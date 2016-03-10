@@ -1,6 +1,6 @@
 # Tickets!
 
-Tickets is a basic ticket tracker using the Laravel PHP framework. See the screenshots below!
+Tickets is a basic ticket tracker using the Laravel PHP framework and Bootstrap 3. See the screenshots below!
 
 ## Screenshots
 
