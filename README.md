@@ -2,6 +2,16 @@
 
 Tickets is a basic ticket tracker using the Laravel PHP framework and Bootstrap 3. See the screenshots below!
 
+## Installing
+
+Copy files to your server. Point to the public folder. 
+
+Run the .SQL files - localhost.sql then tickets.sql
+
+Edit the config/database.php to reference the new database
+
+Load in a web browser and enjoy!
+
 ## Screenshots
 
 ![Alt text](https://raw.githubusercontent.com/velkymx/tickets/master/screenshots/listview.png?raw=true "List View")
