@@ -3219,40 +3219,42 @@
         ]
     },
     {
-        "name": "illuminate/html",
-        "version": "v5.0.0",
-        "version_normalized": "5.0.0.0",
+        "name": "laravelcollective/html",
+        "version": "v5.2.4",
+        "version_normalized": "5.2.4.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/illuminate/html.git",
-            "reference": "3d1009bb8e0f25720c914af5c1f4015dd373c9ef"
+            "url": "https://github.com/LaravelCollective/html.git",
+            "reference": "3a312d39ffe37da0f57b602618b61fd07c1fcec5"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/illuminate/html/zipball/3d1009bb8e0f25720c914af5c1f4015dd373c9ef",
-            "reference": "3d1009bb8e0f25720c914af5c1f4015dd373c9ef",
+            "url": "https://api.github.com/repos/LaravelCollective/html/zipball/3a312d39ffe37da0f57b602618b61fd07c1fcec5",
+            "reference": "3a312d39ffe37da0f57b602618b61fd07c1fcec5",
             "shasum": ""
         },
         "require": {
-            "illuminate/http": "~5.0",
-            "illuminate/session": "~5.0",
-            "illuminate/support": "~5.0",
-            "php": ">=5.4.0"
+            "illuminate/http": "5.2.*",
+            "illuminate/routing": "5.2.*",
+            "illuminate/session": "5.2.*",
+            "illuminate/support": "5.2.*",
+            "illuminate/view": "5.2.*",
+            "php": ">=5.5.9"
         },
-        "time": "2015-01-01 16:31:18",
+        "require-dev": {
+            "illuminate/database": "5.2.*",
+            "mockery/mockery": "~0.9",
+            "phpunit/phpunit": "~4.0"
+        },
+        "time": "2016-01-27 22:29:54",
         "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "5.0-dev"
-            }
-        },
         "installation-source": "dist",
         "autoload": {
             "psr-4": {
-                "Illuminate\\Html\\": ""
+                "Collective\\Html\\": "src/"
             },
             "files": [
-                "helpers.php"
+                "src/helpers.php"
             ]
         },
         "notification-url": "https://packagist.org/downloads/",
@@ -3263,7 +3265,13 @@
             {
                 "name": "Taylor Otwell",
                 "email": "taylorotwell@gmail.com"
+            },
+            {
+                "name": "Adam Engebretson",
+                "email": "adam@laravelcollective.com"
             }
-        ]
+        ],
+        "description": "HTML and Form Builders for the Laravel Framework",
+        "homepage": "http://laravelcollective.com"
     }
 ]
