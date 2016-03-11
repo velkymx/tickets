@@ -33,7 +33,7 @@ class HtmlServiceProvider extends ServiceProvider {
 	 */
 	protected function registerHtmlBuilder()
 	{
-		$this->app->singleton('html', function($app)
+		$this->app->singleton('html', function($app) 
 		{
 			return new HtmlBuilder($app['url']);
 		});
