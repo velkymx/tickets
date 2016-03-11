@@ -6,7 +6,7 @@ Tickets is a basic ticket tracker using the Laravel PHP framework and Bootstrap 
 
 Copy files to your server. Point to the public folder. 
 
-Run the .SQL files - localhost.sql then tickets.sql
+Run the .SQL file "localhost.sql" it includes all tables and starting data.
 
 Edit the config/database.php to reference the new database
 
