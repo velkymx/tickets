@@ -1,10 +1,12 @@
 @extends('layouts.app')
 @section('title')
-Ticket List
+User Tickets
 @stop
-<!-- Main Content -->
 @section('content')
-<h1>Ticket List</h1>
+<h1>{{$user->name}}</h1>
+<hr />
+@foreach ($alltickets as $label => $tickets)
+  <h3>{{ucwords($label)}}</h3>
 <table class="table table-striped">
   <thead>
     <tr>
@@ -39,7 +41,7 @@ Ticket List
     @endforeach
   </tbody>
 </table>
-{!! $tickets->appends($queryfilter)->render() !!}
+@endforeach
 <style>
 .label-base {
 border: 1px solid #2e6da4;

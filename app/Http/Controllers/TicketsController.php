@@ -23,15 +23,43 @@ class TicketsController extends Controller
       $this->middleware('auth');
   }
 
-    public function index(){
+    public function index(Request $request){
 
       $perpage = 10;
 
-      $count = Ticket::count();
+      $filters = array('milestone_id','project_id','sprint_id','status_id','type_id','user_id','importance_id');
 
-      $tickets = Ticket::paginate($perpage);
+      $queryfilter = array();
 
-      return view('tickets.list',compact('tickets','count'));
+      foreach($filters as $filter){
+
+        if(isset($request->$filter) && is_numeric($request->$filter)){
+
+          $queryfilter[$filter] = $request->$filter;
+
+        }
+
+      }
+
+      if(is_array($queryfilter) && sizeof($queryfilter)>0){
+
+          $tickets = new Ticket;
+
+          foreach ($queryfilter as $filter => $value) {
+
+            $tickets = $tickets->where($filter,$value);
+
+          }
+
+          $tickets = $tickets->paginate($perpage);
+
+      } else {
+
+        $tickets = Ticket::paginate($perpage);
+
+      }
+
+      return view('tickets.list',compact('tickets','queryfilter'));
 
     }
 
@@ -63,10 +91,10 @@ class TicketsController extends Controller
       return view('tickets.edit',compact('ticket','lookups'));
     }
 
-    public function update($id)
+    public function update(Request $request,$id)
     {
 
-      $request = Request::all();
+      // $request = Request::all();
 
       $ticket = Ticket::findOrFail($id);
 
@@ -76,7 +104,7 @@ class TicketsController extends Controller
 
       }
 
-      $ticket->update($request);
+      $ticket->update($request->toArray());
 
       return redirect('tickets/?update=success');
 

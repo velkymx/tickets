@@ -50,4 +50,6 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::get('notes/hide/{id}','NotesController@hide');
 
+    Route::get('users/{id}','UsersController@show');
+
 });
