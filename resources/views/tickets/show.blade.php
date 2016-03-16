@@ -71,21 +71,23 @@ Ticket #{{$ticket->id}}
       </tr>
       <tr>
         <td>Assignee</td>
-        <td>{{$ticket->assignee->name}}</td>
+        <td><a href="/user/{{$ticket->assignee->id}}">{{$ticket->assignee->name}}</a></td>
       </tr>
       <tr>
         <td>Type</td>
         <td>{{$ticket->type->name}}</td>
       </tr>
-
-
+      <tr>
+        <td>Owner</td>
+        <td><a href="/user/{{$ticket->user->id}}">{{$ticket->user->name}}</a></td>
+      </tr>
       <tr>
         <td>Milestone</td>
-        <td>{{$ticket->milestone->name}}</td>
+        <td><a href="/tickets/?milestone_id={{$ticket->milestone->id}}">{{$ticket->milestone->name}}</a></td>
       </tr>
       <tr>
         <td>Project</td>
-        <td>{{$ticket->project->name}}</td>
+        <td><a href="/project/{{$ticket->project->id}}">{{$ticket->project->name}}</a></td>
       </tr>
       <tr>
         <td>Created</td>
