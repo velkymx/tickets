@@ -39,7 +39,7 @@ Ticket List
     @endforeach
   </tbody>
 </table>
-{!! $tickets->render() !!}
+{!! $tickets->appends($queryfilter)->render() !!}
 <style>
 .label-base {
 border: 1px solid #2e6da4;
