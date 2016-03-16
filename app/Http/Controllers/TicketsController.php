@@ -27,7 +27,7 @@ class TicketsController extends Controller
 
       $perpage = 10;
 
-      $filters = array('milestone_id','project_id','sprint_id','status_id','type_id','user_id');
+      $filters = array('milestone_id','project_id','sprint_id','status_id','type_id','user_id','importance_id');
 
       $queryfilter = array();
 
@@ -59,7 +59,7 @@ class TicketsController extends Controller
 
       }
 
-      return view('tickets.list',compact('tickets'));
+      return view('tickets.list',compact('tickets','queryfilter'));
 
     }
 
@@ -91,10 +91,10 @@ class TicketsController extends Controller
       return view('tickets.edit',compact('ticket','lookups'));
     }
 
-    public function update($id)
+    public function update(Request $request,$id)
     {
 
-      $request = Request::all();
+      // $request = Request::all();
 
       $ticket = Ticket::findOrFail($id);
 
@@ -104,7 +104,7 @@ class TicketsController extends Controller
 
       }
 
-      $ticket->update($request);
+      $ticket->update($request->toArray());
 
       return redirect('tickets/?update=success');
 
