@@ -47,4 +47,5 @@ border-radius: 3px;
 color:#2e6da4
 
 }
+</style>
 @stop
