@@ -110,10 +110,10 @@ class TicketsController extends Controller
 
     }
 
-    public function store()
+    public function store(Request $request)
     {
 
-      $request = Request::all();
+      $request = $request->toArray();
 
       $request['user_id'] = Auth::id();
 
