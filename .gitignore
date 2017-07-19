@@ -3,3 +3,4 @@ config/mail.php
 .env
 vendor/*
 config/database.php
+vendor/composer/autoload_classmap.php

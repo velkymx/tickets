@@ -4,7 +4,8 @@ Ticket List
 @stop
 <!-- Main Content -->
 @section('content')
-<h1>Ticket List</h1>
+<h1>Ticket List
+<span class="pull-right"><a href="/tickets/create" class="btn btn-sm btn-primary">Create Ticket</a></span></h1>
 <table class="table table-striped">
   <thead>
     <tr>
