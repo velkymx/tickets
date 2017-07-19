@@ -2,3 +2,4 @@ config/app.php
 config/mail.php
 .env
 vendor/*
+config/database.php
