@@ -15,7 +15,7 @@ class CreateMilestonesTable extends Migration
       Schema::create('milestones', function (Blueprint $table) {
           $table->increments('id');
           $table->string('name');
-          $table->tinyInteger('active');
+          $table->tinyInteger('active')->default(1);
       });
     }
 
