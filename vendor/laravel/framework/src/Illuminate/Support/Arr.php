@@ -105,7 +105,7 @@ class Arr
         $results = [];
 
         foreach ($array as $key => $value) {
-            if (is_array($value)) {
+            if (is_array($value) && ! empty($value)) {
                 $results = array_merge($results, static::dot($value, $prepend.$key.'.'));
             } else {
                 $results[$prepend.$key] = $value;
@@ -233,6 +233,13 @@ class Arr
         }
 
         foreach ($keys as $key) {
+            // if the exact key exists in the top-level, remove it
+            if (static::exists($array, $key)) {
+                unset($array[$key]);
+
+                continue;
+            }
+
             $parts = explode('.', $key);
 
             // clean up before each pass
@@ -262,6 +269,10 @@ class Arr
      */
     public static function get($array, $key, $default = null)
     {
+        if (! static::accessible($array)) {
+            return value($default);
+        }
+
         if (is_null($key)) {
             return $array;
         }
@@ -290,6 +301,10 @@ class Arr
      */
     public static function has($array, $key)
     {
+        if (! $array) {
+            return false;
+        }
+
         if (is_null($key)) {
             return false;
         }

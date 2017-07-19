@@ -26,6 +26,7 @@ class MethodDefinitionPass implements Pass
             $methodDef .= $method->returnsReference() ? ' & ' : '';
             $methodDef .= $method->getName();
             $methodDef .= $this->renderParams($method, $config);
+            $methodDef .= $this->renderReturnType($method);
             $methodDef .= $this->renderMethodBody($method, $config);
 
             $code = $this->appendToClass($code, $methodDef);
@@ -64,6 +65,12 @@ class MethodDefinitionPass implements Pass
             $methodParams[] = $paramDef;
         }
         return '(' . implode(', ', $methodParams) . ')';
+    }
+
+    protected function renderReturnType(Method $method)
+    {
+        $type = $method->getReturnType();
+        return $type ? sprintf(': %s', $type) : '';
     }
 
     protected function appendToClass($class, $code)
@@ -119,11 +126,25 @@ if (\$argc > $i) {
 BODY;
             }
         }
-        $body .= <<<BODY
+
+        $body .= $this->getReturnStatement($method, $invoke);
+
+        return $body;
+    }
+
+    private function getReturnStatement($method, $invoke)
+    {
+        if ($method->getReturnType() === 'void') {
+            return <<<BODY
+{$invoke}(__FUNCTION__, \$argv);
+}
+BODY;
+        }
+
+        return <<<BODY
 \$ret = {$invoke}(__FUNCTION__, \$argv);
 return \$ret;
 }
 BODY;
-        return $body;
     }
 }

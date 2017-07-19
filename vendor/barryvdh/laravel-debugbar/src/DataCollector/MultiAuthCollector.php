@@ -2,6 +2,10 @@
 
 namespace Barryvdh\Debugbar\DataCollector;
 
+use Illuminate\Auth\SessionGuard;
+use Illuminate\Contracts\Auth\Guard;
+use Illuminate\Support\Str;
+
 /**
  * Collector for Laravel's Auth provider
  */
@@ -30,8 +34,10 @@ class MultiAuthCollector extends AuthCollector
         $names = '';
 
         foreach($this->guards as $guardName) {
-            $user = $this->auth->guard($guardName)->user();
+            $user = $this->resolveUser($this->auth->guard($guardName));
+
             $data['guards'][$guardName] = $this->getUserInformation($user);
+
             if(!is_null($user)) {
                 $names .= $guardName . ": " . $data['guards'][$guardName]['name'] . ', ';
             }
@@ -47,28 +53,47 @@ class MultiAuthCollector extends AuthCollector
 
         return $data;
     }
-    
+
+    private function resolveUser(Guard $guard)
+    {
+        // if we're logging in using remember token
+        // then we must resolve user „manually”
+        // to prevent csrf token regeneration
+
+        $recaller = $guard instanceof SessionGuard
+            ? $guard->getRequest()->cookies->get($guard->getRecallerName())
+            : null;
+
+        if (is_string($recaller) && Str::contains($recaller, '|')) {
+            $segments = explode('|', $recaller);
+            if (count($segments) == 2 && trim($segments[0]) !== '' && trim($segments[1]) !== '') {
+                return $guard->getProvider()->retrieveByToken($segments[0], $segments[1]);
+            }
+        }
+        return $guard->user();
+    }
+
     /**
      * @{inheritDoc}
      */
     public function getWidgets()
     {
-        $widgets = array(
-            "auth" => array(
+        $widgets = [
+            "auth" => [
                 "icon" => "lock",
                 "widget" => "PhpDebugBar.Widgets.VariableListWidget",
                 "map" => "auth.guards",
                 "default" => "{}"
-            )
-        );
+            ]
+        ];
 
         if ($this->showName) {
-            $widgets['auth.name'] = array(
+            $widgets['auth.name'] = [
                 'icon' => 'user',
                 'tooltip' => 'Auth status',
                 'map' => 'auth.names',
                 'default' => '',
-            );
+            ];
         }
 
         return $widgets;

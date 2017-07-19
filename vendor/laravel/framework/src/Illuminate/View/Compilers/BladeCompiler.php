@@ -184,7 +184,7 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function storeVerbatimBlocks($value)
     {
-        return preg_replace_callback('/@verbatim(.*?)@endverbatim/s', function ($matches) {
+        return preg_replace_callback('/(?<!@)@verbatim(.*?)@endverbatim/s', function ($matches) {
             $this->verbatimBlocks[] = $matches[1];
 
             return $this->verbatimPlaceholder;
@@ -331,7 +331,7 @@ class BladeCompiler extends Compiler implements CompilerInterface
             return isset($match[3]) ? $match[0] : $match[0].$match[2];
         };
 
-        return preg_replace_callback('/\B@(@?\w+)([ \t]*)(\( ( (?>[^()]+) | (?3) )* \))?/x', $callback, $value);
+        return preg_replace_callback('/\B@(@?\w+(?:::\w+)?)([ \t]*)(\( ( (?>[^()]+) | (?3) )* \))?/x', $callback, $value);
     }
 
     /**
@@ -625,7 +625,18 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function compileCan($expression)
     {
-        return "<?php if (Gate::check{$expression}): ?>";
+        return "<?php if (app('Illuminate\\Contracts\\Auth\\Access\\Gate')->check{$expression}): ?>";
+    }
+
+    /**
+     * Compile the else-can statements into valid PHP.
+     *
+     * @param  string  $expression
+     * @return string
+     */
+    protected function compileElsecan($expression)
+    {
+        return "<?php elseif (app('Illuminate\\Contracts\\Auth\\Access\\Gate')->check{$expression}): ?>";
     }
 
     /**
@@ -636,7 +647,18 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function compileCannot($expression)
     {
-        return "<?php if (Gate::denies{$expression}): ?>";
+        return "<?php if (app('Illuminate\\Contracts\\Auth\\Access\\Gate')->denies{$expression}): ?>";
+    }
+
+    /**
+     * Compile the else-can statements into valid PHP.
+     *
+     * @param  string  $expression
+     * @return string
+     */
+    protected function compileElsecannot($expression)
+    {
+        return "<?php elseif (app('Illuminate\\Contracts\\Auth\\Access\\Gate')->denies{$expression}): ?>";
     }
 
     /**
@@ -672,6 +694,17 @@ class BladeCompiler extends Compiler implements CompilerInterface
         $empty = '$__empty_'.$this->forelseCounter--;
 
         return "<?php endforeach; if ({$empty}): ?>";
+    }
+
+    /**
+     * Compile the has section statements into valid PHP.
+     *
+     * @param  string  $expression
+     * @return string
+     */
+    protected function compileHasSection($expression)
+    {
+        return "<?php if (! empty(trim(\$__env->yieldContent{$expression}))): ?>";
     }
 
     /**
@@ -803,9 +836,7 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function compileExtends($expression)
     {
-        if (Str::startsWith($expression, '(')) {
-            $expression = substr($expression, 1, -1);
-        }
+        $expression = $this->stripParentheses($expression);
 
         $data = "<?php echo \$__env->make($expression, array_except(get_defined_vars(), array('__data', '__path')))->render(); ?>";
 
@@ -822,11 +853,22 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function compileInclude($expression)
     {
-        if (Str::startsWith($expression, '(')) {
-            $expression = substr($expression, 1, -1);
-        }
+        $expression = $this->stripParentheses($expression);
 
         return "<?php echo \$__env->make($expression, array_except(get_defined_vars(), array('__data', '__path')))->render(); ?>";
+    }
+
+    /**
+     * Compile the include statements into valid PHP.
+     *
+     * @param  string  $expression
+     * @return string
+     */
+    protected function compileIncludeIf($expression)
+    {
+        $expression = $this->stripParentheses($expression);
+
+        return "<?php if (\$__env->exists($expression)) echo \$__env->make($expression, array_except(get_defined_vars(), array('__data', '__path')))->render(); ?>";
     }
 
     /**
@@ -837,7 +879,7 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function compileStack($expression)
     {
-        return "<?php echo \$__env->yieldContent{$expression}; ?>";
+        return "<?php echo \$__env->yieldPushContent{$expression}; ?>";
     }
 
     /**
@@ -848,7 +890,7 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function compilePush($expression)
     {
-        return "<?php \$__env->startSection{$expression}; ?>";
+        return "<?php \$__env->startPush{$expression}; ?>";
     }
 
     /**
@@ -859,7 +901,22 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function compileEndpush($expression)
     {
-        return '<?php $__env->appendSection(); ?>';
+        return '<?php $__env->stopPush(); ?>';
+    }
+
+    /**
+     * Strip the parentheses from the given expression.
+     *
+     * @param  string  $expression
+     * @return string
+     */
+    protected function stripParentheses($expression)
+    {
+        if (Str::startsWith($expression, '(')) {
+            $expression = substr($expression, 1, -1);
+        }
+
+        return $expression;
     }
 
     /**

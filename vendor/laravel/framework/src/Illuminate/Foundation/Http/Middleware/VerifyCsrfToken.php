@@ -118,7 +118,7 @@ class VerifyCsrfToken
             return false;
         }
 
-        return hash_equals((string) $request->session()->token(), (string) $token);
+        return hash_equals($sessionToken, $token);
     }
 
     /**
@@ -134,7 +134,7 @@ class VerifyCsrfToken
 
         $response->headers->setCookie(
             new Cookie(
-                'XSRF-TOKEN', $request->session()->token(), time() + 60 * 120,
+                'XSRF-TOKEN', $request->session()->token(), time() + 60 * $config['lifetime'],
                 $config['path'], $config['domain'], $config['secure'], false
             )
         );
