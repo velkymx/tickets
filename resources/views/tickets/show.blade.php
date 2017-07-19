@@ -87,7 +87,7 @@ Ticket #{{$ticket->id}}
       </tr>
       <tr>
         <td>Project</td>
-        <td><a href="/project/{{$ticket->project->id}}">{{$ticket->project->name}}</a></td>
+        <td><a href="/projects/show/{{$ticket->project->id}}">{{$ticket->project->name}}</a></td>
       </tr>
       <tr>
         <td>Created</td>
