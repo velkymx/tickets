@@ -8,23 +8,23 @@ Copy files to your server.
 
 Run composer update to get all of the updated libraries
 
-'''
+```
 composer update
-'''
+```
 
 Edit the config/database.php to reference the new database
 
 From the command line run the migrations.
 
-'''
+```
 php artisan migrate
-'''
+```
 
 Seed the database
 
-'''
+```
 php artisan db:seed --class=default_lookup_values
-'''
+```
 
 Load in a web browser and enjoy!
 
