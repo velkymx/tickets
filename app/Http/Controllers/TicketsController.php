@@ -158,9 +158,9 @@ class TicketsController extends Controller
       return array(
 
         'types' => \App\Type::lists('name','id'),
-        'milestones' => \App\Milestone::lists('name','id'),
+        'milestones' => \App\Milestone::where('active',1)->lists('name','id'),
         'importances' => \App\Importance::lists('name','id'),
-        'projects' => \App\Project::lists('name','id'),
+        'projects' => \App\Project::where('active',1)->lists('name','id'),
         'statuses' => \App\Status::lists('name','id'),
         'users' => \App\User::lists('name','id')
 
