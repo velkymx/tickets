@@ -56,6 +56,8 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::get('projects/create','ProjectsController@create');
 
+    Route::get('projects/edit/{id}','ProjectsController@edit');
+
     Route::post('projects/store/{id}','ProjectsController@store');
 
     Route::get('projects/show/{id}','ProjectsController@show');

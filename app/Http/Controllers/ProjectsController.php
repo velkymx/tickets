@@ -66,7 +66,9 @@ class ProjectsController extends Controller
 
     public function edit(Request $request)
     {
-      # code...
+      $project = \App\Project::findOrFail($request->id);
+
+      return view('projects.edit',compact('project'));
     }
 
     public function store(Request $request)
