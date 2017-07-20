@@ -61,7 +61,7 @@ class ProjectsController extends Controller
 
     public function create()
     {
-      # code...
+      return view('projects.create');
     }
 
     public function edit(Request $request)
@@ -71,6 +71,25 @@ class ProjectsController extends Controller
 
     public function store(Request $request)
     {
-      # code...
+
+      if($request->id == 'new'){
+
+        $post = $request->toArray();
+
+        $post['active'] = 1;
+
+        \App\Project::create($post);
+
+      } else {
+
+        $project = \App\Project::findOrFail($request->id);
+
+        $project->update($request->toArray());
+
+      }
+
+
+
+      return redirect('projects');
     }
 }
