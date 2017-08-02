@@ -62,4 +62,14 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::get('projects/show/{id}','ProjectsController@show');
 
+    Route::get('milestone','MilestoneController@index');
+
+    Route::get('milestone/create','MilestoneController@create');
+
+    Route::get('milestone/edit/{id}','MilestoneController@edit');
+
+    Route::post('milestone/store/{id}','MilestoneController@store');
+
+    Route::get('milestone/show/{id}','MilestoneController@show');    
+
 });
