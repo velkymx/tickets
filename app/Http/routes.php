@@ -70,6 +70,6 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::post('milestone/store/{id}','MilestoneController@store');
 
-    Route::get('milestone/show/{id}','MilestoneController@show');    
+    Route::get('milestone/show/{id}','MilestoneController@getShow');    
 
 });
