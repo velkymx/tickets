@@ -38,6 +38,8 @@ Load in a web browser and enjoy!
 
 ![Alt text](https://github.com/velkymx/tickets/blob/master/screenshots/form.png?raw=true "Form View")
 
+![Alt text](https://github.com/velkymx/tickets/blob/master/screenshots/milestone.png?raw=true "Form View")
+
 The MIT License (MIT)
 
 Copyright (c) 2016 Techno Sorcery Corporation
