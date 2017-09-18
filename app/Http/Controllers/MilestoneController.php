@@ -37,6 +37,8 @@ class MilestoneController extends Controller
 
       $total = $milestone->tickets->count();
 
+      $percent = 0;
+
       if($total == 0){
 
         $completed = 0;
