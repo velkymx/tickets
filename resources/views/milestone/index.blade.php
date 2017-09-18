@@ -41,8 +41,12 @@ Milestones List
   @else
     <td></td>
   @endif
-
+  @if (!in_array($milestone->name,['Unreviewed','Future Backlog','Backlog','Scheduled']))
   <td align="right"><a href="/projects/show/{{$milestone->id}}" class="btn btn-sm btn-success">View</a> <a href="/milestone/edit/{{$milestone->id}}" class="btn btn-sm btn-primary">Edit</a></td>
+  @else
+    <td align="right"><a href="/projects/show/{{$milestone->id}}" class="btn btn-sm btn-success">View</a></td>
+  @endif
+
 </tr>
 @endforeach
 </tbody>
