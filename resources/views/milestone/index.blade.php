@@ -22,7 +22,7 @@ Milestones List
   @foreach ($milestones as $milestone)
 <tr>
   <td>{{$milestone->name}}</td>
-  <td><span class="badge">{{$milestone->tickets()->whereIn('status_id',['1','2','3','6'])->count()}}</span></td>
+  <td><span class="badge">{{$milestone->tickets()->whereIn('status_id',['1','2','3','6'])->count()}} / {{$milestone->tickets()->count()}}</span></td>
 
   @if ($milestone->start_at <> '' && $milestone->start_at != '0000-00-00 00:00:00')
   <td>{{date('M jS, Y',strtotime($milestone->start_at))}}</td>

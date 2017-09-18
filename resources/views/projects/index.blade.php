@@ -19,7 +19,7 @@ Ticket List
   @foreach ($projects as $project)
 <tr>
   <td>{{$project->name}}</td>
-  <td><span class="badge">{{$project->tickets()->whereIn('status_id',['1','2','3','6'])->count()}}</span></td>
+  <td><span class="badge">{{$project->tickets()->whereIn('status_id',['1','2','3','6'])->count()}}/{{$project->tickets()->count()}}</span></td>
   <td align="right"><a href="/projects/show/{{$project->id}}" class="btn btn-sm btn-success">View</a> <a href="/projects/edit/{{$project->id}}" class="btn btn-sm btn-primary">Edit</a></td>
 </tr>
 @endforeach
