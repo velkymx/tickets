@@ -58,6 +58,13 @@ class MilestoneController extends Controller
       return view('milestone.create');
     }
 
+    public function edit(Request $request,$id)
+    {
+      $milestone = \App\Milestone::findOrFail($request->id);
+
+      return view('milestone.edit',compact('milestone'));
+    }
+
     public function store(Request $request)
     {
 
@@ -89,6 +96,6 @@ class MilestoneController extends Controller
 
       }
 
-      return redirect('milestones');
+      return redirect('milestone');
     }
 }
