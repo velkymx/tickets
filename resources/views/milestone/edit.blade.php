@@ -4,7 +4,7 @@ Create Milestone
 @stop
 <!-- Main Content -->
 @section('content')
-<h1>Create New Milestone</h1>
+<h1>Edit Milestone</h1>
 <hr>
 {!! Form::open(['method' => 'POST', 'url' => 'milestone/store/'.$milestone->id, 'class' => 'form']) !!}
 <div class="form-group">
