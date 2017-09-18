@@ -33,21 +33,23 @@ class MilestoneController extends Controller
 
       $statuscodes = \App\Status::get();
 
-      $completed = $milestone->tickets()->whereNotIn('status_id',['5','8','9'])->count();
+      $completed = 0;
+
+      $completed = $milestone->tickets()->whereIn('status_id',['5','8','9'])->count();
 
       $total = $milestone->tickets->count();
 
       $percent = 0;
 
-      if($total == 0){
+      if($total !== 0 && $completed !== 0){
 
-        $completed = 0;
+        $percent = (round($completed / $total,2)*100);
 
       }
 
-      if($total !== 0 && $completed !== 0){
+      if ($completed == $total){
 
-        $percent = 100-(round($completed / $total,2)*100);
+        $percent = 100;
 
       }
 

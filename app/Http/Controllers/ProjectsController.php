@@ -58,15 +58,11 @@ class ProjectsController extends Controller
 
       $statuscodes = \App\Status::get();
 
+      $percent = 0;
+
       $completed = $project->tickets()->whereNotIn('status_id',['5','8','9'])->count();
 
       $total = $project->tickets->count();
-
-      if($total == 0){
-
-        $completed = 0;
-
-      }
 
       if($total !== 0 && $completed !== 0){
 
