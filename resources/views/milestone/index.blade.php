@@ -24,19 +24,19 @@ Milestones List
   <td>{{$milestone->name}}</td>
   <td><span class="badge">{{$milestone->tickets()->whereIn('status_id',['1','2','3','6'])->count()}}</span></td>
 
-  @if ($milestone->start_at <> '')
+  @if ($milestone->start_at <> '' && $milestone->start_at != '0000-00-00 00:00:00')
   <td>{{date('M jS, Y',strtotime($milestone->start_at))}}</td>
   @else
     <td></td>
   @endif
 
-  @if ($milestone->start_at <> '')
+  @if ($milestone->due_at <> '' && $milestone->due_at != '0000-00-00 00:00:00')
   <td>{{date('M jS, Y',strtotime($milestone->due_at))}}</td>
   @else
     <td></td>
   @endif
 
-  @if ($milestone->start_at <> '')
+  @if ($milestone->end_at <> '' && $milestone->end_at != '0000-00-00 00:00:00')
   <td>{{date('M jS, Y',strtotime($milestone->end_at))}}</td>
   @else
     <td></td>
