@@ -52,6 +52,7 @@
                 <ul class="nav navbar-nav">
                     <li><a href="{{ url('/home') }}">Home</a></li>
                     <li><a href="{{ url('/tickets') }}">All Tickets</a></li>
+                    <li><a href="{{ url('/milestone') }}">Milestones</a></li>
                     <li><a href="{{ url('/projects') }}">Projects</a></li>
                 </ul>
 
