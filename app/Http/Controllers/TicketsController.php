@@ -158,7 +158,7 @@ class TicketsController extends Controller
       return array(
 
         'types' => \App\Type::pluck('name','id'),
-        'milestones' => \App\Milestone::where('active',1)->pluck('name','id'),
+        'milestones' => \App\Milestone::where('end_at',null)->pluck('name','id'),
         'importances' => \App\Importance::pluck('name','id'),
         'projects' => \App\Project::where('active',1)->pluck('name','id'),
         'statuses' => \App\Status::pluck('name','id'),
