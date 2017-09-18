@@ -4,7 +4,12 @@
 @stop
 <!-- Main Content -->
 @section('content')
-  <h1>{{$milestone->name}} Milestone</h1>
+  <h1>{{$milestone->name}} Milestone
+<span class="pull-right">
+ <a href="/milestone/edit/{{$milestone->id}}" class="btn btn-sm btn-primary">Edit Milestone</a>
+</span>
+
+  </h1>
   <h2>Progress: {{$percent}}% Complete</h2>
   <div class="progress">
     <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width:{{$percent}}%;">
