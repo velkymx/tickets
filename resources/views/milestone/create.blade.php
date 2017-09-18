@@ -6,7 +6,7 @@ Create Milestone
 @section('content')
 <h1>Create New Milestone</h1>
 <hr>
-{!! Form::open(['method' => 'POST', 'url' => 'milestone/store', 'class' => 'form']) !!}
+{!! Form::open(['method' => 'POST', 'url' => 'milestone/store/new', 'class' => 'form']) !!}
 <div class="form-group">
     {!! Form::label('start_at', 'Start Date') !!}
     {!! Form::text('start_at', null, ['class' => 'form-control','id'=>'start_at']) !!}

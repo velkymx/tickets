@@ -57,4 +57,38 @@ class MilestoneController extends Controller
     {
       return view('milestone.create');
     }
+
+    public function store(Request $request)
+    {
+
+      $post = $request->toArray();
+
+      foreach(['start_at','due_at','end_at'] as $date){
+
+        if(isset($post[$date]) && $post[$date] <> ''){
+
+          $post[$date] = date('Y-m-d',strtotime($post[$date]));
+
+        } else {
+
+          $post[$date] = null;
+        }
+      }
+
+      if($request->id == 'new'){
+
+        $post['active'] = 1;
+
+        \App\Milestone::create($post);
+
+      } else {
+
+        $milestone = \App\Milestone::findOrFail($request->id);
+
+        $milestone->update($post);
+
+      }
+
+      return redirect('milestones');
+    }
 }
