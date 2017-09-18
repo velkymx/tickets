@@ -52,4 +52,9 @@ class MilestoneController extends Controller
       return view('milestone.show',compact('milestone','statuscodes','completed','percent'));
 
     }
+
+    public function create()
+    {
+      return view('milestone.create');
+    }
 }
