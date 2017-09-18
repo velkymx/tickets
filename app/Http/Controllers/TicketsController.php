@@ -59,7 +59,16 @@ class TicketsController extends Controller
 
       }
 
-      return view('tickets.list',compact('tickets','queryfilter'));
+      $lookups = $this->lookups();
+
+      $lookups['types'][0] = 'No Change';
+      $lookups['milestones'][0] = 'No Change';
+      $lookups['importances'][0] = 'No Change';
+      $lookups['projects'][0] = 'No Change';
+      $lookups['statuses'][0] = 'No Change';
+      $lookups['users'][0] = 'No Change';
+
+      return view('tickets.list',compact('tickets','queryfilter','lookups'));
 
     }
 
@@ -149,6 +158,42 @@ class TicketsController extends Controller
         return $path.$_FILES['file']['name'];
 
       }
+
+    }
+
+    public function batch(Request $request)
+    {
+      $post = $request->toArray();
+
+      $tickets = $post['tickets'];
+
+      unset($post['tickets']);
+
+      if(count($tickets) == 0){
+
+        return redirect('tickets');
+
+      }
+
+      foreach($post as $k => $v){
+
+        if($v == 0){
+
+          unset($post[$k]);
+
+        }
+
+      }
+
+      foreach($tickets as $ticket){
+
+        $update = Ticket::findOrFail($ticket);
+
+        $update->update($post);
+
+      }
+
+      return redirect('tickets');
 
     }
 

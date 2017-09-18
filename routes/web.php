@@ -28,6 +28,8 @@ Route::group(['middleware' => 'web'], function () {
     Route::post('tickets','TicketsController@store');
 
     Route::post('tickets/upload','TicketsController@upload');
+    
+    Route::post('tickets/batch','TicketsController@batch');
 
     Route::post('tickets/update/{id}','TicketsController@update');
 
