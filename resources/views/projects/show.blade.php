@@ -5,6 +5,26 @@
 <!-- Main Content -->
 @section('content')
 <h1>{{$project->name}} Ticket List</h1>
+<h2>Progress: {{$percent}}% Complete</h2>
+<div class="progress">
+  <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width:{{$percent}}%;">
+    <span class="sr-only">{{$percent}}% Complete</span>
+  </div>
+</div>
+<div class="row-fluid">
+  <div class="col-xs-1 ticketbadge" align="center">
+    <h2>{{$project->tickets->count()}}</h2>
+    <small>Total Tickets</small>
+  </div>
+  @foreach ($statuscodes as $code)
+    <div class="col-xs-1 ticketbadge" align="center">
+      <h2>{{$project->tickets()->where('status_id',$code->id)->count()}}</h2>
+      <small>{{$code->name}}</small>
+    </div>
+  @endforeach
+</div>
+<br clear="all">
+<hr>
 <table class="table table-striped">
   <thead>
     <tr>
@@ -40,12 +60,4 @@
   </tbody>
 </table>
 {!! $tickets->appends($queryfilter)->render() !!}
-<style>
-.label-base {
-border: 1px solid #2e6da4;
-border-radius: 3px;
-color:#2e6da4
-
-}
-</style>
 @stop

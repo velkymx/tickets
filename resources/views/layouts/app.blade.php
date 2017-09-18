@@ -15,6 +15,7 @@
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/jquery-ui.min.css" rel="stylesheet">
     <link href="/css/summernote.css" rel="stylesheet">
+    <link href="/css/overrides.css" rel="stylesheet">
     {{-- <link href="{{ elixir('css/app.css') }}" rel="stylesheet"> --}}
 
     <style>

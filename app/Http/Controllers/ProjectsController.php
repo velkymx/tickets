@@ -48,7 +48,7 @@ class ProjectsController extends Controller
 
           }
 
-          $tickets = $tickets-->paginate($perpage);
+          $tickets = $tickets->paginate($perpage);
 
       } else {
 
@@ -56,7 +56,25 @@ class ProjectsController extends Controller
 
       }
 
-      return view('projects.show',compact('project','tickets','queryfilter'));
+      $statuscodes = \App\Status::get();
+
+      $completed = $project->tickets()->whereNotIn('status_id',['5','8','9'])->count();
+
+      $total = $project->tickets->count();
+
+      if($total == 0){
+
+        $completed = 0;
+
+      }
+
+      if($total !== 0 && $completed !== 0){
+
+        $percent = 100-(round($completed / $total,2)*100);
+
+      }
+
+      return view('projects.show',compact('project','tickets','queryfilter','total','completed','percent','statuscodes'));
     }
 
     public function create()
