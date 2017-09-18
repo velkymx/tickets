@@ -60,9 +60,19 @@ trait SoftDeletes
     {
         $query = $this->newQueryWithoutScopes()->where($this->getKeyName(), $this->getKey());
 
-        $this->{$this->getDeletedAtColumn()} = $time = $this->freshTimestamp();
+        $time = $this->freshTimestamp();
 
-        $query->update([$this->getDeletedAtColumn() => $this->fromDateTime($time)]);
+        $columns = [$this->getDeletedAtColumn() => $this->fromDateTime($time)];
+
+        $this->{$this->getDeletedAtColumn()} = $time;
+
+        if ($this->timestamps) {
+            $this->{$this->getUpdatedAtColumn()} = $time;
+
+            $columns[$this->getUpdatedAtColumn()] = $this->fromDateTime($time);
+        }
+
+        $query->update($columns);
     }
 
     /**
@@ -123,6 +133,16 @@ trait SoftDeletes
     public static function restored($callback)
     {
         static::registerModelEvent('restored', $callback);
+    }
+
+    /**
+     * Determine if the model is currently force deleting.
+     *
+     * @return bool
+     */
+    public function isForceDeleting()
+    {
+        return $this->forceDeleting;
     }
 
     /**

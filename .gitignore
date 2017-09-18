@@ -1,6 +1,6 @@
+.env
 config/app.php
 config/mail.php
-.env
-vendor/*
 config/database.php
-vendor/composer/autoload_classmap.php
+vendor/*
+storage/*
