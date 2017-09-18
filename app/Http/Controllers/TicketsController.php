@@ -185,13 +185,19 @@ class TicketsController extends Controller
 
       }
 
+      $i = 0;
+
       foreach($tickets as $ticket){
 
         $update = Ticket::findOrFail($ticket);
 
         $update->update($post);
 
+        $i++;
+
       }
+
+      \Session::flash('info_message', $i.' ticket(s) updated');
 
       return redirect('tickets');
 
