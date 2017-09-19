@@ -15,27 +15,27 @@ Create Ticket
   </div>
   <div class="form-group">
       {!! Form::label('type_id', 'Ticket Type') !!}
-      {!! Form::select('type_id', $lookups['types'], $ticket->types, ['class' => 'form-control', 'required' => 'required']) !!}
+      {!! Form::select('type_id', $lookups['types'], $ticket->type_id, ['class' => 'form-control', 'required' => 'required']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('importance_id', 'Ticket Importance') !!}
-      {!! Form::select('importance_id', $lookups['importances'], $ticket->importances, ['class' => 'form-control', 'required' => 'required']) !!}
+      {!! Form::select('importance_id', $lookups['importances'], $ticket->importance_id, ['class' => 'form-control', 'required' => 'required']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('milestone_id', 'Ticket Milestone') !!}
-      {!! Form::select('milestone_id', $lookups['milestones'], $ticket->milestones, ['class' => 'form-control', 'required' => 'required']) !!}
+      {!! Form::select('milestone_id', $lookups['milestones'], $ticket->milestone_id, ['class' => 'form-control', 'required' => 'required']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('status_id', 'Ticket Status') !!}
-      {!! Form::select('status_id', $lookups['statuses'], $ticket->statuses, ['class' => 'form-control', 'required' => 'required']) !!}
+      {!! Form::select('status_id', $lookups['statuses'], $ticket->status_id, ['class' => 'form-control', 'required' => 'required']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('project_id', 'Ticket Project') !!}
-      {!! Form::select('project_id', $lookups['projects'], $ticket->projects, ['class' => 'form-control', 'required' => 'required']) !!}
+      {!! Form::select('project_id', $lookups['projects'], $ticket->project_id, ['class' => 'form-control', 'required' => 'required']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('user_id2', 'Assign To') !!}
-      {!! Form::select('user_id2', $lookups['users'], $ticket->users, ['class' => 'form-control', 'required' => 'required']) !!}
+      {!! Form::select('user_id2', $lookups['users'], $ticket->user_id, ['class' => 'form-control', 'required' => 'required']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('due_at', 'Due Date') !!}
