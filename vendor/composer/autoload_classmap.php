@@ -6,6 +6,8 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'AddNoteTime' => $baseDir . '/database/migrations/2017_09_19_163114_add_note_time.php',
+    'AddTicketTime' => $baseDir . '/database/migrations/2017_09_19_163251_add_ticket_time.php',
     'AddUserPermissions' => $baseDir . '/database/migrations/2017_09_18_222219_add_user_permissions.php',
     'App\\Console\\Kernel' => $baseDir . '/app/Console/Kernel.php',
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
