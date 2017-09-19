@@ -37,7 +37,7 @@ class NotesController extends Controller
 
               $ticket->update(['status_id' => $request['status_id']]);
 
-              $changes[] = 'Status Changed to '.$ticket->status->name;
+              $changes[] = 'Status changed to '.$ticket->status->name;
 
             }
 
@@ -65,8 +65,6 @@ class NotesController extends Controller
         }
 
         Note::create($request);
-
-        return $request;
 
         return redirect('tickets/'.$request['ticket_id']);
     }

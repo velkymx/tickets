@@ -290,6 +290,8 @@ class TicketsController extends Controller
       $insert['ticket_id'] = $ticket_id;
       $insert['body'] = $message;
 
+      $change_list = '';
+
       if(count($changes) > 0){
 
         foreach($changes as $change){
