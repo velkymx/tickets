@@ -115,6 +115,8 @@ class TicketsController extends Controller
 
       $ticket->update($request->toArray());
 
+      // TODO Add Change log
+
       \Session::flash('info_message','Ticket #'.$id.' updated');
 
       return redirect('tickets/'.$id);
@@ -205,6 +207,34 @@ class TicketsController extends Controller
 
     }
 
+    public function board()
+    {
+      $tickets = Ticket::get();
+
+      $lookups = $this->lookups();
+
+      return view('tickets.board',compact('tickets','lookups'));
+    }
+
+    public function api(Request $request,$id)
+    {
+
+      $ticket = Ticket::findOrFail($id);
+
+      if($request['status'] != $ticket->status_id){
+
+        $ticket->update(['status_id'=>$request['status']]);
+
+        $this->notate($ticket->id,'',['Status Changed to '.$ticket->status->name]);
+
+        return 'Success';
+
+      }
+
+      return 'Fail';
+
+    }
+
     private function lookups()
     {
 
@@ -218,6 +248,37 @@ class TicketsController extends Controller
         'users' => \App\User::pluck('name','id')
 
       );
+
+    }
+
+    private function notate($ticket_id,$message,$changes)
+    {
+
+      $insert['user_id'] = Auth::id();
+      $insert['ticket_id'] = $ticket_id;
+      $insert['body'] = $message;
+
+      if(count($changes) > 0){
+
+        $change_list = '<ul>';
+
+        foreach($changes as $change){
+
+          $change_list .= '<li>'.$change.'</li>';
+
+        }
+
+        $insert['body'] = $change_list.'</ul>';
+
+        if($message <> ''){
+
+          $insert['body'] .= '<hr>'.$message;
+
+        }
+
+      }
+
+      \App\Note::create($insert);
 
     }
 }
