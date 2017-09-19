@@ -36,18 +36,27 @@ Ticket #{{$ticket->id}}
 {!! Form::open(['url'=>'notes']) !!}
 
 <div class="form-group">
-    {!! Form::label('body', 'Post a Note!') !!}
+    {!! Form::label('body', 'Status Update and Notes') !!}
     {!! Form::textarea('body', null, ['class' => 'form-control summernote', 'required' => 'required']) !!}
 </div>
+<div class="form-group">
+    {!! Form::label('status_id', 'Change Status') !!}
+    {!! Form::select('status_id', $lookups['statuses'], $ticket->status->id, ['class' => 'form-control', 'required' => 'required']) !!}
+</div>
+<div class="form-group">
+    {!! Form::label('importance_id', 'Comment Importance') !!}
+    {!! Form::select('importance_id',$lookups['importances'], $ticket->importance->id, ['class' => 'form-control', 'required' => 'required']) !!}
+</div>
+<div class="form-group">
+    {!! Form::label('hours', 'Add Time or Quantity') !!}
+    {!! Form::text('hours', 0, ['class' => 'form-control', 'required' => 'required']) !!}
+</div>
 {!! Form::hidden('ticket_id',$ticket->id) !!}
-{!! Form::submit('Save Note', ['class' => 'btn btn-success pull-right']) !!}
+{!! Form::submit('Save Comment', ['class' => 'btn btn-success']) !!}
 {!! Form::close() !!}
 </div>
 <div class="col-md-4">
-  <div class="pull-right"><a href="/tickets/create/"><i class="glyphicon glyphicon-plus"></i> Create Ticket</a></div>
-  <br /><br />
-  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#changeStatus">Change Status</button>
-  <a href="/tickets/edit/{{$ticket->id}}" class="btn btn-default pull-right">Edit</a>
+<a href="/tickets/edit/{{$ticket->id}}" class="btn btn-default pull-right">Edit</a>
 <br /><br />
 <div class="panel panel-default">
   <div class="panel-heading">
@@ -90,6 +99,14 @@ Ticket #{{$ticket->id}}
         <td><a href="/projects/show/{{$ticket->project->id}}">{{$ticket->project->name}}</a></td>
       </tr>
       <tr>
+        <td>Time Estimate</td>
+        <td>{{$ticket->estimate}} hours</td>
+      </tr>
+      <tr>
+        <td>Time Actual</td>
+        <td>{{$ticket->notes()->where('hide',0)->sum('hours')}} hours</td>
+      </tr>
+      <tr>
         <td>Created</td>
         <td>{{date('M jS, Y g:ia',strtotime($ticket->created_at))}}</td>
       </tr>
@@ -105,36 +122,6 @@ Ticket #{{$ticket->id}}
 </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="changeStatus" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      {!! Form::open(['url'=>'notes']) !!}
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Change Status</span></h4>
-      </div>
-      <div class="modal-body">
-
-
-        <div class="form-group">
-            {!! Form::textarea('body', null, ['class' => 'form-control summernote2', 'required' => 'required']) !!}
-        </div>
-        {!! Form::hidden('ticket_id',$ticket->id) !!}
-        <div class="form-group">
-            {!! Form::label('status_id', 'Ticket Status') !!}
-            {!! Form::select('status_id', $lookups['statuses'], 1, ['class' => 'form-control', 'required' => 'required']) !!}
-        </div>
-
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        {!! Form::submit('Make it so!', ['class' => 'btn btn-primary']) !!}
-      </div>
-      {!! Form::close() !!}
-    </div>
-  </div>
-</div>
 
 @stop
 @section('javascript')

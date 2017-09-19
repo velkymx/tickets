@@ -25,6 +25,8 @@ class NotesController extends Controller
 
         $request['user_id'] = Auth::id();
 
+        $changes = [];
+
         if (isset($request['status_id']) && isset($request['ticket_id'])) {
 
     // Update the ticket status
@@ -35,12 +37,36 @@ class NotesController extends Controller
 
               $ticket->update(['status_id' => $request['status_id']]);
 
-              $request['body'] = '<ul><li>Status Changed to '.$ticket->status->name.'</li></ul>'.$request['body'];
+              $changes[] = 'Status Changed to '.$ticket->status->name;
 
             }
+
+            if($request['hours'] != 0){
+
+              $changes[] = 'Hours added: '.$request['hours'];
+
+            }
+
+            if(count($changes) > 0){
+
+              $change_list = '<ul>';
+
+              foreach($changes as $change){
+
+                $change_list .= '<li>'.$change.'</li>';
+
+              }
+
+              $request['body'] = $change_list.'</ul><hr>'.$request['body'];
+
+            }
+
+
         }
 
         Note::create($request);
+
+        return $request;
 
         return redirect('tickets/'.$request['ticket_id']);
     }

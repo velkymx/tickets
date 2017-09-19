@@ -41,6 +41,10 @@ Create Ticket
       {!! Form::label('due_at', 'Due Date') !!}
       {!! Form::text('due_at', null, ['class' => 'form-control datepicker']) !!}
   </div>
+  <div class="form-group">
+    {!! Form::label('estimate', 'Time Estimate (hours)') !!}
+    {!! Form::text('estimate', 0, ['class' => 'form-control']) !!}
+</div>
   {!! Form::submit('Save Ticket', ['class' => 'btn btn-info pull-right']) !!}
 {!! Form::close() !!}
 <br /><br /><br /><br />
