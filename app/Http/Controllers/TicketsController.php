@@ -113,9 +113,41 @@ class TicketsController extends Controller
 
       }
 
+      $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'due_at', 'closed_at','estimate'];
+
+      $change_list = [];
+
+      foreach($changes as $change){
+
+        if($request->$change != $ticket->$change){
+
+          $label = $change;
+
+          if(substr($change,-3,3) == '_id'){
+
+            $label = substr($change,0,strlen($change)-3);
+
+            $change_list[] = ucwords($label).' changed to '.$ticket->$label->name;
+
+          } elseif(substr($change,-3,3) == '_at'){
+
+            $label = substr($change,0,strlen($change)-3);
+
+            $change_list[] = ucwords($label).' date changed to '.date('M jS, Y',strtotime($request->$change));
+
+          } else {
+
+            $change_list[] = ucwords($label).' changed to '.$request->$change;
+
+          }
+
+        }
+
+      }
+
       $ticket->update($request->toArray());
 
-      // TODO Add Change log
+      $this->notate($ticket->id,'',$change_list);
 
       \Session::flash('info_message','Ticket #'.$id.' updated');
 
