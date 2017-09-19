@@ -115,7 +115,9 @@ class TicketsController extends Controller
 
       $ticket->update($request->toArray());
 
-      return redirect('tickets/?update=success');
+      \Session::flash('info_message','Ticket #'.$id.' updated');
+
+      return redirect('tickets/'.$id);
 
     }
 
