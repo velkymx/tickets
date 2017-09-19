@@ -47,9 +47,9 @@ class NotesController extends Controller
 
             }
 
-            if(count($changes) > 0){
+            $change_list = '';
 
-              $change_list = '<ul>';
+            if(count($changes) > 0){
 
               foreach($changes as $change){
 
@@ -57,7 +57,7 @@ class NotesController extends Controller
 
               }
 
-              $request['body'] = $change_list.'</ul><hr>'.$request['body'];
+              $request['body'] = $request['body'].'<hr><ul>'.$change_list.'</ul>';
 
             }
 

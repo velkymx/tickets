@@ -292,19 +292,19 @@ class TicketsController extends Controller
 
       if(count($changes) > 0){
 
-        $change_list = '<ul>';
-
         foreach($changes as $change){
 
           $change_list .= '<li>'.$change.'</li>';
 
         }
 
-        $insert['body'] = $change_list.'</ul>';
-
         if($message <> ''){
 
-          $insert['body'] .= '<hr>'.$message;
+          $insert['body'] = $message.'<hr><ul>'.$change_list.'</ul>';
+
+        } else {
+
+          $insert['body'] = '<ul>'.$change_list.'</ul>';
 
         }
 
