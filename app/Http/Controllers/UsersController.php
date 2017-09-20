@@ -22,8 +22,6 @@ class UsersController extends Controller
 
       $statuses = \App\Status::lists('name','id');
 
-
-
       foreach($statuses as $status => $val){
 
           $alltickets[$val] = Ticket::where('user_id2',$id)->where('status_id',$status)->get();
@@ -33,6 +31,31 @@ class UsersController extends Controller
       }
 
       return View('users.show',compact('user','alltickets'));
+
+    }
+
+    public function watch($id)
+    {
+
+      $ticket = Ticket::findOrFail($id);
+
+      $watch = \App\TicketUserWatcher::where('ticket_id',$id)->where('user_id',Auth::id())->first();
+
+      if($watch){
+
+        $watch->delete();
+
+        $message = 'Watch stopped for this ticket';
+
+      } else {
+
+        \App\TicketUserWatcher::create(['user_id'=>Auth::id(),'ticket_id'=>$id]);
+
+        $message = 'Watch started for this ticket';
+
+      }
+
+      return $message;
 
     }
 

@@ -10,6 +10,8 @@ use App\Ticket;
 
 use Illuminate\Support\Facades\Auth;
 
+use Illuminate\Support\Facades\Mail;
+
 class TicketsController extends Controller
 {
 
@@ -218,6 +220,43 @@ class TicketsController extends Controller
         return 'Fail';
     }
 
+    public function note(Request $request)
+    {
+        $request = $request->toArray();
+
+        $request['user_id'] = Auth::id();
+
+        $changes = [];
+
+        $update = [];
+
+        if (isset($request['status_id']) && isset($request['ticket_id'])) {
+            $ticket = \App\Ticket::findOrFail($request['ticket_id']);
+
+            if ($ticket->status_id != $request['status_id']) {
+                $changes[] = 'Status changed to '.$ticket->status->name;
+
+                $update[] = ['status_id' => $request['status_id']];
+            }
+
+            if ($request['hours'] != 0) {
+                $changes[] = 'Hours added: '.$request['hours'];
+            }
+
+            if ($ticket->importance_id != $request['importance_id']) {
+                $changes[] = 'Importance changed to '.$ticket->importance->name;
+
+                $update[] = ['importance_id' => $request['importance_id']];
+            }
+        }
+
+        $ticket->update($update);
+
+        $this->notate($ticket->id, $request['body'], $changes);
+
+        return redirect('tickets/'.$request['ticket_id']);
+    }
+
     private function lookups()
     {
         return array(
@@ -238,6 +277,8 @@ class TicketsController extends Controller
         $insert['ticket_id'] = $ticket_id;
         $insert['body'] = $message;
 
+        $ticket = Ticket::findOrFail($ticket_id);
+
         $change_list = '';
 
         if (count($changes) > 0) {
@@ -253,5 +294,11 @@ class TicketsController extends Controller
         }
 
         \App\Note::create($insert);
+
+        if ($ticket->watchers->count() > 0) {
+            foreach ($ticket->watchers as $watcher) {
+                Mail::to($watcher->user->email)->send(new \App\Mail\NotifyWatchers($ticket));
+            }
+        }
     }
 }

@@ -37,11 +37,13 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::post('tickets/update/{id}','TicketsController@update');
 
-    Route::post('notes','NotesController@store');
+    Route::post('notes','TicketsController@note');
 
     Route::get('notes/hide/{id}','NotesController@hide');
 
     Route::get('users/{id}','UsersController@show');
+
+    Route::get('users/watch/{id}','UsersController@watch');
 
     Route::get('projects','ProjectsController@index');
 

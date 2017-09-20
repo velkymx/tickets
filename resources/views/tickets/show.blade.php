@@ -4,22 +4,27 @@ Ticket #{{$ticket->id}}
 @stop
 <!-- Main Content -->
 @section('content')
+
   <ol class="breadcrumb">
     <li><a href="/">Home</a></li>
     <li><a href="/tickets/">Tickets</a></li>
-    <li class="active">Ticket #{{$ticket->id}} <span class="badge"> {{$ticket->status->name}} </span></li>
+    <li class="active">Ticket #{{$ticket->id}}</li>
   </ol>
   <div class="row-fluid">
     <div class="col-md-8">
-
-
-
-
 <h2>{{$ticket->subject}}</h2>
 <hr />
 {!!html_entity_decode($ticket->description)!!}
 <hr />
-<h3>Notes ({{$ticket->notes()->where('hide','0')->count()}})</h3>
+<div class="alert alert-info alert-dismissible" role="alert" id="alert" style="display:none">
+  <button type="button" class="close" onclick="$('#alert').hide()" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  <div id="alert_messsage"></div>
+</div>
+<h3>Notes ({{$ticket->notes()->where('hide','0')->count()}})
+
+<span class="pull-right"><span class="btn btn-info btn-sm" id="watch"><i class="glyphicon glyphicon-eye-open"></i> Watch</span></span>
+
+</h3>
 <hr />
 @foreach ($ticket->notes()->where('hide','0')->get() as $note)
 <div class="panel panel-default" id="note_{{$note->id}}">
@@ -114,15 +119,19 @@ Ticket #{{$ticket->id}}
         <td>Updated</td>
         <td>{{date('M jS, Y g:ia',strtotime($ticket->updated_at))}}</td>
       </tr>
-
-
+      @foreach ($ticket->watchers as $watcher)
+        <tr>
+          <td>Watcher: </td>
+          <td><a href="mailto:{{$watcher->user->email}}&subject=Ticket #{{$ticket->id}}">{{$watcher->user->name}}</a></td>
+        </tr>
+      @endforeach
     </table>
   </div>
 </div>
 </div>
 </div>
 
-
+<span id="ticket_id" style="display:none">{{$ticket->id}}</span>
 @stop
 @section('javascript')
 <script src="/js/summernote.min.js"></script>
@@ -181,6 +190,18 @@ function hideNote(noteid) {
   $("#note_"+noteid).slideUp();
 
 }
+
+$("#watch").click(
+
+  function(){
+
+    $("#alert_messsage").load('/users/watch/'+$("#ticket_id").html())
+
+    $("#alert").slideDown()
+
+  }
+
+)
 
 </script>
 @stop
