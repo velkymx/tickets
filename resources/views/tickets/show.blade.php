@@ -122,7 +122,7 @@ Ticket #{{$ticket->id}}
       @foreach ($ticket->watchers as $watcher)
         <tr>
           <td>Watcher: </td>
-          <td><a href="mailto:{{$watcher->user->email}}&subject=Ticket #{{$ticket->id}}">{{$watcher->user->name}}</a></td>
+          <td><a href="mailto:{{$watcher->user->email}}?subject=Ticket #{{$ticket->id}}">{{$watcher->user->name}}</a></td>
         </tr>
       @endforeach
     </table>
