@@ -860,7 +860,7 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
             $result->run($this);
         }
 
-        if ($this->useErrorHandler !== null) {
+        if (isset($oldErrorHandlerSetting)) {
             $result->convertErrorsToExceptions($oldErrorHandlerSetting);
         }
 
@@ -1432,7 +1432,7 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
     /**
      * Returns a builder object to create mock objects using a fluent interface.
      *
-     * @param string $className
+     * @param string|string[] $className
      *
      * @return PHPUnit_Framework_MockObject_MockBuilder
      */
