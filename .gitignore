@@ -4,3 +4,5 @@ config/mail.php
 config/database.php
 vendor/*
 storage/*
+
+config/mail.php
