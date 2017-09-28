@@ -20,7 +20,7 @@ class UsersController extends Controller
 
       $user = User::findOrFail($id);
 
-      $statuses = \App\Status::lists('name','id');
+      $statuses = \App\Status::pluck('name','id');
 
       foreach($statuses as $status => $val){
 
