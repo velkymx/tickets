@@ -49,10 +49,6 @@ Ticket #{{$ticket->id}}
     {!! Form::select('status_id', $lookups['statuses'], $ticket->status->id, ['class' => 'form-control', 'required' => 'required']) !!}
 </div>
 <div class="form-group">
-    {!! Form::label('importance_id', 'Comment Importance') !!}
-    {!! Form::select('importance_id',$lookups['importances'], $ticket->importance->id, ['class' => 'form-control', 'required' => 'required']) !!}
-</div>
-<div class="form-group">
     {!! Form::label('hours', 'Add Time or Quantity') !!}
     {!! Form::text('hours', 0, ['class' => 'form-control', 'required' => 'required']) !!}
 </div>

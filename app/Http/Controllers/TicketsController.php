@@ -245,11 +245,11 @@ class TicketsController extends Controller
                 $changes[] = 'Hours added: '.$request['hours'];
             }
 
-            if ($ticket->importance_id != $request['importance_id']) {
-                $changes[] = 'Importance changed to '.$ticket->importance->name;
-
-                $update[] = ['importance_id' => $request['importance_id']];
-            }
+            // if ($ticket->importance_id != $request['importance_id']) {
+            //     $changes[] = 'Importance changed to '.$ticket->importance->name;
+            //
+            //     $update[] = ['importance_id' => $request['importance_id']];
+            // }
         }
 
         $ticket->update($update);
