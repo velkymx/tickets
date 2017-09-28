@@ -69,6 +69,8 @@ class TicketsController extends Controller
 
         $lookups = $this->lookups();
 
+        \App\TicketView::create(['user_id'=>Auth::id(),'ticket_id'=>$ticket->id]);
+
         return view('tickets.show', compact('ticket', 'lookups'));
     }
 

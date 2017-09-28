@@ -94,6 +94,7 @@ return array(
     'CreatePasswordResetsTable' => $baseDir . '/database/migrations/2014_10_12_100000_create_password_resets_table.php',
     'CreateProjectsTable' => $baseDir . '/database/migrations/2017_07_19_212403_create_projects_table.php',
     'CreateStatusesTable' => $baseDir . '/database/migrations/2017_07_19_212537_create_statuses_table.php',
+    'CreateTicketViews' => $baseDir . '/database/migrations/2017_09_28_214406_create_ticket_views.php',
     'CreateTicketsTable' => $baseDir . '/database/migrations/2017_07_19_212901_create_tickets_table.php',
     'CreateTypesTable' => $baseDir . '/database/migrations/2017_07_19_212651_create_types_table.php',
     'CreateUsersTable' => $baseDir . '/database/migrations/2014_10_12_000000_create_users_table.php',

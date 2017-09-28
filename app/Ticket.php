@@ -56,4 +56,10 @@ class Ticket extends Model
     {
         return $this->hasMany('App\TicketUserWatcher');
     }
+
+    public function views()
+    {
+        return $this->hasMany('App\TicketView');
+    }
+
 }

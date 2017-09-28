@@ -121,9 +121,16 @@ Ticket #{{$ticket->id}}
       </tr>
       @foreach ($ticket->watchers as $watcher)
         <tr>
-          <td>Watcher: </td>
+          <td>Watcher</td>
           <td><a href="mailto:{{$watcher->user->email}}?subject=Ticket #{{$ticket->id}}">{{$watcher->user->name}}</a></td>
         </tr>
+      @endforeach
+      @foreach ($ticket->views()->select([DB::raw('DISTINCT user_id'),DB::raw('max(created_at) as viewed_at')])->groupBy('user_id')->get() as $view)
+        <tr>
+          <td>User View</td>
+          <td>{{$view->user->name}} - {{\Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans()}}</td>
+        </tr>
+
       @endforeach
     </table>
   </div>
