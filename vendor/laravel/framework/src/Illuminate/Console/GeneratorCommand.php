@@ -46,8 +46,9 @@ abstract class GeneratorCommand extends Command
      * Execute the console command.
      *
      * @return bool|null
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    public function fire()
+    public function handle()
     {
         $name = $this->qualifyClass($this->getNameInput());
 
@@ -56,7 +57,9 @@ abstract class GeneratorCommand extends Command
         // First we will check to see if the class already exists. If it does, we don't want
         // to create the class and overwrite the user's code. So, we will bail out so the
         // code is untouched. Otherwise, we will continue generating this class' files.
-        if ($this->alreadyExists($this->getNameInput())) {
+        if ((! $this->hasOption('force') ||
+             ! $this->option('force')) &&
+             $this->alreadyExists($this->getNameInput())) {
             $this->error($this->type.' already exists!');
 
             return false;
@@ -80,6 +83,8 @@ abstract class GeneratorCommand extends Command
      */
     protected function qualifyClass($name)
     {
+        $name = ltrim($name, '\\/');
+
         $rootNamespace = $this->rootNamespace();
 
         if (Str::startsWith($name, $rootNamespace)) {
@@ -123,7 +128,7 @@ abstract class GeneratorCommand extends Command
      */
     protected function getPath($name)
     {
-        $name = str_replace_first($this->rootNamespace(), '', $name);
+        $name = Str::replaceFirst($this->rootNamespace(), '', $name);
 
         return $this->laravel['path'].'/'.str_replace('\\', '/', $name).'.php';
     }
@@ -148,6 +153,7 @@ abstract class GeneratorCommand extends Command
      *
      * @param  string  $name
      * @return string
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
     protected function buildClass($name)
     {
@@ -166,8 +172,8 @@ abstract class GeneratorCommand extends Command
     protected function replaceNamespace(&$stub, $name)
     {
         $stub = str_replace(
-            ['DummyNamespace', 'DummyRootNamespace'],
-            [$this->getNamespace($name), $this->rootNamespace()],
+            ['DummyNamespace', 'DummyRootNamespace', 'NamespacedDummyUserModel'],
+            [$this->getNamespace($name), $this->rootNamespace(), $this->userProviderModel()],
             $stub
         );
 
@@ -217,6 +223,20 @@ abstract class GeneratorCommand extends Command
     protected function rootNamespace()
     {
         return $this->laravel->getNamespace();
+    }
+
+    /**
+     * Get the model for the default guard's user provider.
+     *
+     * @return string|null
+     */
+    protected function userProviderModel()
+    {
+        $guard = config('auth.defaults.guard');
+
+        $provider = config("auth.guards.{$guard}.provider");
+
+        return config("auth.providers.{$provider}.model");
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Illuminate\View\Compilers;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class BladeCompiler extends Compiler implements CompilerInterface
 {
@@ -12,8 +13,11 @@ class BladeCompiler extends Compiler implements CompilerInterface
         Concerns\CompilesComponents,
         Concerns\CompilesConditionals,
         Concerns\CompilesEchos,
+        Concerns\CompilesErrors,
+        Concerns\CompilesHelpers,
         Concerns\CompilesIncludes,
         Concerns\CompilesInjections,
+        Concerns\CompilesJson,
         Concerns\CompilesLayouts,
         Concerns\CompilesLoops,
         Concerns\CompilesRawPhp,
@@ -30,11 +34,16 @@ class BladeCompiler extends Compiler implements CompilerInterface
     /**
      * All custom "directive" handlers.
      *
-     * This was implemented as a more usable "extend" in 5.1.
-     *
      * @var array
      */
     protected $customDirectives = [];
+
+    /**
+     * All custom "condition" handlers.
+     *
+     * @var array
+     */
+    protected $conditions = [];
 
     /**
      * The file currently being compiled.
@@ -91,23 +100,16 @@ class BladeCompiler extends Compiler implements CompilerInterface
     protected $footer = [];
 
     /**
-     * Placeholder to temporary mark the position of verbatim blocks.
-     *
-     * @var string
-     */
-    protected $verbatimPlaceholder = '@__verbatim__@';
-
-    /**
-     * Array to temporary store the verbatim blocks found in the template.
+     * Array to temporary store the raw blocks found in the template.
      *
      * @var array
      */
-    protected $verbatimBlocks = [];
+    protected $rawBlocks = [];
 
     /**
      * Compile the view at the given path.
      *
-     * @param  string  $path
+     * @param  string|null  $path
      * @return void
      */
     public function compile($path = null)
@@ -117,10 +119,42 @@ class BladeCompiler extends Compiler implements CompilerInterface
         }
 
         if (! is_null($this->cachePath)) {
-            $contents = $this->compileString($this->files->get($this->getPath()));
+            $contents = $this->compileString(
+                $this->files->get($this->getPath())
+            );
 
-            $this->files->put($this->getCompiledPath($this->getPath()), $contents);
+            if (! empty($this->getPath())) {
+                $tokens = $this->getOpenAndClosingPhpTokens($contents);
+
+                // If the tokens we retrieved from the compiled contents have at least
+                // one opening tag and if that last token isn't the closing tag, we
+                // need to close the statement before adding the path at the end.
+                if ($tokens->isNotEmpty() && $tokens->last() !== T_CLOSE_TAG) {
+                    $contents .= ' ?>';
+                }
+
+                $contents .= "<?php /**PATH {$this->getPath()} ENDPATH**/ ?>";
+            }
+
+            $this->files->put(
+                $this->getCompiledPath($this->getPath()), $contents
+            );
         }
+    }
+
+    /**
+     * Get the open and closing PHP tag tokens from the given string.
+     *
+     * @param  string  $contents
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getOpenAndClosingPhpTokens($contents)
+    {
+        return collect(token_get_all($contents))
+            ->pluck($tokenNumber = 0)
+            ->filter(function ($token) {
+                return in_array($token, [T_OPEN_TAG, T_OPEN_TAG_WITH_ECHO, T_CLOSE_TAG]);
+            });
     }
 
     /**
@@ -152,13 +186,17 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     public function compileString($value)
     {
-        $result = '';
-
         if (strpos($value, '@verbatim') !== false) {
             $value = $this->storeVerbatimBlocks($value);
         }
 
         $this->footer = [];
+
+        if (strpos($value, '@php') !== false) {
+            $value = $this->storePhpBlocks($value);
+        }
+
+        $result = '';
 
         // Here we will loop through all of the tokens returned by the Zend lexer and
         // parse each one into the corresponding valid PHP. We will then have this
@@ -167,8 +205,8 @@ class BladeCompiler extends Compiler implements CompilerInterface
             $result .= is_array($token) ? $this->parseToken($token) : $token;
         }
 
-        if (! empty($this->verbatimBlocks)) {
-            $result = $this->restoreVerbatimBlocks($result);
+        if (! empty($this->rawBlocks)) {
+            $result = $this->restoreRawContent($result);
         }
 
         // If there are any footer lines that need to get added to a template we will
@@ -190,10 +228,34 @@ class BladeCompiler extends Compiler implements CompilerInterface
     protected function storeVerbatimBlocks($value)
     {
         return preg_replace_callback('/(?<!@)@verbatim(.*?)@endverbatim/s', function ($matches) {
-            $this->verbatimBlocks[] = $matches[1];
-
-            return $this->verbatimPlaceholder;
+            return $this->storeRawBlock($matches[1]);
         }, $value);
+    }
+
+    /**
+     * Store the PHP blocks and replace them with a temporary placeholder.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function storePhpBlocks($value)
+    {
+        return preg_replace_callback('/(?<!@)@php(.*?)@endphp/s', function ($matches) {
+            return $this->storeRawBlock("<?php{$matches[1]}?>");
+        }, $value);
+    }
+
+    /**
+     * Store a raw block and return a unique raw placeholder.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function storeRawBlock($value)
+    {
+        return $this->getRawPlaceholder(
+            array_push($this->rawBlocks, $value) - 1
+        );
     }
 
     /**
@@ -202,15 +264,26 @@ class BladeCompiler extends Compiler implements CompilerInterface
      * @param  string  $result
      * @return string
      */
-    protected function restoreVerbatimBlocks($result)
+    protected function restoreRawContent($result)
     {
-        $result = preg_replace_callback('/'.preg_quote($this->verbatimPlaceholder).'/', function () {
-            return array_shift($this->verbatimBlocks);
+        $result = preg_replace_callback('/'.$this->getRawPlaceholder('(\d+)').'/', function ($matches) {
+            return $this->rawBlocks[$matches[1]];
         }, $result);
 
-        $this->verbatimBlocks = [];
+        $this->rawBlocks = [];
 
         return $result;
+    }
+
+    /**
+     * Get a placeholder to temporary mark the position of raw blocks.
+     *
+     * @param  int|string  $replace
+     * @return string
+     */
+    protected function getRawPlaceholder($replace)
+    {
+        return str_replace('#', $replace, '@__raw_block_#__@');
     }
 
     /**
@@ -233,7 +306,7 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     protected function parseToken($token)
     {
-        list($id, $content) = $token;
+        [$id, $content] = $token;
 
         if ($id == T_INLINE_HTML) {
             foreach ($this->compilers as $type) {
@@ -346,6 +419,86 @@ class BladeCompiler extends Compiler implements CompilerInterface
     }
 
     /**
+     * Register an "if" statement directive.
+     *
+     * @param  string  $name
+     * @param  callable  $callback
+     * @return void
+     */
+    public function if($name, callable $callback)
+    {
+        $this->conditions[$name] = $callback;
+
+        $this->directive($name, function ($expression) use ($name) {
+            return $expression !== ''
+                    ? "<?php if (\Illuminate\Support\Facades\Blade::check('{$name}', {$expression})): ?>"
+                    : "<?php if (\Illuminate\Support\Facades\Blade::check('{$name}')): ?>";
+        });
+
+        $this->directive('else'.$name, function ($expression) use ($name) {
+            return $expression !== ''
+                ? "<?php elseif (\Illuminate\Support\Facades\Blade::check('{$name}', {$expression})): ?>"
+                : "<?php elseif (\Illuminate\Support\Facades\Blade::check('{$name}')): ?>";
+        });
+
+        $this->directive('end'.$name, function () {
+            return '<?php endif; ?>';
+        });
+    }
+
+    /**
+     * Check the result of a condition.
+     *
+     * @param  string  $name
+     * @param  array  $parameters
+     * @return bool
+     */
+    public function check($name, ...$parameters)
+    {
+        return call_user_func($this->conditions[$name], ...$parameters);
+    }
+
+    /**
+     * Register a component alias directive.
+     *
+     * @param  string  $path
+     * @param  string|null  $alias
+     * @return void
+     */
+    public function component($path, $alias = null)
+    {
+        $alias = $alias ?: Arr::last(explode('.', $path));
+
+        $this->directive($alias, function ($expression) use ($path) {
+            return $expression
+                        ? "<?php \$__env->startComponent('{$path}', {$expression}); ?>"
+                        : "<?php \$__env->startComponent('{$path}'); ?>";
+        });
+
+        $this->directive('end'.$alias, function ($expression) {
+            return '<?php echo $__env->renderComponent(); ?>';
+        });
+    }
+
+    /**
+     * Register an include alias directive.
+     *
+     * @param  string  $path
+     * @param  string|null  $alias
+     * @return void
+     */
+    public function include($path, $alias = null)
+    {
+        $alias = $alias ?: Arr::last(explode('.', $path));
+
+        $this->directive($alias, function ($expression) use ($path) {
+            $expression = $this->stripParentheses($expression) ?: '[]';
+
+            return "<?php echo \$__env->make('{$path}', {$expression}, \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>";
+        });
+    }
+
+    /**
      * Register a handler for custom directives.
      *
      * @param  string  $name
@@ -354,6 +507,10 @@ class BladeCompiler extends Compiler implements CompilerInterface
      */
     public function directive($name, callable $handler)
     {
+        if (! preg_match('/^\w+(?:::\w+)?$/x', $name)) {
+            throw new InvalidArgumentException("The directive name [{$name}] is not valid. Directive names must only contain alphanumeric characters and underscores.");
+        }
+
         $this->customDirectives[$name] = $handler;
     }
 
@@ -376,5 +533,25 @@ class BladeCompiler extends Compiler implements CompilerInterface
     public function setEchoFormat($format)
     {
         $this->echoFormat = $format;
+    }
+
+    /**
+     * Set the "echo" format to double encode entities.
+     *
+     * @return void
+     */
+    public function withDoubleEncoding()
+    {
+        $this->setEchoFormat('e(%s, true)');
+    }
+
+    /**
+     * Set the "echo" format to not double encode entities.
+     *
+     * @return void
+     */
+    public function withoutDoubleEncoding()
+    {
+        $this->setEchoFormat('e(%s, false)');
     }
 }

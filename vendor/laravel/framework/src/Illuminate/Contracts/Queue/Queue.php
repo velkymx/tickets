@@ -7,7 +7,7 @@ interface Queue
     /**
      * Get the size of the queue.
      *
-     * @param  string  $queue
+     * @param  string|null  $queue
      * @return int
      */
     public function size($queue = null);
@@ -15,9 +15,9 @@ interface Queue
     /**
      * Push a new job onto the queue.
      *
-     * @param  string  $job
+     * @param  string|object  $job
      * @param  mixed   $data
-     * @param  string  $queue
+     * @param  string|null  $queue
      * @return mixed
      */
     public function push($job, $data = '', $queue = null);
@@ -26,7 +26,7 @@ interface Queue
      * Push a new job onto the queue.
      *
      * @param  string  $queue
-     * @param  string  $job
+     * @param  string|object  $job
      * @param  mixed   $data
      * @return mixed
      */
@@ -36,7 +36,7 @@ interface Queue
      * Push a raw payload onto the queue.
      *
      * @param  string  $payload
-     * @param  string  $queue
+     * @param  string|null  $queue
      * @param  array   $options
      * @return mixed
      */
@@ -45,10 +45,10 @@ interface Queue
     /**
      * Push a new job onto the queue after a delay.
      *
-     * @param  \DateTime|int  $delay
-     * @param  string  $job
+     * @param  \DateTimeInterface|\DateInterval|int  $delay
+     * @param  string|object  $job
      * @param  mixed   $data
-     * @param  string  $queue
+     * @param  string|null  $queue
      * @return mixed
      */
     public function later($delay, $job, $data = '', $queue = null);
@@ -57,8 +57,8 @@ interface Queue
      * Push a new job onto the queue after a delay.
      *
      * @param  string  $queue
-     * @param  \DateTime|int  $delay
-     * @param  string  $job
+     * @param  \DateTimeInterface|\DateInterval|int  $delay
+     * @param  string|object  $job
      * @param  mixed   $data
      * @return mixed
      */
@@ -69,7 +69,7 @@ interface Queue
      *
      * @param  array   $jobs
      * @param  mixed   $data
-     * @param  string  $queue
+     * @param  string|null  $queue
      * @return mixed
      */
     public function bulk($jobs, $data = '', $queue = null);

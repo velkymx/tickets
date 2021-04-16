@@ -25,11 +25,9 @@ final class KernelEvents
      * This event allows you to create a response for a request before any
      * other code in the framework is executed.
      *
-     * @Event("Symfony\Component\HttpKernel\Event\GetResponseEvent")
-     *
-     * @var string
+     * @Event("Symfony\Component\HttpKernel\Event\RequestEvent")
      */
-    const REQUEST = 'kernel.request';
+    public const REQUEST = 'kernel.request';
 
     /**
      * The EXCEPTION event occurs when an uncaught exception appears.
@@ -37,11 +35,9 @@ final class KernelEvents
      * This event allows you to create a response for a thrown exception or
      * to modify the thrown exception.
      *
-     * @Event("Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent")
-     *
-     * @var string
+     * @Event("Symfony\Component\HttpKernel\Event\ExceptionEvent")
      */
-    const EXCEPTION = 'kernel.exception';
+    public const EXCEPTION = 'kernel.exception';
 
     /**
      * The VIEW event occurs when the return value of a controller
@@ -50,11 +46,9 @@ final class KernelEvents
      * This event allows you to create a response for the return value of the
      * controller.
      *
-     * @Event("Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent")
-     *
-     * @var string
+     * @Event("Symfony\Component\HttpKernel\Event\ViewEvent")
      */
-    const VIEW = 'kernel.view';
+    public const VIEW = 'kernel.view';
 
     /**
      * The CONTROLLER event occurs once a controller was found for
@@ -63,11 +57,9 @@ final class KernelEvents
      * This event allows you to change the controller that will handle the
      * request.
      *
-     * @Event("Symfony\Component\HttpKernel\Event\FilterControllerEvent")
-     *
-     * @var string
+     * @Event("Symfony\Component\HttpKernel\Event\ControllerEvent")
      */
-    const CONTROLLER = 'kernel.controller';
+    public const CONTROLLER = 'kernel.controller';
 
     /**
      * The CONTROLLER_ARGUMENTS event occurs once controller arguments have been resolved.
@@ -75,11 +67,9 @@ final class KernelEvents
      * This event allows you to change the arguments that will be passed to
      * the controller.
      *
-     * @Event("Symfony\Component\HttpKernel\Event\FilterControllerArgumentsEvent")
-     *
-     * @var string
+     * @Event("Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent")
      */
-    const CONTROLLER_ARGUMENTS = 'kernel.controller_arguments';
+    public const CONTROLLER_ARGUMENTS = 'kernel.controller_arguments';
 
     /**
      * The RESPONSE event occurs once a response was created for
@@ -88,22 +78,18 @@ final class KernelEvents
      * This event allows you to modify or replace the response that will be
      * replied.
      *
-     * @Event("Symfony\Component\HttpKernel\Event\FilterResponseEvent")
-     *
-     * @var string
+     * @Event("Symfony\Component\HttpKernel\Event\ResponseEvent")
      */
-    const RESPONSE = 'kernel.response';
+    public const RESPONSE = 'kernel.response';
 
     /**
      * The TERMINATE event occurs once a response was sent.
      *
      * This event allows you to run expensive post-response jobs.
      *
-     * @Event("Symfony\Component\HttpKernel\Event\PostResponseEvent")
-     *
-     * @var string
+     * @Event("Symfony\Component\HttpKernel\Event\TerminateEvent")
      */
-    const TERMINATE = 'kernel.terminate';
+    public const TERMINATE = 'kernel.terminate';
 
     /**
      * The FINISH_REQUEST event occurs when a response was generated for a request.
@@ -112,8 +98,6 @@ final class KernelEvents
      * the application, when it was changed during the request.
      *
      * @Event("Symfony\Component\HttpKernel\Event\FinishRequestEvent")
-     *
-     * @var string
      */
-    const FINISH_REQUEST = 'kernel.finish_request';
+    public const FINISH_REQUEST = 'kernel.finish_request';
 }

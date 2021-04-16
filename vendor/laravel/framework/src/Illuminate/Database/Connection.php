@@ -109,6 +109,13 @@ class Connection implements ConnectionInterface
     protected $transactions = 0;
 
     /**
+     * Indicates if changes have been made to the database.
+     *
+     * @var int
+     */
+    protected $recordsModified = false;
+
+    /**
      * All of the queries run against the connection.
      *
      * @var array
@@ -446,6 +453,8 @@ class Connection implements ConnectionInterface
 
             $this->bindValues($statement, $this->prepareBindings($bindings));
 
+            $this->recordsHaveBeenModified();
+
             return $statement->execute();
         });
     }
@@ -473,7 +482,11 @@ class Connection implements ConnectionInterface
 
             $statement->execute();
 
-            return $statement->rowCount();
+            $this->recordsHaveBeenModified(
+                ($count = $statement->rowCount()) > 0
+            );
+
+            return $count;
         });
     }
 
@@ -490,7 +503,11 @@ class Connection implements ConnectionInterface
                 return true;
             }
 
-            return $this->getPdo()->exec($query) === false ? false : true;
+            $this->recordsHaveBeenModified(
+                $change = $this->getPdo()->exec($query) !== false
+            );
+
+            return $change;
         });
     }
 
@@ -535,7 +552,7 @@ class Connection implements ConnectionInterface
 
         // Now we'll execute this callback and capture the result. Once it has been
         // executed we will restore the value of query logging and give back the
-        // value of hte callback so the original callers can have the results.
+        // value of the callback so the original callers can have the results.
         $result = $callback();
 
         $this->loggingQueries = $loggingQueries;
@@ -576,8 +593,8 @@ class Connection implements ConnectionInterface
             // so we'll just ask the grammar for the format to get from the date.
             if ($value instanceof DateTimeInterface) {
                 $bindings[$key] = $value->format($grammar->getDateFormat());
-            } elseif ($value === false) {
-                $bindings[$key] = 0;
+            } elseif (is_bool($value)) {
+                $bindings[$key] = (int) $value;
             }
         }
 
@@ -683,14 +700,15 @@ class Connection implements ConnectionInterface
     /**
      * Handle a query exception.
      *
-     * @param  \Exception  $e
+     * @param  \Illuminate\Database\QueryException  $e
      * @param  string  $query
      * @param  array  $bindings
      * @param  \Closure  $callback
      * @return mixed
-     * @throws \Exception
+     *
+     * @throws \Illuminate\Database\QueryException
      */
-    protected function handleQueryException($e, $query, $bindings, Closure $callback)
+    protected function handleQueryException(QueryException $e, $query, $bindings, Closure $callback)
     {
         if ($this->transactions >= 1) {
             throw $e;
@@ -733,6 +751,8 @@ class Connection implements ConnectionInterface
     public function reconnect()
     {
         if (is_callable($this->reconnector)) {
+            $this->doctrineConnection = null;
+
             return call_user_func($this->reconnector, $this);
         }
 
@@ -821,6 +841,19 @@ class Connection implements ConnectionInterface
     }
 
     /**
+     * Indicate if any records have been modified.
+     *
+     * @param  bool  $value
+     * @return void
+     */
+    public function recordsHaveBeenModified($value = true)
+    {
+        if (! $this->recordsModified) {
+            $this->recordsModified = $value;
+        }
+    }
+
+    /**
      * Is Doctrine available?
      *
      * @return bool
@@ -862,11 +895,14 @@ class Connection implements ConnectionInterface
     public function getDoctrineConnection()
     {
         if (is_null($this->doctrineConnection)) {
-            $data = ['pdo' => $this->getPdo(), 'dbname' => $this->getConfig('database')];
+            $driver = $this->getDoctrineDriver();
 
-            $this->doctrineConnection = new DoctrineConnection(
-                $data, $this->getDoctrineDriver()
-            );
+            $this->doctrineConnection = new DoctrineConnection(array_filter([
+                'pdo' => $this->getPdo(),
+                'dbname' => $this->getConfig('database'),
+                'driver' => $driver->getName(),
+                'serverVersion' => $this->getConfig('server_version'),
+            ]), $driver);
         }
 
         return $this->doctrineConnection;
@@ -893,7 +929,11 @@ class Connection implements ConnectionInterface
      */
     public function getReadPdo()
     {
-        if ($this->transactions >= 1) {
+        if ($this->transactions > 0) {
+            return $this->getPdo();
+        }
+
+        if ($this->recordsModified && $this->getConfig('sticky')) {
             return $this->getPdo();
         }
 
@@ -922,7 +962,7 @@ class Connection implements ConnectionInterface
     /**
      * Set the PDO connection used for reading.
      *
-     * @param  \PDO||\Closure|null  $pdo
+     * @param  \PDO|\Closure|null  $pdo
      * @return $this
      */
     public function setReadPdo($pdo)
@@ -990,11 +1030,13 @@ class Connection implements ConnectionInterface
      * Set the query grammar used by the connection.
      *
      * @param  \Illuminate\Database\Query\Grammars\Grammar  $grammar
-     * @return void
+     * @return $this
      */
     public function setQueryGrammar(Query\Grammars\Grammar $grammar)
     {
         $this->queryGrammar = $grammar;
+
+        return $this;
     }
 
     /**
@@ -1011,11 +1053,13 @@ class Connection implements ConnectionInterface
      * Set the schema grammar used by the connection.
      *
      * @param  \Illuminate\Database\Schema\Grammars\Grammar  $grammar
-     * @return void
+     * @return $this
      */
     public function setSchemaGrammar(Schema\Grammars\Grammar $grammar)
     {
         $this->schemaGrammar = $grammar;
+
+        return $this;
     }
 
     /**
@@ -1032,11 +1076,13 @@ class Connection implements ConnectionInterface
      * Set the query post processor used by the connection.
      *
      * @param  \Illuminate\Database\Query\Processors\Processor  $processor
-     * @return void
+     * @return $this
      */
     public function setPostProcessor(Processor $processor)
     {
         $this->postProcessor = $processor;
+
+        return $this;
     }
 
     /**
@@ -1053,15 +1099,27 @@ class Connection implements ConnectionInterface
      * Set the event dispatcher instance on the connection.
      *
      * @param  \Illuminate\Contracts\Events\Dispatcher  $events
-     * @return void
+     * @return $this
      */
     public function setEventDispatcher(Dispatcher $events)
     {
         $this->events = $events;
+
+        return $this;
     }
 
     /**
-     * Determine if the connection in a "dry run".
+     * Unset the event dispatcher for this connection.
+     *
+     * @return void
+     */
+    public function unsetEventDispatcher()
+    {
+        $this->events = null;
+    }
+
+    /**
+     * Determine if the connection is in a "dry run".
      *
      * @return bool
      */
@@ -1134,11 +1192,13 @@ class Connection implements ConnectionInterface
      * Set the name of the connected database.
      *
      * @param  string  $database
-     * @return string
+     * @return $this
      */
     public function setDatabaseName($database)
     {
         $this->database = $database;
+
+        return $this;
     }
 
     /**
@@ -1155,13 +1215,15 @@ class Connection implements ConnectionInterface
      * Set the table prefix in use by the connection.
      *
      * @param  string  $prefix
-     * @return void
+     * @return $this
      */
     public function setTablePrefix($prefix)
     {
         $this->tablePrefix = $prefix;
 
         $this->getQueryGrammar()->setTablePrefix($prefix);
+
+        return $this;
     }
 
     /**
@@ -1197,7 +1259,6 @@ class Connection implements ConnectionInterface
      */
     public static function getResolver($driver)
     {
-        return isset(static::$resolvers[$driver]) ?
-                     static::$resolvers[$driver] : null;
+        return static::$resolvers[$driver] ?? null;
     }
 }

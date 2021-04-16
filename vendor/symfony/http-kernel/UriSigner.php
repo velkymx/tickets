@@ -22,12 +22,10 @@ class UriSigner
     private $parameter;
 
     /**
-     * Constructor.
-     *
      * @param string $secret    A secret
      * @param string $parameter Query string parameter to use
      */
-    public function __construct($secret, $parameter = '_hash')
+    public function __construct(string $secret, string $parameter = '_hash')
     {
         $this->secret = $secret;
         $this->parameter = $parameter;
@@ -49,20 +47,17 @@ class UriSigner
         if (isset($url['query'])) {
             parse_str($url['query'], $params);
         } else {
-            $params = array();
+            $params = [];
         }
 
         $uri = $this->buildUrl($url, $params);
+        $params[$this->parameter] = $this->computeHash($uri);
 
-        return $uri.(false === strpos($uri, '?') ? '?' : '&').$this->parameter.'='.$this->computeHash($uri);
+        return $this->buildUrl($url, $params);
     }
 
     /**
      * Checks that a URI contains the correct hash.
-     *
-     * The query string parameter must be the last one
-     * (as it is generated that way by the sign() method, it should
-     * never be a problem).
      *
      * @param string $uri A signed URI
      *
@@ -74,36 +69,36 @@ class UriSigner
         if (isset($url['query'])) {
             parse_str($url['query'], $params);
         } else {
-            $params = array();
+            $params = [];
         }
 
         if (empty($params[$this->parameter])) {
             return false;
         }
 
-        $hash = urlencode($params[$this->parameter]);
+        $hash = $params[$this->parameter];
         unset($params[$this->parameter]);
 
-        return $this->computeHash($this->buildUrl($url, $params)) === $hash;
+        return hash_equals($this->computeHash($this->buildUrl($url, $params)), $hash);
     }
 
-    private function computeHash($uri)
+    private function computeHash(string $uri): string
     {
-        return urlencode(base64_encode(hash_hmac('sha256', $uri, $this->secret, true)));
+        return base64_encode(hash_hmac('sha256', $uri, $this->secret, true));
     }
 
-    private function buildUrl(array $url, array $params = array())
+    private function buildUrl(array $url, array $params = []): string
     {
-        ksort($params, SORT_STRING);
+        ksort($params, \SORT_STRING);
         $url['query'] = http_build_query($params, '', '&');
 
         $scheme = isset($url['scheme']) ? $url['scheme'].'://' : '';
-        $host = isset($url['host']) ? $url['host'] : '';
+        $host = $url['host'] ?? '';
         $port = isset($url['port']) ? ':'.$url['port'] : '';
-        $user = isset($url['user']) ? $url['user'] : '';
+        $user = $url['user'] ?? '';
         $pass = isset($url['pass']) ? ':'.$url['pass'] : '';
         $pass = ($user || $pass) ? "$pass@" : '';
-        $path = isset($url['path']) ? $url['path'] : '';
+        $path = $url['path'] ?? '';
         $query = isset($url['query']) && $url['query'] ? '?'.$url['query'] : '';
         $fragment = isset($url['fragment']) ? '#'.$url['fragment'] : '';
 

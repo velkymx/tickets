@@ -11,8 +11,8 @@
 
 namespace Symfony\Component\HttpFoundation;
 
-use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\File;
 
 /**
  * BinaryFileResponse represents an HTTP response delivering a file.
@@ -31,22 +31,20 @@ class BinaryFileResponse extends Response
      * @var File
      */
     protected $file;
-    protected $offset;
-    protected $maxlen;
+    protected $offset = 0;
+    protected $maxlen = -1;
     protected $deleteFileAfterSend = false;
 
     /**
-     * Constructor.
-     *
      * @param \SplFileInfo|string $file               The file to stream
      * @param int                 $status             The response status code
      * @param array               $headers            An array of response headers
      * @param bool                $public             Files are public by default
-     * @param null|string         $contentDisposition The type of Content-Disposition to set automatically with the filename
+     * @param string|null         $contentDisposition The type of Content-Disposition to set automatically with the filename
      * @param bool                $autoEtag           Whether the ETag header should be automatically set
      * @param bool                $autoLastModified   Whether the Last-Modified header should be automatically set
      */
-    public function __construct($file, $status = 200, $headers = array(), $public = true, $contentDisposition = null, $autoEtag = false, $autoLastModified = true)
+    public function __construct($file, int $status = 200, array $headers = [], bool $public = true, string $contentDisposition = null, bool $autoEtag = false, bool $autoLastModified = true)
     {
         parent::__construct(null, $status, $headers);
 
@@ -62,13 +60,13 @@ class BinaryFileResponse extends Response
      * @param int                 $status             The response status code
      * @param array               $headers            An array of response headers
      * @param bool                $public             Files are public by default
-     * @param null|string         $contentDisposition The type of Content-Disposition to set automatically with the filename
+     * @param string|null         $contentDisposition The type of Content-Disposition to set automatically with the filename
      * @param bool                $autoEtag           Whether the ETag header should be automatically set
      * @param bool                $autoLastModified   Whether the Last-Modified header should be automatically set
      *
      * @return static
      */
-    public static function create($file = null, $status = 200, $headers = array(), $public = true, $contentDisposition = null, $autoEtag = false, $autoLastModified = true)
+    public static function create($file = null, $status = 200, $headers = [], $public = true, $contentDisposition = null, $autoEtag = false, $autoLastModified = true)
     {
         return new static($file, $status, $headers, $public, $contentDisposition, $autoEtag, $autoLastModified);
     }
@@ -141,7 +139,7 @@ class BinaryFileResponse extends Response
      */
     public function setAutoEtag()
     {
-        $this->setEtag(sha1_file($this->file->getPathname()));
+        $this->setEtag(base64_encode(hash_file('sha256', $this->file->getPathname(), true)));
 
         return $this;
     }
@@ -157,7 +155,7 @@ class BinaryFileResponse extends Response
      */
     public function setContentDisposition($disposition, $filename = '', $filenameFallback = '')
     {
-        if ($filename === '') {
+        if ('' === $filename) {
             $filename = $this->file->getFilename();
         }
 
@@ -167,7 +165,7 @@ class BinaryFileResponse extends Response
             for ($i = 0, $filenameLength = mb_strlen($filename, $encoding); $i < $filenameLength; ++$i) {
                 $char = mb_substr($filename, $i, 1, $encoding);
 
-                if ('%' === $char || ord($char) < 32 || ord($char) > 126) {
+                if ('%' === $char || \ord($char) < 32 || \ord($char) > 126) {
                     $filenameFallback .= '_';
                 } else {
                     $filenameFallback .= $char;
@@ -206,7 +204,7 @@ class BinaryFileResponse extends Response
 
         if (!$this->headers->has('Accept-Ranges')) {
             // Only accept ranges on safe HTTP methods
-            $this->headers->set('Accept-Ranges', $request->isMethodSafe(false) ? 'bytes' : 'none');
+            $this->headers->set('Accept-Ranges', $request->isMethodSafe() ? 'bytes' : 'none');
         }
 
         if (self::$trustXSendfileTypeHeader && $request->headers->has('X-Sendfile-Type')) {
@@ -217,52 +215,55 @@ class BinaryFileResponse extends Response
             if (false === $path) {
                 $path = $this->file->getPathname();
             }
-            if (strtolower($type) === 'x-accel-redirect') {
+            if ('x-accel-redirect' === strtolower($type)) {
                 // Do X-Accel-Mapping substitutions.
-                // @link http://wiki.nginx.org/X-accel#X-Accel-Redirect
-                foreach (explode(',', $request->headers->get('X-Accel-Mapping', '')) as $mapping) {
-                    $mapping = explode('=', $mapping, 2);
-
-                    if (2 === count($mapping)) {
-                        $pathPrefix = trim($mapping[0]);
-                        $location = trim($mapping[1]);
-
-                        if (substr($path, 0, strlen($pathPrefix)) === $pathPrefix) {
-                            $path = $location.substr($path, strlen($pathPrefix));
-                            break;
-                        }
+                // @link https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-redirect
+                $parts = HeaderUtils::split($request->headers->get('X-Accel-Mapping', ''), ',=');
+                foreach ($parts as $part) {
+                    [$pathPrefix, $location] = $part;
+                    if (substr($path, 0, \strlen($pathPrefix)) === $pathPrefix) {
+                        $path = $location.substr($path, \strlen($pathPrefix));
+                        // Only set X-Accel-Redirect header if a valid URI can be produced
+                        // as nginx does not serve arbitrary file paths.
+                        $this->headers->set($type, $path);
+                        $this->maxlen = 0;
+                        break;
                     }
                 }
+            } else {
+                $this->headers->set($type, $path);
+                $this->maxlen = 0;
             }
-            $this->headers->set($type, $path);
-            $this->maxlen = 0;
-        } elseif ($request->headers->has('Range')) {
+        } elseif ($request->headers->has('Range') && $request->isMethod('GET')) {
             // Process the range headers.
             if (!$request->headers->has('If-Range') || $this->hasValidIfRangeHeader($request->headers->get('If-Range'))) {
                 $range = $request->headers->get('Range');
 
-                list($start, $end) = explode('-', substr($range, 6), 2) + array(0);
+                if (0 === strpos($range, 'bytes=')) {
+                    [$start, $end] = explode('-', substr($range, 6), 2) + [0];
 
-                $end = ('' === $end) ? $fileSize - 1 : (int) $end;
+                    $end = ('' === $end) ? $fileSize - 1 : (int) $end;
 
-                if ('' === $start) {
-                    $start = $fileSize - $end;
-                    $end = $fileSize - 1;
-                } else {
-                    $start = (int) $start;
-                }
+                    if ('' === $start) {
+                        $start = $fileSize - $end;
+                        $end = $fileSize - 1;
+                    } else {
+                        $start = (int) $start;
+                    }
 
-                if ($start <= $end) {
-                    if ($start < 0 || $end > $fileSize - 1) {
-                        $this->setStatusCode(416);
-                        $this->headers->set('Content-Range', sprintf('bytes */%s', $fileSize));
-                    } elseif ($start !== 0 || $end !== $fileSize - 1) {
-                        $this->maxlen = $end < $fileSize ? $end - $start + 1 : -1;
-                        $this->offset = $start;
+                    if ($start <= $end) {
+                        $end = min($end, $fileSize - 1);
+                        if ($start < 0 || $start > $end) {
+                            $this->setStatusCode(416);
+                            $this->headers->set('Content-Range', sprintf('bytes */%s', $fileSize));
+                        } elseif ($end - $start < $fileSize - 1) {
+                            $this->maxlen = $end < $fileSize ? $end - $start + 1 : -1;
+                            $this->offset = $start;
 
-                        $this->setStatusCode(206);
-                        $this->headers->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $fileSize));
-                        $this->headers->set('Content-Length', $end - $start + 1);
+                            $this->setStatusCode(206);
+                            $this->headers->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $fileSize));
+                            $this->headers->set('Content-Length', $end - $start + 1);
+                        }
                     }
                 }
             }
@@ -271,7 +272,7 @@ class BinaryFileResponse extends Response
         return $this;
     }
 
-    private function hasValidIfRangeHeader($header)
+    private function hasValidIfRangeHeader(?string $header): bool
     {
         if ($this->getEtag() === $header) {
             return true;
@@ -299,15 +300,15 @@ class BinaryFileResponse extends Response
             return $this;
         }
 
-        $out = fopen('php://output', 'wb');
-        $file = fopen($this->file->getPathname(), 'rb');
+        $out = fopen('php://output', 'w');
+        $file = fopen($this->file->getPathname(), 'r');
 
         stream_copy_to_stream($file, $out, $this->maxlen, $this->offset);
 
         fclose($out);
         fclose($file);
 
-        if ($this->deleteFileAfterSend) {
+        if ($this->deleteFileAfterSend && file_exists($this->file->getPathname())) {
             unlink($this->file->getPathname());
         }
 
@@ -324,12 +325,12 @@ class BinaryFileResponse extends Response
         if (null !== $content) {
             throw new \LogicException('The content cannot be set on a BinaryFileResponse instance.');
         }
+
+        return $this;
     }
 
     /**
      * {@inheritdoc}
-     *
-     * @return false
      */
     public function getContent()
     {
@@ -345,14 +346,14 @@ class BinaryFileResponse extends Response
     }
 
     /**
-     * If this is set to true, the file will be unlinked after the request is send
+     * If this is set to true, the file will be unlinked after the request is sent
      * Note: If the X-Sendfile header is used, the deleteFileAfterSend setting will not be used.
      *
      * @param bool $shouldDelete
      *
      * @return $this
      */
-    public function deleteFileAfterSend($shouldDelete)
+    public function deleteFileAfterSend($shouldDelete = true)
     {
         $this->deleteFileAfterSend = $shouldDelete;
 

@@ -35,21 +35,31 @@ class PhpExecutableFinder
      */
     public function find($includeArgs = true)
     {
+        if ($php = getenv('PHP_BINARY')) {
+            if (!is_executable($php)) {
+                $command = '\\' === \DIRECTORY_SEPARATOR ? 'where' : 'command -v';
+                if ($php = strtok(exec($command.' '.escapeshellarg($php)), \PHP_EOL)) {
+                    if (!is_executable($php)) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+
+            return $php;
+        }
+
         $args = $this->findArguments();
         $args = $includeArgs && $args ? ' '.implode(' ', $args) : '';
 
-        // HHVM support
-        if (defined('HHVM_VERSION')) {
-            return (getenv('PHP_BINARY') ?: PHP_BINARY).$args;
-        }
-
         // PHP_BINARY return the current sapi executable
-        if (PHP_BINARY && in_array(PHP_SAPI, array('cli', 'cli-server', 'phpdbg')) && is_file(PHP_BINARY)) {
-            return PHP_BINARY.$args;
+        if (\PHP_BINARY && \in_array(\PHP_SAPI, ['cgi-fcgi', 'cli', 'cli-server', 'phpdbg'], true)) {
+            return \PHP_BINARY.$args;
         }
 
         if ($php = getenv('PHP_PATH')) {
-            if (!is_executable($php)) {
+            if (!@is_executable($php)) {
                 return false;
             }
 
@@ -57,13 +67,17 @@ class PhpExecutableFinder
         }
 
         if ($php = getenv('PHP_PEAR_PHP_BIN')) {
-            if (is_executable($php)) {
+            if (@is_executable($php)) {
                 return $php;
             }
         }
 
-        $dirs = array(PHP_BINDIR);
-        if ('\\' === DIRECTORY_SEPARATOR) {
+        if (@is_executable($php = \PHP_BINDIR.('\\' === \DIRECTORY_SEPARATOR ? '\\php.exe' : '/php'))) {
+            return $php;
+        }
+
+        $dirs = [\PHP_BINDIR];
+        if ('\\' === \DIRECTORY_SEPARATOR) {
             $dirs[] = 'C:\xampp\php\\';
         }
 
@@ -77,11 +91,8 @@ class PhpExecutableFinder
      */
     public function findArguments()
     {
-        $arguments = array();
-
-        if (defined('HHVM_VERSION')) {
-            $arguments[] = '--php';
-        } elseif ('phpdbg' === PHP_SAPI) {
+        $arguments = [];
+        if ('phpdbg' === \PHP_SAPI) {
             $arguments[] = '-qrr';
         }
 

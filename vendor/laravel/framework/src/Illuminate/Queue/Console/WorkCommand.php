@@ -2,8 +2,8 @@
 
 namespace Illuminate\Queue\Console;
 
-use Carbon\Carbon;
 use Illuminate\Queue\Worker;
+use Illuminate\Support\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Queue\WorkerOptions;
@@ -23,6 +23,7 @@ class WorkCommand extends Command
                             {--queue= : The names of the queues to work}
                             {--daemon : Run the worker in daemon mode (Deprecated)}
                             {--once : Only process the next job on the queue}
+                            {--stop-when-empty : Stop when the queue is empty}
                             {--delay=0 : The number of seconds to delay failed jobs}
                             {--force : Force the worker to run even in maintenance mode}
                             {--memory=128 : The memory limit in megabytes}
@@ -62,7 +63,7 @@ class WorkCommand extends Command
      *
      * @return void
      */
-    public function fire()
+    public function handle()
     {
         if ($this->downForMaintenance() && $this->option('once')) {
             return $this->worker->sleep($this->option('sleep'));
@@ -112,7 +113,8 @@ class WorkCommand extends Command
         return new WorkerOptions(
             $this->option('delay'), $this->option('memory'),
             $this->option('timeout'), $this->option('sleep'),
-            $this->option('tries'), $this->option('force')
+            $this->option('tries'), $this->option('force'),
+            $this->option('stop-when-empty')
         );
     }
 
@@ -168,8 +170,9 @@ class WorkCommand extends Command
     protected function writeStatus(Job $job, $status, $type)
     {
         $this->output->writeln(sprintf(
-            "<{$type}>[%s] %s</{$type}> %s",
+            "<{$type}>[%s][%s] %s</{$type}> %s",
             Carbon::now()->format('Y-m-d H:i:s'),
+            $job->getJobId(),
             str_pad("{$status}:", 11), $job->resolveName()
         ));
     }
@@ -177,7 +180,7 @@ class WorkCommand extends Command
     /**
      * Store a failed job event.
      *
-     * @param  JobFailed  $event
+     * @param  \Illuminate\Queue\Events\JobFailed  $event
      * @return void
      */
     protected function logFailedJob(JobFailed $event)

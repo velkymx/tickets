@@ -3,7 +3,6 @@
 namespace Illuminate\Foundation\Http;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Redirector;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Validation\Validator;
@@ -60,11 +59,11 @@ class FormRequest extends Request implements ValidatesWhenResolved
     protected $errorBag = 'default';
 
     /**
-     * The input keys that should not be flashed on redirect.
+     * The validator instance.
      *
-     * @var array
+     * @var \Illuminate\Contracts\Validation\Validator
      */
-    protected $dontFlash = ['password', 'password_confirmation'];
+    protected $validator;
 
     /**
      * Get the validator instance for the request.
@@ -73,6 +72,10 @@ class FormRequest extends Request implements ValidatesWhenResolved
      */
     protected function getValidatorInstance()
     {
+        if ($this->validator) {
+            return $this->validator;
+        }
+
         $factory = $this->container->make(ValidationFactory::class);
 
         if (method_exists($this, 'validator')) {
@@ -85,7 +88,9 @@ class FormRequest extends Request implements ValidatesWhenResolved
             $this->withValidator($validator);
         }
 
-        return $validator;
+        $this->setValidator($validator);
+
+        return $this->validator;
     }
 
     /**
@@ -122,37 +127,9 @@ class FormRequest extends Request implements ValidatesWhenResolved
      */
     protected function failedValidation(Validator $validator)
     {
-        throw new ValidationException($validator, $this->response(
-            $this->formatErrors($validator)
-        ));
-    }
-
-    /**
-     * Get the proper failed validation response for the request.
-     *
-     * @param  array  $errors
-     * @return \Symfony\Component\HttpFoundation\Response
-     */
-    public function response(array $errors)
-    {
-        if ($this->expectsJson()) {
-            return new JsonResponse($errors, 422);
-        }
-
-        return $this->redirector->to($this->getRedirectUrl())
-                                        ->withInput($this->except($this->dontFlash))
-                                        ->withErrors($errors, $this->errorBag);
-    }
-
-    /**
-     * Format the errors from the given Validator instance.
-     *
-     * @param  \Illuminate\Contracts\Validation\Validator  $validator
-     * @return array
-     */
-    protected function formatErrors(Validator $validator)
-    {
-        return $validator->getMessageBag()->toArray();
+        throw (new ValidationException($validator))
+                    ->errorBag($this->errorBag)
+                    ->redirectTo($this->getRedirectUrl());
     }
 
     /**
@@ -186,7 +163,7 @@ class FormRequest extends Request implements ValidatesWhenResolved
             return $this->container->call([$this, 'authorize']);
         }
 
-        return false;
+        return true;
     }
 
     /**
@@ -199,6 +176,16 @@ class FormRequest extends Request implements ValidatesWhenResolved
     protected function failedAuthorization()
     {
         throw new AuthorizationException('This action is unauthorized.');
+    }
+
+    /**
+     * Get the validated data from the request.
+     *
+     * @return array
+     */
+    public function validated()
+    {
+        return $this->validator->validated();
     }
 
     /**
@@ -219,6 +206,19 @@ class FormRequest extends Request implements ValidatesWhenResolved
     public function attributes()
     {
         return [];
+    }
+
+    /**
+     * Set the Validator instance.
+     *
+     * @param  \Illuminate\Contracts\Validation\Validator  $validator
+     * @return $this
+     */
+    public function setValidator(Validator $validator)
+    {
+        $this->validator = $validator;
+
+        return $this;
     }
 
     /**

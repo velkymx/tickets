@@ -141,21 +141,21 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
      *
      * @var string
      */
-    private $expectedExceptionMessage = '';
+    private $expectedExceptionMessage = null;
 
     /**
      * The regex pattern to validate the expected Exception message.
      *
      * @var string
      */
-    private $expectedExceptionMessageRegExp = '';
+    private $expectedExceptionMessageRegExp = null;
 
     /**
      * The code of the expected Exception.
      *
      * @var int|string
      */
-    private $expectedExceptionCode;
+    private $expectedExceptionCode = null;
 
     /**
      * The name of the test case.
@@ -190,7 +190,7 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
     private $mockObjects = [];
 
     /**
-     * @var array
+     * @var MockGenerator
      */
     private $mockObjectGenerator = null;
 
@@ -510,8 +510,8 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
 
     /**
      * @param mixed      $exception
-     * @param string     $message
-     * @param int|string $code
+     * @param string     $message   Null means we do not check message at all, string (even empty) means we do. Default: null.
+     * @param int|string $code      Null means we do not check code at all, non-null means we do.
      *
      * @throws PHPUnit_Framework_Exception
      *
@@ -519,9 +519,17 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
      */
     public function setExpectedException($exception, $message = '', $code = null)
     {
+        if (null !== $message && !is_string($message)) {
+            throw PHPUnit_Util_InvalidArgumentHelper::factory(2, 'string');
+        }
+
+        if (func_num_args() < 2) {
+            $message = null;
+        }
+
         $this->expectedException = $exception;
 
-        if ($message !== null && $message !== '') {
+        if ($message !== null) {
             $this->expectExceptionMessage($message);
         }
 
@@ -937,11 +945,6 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
             $e = $_e;
         }
 
-        if (isset($_e)) {
-            $this->status        = PHPUnit_Runner_BaseTestRunner::STATUS_ERROR;
-            $this->statusMessage = $_e->getMessage();
-        }
-
         // Clean up the mock objects.
         $this->mockObjects = [];
         $this->prophet     = null;
@@ -976,6 +979,11 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
             if (!isset($e)) {
                 $e = $_e;
             }
+        }
+
+        if (isset($_e)) {
+            $this->status        = PHPUnit_Runner_BaseTestRunner::STATUS_ERROR;
+            $this->statusMessage = $_e->getMessage();
         }
 
         clearstatcache();
@@ -1085,8 +1093,7 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
                     )
                 );
 
-                if (is_string($this->expectedExceptionMessage) &&
-                    !empty($this->expectedExceptionMessage)) {
+                if ($this->expectedExceptionMessage !== null) {
                     $this->assertThat(
                         $e,
                         new PHPUnit_Framework_Constraint_ExceptionMessage(
@@ -1095,8 +1102,7 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
                     );
                 }
 
-                if (is_string($this->expectedExceptionMessageRegExp) &&
-                    !empty($this->expectedExceptionMessageRegExp)) {
+                if ($this->expectedExceptionMessageRegExp !== null) {
                     $this->assertThat(
                         $e,
                         new PHPUnit_Framework_Constraint_ExceptionMessageRegExp(
@@ -2124,7 +2130,7 @@ abstract class PHPUnit_Framework_TestCase extends PHPUnit_Framework_Assert imple
     /**
      * Performs assertions shared by all tests of a test case.
      *
-     * This method is called before the execution of a test ends
+     * This method is called after the execution of a test ends
      * and before tearDown() is called.
      */
     protected function assertPostConditions()

@@ -15,9 +15,7 @@ trait InteractsWithAuthentication
      */
     public function actingAs(UserContract $user, $driver = null)
     {
-        $this->be($user, $driver);
-
-        return $this;
+        return $this->be($user, $driver);
     }
 
     /**
@@ -25,13 +23,19 @@ trait InteractsWithAuthentication
      *
      * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
      * @param  string|null  $driver
-     * @return void
+     * @return $this
      */
     public function be(UserContract $user, $driver = null)
     {
+        if (isset($user->wasRecentlyCreated) && $user->wasRecentlyCreated) {
+            $user->wasRecentlyCreated = false;
+        }
+
         $this->app['auth']->guard($driver)->setUser($user);
 
         $this->app['auth']->shouldUse($driver);
+
+        return $this;
     }
 
     /**
@@ -40,7 +44,7 @@ trait InteractsWithAuthentication
      * @param  string|null  $guard
      * @return $this
      */
-    public function seeIsAuthenticated($guard = null)
+    public function assertAuthenticated($guard = null)
     {
         $this->assertTrue($this->isAuthenticated($guard), 'The user is not authenticated');
 
@@ -53,7 +57,7 @@ trait InteractsWithAuthentication
      * @param  string|null  $guard
      * @return $this
      */
-    public function dontSeeIsAuthenticated($guard = null)
+    public function assertGuest($guard = null)
     {
         $this->assertFalse($this->isAuthenticated($guard), 'The user is authenticated');
 
@@ -74,13 +78,15 @@ trait InteractsWithAuthentication
     /**
      * Assert that the user is authenticated as the given user.
      *
-     * @param  $user
+     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
      * @param  string|null  $guard
      * @return $this
      */
-    public function seeIsAuthenticatedAs($user, $guard = null)
+    public function assertAuthenticatedAs($user, $guard = null)
     {
         $expected = $this->app->make('auth')->guard($guard)->user();
+
+        $this->assertNotNull($expected, 'The current user is not authenticated.');
 
         $this->assertInstanceOf(
             get_class($expected), $user,
@@ -102,7 +108,7 @@ trait InteractsWithAuthentication
      * @param  string|null  $guard
      * @return $this
      */
-    public function seeCredentials(array $credentials, $guard = null)
+    public function assertCredentials(array $credentials, $guard = null)
     {
         $this->assertTrue(
             $this->hasCredentials($credentials, $guard), 'The given credentials are invalid.'
@@ -118,7 +124,7 @@ trait InteractsWithAuthentication
      * @param  string|null  $guard
      * @return $this
      */
-    public function dontSeeCredentials(array $credentials, $guard = null)
+    public function assertInvalidCredentials(array $credentials, $guard = null)
     {
         $this->assertFalse(
             $this->hasCredentials($credentials, $guard), 'The given credentials are valid.'

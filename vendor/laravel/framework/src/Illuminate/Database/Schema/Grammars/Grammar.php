@@ -2,6 +2,7 @@
 
 namespace Illuminate\Database\Schema\Grammars;
 
+use RuntimeException;
 use Illuminate\Support\Fluent;
 use Doctrine\DBAL\Schema\TableDiff;
 use Illuminate\Database\Connection;
@@ -18,6 +19,13 @@ abstract class Grammar extends BaseGrammar
      * @var bool
      */
     protected $transactions = false;
+
+    /**
+     * The commands to be executed outside of create or alter command.
+     *
+     * @var array
+     */
+    protected $fluentCommands = [];
 
     /**
      * Compile a rename column command.
@@ -118,6 +126,19 @@ abstract class Grammar extends BaseGrammar
     protected function getType(Fluent $column)
     {
         return $this->{'type'.ucfirst($column->type)}($column);
+    }
+
+    /**
+     * Create the column definition for a generated, computed column type.
+     *
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return void
+     *
+     * @throws \RuntimeException
+     */
+    protected function typeComputed(Fluent $column)
+    {
+        throw new RuntimeException('This database driver does not support the computed type.');
     }
 
     /**
@@ -224,7 +245,7 @@ abstract class Grammar extends BaseGrammar
 
         return is_bool($value)
                     ? "'".(int) $value."'"
-                    : "'".strval($value)."'";
+                    : "'".(string) $value."'";
     }
 
     /**
@@ -241,6 +262,16 @@ abstract class Grammar extends BaseGrammar
         return tap(new TableDiff($table), function ($tableDiff) use ($schema, $table) {
             $tableDiff->fromTable = $schema->listTableDetails($table);
         });
+    }
+
+    /**
+     * Get the fluent commands for the grammar.
+     *
+     * @return array
+     */
+    public function getFluentCommands()
+    {
+        return $this->fluentCommands;
     }
 
     /**

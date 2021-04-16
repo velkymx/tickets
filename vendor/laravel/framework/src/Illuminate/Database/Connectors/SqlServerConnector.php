@@ -43,12 +43,14 @@ class SqlServerConnector extends Connector implements ConnectorInterface
         // First we will create the basic DSN setup as well as the port if it is in
         // in the configuration options. This will give us the basic DSN we will
         // need to establish the PDO connections and return them back for use.
-        if (in_array('dblib', $this->getAvailableDrivers())) {
-            return $this->getDblibDsn($config);
-        } elseif ($this->prefersOdbc($config)) {
+        if ($this->prefersOdbc($config)) {
             return $this->getOdbcDsn($config);
-        } else {
+        }
+
+        if (in_array('sqlsrv', $this->getAvailableDrivers())) {
             return $this->getSqlSrvDsn($config);
+        } else {
+            return $this->getDblibDsn($config);
         }
     }
 
@@ -61,7 +63,7 @@ class SqlServerConnector extends Connector implements ConnectorInterface
     protected function prefersOdbc(array $config)
     {
         return in_array('odbc', $this->getAvailableDrivers()) &&
-               array_get($config, 'odbc') === true;
+               ($config['odbc'] ?? null) === true;
     }
 
     /**
@@ -75,7 +77,7 @@ class SqlServerConnector extends Connector implements ConnectorInterface
         return $this->buildConnectString('dblib', array_merge([
             'host' => $this->buildHostString($config, ':'),
             'dbname' => $config['database'],
-        ], Arr::only($config, ['appname', 'charset'])));
+        ], Arr::only($config, ['appname', 'charset', 'version'])));
     }
 
     /**
@@ -130,6 +132,14 @@ class SqlServerConnector extends Connector implements ConnectorInterface
             $arguments['MultipleActiveResultSets'] = 'false';
         }
 
+        if (isset($config['transaction_isolation'])) {
+            $arguments['TransactionIsolation'] = $config['transaction_isolation'];
+        }
+
+        if (isset($config['multi_subnet_failover'])) {
+            $arguments['MultiSubnetFailover'] = $config['multi_subnet_failover'];
+        }
+
         return $this->buildConnectString('sqlsrv', $arguments);
     }
 
@@ -156,11 +166,11 @@ class SqlServerConnector extends Connector implements ConnectorInterface
      */
     protected function buildHostString(array $config, $separator)
     {
-        if (isset($config['port']) && ! empty($config['port'])) {
-            return $config['host'].$separator.$config['port'];
-        } else {
+        if (empty($config['port'])) {
             return $config['host'];
         }
+
+        return $config['host'].$separator.$config['port'];
     }
 
     /**

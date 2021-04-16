@@ -30,20 +30,6 @@ class ListenerMakeCommand extends GeneratorCommand
     protected $type = 'Listener';
 
     /**
-     * Execute the console command.
-     *
-     * @return void
-     */
-    public function fire()
-    {
-        if (! $this->option('event')) {
-            return $this->error('Missing required option: --event');
-        }
-
-        parent::fire();
-    }
-
-    /**
      * Build the class with the given name.
      *
      * @param  string  $name
@@ -53,8 +39,11 @@ class ListenerMakeCommand extends GeneratorCommand
     {
         $event = $this->option('event');
 
-        if (! Str::startsWith($event, $this->laravel->getNamespace()) &&
-            ! Str::startsWith($event, 'Illuminate')) {
+        if (! Str::startsWith($event, [
+            $this->laravel->getNamespace(),
+            'Illuminate',
+            '\\',
+        ])) {
             $event = $this->laravel->getNamespace().'Events\\'.$event;
         }
 
@@ -63,7 +52,7 @@ class ListenerMakeCommand extends GeneratorCommand
         );
 
         return str_replace(
-            'DummyFullEvent', $event, $stub
+            'DummyFullEvent', trim($event, '\\'), $stub
         );
     }
 
@@ -75,10 +64,14 @@ class ListenerMakeCommand extends GeneratorCommand
     protected function getStub()
     {
         if ($this->option('queued')) {
-            return __DIR__.'/stubs/listener-queued.stub';
-        } else {
-            return __DIR__.'/stubs/listener.stub';
+            return $this->option('event')
+                        ? __DIR__.'/stubs/listener-queued.stub'
+                        : __DIR__.'/stubs/listener-queued-duck.stub';
         }
+
+        return $this->option('event')
+                    ? __DIR__.'/stubs/listener.stub'
+                    : __DIR__.'/stubs/listener-duck.stub';
     }
 
     /**
@@ -111,9 +104,9 @@ class ListenerMakeCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
-            ['event', 'e', InputOption::VALUE_REQUIRED, 'The event class being listened for.'],
+            ['event', 'e', InputOption::VALUE_OPTIONAL, 'The event class being listened for'],
 
-            ['queued', null, InputOption::VALUE_NONE, 'Indicates the event listener should be queued.'],
+            ['queued', null, InputOption::VALUE_NONE, 'Indicates the event listener should be queued'],
         ];
     }
 }

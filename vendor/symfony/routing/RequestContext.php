@@ -31,25 +31,9 @@ class RequestContext
     private $httpPort;
     private $httpsPort;
     private $queryString;
+    private $parameters = [];
 
-    /**
-     * @var array
-     */
-    private $parameters = array();
-
-    /**
-     * Constructor.
-     *
-     * @param string $baseUrl     The base URL
-     * @param string $method      The HTTP method
-     * @param string $host        The HTTP host name
-     * @param string $scheme      The HTTP scheme
-     * @param int    $httpPort    The HTTP port
-     * @param int    $httpsPort   The HTTPS port
-     * @param string $path        The path
-     * @param string $queryString The query string
-     */
-    public function __construct($baseUrl = '', $method = 'GET', $host = 'localhost', $scheme = 'http', $httpPort = 80, $httpsPort = 443, $path = '/', $queryString = '')
+    public function __construct(string $baseUrl = '', string $method = 'GET', string $host = 'localhost', string $scheme = 'http', int $httpPort = 80, int $httpsPort = 443, string $path = '/', string $queryString = '')
     {
         $this->setBaseUrl($baseUrl);
         $this->setMethod($method);
@@ -64,8 +48,6 @@ class RequestContext
     /**
      * Updates the RequestContext information based on a HttpFoundation Request.
      *
-     * @param Request $request A Request instance
-     *
      * @return $this
      */
     public function fromRequest(Request $request)
@@ -75,8 +57,8 @@ class RequestContext
         $this->setMethod($request->getMethod());
         $this->setHost($request->getHost());
         $this->setScheme($request->getScheme());
-        $this->setHttpPort($request->isSecure() ? $this->httpPort : $request->getPort());
-        $this->setHttpsPort($request->isSecure() ? $request->getPort() : $this->httpsPort);
+        $this->setHttpPort($request->isSecure() || null === $request->getPort() ? $this->httpPort : $request->getPort());
+        $this->setHttpsPort($request->isSecure() && null !== $request->getPort() ? $request->getPort() : $this->httpsPort);
         $this->setQueryString($request->server->get('QUERY_STRING', ''));
 
         return $this;
@@ -312,7 +294,7 @@ class RequestContext
      */
     public function getParameter($name)
     {
-        return isset($this->parameters[$name]) ? $this->parameters[$name] : null;
+        return $this->parameters[$name] ?? null;
     }
 
     /**
@@ -324,7 +306,7 @@ class RequestContext
      */
     public function hasParameter($name)
     {
-        return array_key_exists($name, $this->parameters);
+        return \array_key_exists($name, $this->parameters);
     }
 
     /**

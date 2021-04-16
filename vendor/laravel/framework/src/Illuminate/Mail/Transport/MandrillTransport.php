@@ -2,7 +2,7 @@
 
 namespace Illuminate\Mail\Transport;
 
-use Swift_Mime_Message;
+use Swift_Mime_SimpleMessage;
 use GuzzleHttp\ClientInterface;
 
 class MandrillTransport extends Transport
@@ -37,11 +37,11 @@ class MandrillTransport extends Transport
     /**
      * {@inheritdoc}
      */
-    public function send(Swift_Mime_Message $message, &$failedRecipients = null)
+    public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
     {
         $this->beforeSendPerformed($message);
 
-        $this->client->post('https://mandrillapp.com/api/1.0/messages/send-raw.json', [
+        $this->client->request('POST', 'https://mandrillapp.com/api/1.0/messages/send-raw.json', [
             'form_params' => [
                 'key' => $this->key,
                 'to' => $this->getTo($message),
@@ -60,10 +60,10 @@ class MandrillTransport extends Transport
      *
      * Note that Mandrill still respects CC, BCC headers in raw message itself.
      *
-     * @param  \Swift_Mime_Message $message
+     * @param  \Swift_Mime_SimpleMessage $message
      * @return array
      */
-    protected function getTo(Swift_Mime_Message $message)
+    protected function getTo(Swift_Mime_SimpleMessage $message)
     {
         $to = [];
 

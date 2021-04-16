@@ -6,3 +6,4 @@ vendor/*
 storage/*
 
 config/mail.php
+.DS_Store

@@ -65,7 +65,7 @@ class AppNameCommand extends Command
      *
      * @return void
      */
-    public function fire()
+    public function handle()
     {
         $this->currentRoot = trim($this->laravel->getNamespace(), '\\');
 
@@ -79,7 +79,7 @@ class AppNameCommand extends Command
 
         $this->composer->dumpAutoloads();
 
-        $this->call('clear-compiled');
+        $this->call('optimize:clear');
     }
 
     /**
@@ -223,10 +223,17 @@ class AppNameCommand extends Command
      */
     protected function setDatabaseFactoryNamespaces()
     {
-        $this->replaceIn(
-            $this->laravel->databasePath().'/factories/ModelFactory.php',
-            $this->currentRoot, $this->argument('name')
-        );
+        $files = Finder::create()
+                            ->in(database_path('factories'))
+                            ->contains($this->currentRoot)
+                            ->name('*.php');
+
+        foreach ($files as $file) {
+            $this->replaceIn(
+                $file->getRealPath(),
+                $this->currentRoot, $this->argument('name')
+            );
+        }
     }
 
     /**
@@ -261,7 +268,7 @@ class AppNameCommand extends Command
      */
     protected function getComposerPath()
     {
-        return $this->laravel->basePath().'/composer.json';
+        return base_path('composer.json');
     }
 
     /**
@@ -283,7 +290,7 @@ class AppNameCommand extends Command
     protected function getArguments()
     {
         return [
-            ['name', InputArgument::REQUIRED, 'The desired namespace.'],
+            ['name', InputArgument::REQUIRED, 'The desired namespace'],
         ];
     }
 }
