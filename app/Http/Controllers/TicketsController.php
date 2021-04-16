@@ -291,7 +291,7 @@ class TicketsController extends Controller
 
         if ($ticket->watchers->count() > 0) {
             foreach ($ticket->watchers as $watcher) {
-               // Mail::to($watcher->user->email)->send(new \App\Mail\NotifyWatchers($ticket));
+               Mail::to($watcher->user->email)->send(new \App\Mail\NotifyWatchers($ticket));
             }
         }
     }
