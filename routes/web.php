@@ -11,11 +11,9 @@
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-
 Auth::routes();
+
+Route::view('/', 'welcome');
 
 Route::group(['middleware' => 'web'], function () {
 
