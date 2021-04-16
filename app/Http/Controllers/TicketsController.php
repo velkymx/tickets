@@ -93,8 +93,6 @@ class TicketsController extends Controller
     public function update(Request $request, $id)
     {
 
-      // $request = Request::all();
-
         $ticket = Ticket::findOrFail($id);
 
         if (isset($request['due_at']) && $request['due_at'] <> '') {
@@ -236,23 +234,17 @@ class TicketsController extends Controller
             $ticket = \App\Ticket::findOrFail($request['ticket_id']);
 
             if ($ticket->status_id != $request['status_id']) {
-                $changes[] = 'Status changed to '.$ticket->status->name;
 
-                $update[] = ['status_id' => $request['status_id']];
+                $changes[] = 'Status changed to '.$this->lookups()['statuses'][$request['status_id']];
+
+                $ticket->update(['status_id' => $request['status_id']]);
             }
 
             if ($request['hours'] != 0) {
                 $changes[] = 'Hours added: '.$request['hours'];
             }
 
-            // if ($ticket->importance_id != $request['importance_id']) {
-            //     $changes[] = 'Importance changed to '.$ticket->importance->name;
-            //
-            //     $update[] = ['importance_id' => $request['importance_id']];
-            // }
         }
-
-        $ticket->update($update);
 
         $this->notate($ticket->id, $request['body'], $changes);
 
@@ -299,7 +291,7 @@ class TicketsController extends Controller
 
         if ($ticket->watchers->count() > 0) {
             foreach ($ticket->watchers as $watcher) {
-                Mail::to($watcher->user->email)->send(new \App\Mail\NotifyWatchers($ticket));
+               // Mail::to($watcher->user->email)->send(new \App\Mail\NotifyWatchers($ticket));
             }
         }
     }
