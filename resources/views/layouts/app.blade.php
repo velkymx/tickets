@@ -109,6 +109,10 @@
 
     @yield('content')
   </div>
+  <div class="container" align="center" style="padding:10px">
+  <hr>
+  Tickets! is an open source ticket tracker. <a href="https://github.com/velkymx/tickets" target="_blank">Check us out on Github!</a>. Provided "as is" under the MIT License.
+  </div>
 
     <!-- JavaScripts -->
     <script src="/js/jquery-2.2.1.min.js"></script>
