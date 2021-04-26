@@ -270,7 +270,7 @@ class TicketsController extends Controller
 
         $check = \App\TicketEstimate::where('ticket_id',$ticket_id)->where('user_id',Auth::id())->first();
 
-        if($check->exists() === false){
+        if($check === null){
             \App\TicketEstimate::create([
                 'ticket_id' => $ticket_id,
                 'user_id' => Auth::id(),
