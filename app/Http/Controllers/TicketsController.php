@@ -313,27 +313,37 @@ class TicketsController extends Controller
 
     private function notate($ticket_id, $message, $changes)
     {
-        $insert['user_id'] = Auth::id();
-        $insert['ticket_id'] = $ticket_id;
-        $insert['body'] = $message;
 
-        $ticket = Ticket::findOrFail($ticket_id);
+        $insert = [
+            'user_id' => Auth::id(),
+            'ticket_id' => $ticket_id,
+            'body' => $message
+        ];
 
-        $change_list = '';
+        if(strlen($message) > 0){
 
-        if (count($changes) > 0) {
-            foreach ($changes as $change) {
-                $change_list .= '<li>'.$change.'</li>';
-            }
+            $insert['notetype'] = 'message';
 
-            if ($message <> '') {
-                $insert['body'] = $message.'<hr><ul>'.$change_list.'</ul>';
-            } else {
-                $insert['body'] = '<ul>'.$change_list.'</ul>';
-            }
+            \App\Note::create($insert);
+
         }
 
-        \App\Note::create($insert);
+        if(is_array($changes) && count($changes) > 0){            
+
+            $change_list = '';
+
+            foreach ($changes as $change) {
+                $change_list .= '<li>'.$change.'</li>';
+            }  
+            
+            $insert['body'] = '<ul>'.$change_list.'</ul>';
+            $insert['notetype'] = 'changelog';
+
+            \App\Note::create($insert);
+
+        }
+
+        $ticket = Ticket::findOrFail($ticket_id);
 
         if ($ticket->watchers->count() > 0) {
             foreach ($ticket->watchers as $watcher) {

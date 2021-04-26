@@ -20,13 +20,20 @@ Ticket #{{$ticket->id}}
   <button type="button" class="close" onclick="$('#alert').hide()" aria-label="Close"><span aria-hidden="true">&times;</span></button>
   <div id="alert_messsage"></div>
 </div>
-<h3>Notes ({{$ticket->notes()->where('hide','0')->count()}})
+<h3>
 
 <span class="pull-right"><span class="btn btn-info btn-sm" id="watch"><i class="glyphicon glyphicon-eye-open"></i> Watch</span></span>
 
 </h3>
-<hr />
-@foreach ($ticket->notes()->where('hide','0')->get() as $note)
+
+<ul class="nav nav-tabs" role="tablist">
+<li role="presentation" class="active"><a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">Notes ({{$ticket->notes()->where('hide','0')->where('notetype','message')->count()}})</a></li>
+    <li role="presentation"><a href="#changelog" aria-controls="changelog" role="tab" data-toggle="tab">Changelog ({{$ticket->notes()->where('hide','0')->where('notetype','changelog')->count()}})</a></li>
+  </ul>
+  <br>
+  <div class="tab-content">
+  <div role="tabpanel" class="tab-pane active" id="messages">
+@foreach ($ticket->notes()->where('hide','0')->where('notetype','message')->get() as $note)
 <div class="panel panel-default" id="note_{{$note->id}}">
   <div class="panel-heading">
 <strong><i class="glyphicon glyphicon-user"></i> {{$note->user->name}}</strong> | posted {{date('M jS, Y g:ia',strtotime($note->created_at))}}
@@ -37,6 +44,21 @@ Ticket #{{$ticket->id}}
 </div>
 </div>
 @endforeach
+</div>
+<div role="tabpanel" class="tab-pane" id="changelog">
+@foreach ($ticket->notes()->where('hide','0')->where('notetype','changelog')->get() as $change)
+<div class="panel panel-default" id="note_{{$change->id}}">
+  <div class="panel-heading">
+<strong><i class="glyphicon glyphicon-user"></i> {{$change->user->name}}</strong> changed ticket {{date('M jS, Y g:ia',strtotime($change->created_at))}}
+<span class="pull-right"><button onclick="hideNote('{{$change->id}}');" class="btn btn-default btn-xs">Remove</button></span>
+</div>
+<div class="panel-body">
+{!!html_entity_decode($change->body)!!}
+</div>
+</div>
+@endforeach
+</div>
+</div>
 <hr />
 {!! Form::open(['url'=>'notes']) !!}
 
