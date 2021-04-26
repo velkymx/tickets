@@ -27,6 +27,8 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::get('tickets/{id}','TicketsController@show');
 
+    Route::post('tickets/estimate/{ticket_id}','TicketsController@estimate');    
+
     Route::post('tickets','TicketsController@store');
 
     Route::get('board','TicketsController@board');
@@ -39,7 +41,7 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::post('tickets/update/{id}','TicketsController@update');
 
-    Route::post('notes','TicketsController@note');
+    Route::post('notes','TicketsController@note');    
 
     Route::get('notes/hide/{id}','NotesController@hide');
 

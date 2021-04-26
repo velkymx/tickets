@@ -100,6 +100,21 @@ Ticket #{{$ticket->id}}
         <td><a href="/projects/show/{{$ticket->project->id}}">{{$ticket->project->name}}</a></td>
       </tr>
       <tr>
+        <td>Story Points</td>
+        <td>
+        <span class="pull-right btn btn-xs btn-default" onclick="estimate()">Estimate</span>
+        
+        {{$ticket->storypoints}} Points
+        <br>
+        <br>
+        <ul class="list-group">
+        <?php foreach($ticket->userstorypoints as $usp){ ?>
+        <li class="list-group-item"><?php echo $usp->storypoints; ?> <?php echo $usp->user->name; ?></li>
+        <?php } ?>
+        </ul>
+        
+        </td>
+      </tr>    <tr>
         <td>Time Estimate</td>
         <td>{{$ticket->estimate}} hours</td>
       </tr>
@@ -135,6 +150,46 @@ Ticket #{{$ticket->id}}
 </div>
 
 <span id="ticket_id" style="display:none">{{$ticket->id}}</span>
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Estimate Story Points</h4>
+      </div>
+      <form action="/tickets/estimate/<?php echo $ticket->id; ?>" method="post">
+      @csrf
+      <div class="modal-body">
+<?php foreach([
+  0 => "No Effort",
+  1 => "XS (Extra Small), Dachshund, Kid Hot Chocolate, One",
+  2 => "Somewhere between XS and S",
+  3 => "S (Small), Terrier, Tall Late, Cookie",  
+  5 => "M (Medium), Labrador, Grande Mocha, Cheeseburger",
+  8 => "L (Large), Saint Bernard, Vente Iced Late, Cheeseburge with Fries and Soda",
+  13 => "Somewhere between L and XL",
+  21 => "XL (Extra Large), Great Dane, Trenta Mocha Frap, 5 Course Meal"
+] as $est => $label){ ?>
+<div class="radio">
+  <label>
+    <input type="radio" name="storypoints" id="storypoints" value="<?php echo $est; ?>" <?php if($est == 0) echo 'checked'; ?>>
+    <?php echo $est; ?> - <?php echo $label; ?>
+  </label>
+</div>
+<?php } ?>
+
+       
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <input type="submit" class="btn btn-primary" value="Save Estimate">
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 @stop
 @section('javascript')
 <script src="/js/summernote.min.js"></script>
@@ -168,6 +223,10 @@ Ticket #{{$ticket->id}}
                   }
                 });
               });
+
+function estimate(){
+  $('#myModal').modal()
+}
 
 function sendFile(file, editor) {
      data = new FormData();

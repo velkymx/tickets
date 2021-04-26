@@ -265,6 +265,52 @@ class TicketsController extends Controller
       );
     }
 
+    public function estimate(Request $request,$ticket_id)
+    {
+
+        $check = \App\TicketEstimate::where('ticket_id',$ticket_id)->where('user_id',Auth::id())->first();
+
+        if($check->exists() === false){
+            \App\TicketEstimate::create([
+                'ticket_id' => $ticket_id,
+                'user_id' => Auth::id(),
+                'storypoints' => $request->storypoints
+                ]);
+        } else {
+
+            if ($check->storypoints == $request->storypoints) {
+
+                return redirect('tickets/'.$ticket_id);
+
+            }
+            
+                $check->storypoints = $request->storypoints;
+                $check->save();
+            
+        }
+
+        $getAvg = \App\TicketEstimate::where('ticket_id',$ticket_id)->where('user_id',Auth::id())->get();
+
+        $total = 0;
+
+        foreach($getAvg as $row){
+
+            $total += $row->storypoints;
+
+        }
+
+        $ticket = \App\Ticket::find($ticket_id);
+
+        $ticket->storypoints = $total / sizeof($getAvg);
+
+        $ticket->save();            
+        
+        $this->notate($ticket->id, '', ['Ticket Estimate Set to '.$request->storypoints]);
+
+        return redirect('tickets/'.$ticket_id);
+
+    }
+
     private function notate($ticket_id, $message, $changes)
     {
         $insert['user_id'] = Auth::id();

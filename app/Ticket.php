@@ -52,6 +52,11 @@ class Ticket extends Model
         return $this->hasMany('App\Note');
     }
 
+    public function userstorypoints()
+    {
+        return $this->hasMany('App\TicketEstimate');
+    }    
+
     public function watchers()
     {
         return $this->hasMany('App\TicketUserWatcher');
