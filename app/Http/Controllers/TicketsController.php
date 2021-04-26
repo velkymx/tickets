@@ -99,27 +99,7 @@ class TicketsController extends Controller
             $request['due_at'] = date('Y-m-d', strtotime($request['due_at']));
         }
 
-        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'due_at', 'closed_at','estimate'];
-
-        $change_list = [];
-
-        foreach ($changes as $change) {
-            if ($request->$change != $ticket->$change) {
-                $label = $change;
-
-                if (substr($change, -3, 3) == '_id') {
-                    $label = substr($change, 0, strlen($change)-3);
-
-                    $change_list[] = ucwords($label).' changed to '.$ticket->$label->name;
-                } elseif (substr($change, -3, 3) == '_at') {
-                    $label = substr($change, 0, strlen($change)-3);
-
-                    $change_list[] = ucwords($label).' date changed to '.date('M jS, Y', strtotime($request->$change));
-                } else {
-                    $change_list[] = ucwords($label).' changed to '.$request->$change;
-                }
-            }
-        }
+        $change_list = $this->changes($ticket->toArray(),$request);
 
         $ticket->update($request->toArray());
 
@@ -222,31 +202,25 @@ class TicketsController extends Controller
 
     public function note(Request $request)
     {
-        $request = $request->toArray();
 
-        $request['user_id'] = Auth::id();
+        if($request->has('status_id') && $request->has('ticket_id')){
 
-        $changes = [];
+            $ticket = \App\Ticket::findOrFail($request->ticket_id);
 
-        $update = [];
+            $old = $ticket->toArray();
 
-        if (isset($request['status_id']) && isset($request['ticket_id'])) {
-            $ticket = \App\Ticket::findOrFail($request['ticket_id']);
+            if ($ticket->status_id != $request->status_id) {
 
-            if ($ticket->status_id != $request['status_id']) {
+                $ticket->status_id = $request->status_id;
+                $ticket->save();
 
-                $changes[] = 'Status changed to '.$this->lookups()['statuses'][$request['status_id']];
+            }      
 
-                $ticket->update(['status_id' => $request['status_id']]);
-            }
+            $change_list = $this->changes($old,$ticket->toArray());
 
-            if ($request['hours'] != 0) {
-                $changes[] = 'Hours added: '.$request['hours'];
-            }
+            $this->notate($ticket->id, $request->body, $change_list,$request->hours);
 
-        }
-
-        $this->notate($ticket->id, $request['body'], $changes);
+        }        
 
         return redirect('tickets/'.$request['ticket_id']);
     }
@@ -299,11 +273,13 @@ class TicketsController extends Controller
 
         }
 
-        $ticket = \App\Ticket::find($ticket_id);
+        $old = $ticket = \App\Ticket::find($ticket_id);
 
         $ticket->storypoints = $total / sizeof($getAvg);
 
-        $ticket->save();            
+        $ticket->save();
+
+        $change_list = $this->changes($old->toArray(),$ticket->toArray());
         
         $this->notate($ticket->id, '', ['Ticket Estimate Set to '.$request->storypoints]);
 
@@ -311,13 +287,65 @@ class TicketsController extends Controller
 
     }
 
-    private function notate($ticket_id, $message, $changes)
+    private function changes($old,$new)
+    {
+
+        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'estimate','storypoints'];
+
+        $lookups = $this->lookups();
+
+        $change_list = [];
+
+        foreach ($changes as $change) {
+
+            if($old[$change] != $new[$change]){
+
+                $label = $change;
+
+                if (substr($change, -3, 3) == '_id') {
+                
+                    $label = substr($change, 0, strlen($change)-3);
+
+                    $lookup = $label . 's';
+
+                    if($change == 'status_id'){
+                        $lookup = 'statuses';
+                    }
+
+                    $change_list[] = ucwords($label).' changed to '.$lookups[$lookup][$new[$change]];
+
+                } else {
+                    $change_list[] = ucwords($change).' changed to '.$new[$change];
+                }
+
+            }
+
+        }     
+
+        if(strtotime($old['due_at']) !== strtotime($new['due_at'])){
+
+            $change_list[] = 'Due date changed to '.date('M jS, Y', strtotime($new['due_at']));
+
+        }
+
+        if(strtotime($old['closed_at']) !== strtotime($new['closed_at'])){
+
+            $change_list[] = 'Ticket closed on '.date('M jS, Y', strtotime($new['closed_at']));
+
+        }
+
+        return $change_list;
+
+    }
+
+    private function notate($ticket_id, $message, $changes, $addhours=0)
     {
 
         $insert = [
             'user_id' => Auth::id(),
             'ticket_id' => $ticket_id,
-            'body' => $message
+            'body' => $message,
+            'hours' => $addhours
         ];
 
         if(strlen($message) > 0){
@@ -338,6 +366,7 @@ class TicketsController extends Controller
             
             $insert['body'] = '<ul>'.$change_list.'</ul>';
             $insert['notetype'] = 'changelog';
+            $insert['hours'] = 0;
 
             \App\Note::create($insert);
 

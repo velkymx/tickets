@@ -75,7 +75,7 @@ Ticket #{{$ticket->id}}
     {!! Form::text('hours', 0, ['class' => 'form-control', 'required' => 'required']) !!}
 </div>
 {!! Form::hidden('ticket_id',$ticket->id) !!}
-{!! Form::submit('Save Comment', ['class' => 'btn btn-success']) !!}
+{!! Form::submit('Save Note', ['class' => 'btn btn-success']) !!}
 {!! Form::close() !!}
 </div>
 <div class="col-md-4">
