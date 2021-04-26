@@ -7,3 +7,5 @@ storage/*
 
 config/mail.php
 .DS_Store
+node_modules/*
+.vscode/settings.json
