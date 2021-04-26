@@ -281,7 +281,7 @@ class TicketsController extends Controller
 
         $change_list = $this->changes($old->toArray(),$ticket->toArray());
         
-        $this->notate($ticket->id, '', ['Ticket Estimate Set to '.$request->storypoints]);
+        $this->notate($ticket->id, '', ['Story Points changed to '.$request->storypoints]);
 
         return redirect('tickets/'.$ticket_id);
 
@@ -290,7 +290,7 @@ class TicketsController extends Controller
     private function changes($old,$new)
     {
 
-        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'estimate','storypoints'];
+        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'estimate'];
 
         $lookups = $this->lookups();
 
@@ -348,6 +348,8 @@ class TicketsController extends Controller
             'hours' => $addhours
         ];
 
+        $ticket = Ticket::findOrFail($ticket_id);
+
         if(strlen($message) > 0){
 
             $insert['notetype'] = 'message';
@@ -355,6 +357,11 @@ class TicketsController extends Controller
             \App\Note::create($insert);
 
         }
+
+        if($addhours > 0){
+            $changes[] = 'Time or Quantity adjusted by '.$addhours;
+    
+        }        
 
         if(is_array($changes) && count($changes) > 0){            
 
@@ -370,9 +377,7 @@ class TicketsController extends Controller
 
             \App\Note::create($insert);
 
-        }
-
-        $ticket = Ticket::findOrFail($ticket_id);
+        }        
 
         if ($ticket->watchers->count() > 0) {
             foreach ($ticket->watchers as $watcher) {
