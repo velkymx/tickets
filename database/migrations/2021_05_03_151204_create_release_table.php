@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class ModifyNoteTypes extends Migration
+class CreateReleaseTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,10 @@ class ModifyNoteTypes extends Migration
      */
     public function up()
     {
-        Schema::table('notes', function (Blueprint $table) {
-            $table->enum('notetype', ['message', 'changelog', 'misc'])->default('message');
-          });        
+        Schema::create('release', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->timestamps();
+        });
     }
 
     /**
@@ -25,6 +26,6 @@ class ModifyNoteTypes extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('release');
     }
 }
