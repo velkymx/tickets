@@ -10,6 +10,11 @@ Ticket #{{$ticket->id}}
     <li><a href="/tickets/">Tickets</a></li>
     <li class="active">Ticket #{{$ticket->id}}</li>
   </ol>
+  @if($ticket->closed_at <> '')
+  <div class="alert alert-danger">
+    <strong>Closed</strong> This ticket was closed {{date('m/d/Y g:ia',strtotime($ticket->closed_at))}}
+  </div>
+  @endif
   <div class="row-fluid">
     <div class="col-md-8">
 <h2>{{$ticket->subject}}</h2>
@@ -152,6 +157,12 @@ Ticket #{{$ticket->id}}
         <td>Updated</td>
         <td>{{date('M jS, Y g:ia',strtotime($ticket->updated_at))}}</td>
       </tr>
+      @if($ticket->closed_at <> '')
+      <tr>
+        <td>Closed</td>
+        <td>{{date('M jS, Y g:ia',strtotime($ticket->closed_at))}}</td>
+      </tr>
+      @endif
       @foreach ($ticket->watchers as $watcher)
         <tr>
           <td>Watcher</td>
