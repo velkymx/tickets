@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateReleaseTable extends Migration
+class CreateReleasesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,15 @@ class CreateReleaseTable extends Migration
      */
     public function up()
     {
-        Schema::create('release', function (Blueprint $table) {
+        Schema::create('releases', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->string('title', 200);
+            $table->text('body')->nullable();
+            $table->dateTime('started_at')->nullable();
+            $table->dateTime('completed_at')->nullable();
+            $table->integer('user_id')->unsigned();
             $table->timestamps();
+            $table->foreign('user_id')->references('id')->on('users');
         });
     }
 
