@@ -8,6 +8,8 @@ use App\Http\Requests;
 
 use Illuminate\Support\Facades\Auth;
 
+use Illuminate\Support\Str;
+
 class MilestoneController extends Controller
 {
 
@@ -31,7 +33,20 @@ class MilestoneController extends Controller
 
       $milestone = \App\Milestone::findOrFail($request->id);
 
-      $statuscodes = \App\Status::get();
+      $tmpcodes = \App\Status::get();
+
+      $statuscodes = [];
+
+      foreach($tmpcodes as $code){
+
+        $statuscodes[$code->id] = [
+          'name' => $code->name,
+          'slug' => Str::slug($code->name,'_')
+        ];
+
+      }
+
+      
 
       $completed = 0;
 
@@ -66,7 +81,9 @@ class MilestoneController extends Controller
     {
       $milestone = \App\Milestone::findOrFail($request->id);
 
-      return view('milestone.edit',compact('milestone'));
+      $users = \App\User::pluck('name','id');
+
+      return view('milestone.edit',compact('milestone','users'));
     }
 
     public function store(Request $request)
