@@ -17,7 +17,7 @@ Ticket #{{$ticket->id}}
   @endif
   <div class="row-fluid">
     <div class="col-md-8">
-<h2>{{$ticket->subject}}</h2>
+<h2><i class="{{$ticket->type->icon}}" title="{{$ticket->type->name}}"></i> {{$ticket->subject}}</h2>
 <hr />
 {!!html_entity_decode($ticket->description)!!}
 <hr />
@@ -100,7 +100,7 @@ Ticket #{{$ticket->id}}
       @endif
       <tr>
         <td>Importance</td>
-        <td>{{$ticket->importance->name}}</td>
+        <td><span class="text-{{$ticket->importance->class}}" title="{{$ticket->importance->name}}"><i class="{{$ticket->importance->icon}}"></i> {{$ticket->importance->name}}</span></td>
       </tr>
       <tr>
         <td>Status</td>
@@ -112,7 +112,7 @@ Ticket #{{$ticket->id}}
       </tr>
       <tr>
         <td>Type</td>
-        <td>{{$ticket->type->name}}</td>
+        <td><i class="{{$ticket->type->icon}}" title="{{$ticket->type->name}}"></i> {{$ticket->type->name}}</td>
       </tr>
       <tr>
         <td>Owner</td>
