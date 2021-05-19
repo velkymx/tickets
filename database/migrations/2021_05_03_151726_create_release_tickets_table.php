@@ -13,14 +13,15 @@ class CreateReleaseTicketsTable extends Migration
      */
     public function up()
     {
-        Schema::create('release_tickets', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->integer('ticket_id')->unsigned();
-            $table->integer('release_id')->unsigned();
-            $table->timestamps();
-            $table->foreign('ticket_id')->references('id')->on('tickets');
-            $table->foreign('release_id')->references('id')->on('releases');
-        });
+        // Schema::create('release_tickets', function (Blueprint $table) {
+        //     $table->bigIncrements('id');
+        //     $table->integer('ticket_id')->unsigned();
+        //     $table->integer('release_id')->unsigned();
+        //     $table->timestamps();
+
+        //     // $table->foreign('ticket_id')->references('id')->on('tickets');
+        //     // $table->foreign('release_id')->references('id')->on('releases');
+        // });
     }
 
     /**
