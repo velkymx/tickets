@@ -89,6 +89,14 @@ class TicketsController extends Controller
 
         $lookups = $this->lookups();
 
+        if($ticket->closed_at <> ''){
+            $ticket->closed_at = date('m/d/Y',strtotime($ticket->closed_at));
+        }
+
+        if($ticket->due_at <> ''){
+            $ticket->due_at = date('m/d/Y',strtotime($ticket->due_at));
+        }        
+
         return view('tickets.edit', compact('ticket', 'lookups'));
     }
 
@@ -97,17 +105,19 @@ class TicketsController extends Controller
 
         $ticket = Ticket::findOrFail($id);
 
+        $request = $request->toArray();
+
         if (isset($request['due_at']) && $request['due_at'] <> '') {
             $request['due_at'] = date('Y-m-d', strtotime($request['due_at']));
         }
 
         if (isset($request['closed_at']) && $request['closed_at'] <> '') {
-            $request['closed_at'] = date('Y-m-d H:i:a', strtotime($request['closed_at']));
-        }        
+            $request['closed_at'] = date('Y-m-d H:i:s', strtotime($request['closed_at']));
+        }    
 
         $change_list = $this->changes($ticket->toArray(), $request);
 
-        $ticket->update($request->toArray());
+        $ticket->update($request);
 
         $this->notate($ticket->id, '', $change_list);
 

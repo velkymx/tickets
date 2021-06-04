@@ -35,15 +35,15 @@ Create Ticket
   </div>
   <div class="form-group">
       {!! Form::label('user_id2', 'Assign To') !!}
-      {!! Form::select('user_id2', $lookups['users'], $ticket->user_id, ['class' => 'form-control', 'required' => 'required']) !!}
+      {!! Form::select('user_id2', $lookups['users'], $ticket->user_id2, ['class' => 'form-control', 'required' => 'required']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('due_at', 'Due Date') !!}
-      {!! Form::text('due_at', date('m/d/Y',strtotime($ticket->due_at)), ['class' => 'form-control datepicker']) !!}
+      {!! Form::text('due_at', $ticket->due_at, ['class' => 'form-control datepicker']) !!}
   </div>  
   <div class="form-group">
       {!! Form::label('closed_at', 'Completed Date') !!}
-      {!! Form::text('closed_at', date('m/d/Y',strtotime($ticket->closed_at)), ['class' => 'form-control datepicker']) !!}
+      {!! Form::text('closed_at', $ticket->closed_at, ['class' => 'form-control datepicker']) !!}
   </div>
   <div class="form-group">
     {!! Form::label('estimate', 'Time Estimate (hours)') !!}
