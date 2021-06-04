@@ -16,8 +16,17 @@ Create Milestone
     {!! Form::text('due_at', date('m/d/Y',strtotime($milestone->due_at)), ['class' => 'form-control','id'=>'due_at']) !!}
 </div>
 <div class="form-group">
+<?php  
+
+$end = '';
+
+if($milestone->end_at<>'') { 
+    $end = date('m/d/Y',strtotime($milestone->end_at));
+}
+
+?>
     {!! Form::label('end_at', 'Release Date') !!}
-    {!! Form::text('end_at', date('m/d/Y',strtotime($milestone->end_at)), ['class' => 'form-control','id'=>'end_at']) !!}
+    {!! Form::text('end_at', $end, ['class' => 'form-control','id'=>'end_at']) !!}
 </div>
 <div class="form-group">
     {!! Form::label('name', 'Milestone Name') !!}
@@ -27,6 +36,16 @@ Create Milestone
     {!! Form::label('description', 'Milestone Description') !!}
     {!! Form::textarea('description', $milestone->description, ['class' => 'form-control summernote']) !!}
 </div>
+
+<div class="form-group">
+      {!! Form::label('owner_user_id', 'Product Owner') !!}
+      {!! Form::select('owner_user_id', $users, $milestone->owner_user_id, ['class' => 'form-control', 'required' => 'required']) !!}
+  </div>
+
+  <div class="form-group">
+      {!! Form::label('scrummaster_user_id', 'Scrum Master / Sprint Manager') !!}
+      {!! Form::select('scrummaster_user_id', $users, $milestone->scrummaster_user_id, ['class' => 'form-control', 'required' => 'required']) !!}
+  </div>  
 <div class="form-group">
 {!! Form::submit('Save and Update Milestone', ['class' => 'btn btn-success pull-right']) !!}
 </div>

@@ -40,6 +40,10 @@ Create Ticket
   <div class="form-group">
       {!! Form::label('due_at', 'Due Date') !!}
       {!! Form::text('due_at', date('m/d/Y',strtotime($ticket->due_at)), ['class' => 'form-control datepicker']) !!}
+  </div>  
+  <div class="form-group">
+      {!! Form::label('closed_at', 'Completed Date') !!}
+      {!! Form::text('closed_at', date('m/d/Y',strtotime($ticket->closed_at)), ['class' => 'form-control datepicker']) !!}
   </div>
   <div class="form-group">
     {!! Form::label('estimate', 'Time Estimate (hours)') !!}

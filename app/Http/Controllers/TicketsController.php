@@ -101,6 +101,10 @@ class TicketsController extends Controller
             $request['due_at'] = date('Y-m-d', strtotime($request['due_at']));
         }
 
+        if (isset($request['closed_at']) && $request['closed_at'] <> '') {
+            $request['closed_at'] = date('Y-m-d H:i:a', strtotime($request['closed_at']));
+        }        
+
         $change_list = $this->changes($ticket->toArray(), $request);
 
         $ticket->update($request->toArray());
@@ -224,6 +228,10 @@ class TicketsController extends Controller
             $change_list = $this->changes($old, $ticket->toArray());
 
             $this->notate($ticket->id, $request->body, $change_list, $request->hours);
+
+            $ticket->actual = \App\Note::where('ticket_id',$ticket->id)->sum('hours');          
+
+            $ticket->save();
         }
 
         return redirect('tickets/' . $request['ticket_id']);
