@@ -31,8 +31,7 @@ class NotifyWatchers extends Mailable
     public function build()
     {
         return $this
-        ->subject('Re: '.$this->ticket->subject.' (#'.$this->ticket->id.')')
-        ->from('ivntickets@gmail.com')
+        ->subject('Re: '.$this->ticket->subject.' (#'.$this->ticket->id.')')        
         ->view('mail.notify');
     }
 }
