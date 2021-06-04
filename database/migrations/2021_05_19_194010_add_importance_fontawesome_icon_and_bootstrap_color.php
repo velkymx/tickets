@@ -16,7 +16,7 @@ class AddImportanceFontawesomeIconAndBootstrapColor extends Migration
 
         Schema::table('importances', function (Blueprint $table) {
             $table->text('icon')->nullable();
-            $table->text('class')->default('default');
+            $table->text('class')->nullable();
         });
     }
 
