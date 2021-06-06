@@ -19,54 +19,62 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::get('/home', 'HomeController@index');
 
-    Route::get('tickets','TicketsController@index');
+    Route::get('tickets', 'TicketsController@index');
 
-    Route::get('tickets/create','TicketsController@create');
+    Route::get('tickets/fetch', 'TicketsController@fetch');
 
-    Route::get('tickets/edit/{id}','TicketsController@edit');
+    Route::get('tickets/create', 'TicketsController@create');
 
-    Route::get('tickets/{id}','TicketsController@show');
+    Route::get('tickets/edit/{id}', 'TicketsController@edit');
 
-    Route::post('tickets/estimate/{ticket_id}','TicketsController@estimate');    
+    Route::get('tickets/{id}', 'TicketsController@show');
 
-    Route::post('tickets','TicketsController@store');
+    Route::post('tickets/estimate/{ticket_id}', 'TicketsController@estimate');
 
-    Route::get('board','TicketsController@board');
+    Route::post('tickets', 'TicketsController@store');
 
-    Route::get('tickets/api/{id}','TicketsController@api');
+    Route::get('board', 'TicketsController@board');
 
-    Route::post('tickets/upload','TicketsController@upload');
+    Route::get('tickets/api/{id}', 'TicketsController@api');
 
-    Route::post('tickets/batch','TicketsController@batch');
+    Route::post('tickets/upload', 'TicketsController@upload');
 
-    Route::post('tickets/update/{id}','TicketsController@update');
+    Route::post('tickets/batch', 'TicketsController@batch');
 
-    Route::post('notes','TicketsController@note');    
+    Route::post('tickets/update/{id}', 'TicketsController@update');
 
-    Route::get('notes/hide/{id}','NotesController@hide');
+    Route::post('notes', 'TicketsController@note');
 
-    Route::get('users/{id}','UsersController@show');
+    Route::get('notes/hide/{id}', 'NotesController@hide');
 
-    Route::get('users/watch/{id}','UsersController@watch');
+    Route::get('users/{id}', 'UsersController@show');
 
-    Route::get('projects','ProjectsController@index');
+    Route::get('users/watch/{id}', 'UsersController@watch');
 
-    Route::get('projects/create','ProjectsController@create');
+    Route::get('projects', 'ProjectsController@index');
 
-    Route::get('projects/edit/{id}','ProjectsController@edit');
+    Route::get('projects/create', 'ProjectsController@create');
 
-    Route::post('projects/store/{id}','ProjectsController@store');
+    Route::get('projects/edit/{id}', 'ProjectsController@edit');
 
-    Route::get('projects/show/{id}','ProjectsController@show');
+    Route::post('projects/store/{id}', 'ProjectsController@store');
 
-    Route::get('milestone','MilestoneController@index');
+    Route::get('projects/show/{id}', 'ProjectsController@show');
 
-    Route::get('milestone/create','MilestoneController@create');
+    Route::get('milestone', 'MilestoneController@index');
 
-    Route::get('milestone/edit/{id}','MilestoneController@edit');
+    Route::get('milestone/create', 'MilestoneController@create');
 
-    Route::post('milestone/store/{id}','MilestoneController@store');
+    Route::get('milestone/edit/{id}', 'MilestoneController@edit');
 
-    Route::get('milestone/show/{id}','MilestoneController@getShow');
+    Route::post('milestone/store/{id}', 'MilestoneController@store');
 
+    Route::get('milestone/show/{id}', 'MilestoneController@getShow');
+
+    Route::get('releases', 'ReleasesController@index');
+    Route::get('releases/create', 'ReleasesController@create');
+    Route::get('releases/{id}', 'ReleasesController@view');
+    Route::post('releases/store', 'ReleasesController@post');
+    Route::put('releases/update/{id}', 'ReleasesController@put');
+    Route::delete('releases/delete/{id}', 'ReleasesController@delete');
 });
