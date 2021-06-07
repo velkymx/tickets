@@ -251,12 +251,12 @@ class TicketsController extends Controller
     {
         return array(
 
-            'types' => \App\Type::pluck('name', 'id'),
-            'milestones' => \App\Milestone::where('end_at', null)->pluck('name', 'id'),
-            'importances' => \App\Importance::pluck('name', 'id'),
-            'projects' => \App\Project::where('active', 1)->pluck('name', 'id'),
-            'statuses' => \App\Status::pluck('name', 'id'),
-            'users' => \App\User::pluck('name', 'id')
+            'types' => \App\Type::orderBy('name')->pluck('name', 'id'),
+            'milestones' => \App\Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
+            'importances' => \App\Importance::orderBy('name')->pluck('name', 'id'),
+            'projects' => \App\Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
+            'statuses' => \App\Status::orderBy('name')->pluck('name', 'id'),
+            'users' => \App\User::orderBy('name')->pluck('name', 'id')
 
         );
     }
