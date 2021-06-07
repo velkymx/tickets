@@ -308,7 +308,7 @@ class TicketsController extends Controller
     private function changes($old, $new)
     {
 
-        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'estimate'];
+        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'estimate','user_id2'];
 
         $lookups = $this->lookups();
 
@@ -320,7 +320,7 @@ class TicketsController extends Controller
 
                 $label = $change;
 
-                if (substr($change, -3, 3) == '_id') {
+                if (substr($change, -3, 3) == '_id' || substr($change, -3, 3) == 'id2') {
 
                     $label = substr($change, 0, strlen($change) - 3);
 
@@ -329,6 +329,20 @@ class TicketsController extends Controller
                     if ($change == 'status_id') {
                         $lookup = 'statuses';
                     }
+
+                    if ($change == 'user_id2') {
+                        $lookup = 'users';
+                        $label = 'Assigned user';
+
+                        // set a watcher
+
+                        $watch = \App\TicketUserWatcher::where('ticket_id',$old['id'])->where('user_id',$new[$change])->first();
+
+                        if(!$watch){
+                            \App\TicketUserWatcher::create(['user_id'=>$new[$change],'ticket_id'=>$old['id']]);
+                        }
+
+                    }                    
 
                     $change_list[] = ucwords($label) . ' changed to ' . $lookups[$lookup][$new[$change]];
                 } else {
