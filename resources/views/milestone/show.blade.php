@@ -13,18 +13,21 @@
   <div class="row">
   <div class="col-md-9">
  
-  <ul class="nav nav-tabs" role="tablist">   
-    <li role="all" class="active"><a href="#all" aria-controls="all" role="tab" data-toggle="tab">All Tickets <span class="badge">{{$milestone->tickets->count()}}</span></a></li> 
+  <ul class="nav nav-tabs" role="tablist">        
     <?php  
-      
+ 
+    $i = 0;
 
-    foreach ($statuscodes as $code_id => $code) { 
+    foreach ($statuscodes as $code_id => $code) {       
       
       if($milestone->tickets()->where('status_id',$code_id)->count() == 0) continue;
 
+      $i++;
+
       ?>
-    <li role="{{$code['slug']}}"><a href="#{{$code['slug']}}" aria-controls="{{$code['slug']}}" role="tab" data-toggle="tab">{{$code['name']}} <span class="badge">{{$milestone->tickets()->where('status_id',$code_id)->count()}}</span></a></li>    
+    <li role="{{$code['slug']}}" <?php if($i == 1) echo ' class="active"'; ?>><a href="#{{$code['slug']}}" aria-controls="{{$code['slug']}}" role="tab" data-toggle="tab">{{$code['name']}} <span class="badge">{{$milestone->tickets()->where('status_id',$code_id)->count()}}</span></a></li>    
     <?php } ?>
+    <li role="all"><a href="#all" aria-controls="all" role="tab" data-toggle="tab">All Tickets <span class="badge">{{$milestone->tickets->count()}}</span></a></li>
   </ul>
 
   <br clear="all">
@@ -64,6 +67,7 @@
   <ul class="list-group">
   <li class="list-group-item">Product Owner: {{$milestone->owner->name}}</li>
   <li class="list-group-item">Scrum Master: {{$milestone->scrummaster->name}}</li>
+  <li class="list-group-item">Team Members</li>
   <?php 
   $mem = array();
   
@@ -74,7 +78,7 @@
       $mem[] = $tick->assignee->name;
     
     ?>
-  <li class="list-group-item">Team Member: {{$tick->assignee->name}}</li>
+  <li class="list-group-item"><a href="/users/{{$tick->assignee->id}}"><i class="fas fa-user"></i> {{$tick->assignee->name}}</a></li>
   <?php } ?>
   <?php } ?>
   <li class="list-group-item"><strong>Sprint Summary</strong></li>
