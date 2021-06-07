@@ -18,9 +18,13 @@
  
     $i = 0;
 
+    $available_status = [];
+
     foreach ($statuscodes as $code_id => $code) {       
       
       if($milestone->tickets()->where('status_id',$code_id)->count() == 0) continue;
+
+      $available_status[$code_id] = $code['slug'];
 
       $i++;
 
@@ -30,8 +34,50 @@
     <li role="all"><a href="#all" aria-controls="all" role="tab" data-toggle="tab">All Tickets <span class="badge">{{$milestone->tickets->count()}}</span></a></li>
   </ul>
 
-  <br clear="all">
-  <hr>
+  <div class="tab-content">
+  <?php 
+  $i = 0;
+  
+  foreach($available_status as $st => $code){
+
+    $i++;
+    
+    ?>
+    <div role="tabpanel" class="tab-pane <?php if($i == 1) echo ' active'; ?>" id="{{$code}}">
+    <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Title</th>        
+        <th>P</th>
+        <th>Status</th>
+        <th>Project</th>
+        <th>Assignee</th>
+        <th>Notes</th>        
+        <th>Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach ($milestone->tickets->where('status_id',$st) as $tick)
+      <tr>
+        <td><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
+        <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
+        <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
+        <td>{{$tick->project->name}}</td>
+        <td>{{$tick->assignee->name}}</td>
+        <td>
+          @if ($tick->notes()->where('hide','0')->count() > 0)
+            <span class="badge">{{$tick->notes()->where('hide','0')->count()}}</span>
+          @endif
+      </td>        
+        <td>{{date('M jS, Y g:ia',strtotime($tick->updated_at))}}</td>
+      </tr>
+      @endforeach
+    </tbody>
+  </table>    
+    </div>
+    <?php } ?>
+  
+  <div role="tabpanel" class="tab-pane" id="all">
   <table class="table table-striped">
     <thead>
       <tr>
@@ -62,6 +108,8 @@
       @endforeach
     </tbody>
   </table>
+  </div>
+  </div>
   </div>
   <div class="col-md-3">
   <ul class="list-group">
