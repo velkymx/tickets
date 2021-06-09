@@ -149,7 +149,7 @@ class TicketsController extends Controller
         if (isset($_FILES) && sizeof($_FILES) > 0) {
             $path = '/images/' . $request->input('folder') . '/';
 
-            if (!is_dir($path)) {
+            if (!is_dir($_SERVER['DOCUMENT_ROOT'].$path)) {
                 mkdir($_SERVER['DOCUMENT_ROOT'] . $path);
             }
 
