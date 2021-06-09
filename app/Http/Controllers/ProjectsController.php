@@ -16,7 +16,7 @@ class ProjectsController extends Controller
     
     public function index()
     {
-        $projects = \App\Project::get();
+        $projects = \App\Project::orderBy('name')->get();
 
         return view('projects.index', compact('projects'));
     }
