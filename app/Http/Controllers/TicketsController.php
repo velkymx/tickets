@@ -31,6 +31,11 @@ class TicketsController extends Controller
     {
         $perpage = 10;
 
+
+        if($request->has('perpage')){
+            $perpage = (int) $request->perpage;
+        }
+
         $filters = array('milestone_id', 'project_id', 'sprint_id', 'status_id', 'type_id', 'user_id', 'importance_id');
 
         $queryfilter = array();
@@ -62,7 +67,30 @@ class TicketsController extends Controller
         $lookups['statuses'][0] = 'No Change';
         $lookups['users'][0] = 'No Change';
 
-        return view('tickets.list', compact('tickets', 'queryfilter', 'lookups'));
+        $viewfilters = $this->lookups();
+
+        $viewfilters['statuses']['none'] = 'Any Status';
+        $viewfilters['types']['none'] = 'Any Type';
+        $viewfilters['milestones']['none'] = 'Any Milestone'; 
+        
+
+        $filter = [
+            'milestone_id' => 'none',
+            'type_id' => 'none',
+            'status_id' => 'none',
+        ]; 
+        
+        foreach($filter as $fk => $fv){
+
+            if($request->has($fk)){
+                
+                $filter[$fk] = $request->$fk;
+            }
+    
+
+        }
+
+        return view('tickets.list', compact('tickets', 'queryfilter', 'lookups','viewfilters','filter'));
     }
 
     public function show($id)
