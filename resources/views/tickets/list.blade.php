@@ -9,6 +9,7 @@ Ticket List
 <table class="table">
 <tr>
 <td><span class="btn btn-text">Filter Tickets</span></td>
+<td><input type="text" placeholder="search" class="form-control" name="q"></td>
 <td>
 <select name="perpage" id="perpage" class="form-control">
 <option value=""># Rows</option>X

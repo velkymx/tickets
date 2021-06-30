@@ -36,7 +36,7 @@ class TicketsController extends Controller
             $perpage = (int) $request->perpage;
         }
 
-        $filters = array('milestone_id', 'project_id', 'sprint_id', 'status_id', 'type_id', 'user_id', 'importance_id');
+        $filters = array('milestone_id', 'project_id', 'sprint_id', 'status_id', 'type_id', 'user_id', 'importance_id','q');
 
         $queryfilter = array();
 
@@ -50,7 +50,12 @@ class TicketsController extends Controller
             $tickets = new Ticket;
 
             foreach ($queryfilter as $filter => $value) {
-                $tickets = $tickets->where($filter, $value);
+                if($filter == 'q'){
+                    $tickets = $tickets->where('subject', 'like', '%'.$value.'%');
+
+                } else {
+                    $tickets = $tickets->where($filter, $value);
+                }
             }
 
             $tickets = $tickets->paginate($perpage);
