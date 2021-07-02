@@ -53,8 +53,8 @@
       <td>{{$tick->project->name}}</td>
       <td>{{$tick->assignee->name}}</td>
       <td>
-        @if ($tick->notes()->where('hide','0')->count() > 0)
-          <span class="badge">{{$tick->notes()->where('hide','0')->count()}}</span>
+        @if ($tick->notes()->where('hide','0')->where('notetype','message')->count() > 0)
+          <span class="badge">{{$tick->notes()->where('hide','0')->where('notetype','message')->count()}}</span>
         @endif
     </td>
       <td>{{date('M jS, Y g:ia',strtotime($tick->created_at))}}</td>
