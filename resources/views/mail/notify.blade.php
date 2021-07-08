@@ -1,4 +1,4 @@
-<p>{{$ticket->user->name}} updated Ticket #{{$ticket->id}} - {{$ticket->subject}}</p>
+<p>{{$ticket->user->name}} updated <a href="{{ env('APP_URL') }}/tickets/{{$ticket->id}}">Ticket #{{$ticket->id}}</a> - {{$ticket->subject}}</p>
 <hr>
 <p>{!! $ticket->notes()->where('ticket_id',$ticket->id)->orderBy('created_at','desc')->first()->body !!}</p>
 <hr>
