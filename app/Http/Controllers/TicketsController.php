@@ -161,17 +161,19 @@ class TicketsController extends Controller
 
     public function store(Request $request)
     {
-        $request = $request->toArray();
+        $data = $request->toArray();
 
-        $request['user_id'] = Auth::id();
+        $data['user_id'] = Auth::id();
 
-        if (isset($request['due_at']) && $request['due_at'] <> '') {
-            $request['due_at'] = date('Y-m-d', strtotime($request['due_at']));
+        if (isset($data['due_at']) && $data['due_at'] <> '') {
+            $data['due_at'] = date('Y-m-d', strtotime($data['due_at']));
         }
 
-        Ticket::create($request);
+        $insert = Ticket::create($data);
 
-        return redirect('tickets');
+        $request->session()->flash('status', 'Task was created successfully!');
+
+        return redirect('tickets/'.$insert->id);
     }
 
     public function upload(Request $request)

@@ -10,6 +10,14 @@ Ticket #{{$ticket->id}}
     <li><a href="/tickets/">Tickets</a></li>
     <li class="active">Ticket #{{$ticket->id}}</li>
   </ol>
+
+  @if (session()->has('status'))
+            <div class="alert alert-success">
+                {{ session('status') }}
+            </div>
+        @endif
+
+
   @if($ticket->closed_at <> '')
   <div class="alert alert-danger">
     <strong>Closed</strong> This ticket was closed {{date('m/d/Y g:ia',strtotime($ticket->closed_at))}}
