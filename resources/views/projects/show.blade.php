@@ -33,7 +33,6 @@
   <thead>
     <tr>
       <th>Title</th>
-      <th>T</th>
       <th>P</th>
       <th>Status</th>
       <th>Project</th>
@@ -44,11 +43,10 @@
     </tr>
   </thead>
   <tbody>
-    @foreach ($tickets as $tick)
+    @foreach ($tickets->sortByDesc('importance_id') as $tick)
     <tr>
-      <td><a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>
-      <td>{{$tick->type->name}}</td>
-      <td>{{$tick->importance->name}}</td>
+    <td class="text-{{$tick->importance->class}}"><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
+        <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
       <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
       <td>{{$tick->project->name}}</td>
       <td>{{$tick->assignee->name}}</td>
