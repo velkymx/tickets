@@ -38,30 +38,33 @@ class TicketsController extends Controller
 
         $filters = array('milestone_id', 'project_id', 'sprint_id', 'status_id', 'type_id', 'user_id', 'importance_id','q');
 
+        $tickets = new Ticket;
+
+        // this search filter needs to be reworked
+
         $queryfilter = array();
 
-        foreach ($filters as $filter) {
-            if (isset($request->$filter) && is_numeric($request->$filter)) {
-                $queryfilter[$filter] = $request->$filter;
+        foreach($filters as $filter){
+
+            $queryfilter[$filter] = $request->$filter;
+
+            if($request->has($filter) && is_numeric($request->$filter)){
+                
+                $tickets = $tickets->where($filter, $request->$filter);
+            }
+
+            if($filter == 'q'){
+                $tickets = $tickets->where('subject', 'like', '%'.$request->$filter.'%');
+            }   
+            
+            if($filter == 'status_id' && $request->status_id == 'none'){
+
+                $tickets = $tickets->whereNotIn('status_id', [5,8,9]);
+    
             }
         }
 
-        if (is_array($queryfilter) && sizeof($queryfilter) > 0) {
-            $tickets = new Ticket;
-
-            foreach ($queryfilter as $filter => $value) {
-                if($filter == 'q'){
-                    $tickets = $tickets->where('subject', 'like', '%'.$value.'%');
-
-                } else {
-                    $tickets = $tickets->where($filter, $value);
-                }
-            }
-
-            $tickets = $tickets->paginate($perpage);
-        } else {
-            $tickets = Ticket::paginate($perpage);
-        }
+        $tickets = $tickets->orderBy('importance_id','DESC')->paginate($perpage);
 
         $lookups = $this->lookups();
 
@@ -74,7 +77,8 @@ class TicketsController extends Controller
 
         $viewfilters = $this->lookups();
 
-        $viewfilters['statuses']['none'] = 'Any Status';
+        $viewfilters['statuses']['none'] = 'Any Active Status';
+        $viewfilters['statuses']['all'] = 'Any Status';
         $viewfilters['types']['none'] = 'Any Type';
         $viewfilters['milestones']['none'] = 'Any Milestone'; 
         

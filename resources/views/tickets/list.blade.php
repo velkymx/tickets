@@ -52,7 +52,7 @@ Ticket List
   <tbody>
     @foreach ($tickets->sortByDesc('importance_id') as $tick)
     <tr>
-    <td class="text-{{$tick->importance->class}}"><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
+    <td class="text-{{$tick->importance->class}}"><input type="checkbox" name="tickets[{{$tick->id}}]" value="{{$tick->id}}"> <i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
       <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
       <td>{{$tick->project->name}}</td>
@@ -69,7 +69,8 @@ Ticket List
   </tbody>
 </table>
 <span class="btn btn-danger" id="checkAll">Check All</span>
-{!! $tickets->appends($queryfilter)->render() !!}
+
+{!! $tickets->appends($queryfilter)->links() !!}
 
 <br clear="all"
 <hr>
