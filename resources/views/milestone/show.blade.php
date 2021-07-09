@@ -62,7 +62,7 @@
     <tbody>
       @foreach ($milestone->tickets->where('status_id',$st)->sortByDesc('importance_id') as $tick)
       <tr>
-        <td><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
+        <td class="text-{{$tick->importance->class}}"><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
         <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
@@ -96,7 +96,7 @@
     <tbody>
       @foreach ($milestone->tickets->sortByDesc('importance_id') as $tick)
       <tr>
-        <td><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
+        <td class="text-{{$tick->importance->class}}"><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
         <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
@@ -128,7 +128,7 @@
     <tbody>
       @foreach ($milestone->tickets->whereIn('status_id',['5','8','9'])->sortByDesc('importance_id') as $tick)
       <tr>
-        <td><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
+        <td class="text-{{$tick->importance->class}}"><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
         <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
