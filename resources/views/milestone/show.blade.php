@@ -60,7 +60,7 @@
       </tr>
     </thead>
     <tbody>
-      @foreach ($milestone->tickets->where('status_id',$st) as $tick)
+      @foreach ($milestone->tickets->where('status_id',$st)->sortByDesc('importance_id') as $tick)
       <tr>
         <td><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
@@ -94,7 +94,7 @@
       </tr>
     </thead>
     <tbody>
-      @foreach ($milestone->tickets as $tick)
+      @foreach ($milestone->tickets->sortByDesc('importance_id') as $tick)
       <tr>
         <td><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
@@ -126,7 +126,7 @@
       </tr>
     </thead>
     <tbody>
-      @foreach ($milestone->tickets->whereIn('status_id',['5','8','9']) as $tick)
+      @foreach ($milestone->tickets->whereIn('status_id',['5','8','9'])->sortByDesc('importance_id') as $tick)
       <tr>
         <td><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
