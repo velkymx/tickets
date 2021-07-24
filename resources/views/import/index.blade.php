@@ -7,13 +7,22 @@ Import Tickets
 <h1>Import Tickets</h1>
 
 <p>Columns must be:</p>
-<p>Ticket Type, Ticket Subject, Ticket Details, Ticket Importance, Ticket Status, Ticket Project, Assigned to</p>
+<p>Type Name, Subject, Details, Importance Name, Status Name, Project Name, Assigned To User Name</p>
 
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
 {!! Form::open(['url' => '/tickets/import', 'files' => true]) !!}
     <div class="form-group">
         {!! Form::label('milestone_id', 'Ticket Milestone') !!}
-        {!! Form::select('milestone_id', $milestones, 1, ['class' => 'form-control', 'required' => 'required']) !!}
+        {!! Form::select('milestone_id', [null=>'Select'] + $milestones->toArray(), null, ['class' => 'form-control', 'required' => 'required']) !!}
     </div>
     <div class="form-group">
         {{ Form::label('csv', 'CSV File') }} 

@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Ticket;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Resources\TicketResource;
 use App\Importer;
-
+use App\Exceptions\ImportException;
+use Illuminate\Support\Facades\DB;
 class ImportController extends Controller
 {
     public function __construct()
@@ -23,11 +21,22 @@ class ImportController extends Controller
     
     public function create(Request $request)
     {
-        (new Importer())->call(
-            (int) $request->milestoneId,
-            $request->csv->path(),
-            (string) $request->hasHeader,
-        );
-        return view('import.index');
+        DB::beginTransaction();
+        try {
+            (new Importer())->call(
+                (int) $request->milestone_id,
+                $request->csv->path(),
+                (string) $request->hasHeader,
+            );
+        } catch (ImportException $e) {
+            DB::rollBack();
+            $errors = [
+                $e->getMessage()
+            ];
+            return redirect('/tickets/import')->withErrors($errors)->withInput();
+        }
+        DB::commit();
+        return redirect('/milestone/show/' . $request->milestone_id)
+            ->with("info_message", "Tickets Successfully Imported");
     }
 }

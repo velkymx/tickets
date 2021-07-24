@@ -1,6 +1,7 @@
 <?php
 namespace App;
 
+use App\Exceptions\ImportException;
 use App\Type;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,13 +34,13 @@ class Importer {
         $ticket->importance_id = $this->relation(Importance::class, $row[3]);
         $ticket->status_id = $this->relation(Status::class, $row[4]);
         $ticket->project_id = $this->relation(Project::class, $row[5]);
-        $ticket->user_id2 = $this->relation(User::class, $row[6], false);
+        $ticket->user_id2 = $this->relation(User::class, $row[6]);
         $ticket->user_id = Auth::id();
 
         $ticket->saveOrFail();
     }
     
-    private function relation(string $class, string $value, bool $required = true)
+    private function relation(string $class, string $value)
     {
         $key = $class . '|' . $value;
         if (isset($this->models[$key])) {
@@ -48,8 +49,8 @@ class Importer {
 
         $model = $class::where('name', $value)->first();
 
-        if (!$model && $required) {
-            throw new \Exception("$class with name $value not found.");
+        if (!$model) {
+            throw new ImportException(class_basename($class) . " $value does not exist.");
         }
         
         $this->models[$key] = $model;
