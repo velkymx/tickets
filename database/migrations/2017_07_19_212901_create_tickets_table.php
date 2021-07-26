@@ -44,6 +44,8 @@ class CreateTicketsTable extends Migration
      */
     public function down()
     {
+        Schema::disableForeignKeyConstraints();
         Schema::drop('tickets');
+        Schema::enableForeignKeyConstraints();
     }
 }
