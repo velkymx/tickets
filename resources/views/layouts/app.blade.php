@@ -73,6 +73,7 @@
 
                             <ul class="dropdown-menu" role="menu">
                               <li><a href="/users/{{Auth::id()}}">Profile</a></li>
+                              <li><a href="/user/edit">Edit Profile</a></li>
                               <li><hr></li>
                                 <li>
                                   <a href="{{ route('logout') }}"
@@ -116,9 +117,10 @@
   </div>
 
     <!-- JavaScripts -->
-    <script src="/js/jquery-2.2.1.min.js"></script>
-    <script src="/js/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
     {{-- <script src="{{ elixir('js/app.js') }}"></script> --}}
     @yield('javascript')
 </body>

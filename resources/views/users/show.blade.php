@@ -4,6 +4,21 @@ User Tickets
 @stop
 @section('content')
 <h1>{{$user->name}}</h1>
+@if ($user->title)
+<p><strong>{{$user->title}}</strong></p>
+@endif
+@if ($user->email)
+<p><strong>Email:</strong> <a href="mailto:{{$user->email}}">{{$user->email}}</a></p>
+@endif
+@if ($user->phone)
+<p><strong>Phone Number:</strong> <a href="tel:{{$user->phone}}">{{$user->phone}}</a></p>
+@endif
+@if ($currenttime)
+<p><strong>Local time:</strong> {{$currenttime}}</p>
+@endif
+@if ($user->bio)
+<?php echo $user->bio; ?>
+@endif
 <hr />
 @foreach ($alltickets as $label => $tickets)
   <h3>{{ucwords($label)}}</h3>

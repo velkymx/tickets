@@ -19,6 +19,10 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::get('home', 'TicketsController@home');
 
+    Route::get('user/edit', 'UsersController@edit');
+    
+    Route::post('user/update', 'UsersController@update');
+
     Route::get('tickets','TicketsController@index');
 
     Route::get('tickets/create','TicketsController@create');
