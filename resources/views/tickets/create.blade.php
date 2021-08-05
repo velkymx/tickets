@@ -11,7 +11,7 @@ Create Ticket
 </div>
   <div class="form-group">
       {!! Form::label('description', 'Ticket Details') !!}
-      {!! Form::textarea('description', null, ['class' => 'form-control summernote', 'required' => 'required']) !!}
+      {!! Form::textarea('description', null, ['class' => 'form-control summernote']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('type_id', 'Ticket Type') !!}
