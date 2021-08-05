@@ -81,7 +81,7 @@ Ticket #{{$ticket->id}}
 
 <div class="form-group">
     {!! Form::label('body', 'Status Update and Notes') !!}
-    {!! Form::textarea('body', null, ['class' => 'form-control summernote', 'required' => 'required']) !!}
+    {!! Form::textarea('body', null, ['class' => 'form-control summernote']) !!}
 </div>
 <div class="form-group">
     {!! Form::label('status_id', 'Change Status') !!}
