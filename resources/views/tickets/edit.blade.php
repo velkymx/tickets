@@ -59,29 +59,19 @@ Create Ticket
 <script>
     $(function() {
       $( ".datepicker" ).datepicker();
-      $('.summernote').summernote({
-  height: 300,
-  onImageUpload: function(files, editor) {
-                  sendFile(files[0],'.summernote');
-              }
-            });
-          });
-
-function sendFile(file, editor) {
-     data = new FormData();
-     data.append("file", file);
-     data.append("_token",'{{csrf_token()}}');
-     $.ajax({
-         data: data,
-         type: "POST",
-         url: "/tickets/upload",
-         cache: false,
-         contentType: false,
-         processData: false,
-         success: function(url) {
-             $(editor).summernote('editor.insertImage', url);
-         }
-     });
- }
+    })
 </script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/tinymce.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/icons/default/icons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/plugins/table/plugin.min.js"></script>
+<script>
+tinymce.init({
+    selector: '.summernote',
+    plugins: ' preview paste searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons',     
+    toolbar: 'fontsizeselect formatselect | bold italic underline strikethrough | forecolor backcolor removeformat | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist |  image media link', 
+    toolbar_sticky: true,
+    height : 500,
+    menubar: false,  
+});
+</script> 
 @stop

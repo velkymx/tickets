@@ -27,7 +27,9 @@ Ticket #{{$ticket->id}}
     <div class="col-md-8">
 <h2><i class="{{$ticket->type->icon}}" title="{{$ticket->type->name}}"></i> {{$ticket->subject}}</h2>
 <hr />
+<div id="ticket_body">
 {!!html_entity_decode($ticket->description)!!}
+</div>
 <hr />
 <div class="alert alert-info alert-dismissible" role="alert" id="alert" style="display:none">
   <button type="button" class="close" onclick="$('#alert').hide()" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -237,58 +239,19 @@ Ticket #{{$ticket->id}}
 
 @stop
 @section('javascript')
-<script src="/js/summernote.min.js"></script>
 <script>
     $(function() {
+
+      $("#ticket_body img").addClass('img-responsive')
+
       $( ".datepicker" ).datepicker();
-      $('.summernote').summernote({
-  height: 200,
-  toolbar: [
-
-  ['style', ['fontsize','bold', 'italic', 'underline', 'clear']],
-  ['color', ['color']],
-  ['para', ['ul', 'ol', 'paragraph','hr','link','picture']]
-  ],
-  onImageUpload: function(files, editor) {
-                  sendFile(files[0],'.summernote');
-              }
-            });
-
-
-          $('.summernote2').summernote({
-      height: 200,
-      toolbar: [
-
-      ['style', ['fontsize','bold', 'italic', 'underline', 'clear']],
-      ['color', ['color']],
-      ['para', ['ul', 'ol', 'paragraph','hr','link','picture']]
-      ],
-      onImageUpload: function(files, editor) {
-                      sendFile(files[0],'.summernote2');
-                  }
-                });
-              });
+     
+    })
 
 function estimate(){
   $('#myModal').modal()
 }
 
-function sendFile(file, editor) {
-     data = new FormData();
-     data.append("file", file);
-     data.append("_token",'{{csrf_token()}}');
-     $.ajax({
-         data: data,
-         type: "POST",
-         url: "/tickets/upload/?folder=t{{$ticket->id}}",
-         cache: false,
-         contentType: false,
-         processData: false,
-         success: function(url) {
-             $(editor).summernote('editor.insertImage', url);
-         }
-     });
- }
 
 function hideNote(noteid) {
 
@@ -311,4 +274,17 @@ $("#watch").click(
 )
 
 </script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/tinymce.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/icons/default/icons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/plugins/table/plugin.min.js"></script>
+<script>
+tinymce.init({
+    selector: '.summernote',
+    plugins: ' preview paste searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons',     
+    toolbar: 'bold italic underline strikethrough | forecolor backcolor removeformat | alignleft aligncenter alignright alignjustify | numlist bullist |  image link', 
+    toolbar_sticky: true,
+    height : 300,
+    menubar: false,  
+});
+</script> 
 @stop
