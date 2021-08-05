@@ -33,11 +33,6 @@ Ticket #{{$ticket->id}}
   <button type="button" class="close" onclick="$('#alert').hide()" aria-label="Close"><span aria-hidden="true">&times;</span></button>
   <div id="alert_messsage"></div>
 </div>
-<h3>
-
-<span class="pull-right"><span class="btn btn-info btn-sm" id="watch"><i class="glyphicon glyphicon-eye-open"></i> Watch</span></span>
-
-</h3>
 
 <ul class="nav nav-tabs" role="tablist">
 <li role="presentation" class="active"><a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">Notes ({{$ticket->notes()->where('hide','0')->where('notetype','message')->count()}})</a></li>
@@ -92,7 +87,9 @@ Ticket #{{$ticket->id}}
 {!! Form::close() !!}
 </div>
 <div class="col-md-4" align="right">
-<a href="/tickets/edit/{{$ticket->id}}" class="btn btn-default"><i class="far fa-edit"></i> Edit</a> <a href="/tickets/clone/{{$ticket->id}}" class="btn btn-default"><i class="far fa-copy"></i> Clone</a>
+<span class="btn btn-info" id="watch"><i class="far fa-eye"></i> Watch</span>
+<a href="/tickets/edit/{{$ticket->id}}" class="btn btn-default"><i class="far fa-edit"></i> Edit</a> 
+<a href="/tickets/clone/{{$ticket->id}}" class="btn btn-default"><i class="far fa-copy"></i> Clone</a>
 <br /><br />
 <div class="panel panel-default">
   <div class="panel-heading">
