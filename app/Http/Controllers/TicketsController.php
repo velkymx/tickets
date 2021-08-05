@@ -27,6 +27,22 @@ class TicketsController extends Controller
         $this->middleware('auth');
     }
 
+    public function home()
+    {        
+
+        $statuses = \App\Status::whereNotIn('id', [5,8,9])->pluck('name','id');
+  
+        foreach($statuses as $status => $val){
+  
+            $alltickets[$val] = Ticket::where('user_id2',Auth::id())->where('status_id',$status)->get();
+  
+            if(sizeof($alltickets[$val])==0) unset($alltickets[$val]);
+  
+        }
+  
+        return View('home',compact('alltickets'));
+    }
+
     public function index(Request $request)
     {
         $perpage = 10;

@@ -17,7 +17,7 @@ Route::view('/', 'welcome');
 
 Route::group(['middleware' => 'web'], function () {
 
-    Route::get('/home', 'HomeController@index');
+    Route::get('home', 'TicketsController@home');
 
     Route::get('tickets','TicketsController@index');
 
