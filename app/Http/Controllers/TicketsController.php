@@ -120,6 +120,23 @@ class TicketsController extends Controller
         return view('tickets.create', compact('lookups'));
     }
 
+    public function clone($id)
+    {
+        $ticket = Ticket::findOrFail($id);
+
+        $lookups = $this->lookups();
+
+        if($ticket->closed_at <> ''){
+            $ticket->closed_at = date('m/d/Y',strtotime($ticket->closed_at));
+        }
+
+        if($ticket->due_at <> ''){
+            $ticket->due_at = date('m/d/Y',strtotime($ticket->due_at));
+        }        
+
+        return view('tickets.clone', compact('ticket', 'lookups'));
+    }    
+
     public function edit($id)
     {
         $ticket = Ticket::findOrFail($id);
