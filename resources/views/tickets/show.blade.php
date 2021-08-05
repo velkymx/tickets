@@ -42,9 +42,11 @@ Ticket #{{$ticket->id}}
   <div class="tab-content">
   <div role="tabpanel" class="tab-pane active" id="messages">
     <?php if($ticket->notes()->where('hide','0')->where('notetype','message')->count() == 0){?>
-      <div>
-        No Notes Found
-      </div>
+      <div class="panel panel-default">
+  <div class="panel-body">
+    No Notes Found
+  </div>
+</div>
     <?php } ?>
 @foreach ($ticket->notes()->where('hide','0')->where('notetype','message')->get() as $note)
 <div class="panel panel-default" id="note_{{$note->id}}">
