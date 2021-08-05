@@ -91,8 +91,8 @@ Ticket #{{$ticket->id}}
 {!! Form::submit('Save Note', ['class' => 'btn btn-success']) !!}
 {!! Form::close() !!}
 </div>
-<div class="col-md-4">
-<a href="/tickets/edit/{{$ticket->id}}" class="btn btn-default pull-right">Edit</a> <a href="/tickets/clone/{{$ticket->id}}" class="btn btn-default pull-right"><i class="far fa-copy"></i> Clone</a>
+<div class="col-md-4" align="right">
+<a href="/tickets/edit/{{$ticket->id}}" class="btn btn-default"><i class="far fa-edit"></i> Edit</a> <a href="/tickets/clone/{{$ticket->id}}" class="btn btn-default"><i class="far fa-copy"></i> Clone</a>
 <br /><br />
 <div class="panel panel-default">
   <div class="panel-heading">
