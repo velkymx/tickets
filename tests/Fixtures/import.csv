@@ -1,0 +1,7 @@
+Ticket Type,Ticket Subject,Ticket Details,Ticket Importance,Ticket Status,Ticket Project,Assigned to
+Regression,FOUR-3722,"Select list with dropdown type data connectors in web entry, it is not displayed correctly",Blocker,New,Platform,Unassigned
+Regression,FOUR-3716,SSO>Microsoft> error when logging in with microsoft azure account,Critical,New,Platform,Unassigned
+Regression,FOUR-3704,user signals are not created and not found once the toggle is activated,Major,New,Platform,Unassigned
+Regression,FOUR-3702,Records are not displayed in a save search created from a collection,Major,New,Platform,Unassigned
+Regression,FOUR-3695,Slack connector with mustache syntax variables not working,Major,New,Platform,Unassigned
+Regression,FOUR-3683,Terminate event not working properly,Major,Active,Platform,Unassigned
