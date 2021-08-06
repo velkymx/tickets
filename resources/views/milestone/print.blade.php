@@ -18,8 +18,8 @@ Milestones List
     
     ?>
 <div class="row">
-    <div class="col-md-4"><h3><i class="{{$type->icon}}" title="{{$type->name}}"></i> {{$type->name}}s</h3></div>
-    <div class="col-md-8">
+    <div class="col-md-3"><h3><i class="{{$type->icon}}" title="{{$type->name}}"></i> {{$type->name}}s</h3></div>
+    <div class="col-md-9">
     <ul class="list-group">
         <?php foreach($tickets as $ticket){ ?>
             <li class="list-group-item"><?php echo $ticket->subject;?> (<a href="/tickets/<?php echo $ticket->id;?>">#<?php echo $ticket->id;?></a>)</li>
