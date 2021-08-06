@@ -42,7 +42,7 @@ Milestones List
     <td></td>
   @endif
   
-  <td align="right"><a href="/milestone/show/{{$milestone->id}}" class="btn btn-sm btn-success">View</a> <a href="/milestone/edit/{{$milestone->id}}" class="btn btn-sm btn-primary">Edit</a></td>
+  <td align="right"><a href="/milestone/show/{{$milestone->id}}" class="btn btn-sm btn-success">View</a> <a href="/milestone/print/{{$milestone->id}}" class="btn btn-sm btn-default">Print</a> <a href="/milestone/edit/{{$milestone->id}}" class="btn btn-sm btn-primary">Edit</a></td>
   
 </tr>
 @endforeach

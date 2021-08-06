@@ -28,6 +28,17 @@ class MilestoneController extends Controller
 
     }
 
+    public function print(Request $request)
+    {
+
+      $milestone = \App\Milestone::findOrFail($request->id);
+
+      $types = \App\Type::all();
+
+      return view('milestone.print',compact('milestone','types'));
+
+    }    
+
     public function getShow(Request $request)
     {
 
@@ -45,8 +56,6 @@ class MilestoneController extends Controller
         ];
 
       }
-
-      
 
       $completed = 0;
 
