@@ -54,7 +54,7 @@ Ticket List
     <tr>
     <td class="text-{{$tick->importance->class}}"><input type="checkbox" name="tickets[{{$tick->id}}]" value="{{$tick->id}}"> <i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
-      <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
+      <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
       <td>{{$tick->project->name}}</td>
       <td>{{$tick->assignee->name}}</td>
       <td>
@@ -101,14 +101,7 @@ Ticket List
 </div>
 {!! Form::submit('Save and Update Checked Tickets', ['class' => 'btn btn-info pull-right']) !!}
 {!! Form::close() !!}
-<style>
-.label-base {
-border: 1px solid #2e6da4;
-border-radius: 3px;
-color:#2e6da4
 
-}
-</style>
 @section('javascript')
 <script>
  $('#checkAll').click(function () {    

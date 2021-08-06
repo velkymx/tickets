@@ -37,7 +37,7 @@ User Tickets
       <td><a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>
       <td>{{$tick->type->name}}</td>
       <td>{{$tick->importance->name}}</td>
-      <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
+      <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
       <td>{{$tick->project->name}}</td>
       <td>{{$tick->assignee->name}}</td>
       <td>
@@ -53,7 +53,7 @@ User Tickets
 </table>
 @endforeach
 <style>
-.label-base {
+.label-default {
 border: 1px solid #2e6da4;
 border-radius: 3px;
 color:#2e6da4

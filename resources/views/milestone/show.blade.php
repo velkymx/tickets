@@ -65,7 +65,7 @@
       <tr>
         <td class="text-{{$tick->importance->class}}"><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
-        <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
+        <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
         <td>{{$tick->assignee->name}}</td>
         <td>
@@ -99,7 +99,7 @@
       <tr>
         <td class="text-{{$tick->importance->class}}"><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
-        <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
+        <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
         <td>{{$tick->assignee->name}}</td>
         <td>
@@ -131,7 +131,7 @@
       <tr>
         <td class="text-{{$tick->importance->class}}"><i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}}">#{{$tick->id}} {{$tick->subject}}</a></td>        
         <td><span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}"><i class="{{$tick->importance->icon}}"></i></span></td>
-        <td align="center"><span class="label label-base">{{$tick->status->name}}</span></td>
+        <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
         <td>{{$tick->assignee->name}}</td>
         <td>
