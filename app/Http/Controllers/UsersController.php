@@ -49,7 +49,12 @@ class UsersController extends Controller
 
       $timezones = $this->get_timezones();
 
-      return View('users.edit',compact('user','timezones'));
+      $themes = [
+        '/css/bootstrap.min.css' => 'Default',
+        '/css/bootstrap.darkly.min.css' => 'Darkly'
+      ];
+
+      return View('users.edit',compact('user','timezones','themes'));
       
     }
 
@@ -60,6 +65,7 @@ class UsersController extends Controller
       $user->email = $request->email;
       $user->phone = $request->phone;
       $user->timezone = $request->timezone;
+      $user->theme = $request->theme;
       $user->title = $request->title;
       $user->bio = $request->bio;
 

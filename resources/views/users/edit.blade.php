@@ -27,7 +27,10 @@ Edit User
 <div class="form-group">
     <label for="timezone">Timezone</label>
     {{Form::select('timezone', $timezones, $user->timezone,['class'=>'form-control'])}}
-    
+</div>
+<div class="form-group">
+    <label for="timezone">Theme</label>
+    {{Form::select('theme', $themes, $user->theme,['class'=>'form-control'])}}
 </div>
 {!! Form::submit('Save Profile', ['class' => 'btn btn-success']) !!}  
 {{ Form::close() }} 

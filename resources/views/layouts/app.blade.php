@@ -12,7 +12,11 @@
     <link href="https://fonts.googleapis.com/css?family=Lato:100,300,400,700" rel='stylesheet' type='text/css'>
     <link rel="icon" type="image/png" sizes="16x16" href="/tickets.png">
     <!-- Styles -->
+    @if (Auth::guest())
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    @else
+    <link href="{{\Auth::user()->theme}}" rel="stylesheet">
+    @endif
     <link href="/css/jquery-ui.min.css" rel="stylesheet">
     <link href="/css/summernote.css" rel="stylesheet">
     <link href="/css/overrides.css" rel="stylesheet">
