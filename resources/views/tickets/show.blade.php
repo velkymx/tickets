@@ -26,11 +26,24 @@ Ticket #{{$ticket->id}}
   <div class="row-fluid">
     <div class="col-md-8">
 <h2><i class="{{$ticket->type->icon}}" title="{{$ticket->type->name}}"></i> {{$ticket->subject}}</h2>
-<hr />
+
 <div id="ticket_body">
-{!!html_entity_decode($ticket->description)!!}
+  
+  @if($ticket->description<>'')
+  <hr>
+  {!!html_entity_decode($ticket->description)!!}
+    
+
+@else
+<div class="panel panel-default">
+  <div class="panel-body">
+No Ticket Body Provided
 </div>
-<hr />
+</div>
+@endif
+
+</div>
+
 <div class="alert alert-info alert-dismissible" role="alert" id="alert" style="display:none">
   <button type="button" class="close" onclick="$('#alert').hide()" aria-label="Close"><span aria-hidden="true">&times;</span></button>
   <div id="alert_messsage"></div>
@@ -96,16 +109,15 @@ Ticket #{{$ticket->id}}
 {!! Form::close() !!}
 </div>
 <div class="col-md-4" align="right">
-<span class="btn btn-info" id="watch"><i class="far fa-eye"></i> Watch</span>
-<a href="/tickets/edit/{{$ticket->id}}" class="btn btn-default"><i class="far fa-edit"></i> Edit</a> 
-<a href="/tickets/clone/{{$ticket->id}}" class="btn btn-default"><i class="far fa-copy"></i> Clone</a>
-<br /><br />
-<div class="panel panel-default">
-  <div class="panel-heading">
-  Details
-</div>
-  <div class="panel-body">
-    <table class="table">
+  <div class="row">
+    <div class="col-md-4"><span class="btn btn-block btn-info" id="watch"><i class="far fa-eye"></i> Watch</span></div>
+    <div class="col-md-4"><a href="/tickets/edit/{{$ticket->id}}" class="btn btn-block btn-default"><i class="far fa-edit"></i> Edit</a> </div>
+    <div class="col-md-4"><a href="/tickets/clone/{{$ticket->id}}" class="btn btn-block btn-default"><i class="far fa-copy"></i> Clone</a></div>
+  </div>
+  <br>  
+  <div class="panel panel-default">  
+  <div class="panel-heading text-left">Ticket Details</div>
+<table class="table">
       @if ($ticket->due_at > 0)
         <tr>
           <td>Due</td>
@@ -191,7 +203,7 @@ Ticket #{{$ticket->id}}
 
       @endforeach
     </table>
-  </div>
+
 </div>
 </div>
 </div>
