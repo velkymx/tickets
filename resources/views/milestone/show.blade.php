@@ -5,8 +5,9 @@
 <!-- Main Content -->
 @section('content')
   <h1>{{$milestone->name}} Milestone
-<span class="pull-right">
+  <span class="pull-right">
  <a href="/milestone/edit/{{$milestone->id}}" class="btn btn-sm btn-primary">Edit Milestone</a>
+ <a href="/milestone/print/{{$milestone->id}}" class="btn btn-sm btn-primary">Print</a>
 </span>
 
   </h1>
