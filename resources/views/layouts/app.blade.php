@@ -117,7 +117,7 @@
   </div>
   <div class="container" align="center" style="padding:10px">
   <hr>
-  Tickets! is the open source ticket tracker powered by Laravel. <a href="https://github.com/velkymx/tickets" target="_blank">Check us out on Github.</a> Provided "as is" under the MIT License.
+  Tickets is the open source ticket tracker powered by <a href="https://laravel.com" target="_blank">Laravel</a>. <a href="https://github.com/velkymx/tickets" target="_blank">Check us out on Github.</a> Provided "as is" under the <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
   </div>
 
     <!-- JavaScripts -->
