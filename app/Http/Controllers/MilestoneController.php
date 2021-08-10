@@ -83,7 +83,10 @@ class MilestoneController extends Controller
 
     public function create()
     {
-      return view('milestone.create');
+
+      $users = \App\User::pluck('name','id');
+
+      return view('milestone.create',compact('users'));
     }
 
     public function edit(Request $request,$id)
