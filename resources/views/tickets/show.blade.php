@@ -41,7 +41,9 @@ No Ticket Body Provided
 </div>
 </div>
 @endif
-
+<br>
+<br>
+<br>
 </div>
 
 <div class="alert alert-info alert-dismissible" role="alert" id="alert" style="display:none">
