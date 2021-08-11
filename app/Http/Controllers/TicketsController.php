@@ -495,6 +495,10 @@ class TicketsController extends Controller
 
         if ($ticket->watchers->count() > 0) {
             foreach ($ticket->watchers as $watcher) {
+                if($watcher->user_id == Auth::id()){
+                    continue;
+                }
+                
                 Mail::to($watcher->user->email)->send(new \App\Mail\NotifyWatchers($ticket));
             }
         }
