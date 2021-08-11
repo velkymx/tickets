@@ -34,6 +34,8 @@ Route::group(['middleware' => 'web'], function () {
     Route::post('tickets/import','ImportController@create');
 
     Route::get('tickets/edit/{id}','TicketsController@edit');
+    
+    Route::get('tickets/claim/{id}','TicketsController@claim');
 
     Route::get('tickets/clone/{id}','TicketsController@clone');
 

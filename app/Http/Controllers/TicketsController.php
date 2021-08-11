@@ -118,6 +118,25 @@ class TicketsController extends Controller
         return view('tickets.list', compact('tickets', 'queryfilter', 'lookups','viewfilters','filter'));
     }
 
+    public function claim($id)
+    {
+        $ticket = Ticket::findOrFail($id);
+
+        $request = $ticket->toArray();
+
+        $request['user_id2'] = Auth::id();
+
+        $change_list = $this->changes($ticket->toArray(), $request);
+
+        $ticket->update($request);
+
+        $this->notate($ticket->id, '', $change_list);
+
+        \Session::flash('info_message', 'You are assigned to Ticket #' . $id);
+
+        return redirect('tickets/' . $id);        
+    }
+
     public function show($id)
     {
         $ticket = Ticket::findOrFail($id);

@@ -23,6 +23,12 @@ Ticket #{{$ticket->id}}
     <strong>Closed</strong> This ticket was closed {{date('m/d/Y g:ia',strtotime($ticket->closed_at))}}
   </div>
   @endif
+  @if($ticket->assignee->name == 'Unassigned')
+  <div class="alert alert-warning"> 
+    <a href="/tickets/claim/{{$ticket->id}}" class="btn btn-warning btn-sm pull-right" style="margin-top:-7px">Claim Ticket</a>
+      This Ticket is currently unassigned.
+  </div>
+  @endif
   <div class="row-fluid">
     <div class="col-md-8">
 <h2><i class="{{$ticket->type->icon}}" title="{{$ticket->type->name}}"></i> {{$ticket->subject}}</h2>
