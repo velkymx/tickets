@@ -266,7 +266,10 @@ No Ticket Body Provided
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="confirm-claim-button">Claim Ticket</button>
+        <button type="button" class="btn btn-primary" id="confirm-claim-button">
+          Claim Ticket
+          <i id="claim-spinner" class="fas fa-spinner fa-spin hidden"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -322,6 +325,8 @@ $("#watch").click(
 
 $("#confirm-claim-button").click(
   function(){
+    $("#claim-spinner").removeClass('hidden');
+    $("#confirm-claim-button").prop("disabled", true);
     $.post('/tickets/claim/' + $("#ticket_id").html(), {}, function(response) {
       $('#confirmClaim').modal('hide');
       location.reload();
