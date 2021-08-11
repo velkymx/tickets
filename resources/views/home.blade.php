@@ -52,12 +52,4 @@ User Tickets
   </tbody>
 </table>
 @endforeach
-<style>
-.label-default {
-border: 1px solid #2e6da4;
-border-radius: 3px;
-color:#2e6da4
-
-}
-</style>
 @stop
