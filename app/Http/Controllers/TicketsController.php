@@ -486,4 +486,16 @@ class TicketsController extends Controller
 
         return TicketResource::collection(Ticket::whereBetween('closed_at', [$request->started_at, $request->completed_at])->get());
     }
+
+    public function claim(Request $request, $ticket_id)
+    {
+        $ticket = Ticket::findOrFail($ticket_id);
+        $ticket->user_id2 = $request->user()->id;
+        if (env('CLAIM_STATUS_ID')) {
+            $ticket->status_id = env('CLAIM_STATUS_ID');
+        }
+        $ticket->saveOrFail();
+        \Session::flash('info_message', 'You have been assigned ticket #' . $ticket->id);
+        return 'ok';
+    }
 }

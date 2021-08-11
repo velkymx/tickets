@@ -111,10 +111,11 @@ No Ticket Body Provided
 {!! Form::close() !!}
 </div>
 <div class="col-md-4" align="right">
-  <div class="row">
-    <div class="col-md-4"><span class="btn btn-block btn-info" id="watch"><i class="far fa-eye"></i> Watch</span></div>
-    <div class="col-md-4"><a href="/tickets/edit/{{$ticket->id}}" class="btn btn-block btn-default"><i class="far fa-edit"></i> Edit</a> </div>
-    <div class="col-md-4"><a href="/tickets/clone/{{$ticket->id}}" class="btn btn-block btn-default"><i class="far fa-copy"></i> Clone</a></div>
+  <div class="row action-buttons">
+    <div class="col-md-3"><span class="btn btn-block btn-info" id="watch"><i class="far fa-eye"></i> Watch</span></div>
+    <div class="col-md-3"><button class="btn btn-block btn-default" id="claim" data-toggle="modal" data-target="#confirmClaim"><i class="far fa-play-circle"></i> Claim</button> </div>
+    <div class="col-md-3"><a href="/tickets/edit/{{$ticket->id}}" class="btn btn-block btn-default"><i class="far fa-edit"></i> Edit</a> </div>
+    <div class="col-md-3"><a href="/tickets/clone/{{$ticket->id}}" class="btn btn-block btn-default"><i class="far fa-copy"></i> Clone</a></div>
   </div>
   <br>  
   <div class="panel panel-default">  
@@ -251,6 +252,38 @@ No Ticket Body Provided
   </div>
 </div>
 
+<div class="modal fade" tabindex="-1" role="dialog" id="confirmClaim">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <p>
+          @if (env('CLAIM_STATUS_ID', false))
+            Are you sure you want to assign this ticket to yourself and change the status to {{ App\Status::findOrFail(env('CLAIM_STATUS_ID'))->name }}?
+          @else
+            Are you sure you want to assign this ticket to yourself?
+          @endif
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirm-claim-button">Claim Ticket</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<style>
+  .action-buttons .col-md-3 {
+    padding-left: 3px;
+    padding-right: 3px;
+  }
+  .action-buttons {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+</style>
+
 @stop
 @section('javascript')
 <script>
@@ -285,6 +318,15 @@ $("#watch").click(
 
   }
 
+)
+
+$("#confirm-claim-button").click(
+  function(){
+    $.post('/tickets/claim/' + $("#ticket_id").html(), {}, function(response) {
+      $('#confirmClaim').modal('hide');
+      location.reload();
+    });
+  }
 )
 
 </script>

@@ -38,6 +38,8 @@ Route::group(['middleware' => 'web'], function () {
     Route::get('tickets/clone/{id}','TicketsController@clone');
 
     Route::get('tickets/{id}','TicketsController@show');
+    
+    Route::post('tickets/claim/{ticket_id}','TicketsController@claim');
 
     Route::post('tickets/estimate/{ticket_id}','TicketsController@estimate');    
 
