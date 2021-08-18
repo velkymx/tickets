@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title')
-Milestones List
+{{$milestone->name}} Ticket List
 @stop
 <!-- Main Content -->
 @section('content')
