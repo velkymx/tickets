@@ -18,7 +18,7 @@ foreach($projects as $project_id => $project) {
 
 foreach($types as $type) {
 
-    $tickets = $milestone->tickets()->where('type_id',$type->id)->whereNotIn('status_id',[8,9])->where('project_id',$project_id)->get();
+    $tickets = $milestone->tickets()->where('type_id',$type->id)->whereNotIn('status_id',[8,9])->where('project_id',$project_id)->orderBy('subject')->get();
     
     if(count($tickets)>0){ 
     
