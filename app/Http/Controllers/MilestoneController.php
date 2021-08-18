@@ -33,9 +33,15 @@ class MilestoneController extends Controller
 
       $milestone = \App\Milestone::findOrFail($request->id);
 
+      $projects = [];
+
+      foreach($milestone->tickets as $tic){
+        $projects[$tic->project->id] = $tic->project->name;
+      }
+
       $types = \App\Type::all();
 
-      return view('milestone.print',compact('milestone','types'));
+      return view('milestone.print',compact('milestone','types','projects'));
 
     }    
 

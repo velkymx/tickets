@@ -45,7 +45,7 @@ class default_lookup_values extends Seeder
                 '2' => 'enhancement',
                 '3' => 'task',
                 '4' => 'proposal'
-                ]
+        ]
 ];
 
     foreach($data as $table => $values){

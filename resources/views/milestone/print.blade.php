@@ -10,9 +10,15 @@ Milestones List
 @else
 <p>Unreleased Version - Started on {{date('F jS, Y', strtotime($milestone->start_at))}}</p>
 @endif
-<?php foreach($types as $type) {
+<?php 
 
-    $tickets = $milestone->tickets()->where('type_id',$type->id)->get();
+foreach($projects as $project_id => $project) {
+
+    echo "<h3><i class='fas fa-folder'></i> $project</h3><hr>";
+
+foreach($types as $type) {
+
+    $tickets = $milestone->tickets()->where('type_id',$type->id)->where('project_id',$project_id)->get();
     
     if(count($tickets)>0){ 
     
@@ -29,6 +35,11 @@ Milestones List
 </div>
 <?php }
 
+    }
+
+?>
+<br><br>
+<?php
     }
 ?>
 @stop
