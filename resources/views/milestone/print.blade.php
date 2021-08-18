@@ -42,4 +42,5 @@ foreach($types as $type) {
 <?php
     }
 ?>
+<div>Milestone {{$milestone->name}} Ticket List Generated <?php echo date('F dS, Y H:i'); ?></div>
 @stop
