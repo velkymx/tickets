@@ -22,7 +22,7 @@ class MilestoneController extends Controller
     public function index()
     {
 
-      $milestones = \App\Milestone::all();
+      $milestones = \App\Milestone::orderBy('name')->get();
 
       return view('milestone.index',compact('milestones'));
 
