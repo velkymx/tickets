@@ -74,7 +74,7 @@ No Ticket Body Provided
 @foreach ($ticket->notes()->where('hide','0')->where('notetype','message')->get() as $note)
 <div class="panel panel-default" id="note_{{$note->id}}">
   <div class="panel-heading">
-<strong><a href="/users/{{$change->user->id}}"><i class="glyphicon glyphicon-user"></i> {{$note->user->name}}</a></strong> | posted {{date('M jS, Y g:ia',strtotime($note->created_at))}}
+<strong><a href="/users/{{$note->user->id}}"><i class="glyphicon glyphicon-user"></i> {{$note->user->name}}</a></strong> | posted {{date('M jS, Y g:ia',strtotime($note->created_at))}}
 <span class="pull-right"><button onclick="hideNote('{{$note->id}}');" class="btn btn-default btn-xs">Remove</button></span>
 </div>
 <div class="panel-body">
