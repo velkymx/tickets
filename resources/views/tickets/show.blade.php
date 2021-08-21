@@ -87,7 +87,7 @@ No Ticket Body Provided
 @foreach ($ticket->notes()->where('hide','0')->where('notetype','changelog')->get() as $change)
 <div class="panel panel-default" id="note_{{$change->id}}">
   <div class="panel-heading">
-<strong><i class="glyphicon glyphicon-user"></i> {{$change->user->name}}</strong> changed ticket {{date('M jS, Y g:ia',strtotime($change->created_at))}}
+<strong><a href="/users/{{$change->user->id}}"><i class="glyphicon glyphicon-user"></i> {{$change->user->name}}</a></strong> changed ticket {{date('M jS, Y g:ia',strtotime($change->created_at))}}
 <span class="pull-right"><button onclick="hideNote('{{$change->id}}');" class="btn btn-default btn-xs">Remove</button></span>
 </div>
 <div class="panel-body">
