@@ -56,6 +56,7 @@
         <th>Status</th>
         <th>Project</th>
         <th>Assignee</th>
+        <th>Est</th>
         <th>Notes</th>        
         <th>Updated</th>
       </tr>
@@ -68,6 +69,7 @@
         <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
         <td>{{$tick->assignee->name}}</td>
+        <td>{{$tick->storypoints}}sp/{{$tick->estimate}}h</td>
         <td>
           @if ($tick->notes()->where('hide','0')->where('notetype','message')->count() > 0)
             <span class="badge">{{$tick->notes()->where('hide','0')->where('notetype','message')->count()}}</span>
@@ -90,6 +92,7 @@
         <th>Status</th>
         <th>Project</th>
         <th>Assignee</th>
+        <th>Est</th>
         <th>Notes</th>        
         <th>Updated</th>
       </tr>
@@ -102,6 +105,7 @@
         <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
         <td>{{$tick->assignee->name}}</td>
+        <td>{{$tick->storypoints}}sp/{{$tick->estimate}}h</td>
         <td>
           @if ($tick->notes()->where('hide','0')->where('notetype','message')->count() > 0)
             <span class="badge">{{$tick->notes()->where('hide','0')->where('notetype','message')->count()}}</span>
@@ -122,6 +126,7 @@
         <th>Status</th>
         <th>Project</th>
         <th>Assignee</th>
+        <th>Est</th>
         <th>Notes</th>        
         <th>Updated</th>
       </tr>
@@ -134,6 +139,7 @@
         <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
         <td>{{$tick->project->name}}</td>
         <td>{{$tick->assignee->name}}</td>
+        <td>{{$tick->storypoints}}sp/{{$tick->estimate}}h</td>
         <td>
           @if ($tick->notes()->where('hide','0')->where('notetype','message')->count() > 0)
             <span class="badge">{{$tick->notes()->where('hide','0')->where('notetype','message')->count()}}</span>
