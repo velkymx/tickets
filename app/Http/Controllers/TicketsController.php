@@ -399,7 +399,7 @@ class TicketsController extends Controller
     private function changes($old, $new)
     {
 
-        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'estimate','user_id2'];
+        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'estimate','user_id2','storypoints'];
 
         $lookups = $this->lookups();
 
@@ -419,6 +419,10 @@ class TicketsController extends Controller
 
                     if ($change == 'status_id') {
                         $lookup = 'statuses';
+                    }
+
+                    if($change == 'storypoints'){
+                        $label = 'Story points';
                     }
 
                     if ($change == 'user_id2') {

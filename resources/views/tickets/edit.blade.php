@@ -49,7 +49,10 @@ Create Ticket
     {!! Form::label('estimate', 'Time Estimate (hours)') !!}
     {!! Form::text('estimate', $ticket->estimate, ['class' => 'form-control']) !!}
 </div>
-
+<div class="form-group">
+    {!! Form::label('storypoints', 'Story Points') !!}
+    {!! Form::text('storypoints', $ticket->storypoints, ['class' => 'form-control']) !!}
+</div>
   {!! Form::submit('Save Ticket', ['class' => 'btn btn-info pull-right']) !!}
 {!! Form::close() !!}
 <br /><br /><br /><br />
