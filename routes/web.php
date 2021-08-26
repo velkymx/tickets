@@ -45,7 +45,7 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::post('tickets','TicketsController@store');
 
-    Route::get('board','TicketsController@board');
+    // Route::get('board','TicketsController@board');
 
     Route::get('tickets/api/{id}','TicketsController@api');
 

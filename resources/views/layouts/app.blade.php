@@ -57,8 +57,7 @@
                     <li><a href="{{ url('/home') }}">Home</a></li>
                     <li><a href="{{ url('/tickets') }}">All Tickets</a></li>
                     <li><a href="{{ url('/milestone') }}">Milestones</a></li>
-                    <li><a href="{{ url('/projects') }}">Projects</a></li>
-                    <li><a href="{{ url('/board') }}">Board</a></li>
+                    <li><a href="{{ url('/projects') }}">Projects</a></li>                    
                 </ul>
 
                 <!-- Right Side Of Navbar -->
