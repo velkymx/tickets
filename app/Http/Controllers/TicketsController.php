@@ -374,7 +374,7 @@ class TicketsController extends Controller
             $check->save();
         }
 
-        $getAvg = \App\TicketEstimate::where('ticket_id', $ticket_id)->where('user_id', Auth::id())->get();
+        $getAvg = \App\TicketEstimate::where('ticket_id', $ticket_id)->get();
 
         $total = 0;
 
@@ -383,9 +383,33 @@ class TicketsController extends Controller
             $total += $row->storypoints;
         }
 
+        // 0 - No Effort
+        // 1 - XS (Extra Small), Dachshund, Kid Hot Chocolate, One
+        // 2 - Somewhere between XS and S
+        // 3 - S (Small), Terrier, Tall Late, Cookie
+        // 5 - M (Medium), Labrador, Grande Mocha, Cheeseburger
+        // 8 - L (Large), Saint Bernard, Vente Iced Late, Cheeseburge with Fries and Soda
+        // 13 - Somewhere between L and XL
+        // 21 - XL (Extra Large), Great Dane, Trenta Mocha Frap, 5 Course Meal    
+        
+        $avg = $total / sizeof($getAvg);
+
+        $fibs = [1,2,3,5,8,13,21];
+
+        foreach($fibs as $fkey => $fib){
+
+            if($avg == $fib){
+                $sp = $fib;
+            }
+
+            if($avg > $fib){
+                $sp = $fibs[$fkey+1];
+            }            
+        }
+
         $old = $ticket = \App\Ticket::find($ticket_id);
 
-        $ticket->storypoints = $total / sizeof($getAvg);
+        $ticket->storypoints = $sp;
 
         $ticket->save();
 
