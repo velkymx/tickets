@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 
 use App\Http\Resources\TicketResource;
+use App\ReleaseTicket;
 
 class TicketsController extends Controller
 {
@@ -90,6 +91,7 @@ class TicketsController extends Controller
         $lookups['projects'][0] = 'No Change';
         $lookups['statuses'][0] = 'No Change';
         $lookups['users'][0] = 'No Change';
+        $lookups['releases'][0] = 'No Change';
 
         $viewfilters = $this->lookups();
 
@@ -273,6 +275,13 @@ class TicketsController extends Controller
         foreach ($tickets as $ticket) {
             $update = Ticket::findOrFail($ticket);
 
+            if($request->has('release_id') && $request->release_id >0){
+                $release_ticket = new ReleaseTicket();
+                $release_ticket->release_id = $request->release_id;
+                $release_ticket->ticket_id = $ticket;
+                $release_ticket->save();
+            }
+
             $update->update($post);
 
             $i++;
@@ -347,6 +356,7 @@ class TicketsController extends Controller
             'importances' => \App\Importance::orderBy('name')->pluck('name', 'id'),
             'projects' => \App\Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
             'statuses' => \App\Status::orderBy('name')->pluck('name', 'id'),
+            'releases' => \App\Release::orderBy('title')->pluck('title', 'id'),
             'users' => \App\User::orderBy('name')->pluck('name', 'id')
 
         );

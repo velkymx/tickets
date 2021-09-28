@@ -4,7 +4,7 @@ Ticket List
 @stop
 <!-- Main Content -->
 @section('content')
-<h1>Ticket List</h1>
+<h1>Tickets</h1>
 {!! Form::open(['method' => 'GET', 'url' => 'tickets', 'class' => 'form']) !!}
 <table class="table">
 <tr>
@@ -98,6 +98,10 @@ Ticket List
 <div class="form-group">
     {!! Form::label('user_id2', 'Assign To') !!}
     {!! Form::select('user_id2', $lookups['users'],0, ['class' => 'form-control', 'required' => 'required']) !!}
+</div>
+<div class="form-group">
+    {!! Form::label('release_id', 'Add to Release') !!}
+    {!! Form::select('release_id', $lookups['releases'],0, ['class' => 'form-control', 'required' => 'required']) !!}
 </div>
 {!! Form::submit('Save and Update Checked Tickets', ['class' => 'btn btn-info pull-right']) !!}
 {!! Form::close() !!}

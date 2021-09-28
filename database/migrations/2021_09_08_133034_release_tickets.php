@@ -18,7 +18,7 @@ class ReleaseTickets extends Migration
             $table->integer('ticket_id')->unsigned();
             $table->integer('release_id')->unsigned();
             $table->timestamps();
-  
+                         
             $table->foreign('ticket_id')->references('id')->on('tickets');
             $table->foreign('release_id')->references('id')->on('releases');
         });
