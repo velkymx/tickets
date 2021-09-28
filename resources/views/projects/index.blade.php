@@ -4,7 +4,7 @@ Ticket List
 @stop
 <!-- Main Content -->
 @section('content')
-<h1>Projects List
+<h1>Projects
   <span class="pull-right"><a href="/projects/create" class="btn btn-sm btn-primary">Create Project</a></span></h1>
   <hr>
   <table class="table table-striped">

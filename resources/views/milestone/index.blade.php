@@ -4,7 +4,7 @@ Milestones List
 @stop
 <!-- Main Content -->
 @section('content')
-<h1>Milestones List
+<h1>Milestones
   <span class="pull-right"><a href="/milestone/create" class="btn btn-sm btn-primary">Create Milestone</a></span></h1>
   <hr>
   <table class="table table-striped">

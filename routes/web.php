@@ -85,4 +85,12 @@ Route::group(['middleware' => 'web'], function () {
 
     Route::get('milestone/show/{id}','MilestoneController@getShow');
 
+     
+    Route::get('releases','ReleaseController@index');    
+    Route::get('release/create','ReleaseController@create');    
+    Route::get('release/edit/{id}','ReleaseController@edit');    
+    Route::post('release/edit/{id}','ReleaseController@put');    
+    Route::post('release/store','ReleaseController@store'); 
+    Route::get('release/{id}','ReleaseController@show');   
+
 });
