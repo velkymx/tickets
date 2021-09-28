@@ -4,13 +4,7 @@
 @stop
 <!-- Main Content -->
 @section('content')
-  <h1>{{$milestone->name}} Milestone
-  <span class="pull-right">
- <a href="/milestone/edit/{{$milestone->id}}" class="btn btn-sm btn-primary">Edit Milestone</a>
- <a href="/milestone/print/{{$milestone->id}}" class="btn btn-sm btn-primary">Print</a>
-</span>
-
-  </h1>
+  <h1>{{$milestone->name}} Milestone</h1>
   <div class="row">
   <div class="col-md-9">
  
@@ -154,6 +148,12 @@
   </div>
   </div>
   <div class="col-md-3">
+    <div class="row">
+      <div class="col-md-4"><a href="/milestone/edit/{{$milestone->id}}" class="btn btn-block btn-default">Edit</a></div>
+      <div class="col-md-4"><a href="/milestone/print/{{$milestone->id}}" class="btn btn-block btn-default">Print</a></div>
+      <div class="col-md-4"><a href="/milestone/report/{{$milestone->id}}" class="btn btn-block btn-default">Report</a></div>
+    </div>
+    <br>
   <ul class="list-group">
   <li class="list-group-item">Product Owner: {{$milestone->owner->name}}</li>
   <li class="list-group-item">Scrum Master: {{$milestone->scrummaster->name}}</li>

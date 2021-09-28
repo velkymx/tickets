@@ -84,6 +84,7 @@ Route::group(['middleware' => 'web'], function () {
     Route::post('milestone/store/{id}','MilestoneController@store');
 
     Route::get('milestone/show/{id}','MilestoneController@getShow');
+    Route::get('milestone/report/{id}','MilestoneController@report');
 
      
     Route::get('releases','ReleaseController@index');    

@@ -45,6 +45,15 @@ class MilestoneController extends Controller
 
     }    
 
+    public function report(Request $request)
+    {
+
+      $milestone = \App\Milestone::findOrFail($request->id);
+      
+      return view('milestone.report',compact('milestone'));
+
+    }
+
     public function getShow(Request $request)
     {
 
