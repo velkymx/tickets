@@ -130,13 +130,17 @@ class MilestoneController extends Controller
         }
       }
 
-      if($request->id == 'new'){
+      if($request->id == 'new'){        
 
         $post['active'] = 1;
 
-        \App\Milestone::create($post);
+        \Session::flash('info_message', 'Milestone Created');
+
+        $milestone = \App\Milestone::create($post);
 
       } else {
+
+        \Session::flash('info_message', 'Milestone updated');
 
         $milestone = \App\Milestone::findOrFail($request->id);
 
@@ -144,6 +148,6 @@ class MilestoneController extends Controller
 
       }
 
-      return redirect('milestone');
+      return redirect('milestone/show/'.$milestone->id);
     }
 }
