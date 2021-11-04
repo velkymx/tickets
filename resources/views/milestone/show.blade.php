@@ -4,7 +4,7 @@
 @stop
 <!-- Main Content -->
 @section('content')
-<span class="pull-right"><i class="fas fa-window-maximize  fa-rotate-90" onclick="toggle_sidebar()"></i></span>
+<span class="btn btn-default pull-right" onclick="toggle_sidebar()"><i class="fas fa-window-maximize  fa-rotate-90"></i></span>
 <h1>{{$milestone->name}} Milestone <a class="btn btn-link" role="button" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample"><i class="fas fa-info-circle"></i></a></h1>
 
 <div class="collapse" id="collapseExample">
