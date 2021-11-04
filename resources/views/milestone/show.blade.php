@@ -204,6 +204,8 @@
     margin-bottom: 0;
   }
 </style>
+@stop
+@section('javascript')
 <script>
 $( document ).ready(function() {
   toggle_sidebar()
@@ -220,8 +222,6 @@ $( document ).ready(function() {
   
 
     $('#sidebar').toggle();
-
-
 
   }
 </script>
