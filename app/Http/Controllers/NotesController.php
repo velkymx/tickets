@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use App\Note;
+use App\Models\Note;
 
 class NotesController extends Controller
 {

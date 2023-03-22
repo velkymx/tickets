@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
 use App\Http\Requests;
-
 use Illuminate\Support\Facades\Auth;
-
 use Illuminate\Support\Str;
+use App\Models\Milestone;
+use App\Models\Type;
+use App\Models\Status;
+use App\Models\User;
 
 class MilestoneController extends Controller
 {
@@ -22,7 +23,7 @@ class MilestoneController extends Controller
     public function index()
     {
 
-      $milestones = \App\Milestone::orderBy('name')->get();
+      $milestones = Milestone::orderBy('name')->get();
 
       return view('milestone.index',compact('milestones'));
 
@@ -31,7 +32,7 @@ class MilestoneController extends Controller
     public function print(Request $request)
     {
 
-      $milestone = \App\Milestone::findOrFail($request->id);
+      $milestone = Milestone::findOrFail($request->id);
 
       $projects = [];
 
@@ -39,7 +40,7 @@ class MilestoneController extends Controller
         $projects[$tic->project->id] = $tic->project->name;
       }
 
-      $types = \App\Type::all();
+      $types = Type::all();
 
       return view('milestone.print',compact('milestone','types','projects'));
 
@@ -48,9 +49,9 @@ class MilestoneController extends Controller
     public function getShow(Request $request)
     {
 
-      $milestone = \App\Milestone::findOrFail($request->id);
+      $milestone = Milestone::findOrFail($request->id);
 
-      $tmpcodes = \App\Status::get();
+      $tmpcodes = Status::get();
 
       $statuscodes = [];
 
@@ -90,16 +91,16 @@ class MilestoneController extends Controller
     public function create()
     {
 
-      $users = \App\User::pluck('name','id');
+      $users = User::pluck('name','id');
 
       return view('milestone.create',compact('users'));
     }
 
     public function edit(Request $request,$id)
     {
-      $milestone = \App\Milestone::findOrFail($request->id);
+      $milestone = Milestone::findOrFail($request->id);
 
-      $users = \App\User::pluck('name','id');
+      $users = User::pluck('name','id');
 
       return view('milestone.edit',compact('milestone','users'));
     }
@@ -125,11 +126,11 @@ class MilestoneController extends Controller
 
         $post['active'] = 1;
 
-        \App\Milestone::create($post);
+        Milestone::create($post);
 
       } else {
 
-        $milestone = \App\Milestone::findOrFail($request->id);
+        $milestone = Milestone::findOrFail($request->id);
 
         $milestone->update($post);
 
