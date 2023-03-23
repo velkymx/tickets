@@ -46,7 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/edit/{id}', [ProjectsController::class, 'edit'])->name('projects.edit');
     Route::get('/projects/show/{id}', [ProjectsController::class, 'show'])->name('projects.show');
     Route::get('/release/{id}', [ReleaseController::class, 'show'])->name('release.show');   
-    Route::get('/release/create', [ReleaseController::class, 'create'])->name('release.create');
+    Route::get('/releases/create', [ReleaseController::class, 'create'])->name('release.create');
     Route::get('/release/edit/{id}', [ReleaseController::class, 'edit'])->name('release.edit');
     Route::get('/releases', [ReleaseController::class, 'index'])->name('releases.list');
     Route::get('/tickets', [TicketsController::class, 'index'])->name('tickets.list');
