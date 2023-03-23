@@ -27,13 +27,13 @@ class CreateTicketsTable extends Migration
           $table->dateTime('closed_at')->nullable();
           $table->timestamps();
 
-          $table->foreign('user_id')->references('id')->on('users');
-          $table->foreign('type_id')->references('id')->on('types');
-          $table->foreign('status_id')->references('id')->on('statuses');
-          $table->foreign('importance_id')->references('id')->on('importances');
-          $table->foreign('milestone_id')->references('id')->on('milestones');
-          $table->foreign('project_id')->references('id')->on('projects');
-          $table->foreign('user_id2')->references('id')->on('users');
+        //   $table->foreign('user_id')->references('id')->on('users');
+        //   $table->foreign('type_id')->references('id')->on('types');
+        //   $table->foreign('status_id')->references('id')->on('statuses');
+        //   $table->foreign('importance_id')->references('id')->on('importances');
+        //   $table->foreign('milestone_id')->references('id')->on('milestones');
+        //   $table->foreign('project_id')->references('id')->on('projects');
+        //   $table->foreign('user_id2')->references('id')->on('users');
       });
     }
 

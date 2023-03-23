@@ -6,6 +6,11 @@ use Illuminate\Http\Request;
 use App\Importer;
 use App\Exceptions\ImportException;
 use Illuminate\Support\Facades\DB;
+
+
+use App\Models\Milestone;
+
+
 class ImportController extends Controller
 {
     public function __construct()
@@ -15,7 +20,7 @@ class ImportController extends Controller
 
     public function index(Request $request)
     {
-        $milestones = \App\Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id');
+        $milestones = Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id');
         return view('import.index', compact('milestones'));
     }
     

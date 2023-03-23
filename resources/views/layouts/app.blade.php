@@ -13,12 +13,12 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/tickets.png">
     <!-- Styles -->
     @if (Auth::guest())
-    <link href="/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
     @else
     <link href="{{\Auth::user()->theme}}" rel="stylesheet">
     @endif
-    <link href="/css/jquery-ui.min.css" rel="stylesheet">
-    <link href="/css/summernote.css" rel="stylesheet">
+
+    <link href="/css/jquery-ui.min.css" rel="stylesheet">    
     <link href="/css/overrides.css" rel="stylesheet">
     {{-- <link href="{{ elixir('css/app.css') }}" rel="stylesheet"> --}}
 
@@ -68,7 +68,7 @@
                         <li><a href="{{ url('/login') }}">Login</a></li>
                         <li><a href="{{ url('/register') }}">Register</a></li>
                     @else
-                      <li><a href="/tickets/create">New Ticket</a></li>
+                      <li><a href="/ticket/create">New Ticket</a></li>
                       <li><a href="/tickets/import">Import</a></li>
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -119,13 +119,10 @@
   <hr>
   Tickets is the open source ticket tracker powered by <a href="https://laravel.com" target="_blank">Laravel</a>. <a href="https://github.com/velkymx/tickets" target="_blank">Check us out on Github.</a> Provided "as is" under the <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
   </div>
-
-    <!-- JavaScripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
-    {{-- <script src="{{ elixir('js/app.js') }}"></script> --}}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
     @yield('javascript')
 </body>
 </html>

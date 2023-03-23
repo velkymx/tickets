@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use App\Release;
-use App\ReleaseTicket;
+use App\Models\Release;
+use App\Models\ReleaseTicket;
+use App\Models\Type;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Console\Presets\React;
 
@@ -85,7 +86,7 @@ class ReleaseController extends Controller
 
         }
   
-        $types = \App\Type::pluck('icon','name');
+        $types = Type::pluck('icon','name');
 
         return View('release/show',compact('release','projects','types','release_tickets'));        
     }

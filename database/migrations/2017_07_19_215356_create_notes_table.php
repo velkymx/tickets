@@ -21,8 +21,8 @@ class CreateNotesTable extends Migration
             $table->integer('hide')->default(0);
             $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->foreign('ticket_id')->references('id')->on('tickets');
+            // $table->foreign('user_id')->references('id')->on('users');
+            // $table->foreign('ticket_id')->references('id')->on('tickets');
         });
     }
 

@@ -3,14 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
 use App\Http\Requests;
-
 use Illuminate\Support\Facades\Auth;
-
-use App\Ticket;
-
-use App\User;
+use App\Models\Ticket;
+use App\Models\TicketUserWatcher;
+use App\Models\Status;
+use App\Models\User;
 
 class UsersController extends Controller
 {
@@ -20,7 +18,7 @@ class UsersController extends Controller
 
       $user = User::findOrFail($id);
 
-      $statuses = \App\Status::pluck('name','id');      
+      $statuses = Status::pluck('name','id');      
 
       foreach($statuses as $status => $val){
 
@@ -82,7 +80,7 @@ class UsersController extends Controller
 
       $ticket = Ticket::findOrFail($id);
 
-      $watch = \App\TicketUserWatcher::where('ticket_id',$id)->where('user_id',Auth::id())->first();
+      $watch = TicketUserWatcher::where('ticket_id',$id)->where('user_id',Auth::id())->first();
 
       if($watch){
 
@@ -92,7 +90,7 @@ class UsersController extends Controller
 
       } else {
 
-        \App\TicketUserWatcher::create(['user_id'=>Auth::id(),'ticket_id'=>$id]);
+        TicketUserWatcher::create(['user_id'=>Auth::id(),'ticket_id'=>$id]);
 
         $message = 'Watch started for this ticket';
 

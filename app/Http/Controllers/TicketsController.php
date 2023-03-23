@@ -6,14 +6,20 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 
-use App\Ticket;
+use App\Models\Ticket;
+use App\Models\TicketEstimate;
+use App\Models\TicketUserWatcher;
+use App\Models\Note;
+use App\Models\Status;
+use App\Models\TicketView;
+use App\Models\ReleaseTicket;
 
 use Illuminate\Support\Facades\Auth;
 
 use Illuminate\Support\Facades\Mail;
 
 use App\Http\Resources\TicketResource;
-use App\ReleaseTicket;
+
 
 class TicketsController extends Controller
 {
@@ -31,7 +37,7 @@ class TicketsController extends Controller
     public function home()
     {        
 
-        $statuses = \App\Status::whereNotIn('id', [5,8,9])->pluck('name','id');
+        $statuses = Status::whereNotIn('id', [5,8,9])->pluck('name','id');
   
         foreach($statuses as $status => $val){
   
@@ -145,7 +151,7 @@ class TicketsController extends Controller
 
         $lookups = $this->lookups();
 
-        \App\TicketView::create(['user_id' => Auth::id(), 'ticket_id' => $ticket->id]);
+        TicketView::create(['user_id' => Auth::id(), 'ticket_id' => $ticket->id]);
 
         return view('tickets.show', compact('ticket', 'lookups'));
     }
@@ -321,7 +327,7 @@ class TicketsController extends Controller
 
         if ($request->has('status_id') && $request->has('ticket_id')) {
 
-            $ticket = \App\Ticket::findOrFail($request->ticket_id);
+            $ticket = Ticket::findOrFail($request->ticket_id);
 
             $old = $ticket->toArray();
 
@@ -339,7 +345,7 @@ class TicketsController extends Controller
 
             $this->notate($ticket->id, $request->body, $change_list, $request->hours);
 
-            $ticket->actual = \App\Note::where('ticket_id',$ticket->id)->sum('hours');          
+            $ticket->actual = Note::where('ticket_id',$ticket->id)->sum('hours');          
 
             $ticket->save();
         }
@@ -351,13 +357,13 @@ class TicketsController extends Controller
     {
         return array(
 
-            'types' => \App\Type::orderBy('name')->pluck('name', 'id'),
-            'milestones' => \App\Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
-            'importances' => \App\Importance::orderBy('name')->pluck('name', 'id'),
-            'projects' => \App\Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
-            'statuses' => \App\Status::orderBy('name')->pluck('name', 'id'),
-            'releases' => \App\Release::orderBy('title')->pluck('title', 'id'),
-            'users' => \App\User::orderBy('name')->pluck('name', 'id')
+            'types' => \App\Models\Type::orderBy('name')->pluck('name', 'id'),
+            'milestones' => \App\Models\Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
+            'importances' => \App\Models\Importance::orderBy('name')->pluck('name', 'id'),
+            'projects' => \App\Models\Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
+            'statuses' => \App\Models\Status::orderBy('name')->pluck('name', 'id'),
+            'releases' => \App\Models\Release::orderBy('title')->pluck('title', 'id'),
+            'users' => \App\Models\User::orderBy('name')->pluck('name', 'id')
 
         );
     }
@@ -365,10 +371,10 @@ class TicketsController extends Controller
     public function estimate(Request $request, $ticket_id)
     {
 
-        $check = \App\TicketEstimate::where('ticket_id', $ticket_id)->where('user_id', Auth::id())->first();
+        $check = \App\Models\TicketEstimate::where('ticket_id', $ticket_id)->where('user_id', Auth::id())->first();
 
         if ($check === null) {
-            \App\TicketEstimate::create([
+            \App\Models\TicketEstimate::create([
                 'ticket_id' => $ticket_id,
                 'user_id' => Auth::id(),
                 'storypoints' => $request->storypoints
@@ -384,7 +390,7 @@ class TicketsController extends Controller
             $check->save();
         }
 
-        $getAvg = \App\TicketEstimate::where('ticket_id', $ticket_id)->get();
+        $getAvg = TicketEstimate::where('ticket_id', $ticket_id)->get();
 
         $total = 0;
 
@@ -417,7 +423,7 @@ class TicketsController extends Controller
             }            
         }
 
-        $old = $ticket = \App\Ticket::find($ticket_id);
+        $old = $ticket = \App\Models\Ticket::find($ticket_id);
 
         $ticket->storypoints = $sp;
 
@@ -465,10 +471,10 @@ class TicketsController extends Controller
 
                         // set a watcher
 
-                        $watch = \App\TicketUserWatcher::where('ticket_id',$old['id'])->where('user_id',$new[$change])->first();
+                        $watch = TicketUserWatcher::where('ticket_id',$old['id'])->where('user_id',$new[$change])->first();
 
                         if(!$watch){
-                            \App\TicketUserWatcher::create(['user_id'=>$new[$change],'ticket_id'=>$old['id']]);
+                            TicketUserWatcher::create(['user_id'=>$new[$change],'ticket_id'=>$old['id']]);
                         }
 
                     }                    
@@ -509,7 +515,7 @@ class TicketsController extends Controller
 
             $insert['notetype'] = 'message';
 
-            \App\Note::create($insert);
+            Note::create($insert);
         }
 
         if ($addhours > 0) {
@@ -528,7 +534,7 @@ class TicketsController extends Controller
             $insert['notetype'] = 'changelog';
             $insert['hours'] = 0;
 
-            \App\Note::create($insert);
+            Note::create($insert);
         }
 
         if ($ticket->watchers->count() > 0) {

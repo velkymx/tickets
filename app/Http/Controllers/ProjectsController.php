@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
-use App\Http\Requests;
+use Illuminate\View\View;
+use App\Models\Project;
+use App\Models\Ticket;
+use App\Models\Status;
 
 class ProjectsController extends Controller
 {
@@ -16,14 +18,14 @@ class ProjectsController extends Controller
     
     public function index()
     {
-        $projects = \App\Project::orderBy('name')->get();
+        $projects = Project::orderBy('name')->get();
 
         return view('projects.index', compact('projects'));
     }
 
     public function show($id)
     {
-        $project = \App\Project::findOrFail($id);
+        $project = Project::findOrFail($id);
 
         $perpage = 10;
 
@@ -38,7 +40,7 @@ class ProjectsController extends Controller
         }
 
         if (is_array($queryfilter) && sizeof($queryfilter)>0) {
-            $tickets = new \App\Ticket;
+            $tickets = new Ticket;
 
             foreach ($queryfilter as $filter => $value) {
                 $tickets = $tickets->where($filter, $value);
@@ -46,10 +48,10 @@ class ProjectsController extends Controller
 
             $tickets = $tickets->paginate($perpage);
         } else {
-            $tickets = \App\Ticket::where('project_id', $project->id)->paginate($perpage);
+            $tickets = Ticket::where('project_id', $project->id)->paginate($perpage);
         }
 
-        $statuscodes = \App\Status::get();
+        $statuscodes = Status::get();
 
         $percent = 0;
 
@@ -71,7 +73,7 @@ class ProjectsController extends Controller
 
     public function edit(Request $request)
     {
-        $project = \App\Project::findOrFail($request->id);
+        $project = Project::findOrFail($request->id);
 
         return view('projects.edit', compact('project'));
     }
@@ -83,9 +85,9 @@ class ProjectsController extends Controller
 
             $post['active'] = 1;
 
-            \App\Project::create($post);
+            Project::create($post);
         } else {
-            $project = \App\Project::findOrFail($request->id);
+            $project = Project::findOrFail($request->id);
 
             $project->update($request->toArray());
         }
