@@ -1,7 +1,7 @@
 # Tickets!
 
 
-Tickets is a basic ticket tracker using the Laravel PHP framework and Bootstrap 3. Please feel free to add features and grow the project. See the screenshots below!
+Tickets is an agile style ticket tracker using the Laravel PHP framework and Bootstrap 3. Please feel free to add features and grow the project. See the screenshots below!
 
 
 ## Installing
