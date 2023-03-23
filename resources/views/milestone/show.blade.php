@@ -155,8 +155,12 @@
   </div>
   <div class="col-md-3">
   <ul class="list-group">
+    @if ($milestone->owner)
   <li class="list-group-item">Product Owner: {{$milestone->owner->name}}</li>
+  @endif
+  @if ($milestone->scrummaster)
   <li class="list-group-item">Scrum Master: {{$milestone->scrummaster->name}}</li>
+  @endif
   <li class="list-group-item">Team Members</li>
   <?php 
   $mem = array();
