@@ -31,7 +31,7 @@ Create Ticket
   </div>
   <div class="form-group">
       {!! Form::label('project_id', 'Ticket Project') !!}
-      {!! Form::select('project_id', $lookups['projects'], 4, ['class' => 'form-control', 'required' => 'required']) !!}
+      {!! Form::select('project_id', $lookups['projects'], 1, ['class' => 'form-control', 'required' => 'required']) !!}
   </div>
   <div class="form-group">
       {!! Form::label('user_id2', 'Assign To') !!}
