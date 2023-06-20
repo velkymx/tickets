@@ -13,7 +13,8 @@
         "laravel/sanctum": "^3.0",
         "laravel/socialite": "^5.6",
         "laravel/tinker": "^2.7",
-        "laravelcollective/html": "^6.4"
+        "laravelcollective/html": "^6.4",
+        "openai-php/laravel": "^0.4.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
@@ -61,7 +62,8 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
-            "pestphp/pest-plugin": true
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
         }
     },
     "minimum-stability": "stable",
