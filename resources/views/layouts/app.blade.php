@@ -73,8 +73,7 @@
                         <li><a href="{{ url('/login') }}">Login</a></li>
                         <li><a href="{{ url('/register') }}">Register</a></li>
                     @else
-                      <li><a href="/ticket/create">New Ticket</a></li>
-                      <li><a href="/tickets/import">Import</a></li>
+                      <li><a href="/ticket/create">New Ticket</a></li>                      
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
                                 {{ Auth::user()->name }} <span class="caret"></span>
@@ -83,6 +82,8 @@
                             <ul class="dropdown-menu" role="menu">
                               <li><a href="/users/{{Auth::id()}}">Profile</a></li>
                               <li><a href="/user/edit">Edit Profile</a></li>
+                              <li><a href="/users/">Manage Users</a></li>
+                              <li><a href="/tickets/import">Import Tickets</a></li>
                               <li><hr></li>
                                 <li>
                                   <a href="{{ route('logout') }}"
