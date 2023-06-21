@@ -50,13 +50,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/release/edit/{id}', [ReleaseController::class, 'edit'])->name('release.edit');
     Route::get('/releases', [ReleaseController::class, 'index'])->name('releases.list');
     Route::get('/tickets', [TicketsController::class, 'index'])->name('tickets.list');
+    Route::get('/tickets/ai', [TicketsController::class, 'ai'])->name('tickets.ai');
+    Route::post('/tickets/ai/process', [TicketsController::class, 'ai_process'])->name('tickets.ai_process');
+    Route::get('/tickets/import', [ImportController::class, 'index'])->name('tickets.import');
     Route::get('/tickets/{id}', [TicketsController::class, 'show'])->name('tickets.show');
     Route::get('/tickets/api/{id}', [TicketsController::class, 'api'])->name('tickets.api');
     Route::get('/tickets/claim/{id}', [TicketsController::class, 'claim'])->name('tickets.claim');
     Route::get('/tickets/clone/{id}', [TicketsController::class, 'clone'])->name('tickets.clone');
     Route::get('/ticket/create', [TicketsController::class, 'create'])->name('tickets.create');
-    Route::get('/tickets/edit/{id}', [TicketsController::class, 'edit'])->name('tickets.edit');
-    Route::get('/tickets/import', [ImportController::class, 'index'])->name('tickets.import');
+    Route::get('/tickets/edit/{id}', [TicketsController::class, 'edit'])->name('tickets.edit');    
     Route::get('/user/edit', [UsersController::class, 'edit'])->name('user.edit');
     Route::get('/users/{id}', [UsersController::class, 'show'])->name('user.show');
     Route::get('/users/watch/{id}', [UsersController::class, 'watch'])->name('users.watch');
