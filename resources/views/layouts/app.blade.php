@@ -51,7 +51,7 @@
                     <span class="text-warning">Tickets</span>
                 </a>
                 <br clear="all">
-                <div class="container collapsed" style="margin-bottom:10px; margin-top:-6px">
+                <div class="container collapsed hidden-lg" style="margin-bottom:10px; margin-top:-6px">
                 <a href="/ticket/create" class="btn btn-block btn-info">New Ticket</a>
                 </div>
             </div>

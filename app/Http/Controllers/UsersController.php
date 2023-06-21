@@ -30,13 +30,45 @@ class UsersController extends Controller
 
       $time = new \DateTime(NULL, new \DateTimeZone($user->timezone));
     
-      // Us dumb Americans can't handle millitary time
+      // Us dumb Americans can't handle military time
       $ampm = $time->format('H') > 12 ? ' ('. $time->format('g:i a'). ')' : '';
   
       // Remove region name and add a sample time
       $currenttime = $time->format('H:i') . $ampm;      
 
       return View('users.show',compact('user','alltickets','currenttime'));
+
+    }
+
+    public function add(){
+
+      $timezones = $this->get_timezones();
+
+      $themes = [
+        '/css/bootstrap.min.css' => 'Default',
+        '/css/bootstrap.darkly.min.css' => 'Darkly'
+      ];      
+        
+        return View('users.add',compact('timezones','themes'));
+  
+    }
+
+    public function store(Request $request)
+    {
+
+      $user = new User;
+      $user->name = $request->name;
+      $user->email = $request->email;
+      $user->timezone = $request->timezone;
+      $user->theme = $request->theme;
+      $user->title = $request->title;
+      $user->bio = $request->bio;
+      $user->password = bcrypt('password');
+      $user->save();
+
+      \Session::flash('info_message', 'User Added');
+
+      return redirect('users/' . $user->id);
 
     }
 
@@ -106,7 +138,7 @@ class UsersController extends Controller
         'Africa' => \DateTimeZone::AFRICA,
         'America' => \DateTimeZone::AMERICA,
         'Antarctica' => \DateTimeZone::ANTARCTICA,
-        'Aisa' => \DateTimeZone::ASIA,
+        'Asia' => \DateTimeZone::ASIA,
         'Atlantic' => \DateTimeZone::ATLANTIC,
         'Europe' => \DateTimeZone::EUROPE,
         'Indian' => \DateTimeZone::INDIAN,
@@ -131,6 +163,14 @@ class UsersController extends Controller
     }     
     
     return $timezones;
+    }
+
+    public function list(){
+
+      $users = User::orderBy('name')->get();
+
+      return View('users.list',compact('users'));
+
     }
 
 }

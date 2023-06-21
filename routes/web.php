@@ -59,7 +59,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/clone/{id}', [TicketsController::class, 'clone'])->name('tickets.clone');
     Route::get('/ticket/create', [TicketsController::class, 'create'])->name('tickets.create');
     Route::get('/tickets/edit/{id}', [TicketsController::class, 'edit'])->name('tickets.edit');    
+    Route::get('/user/add', [UsersController::class, 'add'])->name('user.add');
     Route::get('/user/edit', [UsersController::class, 'edit'])->name('user.edit');
+    Route::get('/users/', [UsersController::class, 'list'])->name('user.list');
     Route::get('/users/{id}', [UsersController::class, 'show'])->name('user.show');
     Route::get('/users/watch/{id}', [UsersController::class, 'watch'])->name('users.watch');
     
@@ -75,6 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/update/{id}', [TicketsController::class, 'update'])->name('tickets.update');
     Route::post('/tickets/upload', [TicketsController::class, 'upload'])->name('tickets.upload');
     Route::post('/user/update', [UsersController::class, 'update'])->name('user.update');
+    Route::post('/user/add', [UsersController::class, 'store'])->name('user.store');
     
     
 });
