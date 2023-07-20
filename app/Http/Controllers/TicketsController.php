@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 
 use App\Http\Resources\TicketResource;
+use OpenAI\Laravel\Facades\OpenAI;
 
 
 class TicketsController extends Controller
@@ -32,6 +33,30 @@ class TicketsController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+    }
+
+    public function ai()
+    {
+        return View('tickets/ai');
+    }
+
+    public function ai_process(Request $request)
+    {
+
+        $completion = OpenAI::completions()->create([
+            'model' => 'gpt-3.5-turbo',
+            'prompt' => $request->input,
+        ]);
+
+        try {
+        
+        return $completion['choices'][0]['text'];
+            
+            } catch (\Exception $e) {
+                return json_encode($e->getMessage());
+            }
+
+        
     }
 
     public function home()
