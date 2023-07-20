@@ -72,10 +72,16 @@ class UsersController extends Controller
 
     }
 
-    public function edit()
+    public function edit(Request $request,$id="")
     {
       
-      $user = User::findOrFail(Auth::id());
+      if(isset($id) && is_numeric($id)){
+
+      $user = User::findOrFail($id);
+
+      } else {
+        $user = User::findOrFail(Auth::id());
+      }
 
       $timezones = $this->get_timezones();
 
@@ -87,6 +93,27 @@ class UsersController extends Controller
       return View('users.edit',compact('user','timezones','themes'));
       
     }
+
+
+
+    public function update_user(Request $request)
+    {
+      $user = User::findOrFail($request->id);
+      $user->name = $request->name;
+      $user->email = $request->email;
+      $user->phone = $request->phone;
+      $user->timezone = $request->timezone;
+      $user->theme = $request->theme;
+      $user->title = $request->title;
+      $user->bio = $request->bio;
+
+      $user->save();
+
+      \Session::flash('info_message', 'Profile Changes Saved');
+
+      return redirect('users/' . Auth::id());
+
+    }      
 
     public function update(Request $request)
     {
