@@ -63,14 +63,15 @@ Route::middleware('auth')->group(function () {
     
     Route::post('/tickets', [TicketsController::class, 'store'])->name('tickets.store');
     Route::post('/tickets/estimate/{ticket_id}', [TicketsController::class, 'estimate'])->name('tickets.estimate');
-    Route::post('/milestone/store/{id}', [MilestoneController::class, 'store'])->name('milestone.update');
+    Route::post('/milestone/store/{id}', [MilestoneController::class, 'store'])->name('milestone.store');
+    Route::put('/milestone/update/{id}', [MilestoneController::class, 'update'])->name('milestone.update');
     Route::post('/notes', [TicketsController::class, 'note'])->name('notes.store');
     Route::post('/projects/store/{id}', [ProjectsController::class, 'store'])->name('projects.update');
-    Route::post('/release/edit/{id}', [ReleaseController::class, 'put'])->name('release.update');
+    Route::put('/release/edit/{id}', [ReleaseController::class, 'put'])->name('release.update');
     Route::post('/release/store', [ReleaseController::class, 'store'])->name('release.store'); 
     Route::post('/tickets/batch', [TicketsController::class, 'batch'])->name('tickets.batch');
     Route::post('/tickets/import', [ImportController::class, 'create'])->name('tickets.storeimport');
-    Route::post('/tickets/update/{id}', [TicketsController::class, 'update'])->name('tickets.update');
+    Route::put('/tickets/update/{id}', [TicketsController::class, 'update'])->name('tickets.update');
     Route::post('/tickets/upload', [TicketsController::class, 'upload'])->name('tickets.upload');
     Route::post('/user/update', [UsersController::class, 'update'])->name('user.update');
     
