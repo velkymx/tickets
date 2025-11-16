@@ -37,6 +37,15 @@ php artisan db:seed --class=DefaultsSeeder
 ```
 
 
+Add default Users: 
+* unassigned:nopassword
+* admininistrator:password123
+
+```
+php artisan db:seed --class=UserSeeder
+```
+
+
 Load in a web browser and enjoy!
 
 
