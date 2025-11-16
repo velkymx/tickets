@@ -13,23 +13,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/yeti/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    
-
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh; /* Better for modern layouts */
-        }
-        .fa-btn {
-            margin-right: 0.3rem; /* Using Bootstrap spacing units */
-        }
-    </style>
+    @auth
+    @if (Auth::user()->theme && (strtolower(Auth::user()->theme) == '/css/bootstrap.darkly.min.css'))
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/darkly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    @endif
+    @endauth
 </head>
 <body id="app-layout">
 <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
     <div class="container">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <span class="text-warning">Tickets</span>
+            <span class="text-primary">Tickets</span>
         </a>
 
         {{-- Toggler Button: data-bs-target now points to the new ID --}}
