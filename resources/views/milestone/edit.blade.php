@@ -37,6 +37,30 @@
         </select>
     </div>
 
+            <div class="row g-3 mb-4">
+            {{-- Product Owner --}}
+            <div class="col-md-6">
+                <label for="owner_user_id" class="form-label">Product Owner</label>
+                <select name="owner_user_id" id="owner_user_id" class="form-select" required>
+                    <option value="" disabled @selected(!old('owner_user_id'))>Select Owner</option>
+                    @foreach ($users as $id => $name)
+                        <option value="{{ $id }}" @selected(old('owner_user_id', $milestone->owner_user_id) == $id)>{{ $name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            
+            {{-- Scrum Master / Sprint Manager --}}
+            <div class="col-md-6">
+                <label for="scrummaster_user_id" class="form-label">Scrum Master / Sprint Manager</label>
+                <select name="scrummaster_user_id" id="scrummaster_user_id" class="form-select" required>
+                    <option value="" disabled @selected(!old('scrummaster_user_id'))>Select Scrum Master</option>
+                    @foreach ($users as $id => $name)
+                        <option value="{{ $id }}" @selected(old('scrummaster_user_id', $milestone->scrummaster_user_id) == $id)>{{ $name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
     {{-- Submit Button --}}
     <div class="d-flex justify-content-end mt-4">
         <button type="submit" class="btn btn-success">Save Milestone</button>
