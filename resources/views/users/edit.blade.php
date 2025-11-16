@@ -1,59 +1,103 @@
 @extends('layouts.app')
-@section('title')
-Edit User
-@stop
+@section('title', 'Edit User')
 @section('content')
-<h1>Edit Profile</h1>
-{{ Form::open(array('url' => 'user/update','id'=>'user_form')) }}
-<div class="form-group">
-    <label for="name">Name</label>
-    <input type="text" class="form-control required" name="name" id="name" value="{{$user->name}}" placeholder="Full Name">
-</div>
-<div class="form-group">
-    <label for="title">Job Title</label>
-    <input type="text" class="form-control required" name="title" id="title" value="{{$user->title}}" placeholder="Web Developer">
-</div>
-{!! Form::label('bio', 'Bio') !!}
-    {!! Form::textarea('bio', $user->bio, ['class' => 'form-control summernote']) !!}
-    <h3>Contact Info</h3>
-<div class="form-group">
-    <label for="email">Email address</label>
-    <input type="email" class="form-control required email" name="email" id="email" value="{{$user->email}}" placeholder="Email">
-</div>
-<div class="form-group">
-    <label for="phone">Phone Number</label>
-    <input type="text" class="form-control" id="phone" name="phone" value="{{$user->phone}}" placeholder="(343) 334-3423">
-</div>
-<div class="form-group">
-    <label for="timezone">Timezone</label>
-    {{Form::select('timezone', $timezones, $user->timezone,['class'=>'form-control'])}}
-</div>
-<div class="form-group">
-    <label for="timezone">Theme</label>
-    {{Form::select('theme', $themes, $user->theme,['class'=>'form-control'])}}
-</div>
-{!! Form::submit('Save Profile', ['class' => 'btn btn-success']) !!}  
-{{ Form::close() }} 
-@section('javascript') 
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/tinymce.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/icons/default/icons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/plugins/table/plugin.min.js"></script>
-<script>
-$(function() {
-$("#user_form").validate();
-})
+<h1 class="mb-4">Edit Profile</h1>
+<hr>
 
-tinymce.init({
-    selector: '.summernote',
-    plugins: ' preview paste searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons',     
-    toolbar: 'bold italic underline strikethrough | forecolor backcolor removeformat | alignleft aligncenter alignright alignjustify | numlist bullist |  image link', 
-    toolbar_sticky: true,
-    height : 300,
-    menubar: false,  
-});
-</script> 
+<form method="POST" action="/user/update" id="user_form">
+    @csrf 
+
+    <div class="mb-3">
+        <label for="name" class="form-label">Name</label>
+        <input type="text" class="form-control" name="name" id="name" value="{{ $user->name }}" placeholder="Full Name" required>
+    </div>
+    <div class="mb-3">
+        <label for="title" class="form-label">Job Title</label>
+        <input type="text" class="form-control" name="title" id="title" value="{{ $user->title }}" placeholder="Web Developer" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="editor-container" class="form-label">Bio</label>
+        <div id="editor-container" style="height: 250px;">
+        </div>
+        <input type="hidden" name="bio" id="bio-input" value="{{ $user->bio }}">
+    </div>
+
+    <h3 class="mt-5 mb-3">Contact Info</h3>
+    
+    <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <input type="email" class="form-control" name="email" id="email" value="{{ $user->email }}" placeholder="Email" required>
+    </div>
+    <div class="mb-3">
+        <label for="phone" class="form-label">Phone Number</label>
+        <input type="text" class="form-control" id="phone" name="phone" value="{{ $user->phone }}" placeholder="(343) 334-3423">
+    </div>
+
+    <div class="mb-3">
+        <label for="timezone" class="form-label">Timezone</label>
+        <select name="timezone" id="timezone" class="form-select">
+            @foreach ($timezones as $timezone)
+                @foreach($timezone as $key => $value)      
+                <option value="{{ $key }}" @if ($user->timezone == $key) selected @endif>{{ $value }}</option>
+            @endforeach
+            @endforeach
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="theme" class="form-label">Theme</label>
+        <select name="theme" id="theme" class="form-select">
+            @foreach ($themes as $key => $value)
+                <option value="{{ $key }}" @if ($user->theme == $key) selected @endif>{{ $value }}</option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="d-flex justify-content-start mt-4">
+        <button type="submit" class="btn btn-success">Save Profile</button>
+    </div>
+</form>
+@endsection
+
+@section('javascript')
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const quillToolbarOptions = [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }], 
+            ['bold', 'italic', 'underline', 'strike'], 
+            ['blockquote', 'code-block'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'color': [] }, { 'background': [] }], 
+            ['link', 'image', 'video'],
+            ['clean']
+        ];
+
+        const quill = new Quill('#editor-container', {
+            modules: { toolbar: quillToolbarOptions },
+            theme: 'snow',
+            placeholder: 'Write a short bio about yourself here...'
+        });
+        
+        const initialContentInput = document.getElementById('bio-input');
+        
+        if (initialContentInput && initialContentInput.value) {
+            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
+        }
+
+        const form = document.getElementById('user_form');
+        const hiddenInput = initialContentInput;
+
+        form.addEventListener('submit', function() {
+            hiddenInput.value = quill.root.innerHTML;
+        });
+    });
+</script>
 <style>
     .error { color:red }
 </style>
-@stop
-@stop
+@endsection
