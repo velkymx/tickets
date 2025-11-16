@@ -3,7 +3,6 @@
 
 @section('content')
 
-{{-- 1. Hero Section --}}
 <div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
     <div class="container-fluid py-5">
         <h1 class="display-5 fw-bold text-primary">Tickets! Your Project, Simplified.</h1>
@@ -19,12 +18,10 @@
     </div>
 </div>
 
-{{-- 2. Feature Section --}}
+
 <h2 class="text-center mb-5 fw-bold text-dark">Powerful Features, Built for Speed</h2>
 
 <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
-    
-    {{-- Feature 1: Milestone Tracking --}}
     <div class="col">
         <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
@@ -36,8 +33,6 @@
             </div>
         </div>
     </div>
-    
-    {{-- Feature 2: Team Roles --}}
     <div class="col">
         <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
@@ -49,8 +44,6 @@
             </div>
         </div>
     </div>
-    
-    {{-- Feature 3: Real-Time Updates --}}
     <div class="col">
         <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
@@ -63,8 +56,6 @@
         </div>
     </div>
 </div>
-
-{{-- 3. GitHub/Issue Reporting Section --}}
 <div id="github-section" class="p-5 mb-4 bg-dark text-white rounded-3 shadow-lg">
     <div class="container-fluid py-5">
         <h2 class="fw-bold mb-4">Found a Bug? Have an Idea?</h2>
@@ -96,5 +87,4 @@
         </div>
     </div>
 </div>
-
 @endsection
