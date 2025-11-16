@@ -96,6 +96,13 @@ class MilestoneController extends Controller
       return view('milestone.create',compact('users'));
     }
 
+    public function update(Request $request)
+    {
+
+      // TODO: this method needs to be implemented
+      dd($request->all());
+    }
+
     public function edit(Request $request,$id)
     {
       $milestone = Milestone::findOrFail($request->id);
