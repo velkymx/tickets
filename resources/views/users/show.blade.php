@@ -2,7 +2,7 @@
 @section('title', 'User Tickets')
 @section('content')
 <div class="mb-4">
-    <h1>{{ $user->name }}</h1>
+    <h1>{{ $user->name }} @if($user->admin == 1) <span class="badge text-bg-secondary">Admin</span>@endif</h1>
     @if ($user->title)
     <p class="lead text-muted">{{ $user->title }}</p>
     @endif
@@ -26,7 +26,8 @@
     </div>
 
     @if ($user->bio)
-    <div class="card card-body bg-light mb-4">
+    <h3>Bio</h3>
+    <div class="mb-4">
         {!! $user->bio !!}
     </div>
     @endif
