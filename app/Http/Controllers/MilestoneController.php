@@ -96,11 +96,24 @@ class MilestoneController extends Controller
       return view('milestone.create',compact('users'));
     }
 
-    public function update(Request $request)
+     public function update(Request $request, Milestone $milestone)
     {
+        $validatedData = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'scrummaster_user_id' => ['nullable', 'integer'],
+            'owner_user_id' => ['nullable', 'integer'],
+            'start_at' => ['nullable', 'date'],
+            'due_at' => ['nullable', 'date', 'after_or_equal:start_at'],
+            'end_at' => ['nullable', 'date', 'after_or_equal:start_at', 'after_or_equal:due_at'],
+        ]);
 
-      // TODO: this method needs to be implemented
-      dd($request->all());
+        $milestone->fill($validatedData);
+
+        $milestone->save();
+
+        return redirect('/milestone/show/' . $milestone->id)
+                    ->with('success', 'Milestone "' . $milestone->name . '" updated successfully!');
     }
 
     public function edit(Request $request,$id)
