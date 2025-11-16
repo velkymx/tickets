@@ -96,7 +96,7 @@ class MilestoneController extends Controller
       return view('milestone.create',compact('users'));
     }
 
-     public function update(Request $request, Milestone $milestone)
+     public function update(Request $request, $id)
     {
         $validatedData = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -107,6 +107,8 @@ class MilestoneController extends Controller
             'due_at' => ['nullable', 'date', 'after_or_equal:start_at'],
             'end_at' => ['nullable', 'date', 'after_or_equal:start_at', 'after_or_equal:due_at'],
         ]);
+
+        $milestone = Milestone::findOrFail($id);
 
         $milestone->fill($validatedData);
 
