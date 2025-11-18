@@ -66,7 +66,7 @@ Load in a web browser and enjoy!
 
 ![Alt text](https://github.com/velkymx/tickets/blob/master/screenshots/milestone.png?raw=true 'Form View')
 
-### 🎟️ Ticket Import Guide
+### Ticket Import Guide
 You can bulk-create tickets using the CSV Import tool located at the /tickets/import page. This tool requires you to use the **exact text names** of existing system fields (like 'bug' or 'critical') for a successful import.
 
 **1. Required CSV Columns**
