@@ -1,5 +1,7 @@
 <?php
 
+namespace Database\Seeders;
+
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -17,14 +19,29 @@ class UserSeeder extends Seeder
         DB::table('users')->insert([
             
             'name' => 'Unassigned',
-            'email' => '',
+            'email' => 'noreply@ajbapps.com',
             'password' => Hash::make(rand()),            
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
             'active' => 1,
+            'admin' => 0,
             'title' => 'Unassigned User',     
             'timezone' => 'UTC',     
 
         ]);        
+
+        DB::table('users')->insert([
+            
+            'name' => 'administrator',
+            'email' => 'support@ajbapps.com',
+            'password' => Hash::make('password123'),            
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'active' => 1,
+            'admin' => 1,
+            'title' => 'Administrator User',     
+            'timezone' => 'UTC',     
+
+        ]);             
     }
 }

@@ -2,16 +2,15 @@
 @section('title')
 Import Tickets
 @stop
-<!-- Main Content -->
 @section('content')
-<h1>Import Tickets</h1>
+<h1 class="mb-4">Import Tickets</h1>
 
-<p>Columns must be:</p>
-<p>Type Name, Subject, Details, Importance Name, Status Name, Project Name, Assigned To User Name</p>
+<p class="mb-1">Columns must be:</p>
+<p class="mb-4 text-muted">Type Name, Subject, Details, Importance Name, Status Name, Project Name, Assigned To User Name</p>
 
 @if ($errors->any())
-    <div class="alert alert-danger">
-        <ul>
+    <div class="alert alert-danger" role="alert">
+        <ul class="mb-0">
             @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
             @endforeach
@@ -19,23 +18,29 @@ Import Tickets
     </div>
 @endif
 
-{!! Form::open(['url' => '/tickets/import', 'files' => true]) !!}
-    <div class="form-group">
-        {!! Form::label('milestone_id', 'Ticket Milestone') !!}
-        {!! Form::select('milestone_id', [null=>'Select'] + $milestones->toArray(), null, ['class' => 'form-control', 'required' => 'required']) !!}
+<form method="POST" action="{{ url('/tickets/import') }}" enctype="multipart/form-data" class="bg-white p-4 rounded-3 shadow">
+    @csrf
+    <div class="mb-3">
+        <label for="milestone_id" class="form-label">Ticket Milestone</label>
+        <select name="milestone_id" id="milestone_id" class="form-select" required>
+            <option value="">Select</option>
+            @foreach ([null=>'Select'] + $milestones->toArray() as $id => $name)
+                <option value="{{ $id }}">{{ $name }}</option>
+            @endforeach
+        </select>
     </div>
-    <div class="form-group">
-        {{ Form::label('csv', 'CSV File') }} 
-        {{ Form::file('csv', ['class' => 'form-control-file', 'required' => 'required']) }}
+    <div class="mb-3">
+        <label for="csv" class="form-label">CSV File</label> 
+        <input type="file" name="csv" id="csv" class="form-control" required>
     </div>
-    <div class="form-check">
-        {{ Form::checkbox('hasHeader', true, true, ['class' => 'form-check-label']) }}
-        {{ Form::label('hasHeader', 'Has Header Row', ['class' => 'form-check-input']) }} 
+    <div class="form-check mb-4">
+        <input class="form-check-input" type="checkbox" name="hasHeader" id="hasHeader" value="1" checked>
+        <label class="form-check-label" for="hasHeader">Has Header Row</label>
     </div>
-    <div class="form-group">
-        {{ Form::submit('Import', ['class' => 'btn btn-info']) }}
+    <div class="mb-3">
+        <button type="submit" class="btn btn-info text-white">Import</button>
     </div>
-{!! Form::close() !!}
+</form>
 @endsection
 
 @section('javascript')

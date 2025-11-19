@@ -1,59 +1,80 @@
 @extends('layouts.app')
 @section('title')
-Releases List
+Create Release
 @stop
-<!-- Main Content -->
 @section('content')
 <h1>Create Release</h1>
 <hr>
-{!! Form::open(['method' => 'POST', 'url' => '/release/store', 'class' => 'form','id'=>'formRelease']) !!}
+<form method="POST" action="/release/store" class="form-horizontal" id="formRelease">
+    @csrf 
 
-<div class="form-group">
-    {!! Form::label('title', 'Release Title') !!}
-    {!! Form::text('title', null, ['class' => 'form-control', 'required' => 'required']) !!}
-</div>
-<div class="row">
-    <div class="col-md-6">
-        <div class="form-group">
-            {!! Form::label('started_at', 'Start Date') !!}
-            {!! Form::text('started_at', false, ['class' => 'form-control datepicker', 'required' => 'required']) !!}
-        </div>
+    <div class="mb-3">
+        <label for="title" class="form-label">Release Title</label>
+        <input type="text" name="title" id="title" value="{{ old('title') }}" class="form-control" required>
     </div>
-    <div class="col-md-6">
-        <div class="form-group">
-            {!! Form::label('completed_at', 'Release Date') !!}
-            {!! Form::text('completed_at', false, ['class' => 'form-control datepicker']) !!}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="started_at" class="form-label">Start Date</label>
+                <input type="date" name="started_at" id="started_at" value="{{ old('started_at', date('Y-m-d')) }}" class="form-control" required>
+            </div>
         </div>
-    </div>    
-</div>
-<div class="form-group">
-    {!! Form::label('body', 'Describe Release') !!}
-    {!! Form::textarea('body', null, ['class' => 'form-control summernote']) !!}
-</div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="completed_at" class="form-label">Release Date</label>
+                <input type="date" name="completed_at" id="completed_at" value="{{ old('completed_at') }}" class="form-control">
+            </div>
+        </div>    
+    </div>
+    <div class="mb-3">
+        <label for="editor-container" class="form-label">Describe Release</label>
+        <div id="editor-container" style="height: 250px;">
+        </div>
+        <input type="hidden" name="body" id="description-input" value="{{ old('body') }}">
+    </div>
+
 <div class="alert alert-info"><i class="fas fa-info-circle"></i> Add tickets to your release from the All Tickets tab using the bulk update feature.</div>
-<div class="form-group">
-    {!! Form::submit('Save Release', ['class' => 'btn btn-success pull-right']) !!}
+<div class="d-flex justify-content-end mt-4">
+    <button type="submit" class="btn btn-success">Save Release</button>
 </div>
-{!! Form::close() !!}
-@stop
+</form>
+@endsection
 @section('javascript')
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+
 <script>
-    $(function() {
-        $(".datepicker").datepicker();
-        $("#formRelease").validate();
-    })
-</script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/tinymce.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/icons/default/icons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/plugins/table/plugin.min.js"></script>
-<script>
-    tinymce.init({
-        selector: '.summernote',
-        plugins: ' preview paste searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons',
-        toolbar: 'fontsizeselect formatselect | bold italic underline strikethrough | forecolor backcolor removeformat | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist |  image media link',
-        toolbar_sticky: true,
-        height: 300,
-        menubar: false,
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const quillToolbarOptions = [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }], 
+            ['bold', 'italic', 'underline', 'strike'], 
+            ['blockquote', 'code-block'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'color': [] }, { 'background': [] }], 
+            ['link', 'image', 'video'],
+            ['clean']
+        ];
+
+        const quill = new Quill('#editor-container', {
+            modules: { toolbar: quillToolbarOptions },
+            theme: 'snow',
+            placeholder: 'Describe the release contents and goals here...'
+        });
+        
+        const initialContentInput = document.getElementById('description-input');
+        
+        if (initialContentInput && initialContentInput.value) {
+            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
+        }
+
+        const form = document.getElementById('formRelease');
+        const hiddenInput = initialContentInput;
+
+        form.addEventListener('submit', function() {
+            hiddenInput.value = quill.root.innerHTML;
+        });
     });
 </script>
-@stop
+@endsection

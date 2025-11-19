@@ -1,80 +1,159 @@
 @extends('layouts.app')
-@section('title')
-Ticket Board
-@endsection
-<!-- Main Content -->
+
+@section('title', 'Ticket Board')
+
 @section('content')
 
-  <h1>Ticket Board</h1>
-  <div id="update" style="display:none">
+    <h1 class="mb-4">Ticket Board</h1>
 
-  </div>
-  <div class="row" style="white-space: nowrap;overflow: auto;">
-    <table>
-      <tr>
-    @foreach ($lookups['statuses'] as $key => $value)
-      <td valign="top" style="padding:10px">
-        <div style="width:240px" class="panel panel-default" id="status[{{$key}}]">
-          <div class="panel-heading">{{$value}}</div>
-          <ol class="simple_with_animation vertical" id="{{$key}}">
-          @foreach ($tickets->where('status_id',$key) as $ticket)
-            <li id="{{$ticket->id}}">
-              <a href="/tickets/{{$ticket->id}}">{{$ticket->subject}}</a>
-            </li>
-          @endforeach
-        </ol>
-        </div>
-      </td>
-    @endforeach
-    </tr>
-    </table>
-  </div>
+    {{-- Alert Container for AJAX updates (Vanilla JS will target this) --}}
+    <div id="update-alert" class="alert alert-success alert-dismissible fade" role="alert" style="display:none;">
+        <span id="update-message"></span>
+        <button type="button" class="btn-close" aria-label="Close" id="close-alert-btn"></button>
+    </div>
+
+    {{-- The container for the board. We need horizontal scrolling. --}}
+    <div class="d-flex overflow-auto pb-3"> 
+        
+        {{-- Iterate over all available statuses to create columns --}}
+        @foreach ($lookups['statuses'] as $status_id => $status_name)
+            
+            {{-- Column Container (Replaced <table>/<td> and old panel styling) --}}
+            <div class="me-4 flex-shrink-0" style="width: 280px;">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">{{ $status_name }}</h5>
+                    </div>
+                    
+                    {{-- The List Container for SortableJS (must use a unique ID) --}}
+                    <div class="card-body p-2 bg-light-subtle">
+                        <ol class="list-group list-group-flush ticket-column" data-status-id="{{ $status_id }}" id="status-{{ $status_id }}">
+                            
+                            {{-- Iterate over tickets belonging to this status --}}
+                            @foreach ($tickets->where('status_id', $status_id) as $ticket)
+                                <li class="list-group-item list-group-item-action p-2 mb-2 rounded shadow-sm bg-white" data-ticket-id="{{ $ticket->id }}">
+                                    <a href="/tickets/{{ $ticket->id }}" class="text-decoration-none text-body">
+                                        #{{ $ticket->id }} {{ $ticket->subject }}
+                                    </a>
+                                </li>
+                            @endforeach
+                            
+                            {{-- Add a placeholder item if column is empty for better drag-and-drop --}}
+                            @if ($tickets->where('status_id', $status_id)->isEmpty())
+                                <li class="list-group-item list-group-item-light text-center fst-italic py-4" data-empty-placeholder>
+                                    Drop tickets here
+                                </li>
+                            @endif
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
 @endsection
+
 @section('javascript')
-  <script src="/js/jquery-sortable.js" charset="utf-8"></script>
-  <script type="text/javascript">
-  var adjustment;
+    {{-- SortableJS CDN (Vanilla JS drag-and-drop) --}}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 
-  $("ol.simple_with_animation").sortable({
-    group: 'simple_with_animation',
-    pullPlaceholder: false,
-    // animation on drop
-    onDrop: function  ($item, container, _super) {
-      var $clonedItem = $('<li/>').css({height: 0});
-      $item.before($clonedItem);
-      $clonedItem.animate({'height': $item.height()});
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ticketColumns = document.querySelectorAll('.ticket-column');
+            const alertDiv = document.getElementById('update-alert');
+            const alertMessage = document.getElementById('update-message');
+            const closeAlertBtn = document.getElementById('close-alert-btn');
 
-      $item.animate($clonedItem.position(), function  () {
-        $clonedItem.detach();
-        _super($item, container);
-      });
+            // --- 1. AJAX Status Update Function (Vanilla JS Fetch) ---
+            function updateTicketStatus(ticketId, newStatusId) {
+                // Remove any old placeholder before sending
+                const placeholder = document.querySelector('[data-empty-placeholder]');
+                if (placeholder) {
+                    placeholder.remove();
+                }
 
-      $id = $item[0].id;
+                const url = `/tickets/api/${ticketId}/?status=${newStatusId}`;
 
-      $status = container.target[0].id;
+                fetch(url)
+                    .then(response => response.text())
+                    .then(data => {
+                        // Display success message from the API call
+                        alertMessage.textContent = `Ticket ${ticketId} updated. ${data}`;
+                        alertDiv.classList.remove('fade');
+                        alertDiv.classList.add('show');
+                        alertDiv.style.display = 'block';
+                    })
+                    .catch(error => {
+                        alertMessage.textContent = `Error updating ticket ${ticketId}. See console for details.`;
+                        alertDiv.classList.remove('alert-success');
+                        alertDiv.classList.add('alert-danger', 'show');
+                        alertDiv.style.display = 'block';
+                        console.error('API Update Error:', error);
+                    });
+            }
 
-      $("#update").load('/tickets/api/'+$id+'/?status='+$status);
+            // --- 2. Initialize SortableJS for each column ---
+            ticketColumns.forEach(column => {
+                const statusId = column.getAttribute('data-status-id');
 
-    },
+                new Sortable(column, {
+                    group: 'tickets-board', // Name to allow dragging between lists
+                    animation: 150,
+                    ghostClass: 'list-group-item-secondary', // Class for the ghost item
+                    
+                    // Event fired when an item is dropped into a new list
+                    onEnd: function (evt) {
+                        const ticketItem = evt.item;
+                        const ticketId = ticketItem.getAttribute('data-ticket-id');
+                        
+                        // Check if the status actually changed
+                        const oldList = evt.from;
+                        const newList = evt.to;
 
-    // set $item relative to cursor position
-    onDragStart: function ($item, container, _super) {
-      var offset = $item.offset(),
-          pointer = container.rootGroup.pointer;
+                        if (oldList !== newList) {
+                            const newStatusId = newList.getAttribute('data-status-id');
+                            updateTicketStatus(ticketId, newStatusId);
+                        }
+                        
+                        // Handle the empty state visually
+                        checkEmptyColumn(oldList);
+                        checkEmptyColumn(newList);
+                    }
+                });
+            });
 
-      adjustment = {
-        left: pointer.left - offset.left,
-        top: pointer.top - offset.top
-      };
+            // --- 3. Empty Column Placeholder Handler ---
+            function checkEmptyColumn(listElement) {
+                // Find all actual ticket items (those with data-ticket-id)
+                const items = listElement.querySelectorAll('li[data-ticket-id]');
+                let placeholder = listElement.querySelector('[data-empty-placeholder]');
 
-      _super($item, container);
-    },
-    onDrag: function ($item, position) {
-      $item.css({
-        left: position.left - adjustment.left,
-        top: position.top - adjustment.top
-      });
-    }
-  });
-  </script>
+                if (items.length === 0) {
+                    // List is empty, add placeholder if it doesn't exist
+                    if (!placeholder) {
+                        const newPlaceholder = document.createElement('li');
+                        newPlaceholder.className = 'list-group-item list-group-item-light text-center fst-italic py-4';
+                        newPlaceholder.setAttribute('data-empty-placeholder', '');
+                        newPlaceholder.textContent = 'Drop tickets here';
+                        listElement.appendChild(newPlaceholder);
+                    }
+                } else {
+                    // List has items, remove placeholder if it exists
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                }
+            }
+            
+            // --- 4. Alert Close Button Handler (Vanilla JS) ---
+            closeAlertBtn.addEventListener('click', function() {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertDiv.style.display = 'none';
+                }, 150);
+            });
+            
+            // Initial check for placeholders
+            ticketColumns.forEach(checkEmptyColumn);
+        });
+    </script>
 @endsection

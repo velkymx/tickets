@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Importer;
+use App\Models\Importer;
 use App\Exceptions\ImportException;
 use Illuminate\Support\Facades\DB;
 

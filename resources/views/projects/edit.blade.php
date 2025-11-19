@@ -1,42 +1,96 @@
 @extends('layouts.app')
-@section('title')
-Edit Project
-@stop
-<!-- Main Content -->
-@section('content')
-<h1>Edit Project</h1>
-<hr>
-{!! Form::open(['method' => 'POST', 'url' => '/projects/store/'.$project->id, 'class' => 'form-horizontal']) !!}
+@section('title', 'Edit Project')
 
-    <div class="form-group">
-        {!! Form::label('name', 'Project Name') !!}
-        {!! Form::text('name', $project->name, ['class' => 'form-control', 'required' => 'required']) !!}
+@section('content')
+<h1 class="mb-4">Edit Project</h1>
+<hr>
+
+{{-- Replaced Form::open with standard HTML form --}}
+<form method="POST" action="/projects/store/{{ $project->id }}" class="form-horizontal">
+    @csrf 
+    {{-- Assuming CSRF is handled by Laravel's @csrf directive --}}
+
+    {{-- Project Name Field --}}
+    <div class="mb-3">
+        <label for="name" class="form-label">Project Name</label>
+        {{-- Replaced Form::text with standard input --}}
+        <input type="text" name="name" id="name" value="{{ old('name', $project->name) }}" class="form-control" required>
     </div>
-    <div class="form-group">
-        {!! Form::label('description', 'Describe Project') !!}
-        {!! Form::textarea('description', $project->description, ['class' => 'form-control summernote']) !!}
+
+    {{-- Project Description Field (Quill.js Target) --}}
+    <div class="mb-3">
+        <label for="editor-container" class="form-label">Describe Project</label>
+        {{-- Quill editor container --}}
+        <div id="editor-container" style="height: 250px;">
+            {!! old('description', $project->description) !!}
+        </div>
+        {{-- Hidden input to hold the HTML content submitted by Quill --}}
+        <input type="hidden" name="description" id="description-input" value="{{ old('description', $project->description) }}">
     </div>
-    <div class="form-group">
-        {!! Form::label('active', 'Active') !!}
-        {!! Form::select('active', ['0'=>'Inactive','1'=>'Active'], $project->active, ['class' => 'form-control', 'required' => 'required']) !!}
+
+    {{-- Active Status Field --}}
+    <div class="mb-3">
+        <label for="active" class="form-label">Active</label>
+        {{-- Replaced Form::select with standard select --}}
+        <select name="active" id="active" class="form-select" required>
+            <option value="0" @if (old('active', $project->active) == '0') selected @endif>Inactive</option>
+            <option value="1" @if (old('active', $project->active) == '1') selected @endif>Active</option>
+        </select>
     </div>
-<div class="form-group">
-{!! Form::submit('Save Project', ['class' => 'btn btn-success pull-right']) !!}
-</div>
-{!! Form::close() !!}
-@stop
+
+    {{-- Submit Button --}}
+    <div class="d-flex justify-content-end mt-4">
+        {{-- Replaced Form::submit and pull-right with standard button and d-flex --}}
+        <button type="submit" class="btn btn-success">Save Project</button>
+    </div>
+</form>
+@endsection
+
 @section('javascript')
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/tinymce.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/icons/default/icons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/plugins/table/plugin.min.js"></script>
+{{-- Quill.js CSS and JS --}}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+
 <script>
-    tinymce.init({
-        selector: '.summernote',
-        plugins: ' preview paste searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor toc insertdatetime advlist lists wordcount imagetools textpattern noneditable help charmap quickbars emoticons',
-        toolbar: 'fontsizeselect formatselect | bold italic underline strikethrough | forecolor backcolor removeformat | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist |  image media link',
-        toolbar_sticky: true,
-        height: 300,
-        menubar: false,
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // --- 1. Quill Initialization ---
+        const quillToolbarOptions = [
+            ['bold', 'italic', 'underline', 'strike'], 
+            ['blockquote', 'code-block'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            ['link', 'image'],
+            ['clean']
+        ];
+
+        const quill = new Quill('#editor-container', {
+            modules: { toolbar: quillToolbarOptions },
+            theme: 'snow',
+            placeholder: 'Enter milestone details here...'
+        });
+        
+        // Load initial content from the hidden input/old value
+        // FIXED: Using the correct ID 'description-input' from the HTML
+        const initialContentInput = document.getElementById('description-input');
+        
+        if (initialContentInput && initialContentInput.value) {
+            // Dangerously paste HTML content into the editor
+            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
+        }
+
+        // --- 2. Form Submission Handler (Quill Content) ---
+        // FIXED: Using the correct form ID 'milestone_form' from the HTML
+        const form = document.getElementById('milestone_form');
+        const hiddenInput = initialContentInput;
+
+        form.addEventListener('submit', function() {
+            // Get the HTML content from the editor and put it into the hidden input
+            hiddenInput.value = quill.root.innerHTML;
+        });
+        
+        // NOTE: The jQuery Datepicker block was removed to avoid using jQuery 
+        // and because there are no date fields in this form.
     });
 </script>
 @endsection
