@@ -18,14 +18,14 @@ class UsersController extends Controller
 
         $statuses = Status::pluck('name', 'id');
 
-        foreach ($statuses as $status => $val) {
+        $tickets = Ticket::where('user_id2', $id)
+            ->with('status')
+            ->get()
+            ->groupBy(fn ($ticket) => $ticket->status->name);
 
-            $alltickets[$val] = Ticket::where('user_id2', $id)->where('status_id', $status)->get();
-
-            if (count($alltickets[$val]) == 0) {
-                unset($alltickets[$val]);
-            }
-
+        $alltickets = [];
+        foreach ($tickets as $statusName => $ticketGroup) {
+            $alltickets[$statusName] = $ticketGroup;
         }
 
         $timezone = $user->timezone ?? config('app.timezone');
