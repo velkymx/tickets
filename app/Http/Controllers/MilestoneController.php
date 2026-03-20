@@ -179,6 +179,8 @@ class MilestoneController extends Controller
 
     public function report($id)
     {
+        // Authorization: Any authenticated user can view milestone reports
+        // TODO: Add granular permissions (owner, assigned, admin only) if needed
         $milestone = Milestone::with(['owner', 'scrummaster'])->findOrFail($id);
         $tickets = $milestone->tickets()
             ->with(['status', 'type', 'assignee', 'notes.user'])
