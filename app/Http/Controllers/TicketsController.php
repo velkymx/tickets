@@ -310,10 +310,10 @@ class TicketsController extends Controller
 
             $this->notate($ticket->id, '', ['Status Changed to '.$ticket->status->name]);
 
-            return 'Success';
+            return response()->json(['status' => 'success']);
         }
 
-        return 'Fail';
+        return response()->json(['error' => 'Status unchanged'], 400);
     }
 
     public function note(Request $request)
