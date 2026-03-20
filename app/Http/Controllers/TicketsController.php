@@ -18,6 +18,7 @@ use App\Models\Type;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class TicketsController extends Controller
 {
@@ -234,20 +235,20 @@ class TicketsController extends Controller
 
     public function upload(Request $request)
     {
+        $request->validate([
+            'file' => 'required|file|mimes:jpg,jpeg,png,gif|max:5120',
+            'folder' => 'required|string|max:50',
+        ]);
 
-        // return $request->input('folder');
+        $file = $request->file('file');
+        $folder = preg_replace('/[^a-zA-Z0-9_-]/', '', $request->input('folder'));
 
-        if (isset($_FILES) && count($_FILES) > 0) {
-            $path = '/images/'.$request->input('folder').'/';
+        $filename = time().'_'.Str::random(10).'.'.$file->getClientOriginalExtension();
+        $path = 'images/'.$folder.'/'.$filename;
 
-            if (! is_dir($_SERVER['DOCUMENT_ROOT'].$path)) {
-                mkdir($_SERVER['DOCUMENT_ROOT'].$path);
-            }
+        $file->move(public_path('images/'.$folder), $filename);
 
-            move_uploaded_file($_FILES['file']['tmp_name'], $_SERVER['DOCUMENT_ROOT'].$path.$_FILES['file']['name']);
-
-            return $path.$_FILES['file']['name'];
-        }
+        return '/'.$path;
     }
 
     public function batch(Request $request)
