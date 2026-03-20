@@ -2,20 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\View\View;
 use App\Models\Project;
-use App\Models\Ticket;
 use App\Models\Status;
+use App\Models\Ticket;
+use Illuminate\Http\Request;
 
 class ProjectsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
 
-  public function __construct()
-  {
-      $this->middleware('auth');
-  }
-    
     public function index()
     {
         $projects = Project::orderBy('name')->get();
@@ -23,15 +21,15 @@ class ProjectsController extends Controller
         return view('projects.index', compact('projects'));
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $project = Project::findOrFail($id);
 
         $perpage = 10;
 
-        $filters = array('milestone_id','project_id','sprint_id','status_id','type_id','user_id','importance_id');
+        $filters = ['milestone_id', 'project_id', 'sprint_id', 'status_id', 'type_id', 'user_id', 'importance_id'];
 
-        $queryfilter = array();
+        $queryfilter = [];
 
         foreach ($filters as $filter) {
             if (isset($request->$filter) && is_numeric($request->$filter)) {
@@ -39,7 +37,7 @@ class ProjectsController extends Controller
             }
         }
 
-        if (is_array($queryfilter) && sizeof($queryfilter)>0) {
+        if (is_array($queryfilter) && count($queryfilter) > 0) {
             $tickets = new Ticket;
 
             foreach ($queryfilter as $filter => $value) {
@@ -55,12 +53,12 @@ class ProjectsController extends Controller
 
         $percent = 0;
 
-        $completed = $project->tickets()->whereNotIn('status_id', ['5','8','9'])->count();
+        $completed = $project->tickets()->whereIn('status_id', [5, 8, 9])->count();
 
         $total = $project->tickets->count();
 
         if ($total !== 0 && $completed !== 0) {
-            $percent = 100-(round($completed / $total, 2)*100);
+            $percent = round($completed / $total, 2) * 100;
         }
 
         return view('projects.show', compact('project', 'tickets', 'queryfilter', 'total', 'completed', 'percent', 'statuscodes'));
@@ -91,8 +89,6 @@ class ProjectsController extends Controller
 
             $project->update($request->toArray());
         }
-
-
 
         return redirect('projects');
     }
