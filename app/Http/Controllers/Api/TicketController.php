@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Note;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 
@@ -58,5 +59,41 @@ class TicketController extends Controller
             'closed_at' => $ticket->closed_at,
             'created_at' => $ticket->created_at->toDateString(),
         ]]);
+    }
+
+    public function note(Request $request, $id)
+    {
+        $ticket = Ticket::where('user_id2', $request->user()->id)
+            ->findOrFail($id);
+
+        if ($request->has('status_id') && $request->status_id != $ticket->status_id) {
+            $ticket->status_id = $request->status_id;
+
+            if ($request->status_id == 5) {
+                $ticket->closed_at = now();
+            }
+
+            $ticket->save();
+        }
+
+        if ($request->has('body') || $request->has('hours')) {
+            Note::create([
+                'user_id' => $request->user()->id,
+                'ticket_id' => $ticket->id,
+                'body' => $request->body ?? '',
+                'hours' => $request->hours ?? 0,
+                'notetype' => 'message',
+            ]);
+        }
+
+        $ticket->load('status');
+
+        return response()->json([
+            'message' => 'Note added successfully',
+            'ticket' => [
+                'id' => $ticket->id,
+                'status' => $ticket->status->name ?? null,
+            ],
+        ]);
     }
 }
