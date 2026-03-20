@@ -29,12 +29,14 @@ class TicketController extends Controller
 
     public function index(Request $request)
     {
+        $user = $request->attributes->get('api_user');
+
         $query = Ticket::with(['status', 'importance']);
 
         if ($request->boolean('unassigned')) {
             $query->whereNull('user_id2')->orWhere('user_id2', 0);
         } else {
-            $query->where('user_id2', $request->user()->id);
+            $query->where('user_id2', $user->id);
         }
 
         if ($request->has('status')) {
@@ -62,6 +64,8 @@ class TicketController extends Controller
 
     public function store(Request $request)
     {
+        $user = $request->attributes->get('api_user');
+
         $request->validate([
             'subject' => 'required|string|max:255',
         ]);
@@ -76,8 +80,8 @@ class TicketController extends Controller
             'due_at' => $request->due_at ?? null,
             'estimate' => $request->estimate ?? 0,
             'storypoints' => $request->storypoints ?? 0,
-            'user_id' => $request->user()->id,
-            'user_id2' => $request->user()->id,
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
             'status_id' => 1,
         ]);
 
@@ -94,8 +98,10 @@ class TicketController extends Controller
 
     public function show(Request $request, $id)
     {
+        $user = $request->attributes->get('api_user');
+
         $ticket = Ticket::with(['status', 'type', 'importance', 'milestone', 'project', 'assignee', 'notes.user'])
-            ->where('user_id2', $request->user()->id)
+            ->where('user_id2', $user->id)
             ->findOrFail($id);
 
         $notes = $ticket->notes->map(function ($note) {
@@ -129,10 +135,12 @@ class TicketController extends Controller
 
     public function note(Request $request, $id)
     {
+        $user = $request->attributes->get('api_user');
+
         $ticket = Ticket::findOrFail($id);
 
         if ($request->boolean('claim')) {
-            $ticket->user_id2 = $request->user()->id;
+            $ticket->user_id2 = $user->id;
             $ticket->save();
         }
 
@@ -148,7 +156,7 @@ class TicketController extends Controller
 
         if ($request->has('body') || $request->has('hours')) {
             Note::create([
-                'user_id' => $request->user()->id,
+                'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
                 'body' => $request->body ?? '',
                 'hours' => $request->hours ?? 0,

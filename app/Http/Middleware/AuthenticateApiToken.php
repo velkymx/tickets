@@ -17,6 +17,10 @@ class AuthenticateApiToken
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
+        if (strlen($token) < 32 || strlen($token) > 128) {
+            return response()->json(['message' => 'Invalid token format'], 401);
+        }
+
         $hashed = hash('sha256', $token);
         $user = User::where('api_token', $hashed)->first();
 
@@ -24,7 +28,7 @@ class AuthenticateApiToken
             return response()->json(['message' => 'Invalid token'], 401);
         }
 
-        auth()->setUser($user);
+        $request->attributes->set('api_user', $user);
 
         return $next($request);
     }
