@@ -303,6 +303,10 @@ class TicketsController extends Controller
 
     public function api(Request $request, $id)
     {
+        $request->validate([
+            'status' => 'required|integer|exists:statuses,id',
+        ]);
+
         $ticket = Ticket::findOrFail($id);
 
         if ($request['status'] != $ticket->status_id) {
