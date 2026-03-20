@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\TicketResource;
-use App\Mail\NotifyWatchers;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -19,7 +18,6 @@ use App\Models\Type;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 
 class TicketsController extends Controller
 {
@@ -533,16 +531,6 @@ class TicketsController extends Controller
             $insert['hours'] = 0;
 
             Note::create($insert);
-        }
-
-        if ($ticket->watchers->count() > 0) {
-            foreach ($ticket->watchers as $watcher) {
-                if ($watcher->user_id == Auth::id()) {
-                    continue;
-                }
-
-                Mail::to($watcher->user->email)->send(new NotifyWatchers($ticket));
-            }
         }
     }
 
