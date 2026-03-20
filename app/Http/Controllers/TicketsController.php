@@ -483,6 +483,13 @@ class TicketsController extends Controller
 
     private function notate($ticket_id, $message, $changes, $addhours = 0)
     {
+        $hasMessage = strlen($message) > 0;
+        $hasHours = $addhours > 0;
+        $hasChanges = is_array($changes) && count($changes) > 0;
+
+        if (! $hasMessage && ! $hasHours && ! $hasChanges) {
+            return;
+        }
 
         $insert = [
             'user_id' => Auth::id(),
