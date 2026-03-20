@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/milestone/edit/{id}', [MilestoneController::class, 'edit'])->name('milestone.edit');
     Route::get('/milestone/print/{id}', [MilestoneController::class, 'print'])->name('milestone.print');
     Route::get('/milestone/show/{id}', [MilestoneController::class, 'getShow'])->name('milestone.show');
+    Route::get('/milestone/watch/{id}', [MilestoneController::class, 'toggleWatcher'])->name('milestone.watch');
 
     // --- Notes Routes ---
     Route::get('/notes/hide/{id}', [NotesController::class, 'hide'])->name('notes.hide');

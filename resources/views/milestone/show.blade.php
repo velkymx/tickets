@@ -6,6 +6,14 @@
     <h1>{{ $milestone->name }} Milestone</h1>
     {{-- Replaced pull-right with d-flex utilities and btn-group --}}
     <div class="btn-group" role="group" aria-label="Milestone Actions">
+        @auth
+            @php
+                $isWatching = $milestone->watchers->contains('user_id', auth()->id());
+            @endphp
+            <a href="/milestone/watch/{{ $milestone->id }}" class="btn btn-sm {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
+                {{ $isWatching ? 'Unwatch' : 'Watch' }}
+            </a>
+        @endauth
         <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-sm btn-primary">Edit Milestone</a>
         <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a>
     </div>
