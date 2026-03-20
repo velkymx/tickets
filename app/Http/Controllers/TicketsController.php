@@ -294,7 +294,8 @@ class TicketsController extends Controller
 
     public function board()
     {
-        $tickets = Ticket::with(['status', 'type', 'assignee'])->get();
+        $perpage = 50;
+        $tickets = Ticket::with(['status', 'type', 'assignee'])->paginate($perpage);
 
         $lookups = $this->lookups();
 

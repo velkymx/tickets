@@ -30,11 +30,14 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         $user = $request->attributes->get('api_user');
+        $perPage = min((int) $request->get('per_page', 20), 100);
 
         $query = Ticket::with(['status', 'importance']);
 
         if ($request->boolean('unassigned')) {
-            $query->whereNull('user_id2')->orWhere('user_id2', 0);
+            $query->where(function ($q) {
+                $q->whereNull('user_id2')->orWhere('user_id2', 0);
+            });
         } else {
             $query->where('user_id2', $user->id);
         }
@@ -43,7 +46,7 @@ class TicketController extends Controller
             $query->where('status_id', $request->status);
         }
 
-        $tickets = $query->get();
+        $tickets = $query->orderBy('created_at', 'DESC')->paginate($perPage);
 
         $data = $tickets->map(function ($ticket) {
             return [
@@ -59,7 +62,15 @@ class TicketController extends Controller
             ];
         });
 
-        return response()->json(['data' => $data]);
+        return response()->json([
+            'data' => $data,
+            'meta' => [
+                'current_page' => $tickets->currentPage(),
+                'last_page' => $tickets->lastPage(),
+                'per_page' => $tickets->perPage(),
+                'total' => $tickets->total(),
+            ],
+        ]);
     }
 
     public function store(Request $request)
