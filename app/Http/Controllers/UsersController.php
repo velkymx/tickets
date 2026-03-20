@@ -28,7 +28,8 @@ class UsersController extends Controller
 
         }
 
-        $time = new \DateTime(null, new \DateTimeZone($user->timezone));
+        $timezone = $user->timezone ?? config('app.timezone');
+        $time = new \DateTime(null, new \DateTimeZone($timezone));
 
         // Us dumb Americans can't handle millitary time
         $ampm = $time->format('H') > 12 ? ' ('.$time->format('g:i a').')' : '';
@@ -58,6 +59,16 @@ class UsersController extends Controller
 
     public function update(Request $request)
     {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'timezone' => 'nullable|string|max:100',
+            'theme' => 'nullable|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'bio' => 'nullable|string',
+        ]);
+
         $user = User::findOrFail(Auth::id());
         $user->name = $request->name;
         $user->email = $request->email;
