@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('milestone_user_watchers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('milestone_id');
+            $table->unsignedInteger('milestone_id');
             $table->unsignedBigInteger('user_id');
             $table->timestamps();
 
