@@ -31,7 +31,7 @@ class MilestoneController extends Controller
     public function print(Request $request)
     {
 
-        $milestone = Milestone::findOrFail($request->id);
+        $milestone = Milestone::with('tickets.project')->findOrFail($request->id);
 
         $projects = [];
 
@@ -48,7 +48,7 @@ class MilestoneController extends Controller
     public function getShow(Request $request)
     {
 
-        $milestone = Milestone::with('watchers.user')->findOrFail($request->id);
+        $milestone = Milestone::with(['watchers.user', 'tickets'])->findOrFail($request->id);
 
         $tmpcodes = Status::get();
 

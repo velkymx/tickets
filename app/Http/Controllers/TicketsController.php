@@ -167,11 +167,11 @@ class TicketsController extends Controller
 
         $lookups = $this->lookups();
 
-        if ($ticket->closed_at != '') {
+        if (! empty($ticket->closed_at)) {
             $ticket->closed_at = date('m/d/Y', strtotime($ticket->closed_at));
         }
 
-        if ($ticket->due_at != '') {
+        if (! empty($ticket->due_at)) {
             $ticket->due_at = date('m/d/Y', strtotime($ticket->due_at));
         }
 
@@ -184,11 +184,11 @@ class TicketsController extends Controller
 
         $lookups = $this->lookups();
 
-        if ($ticket->closed_at != '') {
+        if (! empty($ticket->closed_at)) {
             $ticket->closed_at = date('m/d/Y', strtotime($ticket->closed_at));
         }
 
-        if ($ticket->due_at != '') {
+        if (! empty($ticket->due_at)) {
             $ticket->due_at = date('m/d/Y', strtotime($ticket->due_at));
         }
 
@@ -221,11 +221,12 @@ class TicketsController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->toArray();
+        $data = $request->only(['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'due_at', 'estimate', 'storypoints']);
 
         $data['user_id'] = Auth::id();
+        $data['user_id2'] = Auth::id();
 
-        if (isset($data['due_at']) && $data['due_at'] != '') {
+        if (! empty($data['due_at'])) {
             $data['due_at'] = date('Y-m-d', strtotime($data['due_at']));
         }
 
@@ -467,14 +468,16 @@ class TicketsController extends Controller
             }
         }
 
-        if (strtotime($old['due_at']) !== strtotime($new['due_at'])) {
-
-            $change_list[] = 'Due date changed to '.date('M jS, Y', strtotime($new['due_at']));
+        $oldDueAt = $old['due_at'] ? strtotime($old['due_at']) : null;
+        $newDueAt = $new['due_at'] ? strtotime($new['due_at']) : null;
+        if ($oldDueAt !== $newDueAt && ($oldDueAt !== null || $newDueAt !== null)) {
+            $change_list[] = 'Due date changed to '.($new['due_at'] ? date('M jS, Y', strtotime($new['due_at'])) : 'N/A');
         }
 
-        if (strtotime($old['closed_at']) !== strtotime($new['closed_at'])) {
-
-            $change_list[] = 'Ticket closed on '.date('M jS, Y', strtotime($new['closed_at']));
+        $oldClosedAt = $old['closed_at'] ? strtotime($old['closed_at']) : null;
+        $newClosedAt = $new['closed_at'] ? strtotime($new['closed_at']) : null;
+        if ($oldClosedAt !== $newClosedAt && ($oldClosedAt !== null || $newClosedAt !== null)) {
+            $change_list[] = 'Ticket closed on '.($new['closed_at'] ? date('M jS, Y', strtotime($new['closed_at'])) : 'N/A');
         }
 
         return $change_list;
