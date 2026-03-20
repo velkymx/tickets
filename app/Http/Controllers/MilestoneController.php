@@ -186,7 +186,7 @@ class MilestoneController extends Controller
             ->with(['status', 'type', 'assignee', 'notes.user'])
             ->get();
 
-        $closedStatusIds = [5, 8, 9];
+        $closedStatusIds = Status::closedStatusIds();
         $totalTickets = $tickets->count();
         $completedTickets = $tickets->whereIn('status_id', $closedStatusIds)->count();
         $openTickets = $tickets->whereNotIn('status_id', $closedStatusIds)->count();

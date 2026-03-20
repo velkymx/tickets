@@ -53,7 +53,7 @@ class ProjectsController extends Controller
 
         $percent = 0;
 
-        $completed = $project->tickets()->whereIn('status_id', [5, 8, 9])->count();
+        $completed = $project->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
 
         $total = $project->tickets->count();
 

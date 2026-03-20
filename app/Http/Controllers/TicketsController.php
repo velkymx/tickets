@@ -35,7 +35,7 @@ class TicketsController extends Controller
 
     public function home()
     {
-        $statusIds = Status::whereNotIn('id', [5, 8, 9])->pluck('id')->toArray();
+        $statusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
 
         $tickets = Ticket::where('user_id2', Auth::id())
             ->whereIn('status_id', $statusIds)
@@ -85,7 +85,7 @@ class TicketsController extends Controller
 
             if ($filter == 'status_id' && $request->status_id == 'none') {
 
-                $tickets = $tickets->whereNotIn('status_id', [5, 8, 9]);
+                $tickets = $tickets->whereNotIn('status_id', Status::closedStatusIds());
 
             }
         }
