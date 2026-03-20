@@ -11,11 +11,15 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'phone', 'timezone', 'theme', 'title', 'bio',
     ];
 
     protected $hidden = [
         'password', 'remember_token', 'api_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
     ];
 
     public function tickets()

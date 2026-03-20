@@ -32,6 +32,14 @@ class Ticket extends Model
         'subject', 'description', 'type_id', 'user_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'user_id2', 'due_at', 'closed_at', 'estimate', 'storypoints', 'actual',
     ];
 
+    protected $casts = [
+        'due_at' => 'datetime',
+        'closed_at' => 'datetime',
+        'estimate' => 'decimal:2',
+        'actual' => 'decimal:2',
+        'storypoints' => 'integer',
+    ];
+
     public function type()
     {
         return $this->belongsTo('App\Models\Type');
