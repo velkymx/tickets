@@ -294,7 +294,7 @@ class TicketsController extends Controller
 
     public function board()
     {
-        $tickets = Ticket::get();
+        $tickets = Ticket::with(['status', 'type', 'assignee'])->get();
 
         $lookups = $this->lookups();
 
