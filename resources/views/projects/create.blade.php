@@ -37,11 +37,6 @@
 @endsection
 
 @section('javascript')
-{{-- Load Quill CSS using the specified CDN path --}}
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-{{-- Load Quill.js 2.0.3 using the specified CDN path --}}
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         

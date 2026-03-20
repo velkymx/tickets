@@ -45,9 +45,6 @@ Edit Release
 </form>
 @stop
 @section('javascript')
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         

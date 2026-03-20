@@ -258,53 +258,13 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 @if(!empty($burndownData) && count($burndownData['labels']) > 0)
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('burndownChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($burndownData['labels']) !!},
-            datasets: [
-                {
-                    label: 'Ideal',
-                    data: {!! json_encode($burndownData['ideal']) !!},
-                    borderColor: 'rgba(200, 200, 200, 1)',
-                    borderDash: [5, 5],
-                    fill: false,
-                    tension: 0
-                },
-                {
-                    label: 'Actual',
-                    data: {!! json_encode($burndownData['actual']) !!},
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    fill: false,
-                    tension: 0
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Story Points'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Sprint Days'
-                    }
-                }
-            }
-        }
-    });
-});
+    window.burndownChartData = {
+        labels: {!! json_encode($burndownData['labels']) !!},
+        ideal: {!! json_encode($burndownData['ideal']) !!},
+        actual: {!! json_encode($burndownData['actual']) !!}
+    };
 </script>
 @endif
 @endpush

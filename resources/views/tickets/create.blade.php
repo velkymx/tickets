@@ -120,11 +120,7 @@
 @stop
 
 @section('javascript')
-{{-- 1. Quill.js CSS and JS --}}
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
-{{-- 2. Datepicker (assuming jQuery/jQuery UI are available in layouts.app) --}}
+{{-- Datepicker --}}
 <script>
     $(function() {
       $( ".datepicker" ).datepicker();
