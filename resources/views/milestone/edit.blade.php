@@ -69,10 +69,10 @@
 @endsection
 
 @section('javascript')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+<script type="module">
+    document.addEventListener('DOMContentLoaded', async function() {
+        const Quill = await window.loadQuill();
         
-        // --- 1. Quill Initialization ---
         const quillToolbarOptions = [
             ['bold', 'italic', 'underline', 'strike'], 
             ['blockquote', 'code-block'],
@@ -88,27 +88,18 @@
             placeholder: 'Enter milestone details here...'
         });
         
-        // Load initial content from the hidden input/old value
-        // FIXED: Using the correct ID 'description-input' from the HTML
         const initialContentInput = document.getElementById('description-input');
         
         if (initialContentInput && initialContentInput.value) {
-            // Dangerously paste HTML content into the editor
             quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
         }
 
-        // --- 2. Form Submission Handler (Quill Content) ---
-        // FIXED: Using the correct form ID 'milestone_form' from the HTML
         const form = document.getElementById('milestone_form');
         const hiddenInput = initialContentInput;
 
         form.addEventListener('submit', function() {
-            // Get the HTML content from the editor and put it into the hidden input
             hiddenInput.value = quill.root.innerHTML;
         });
-        
-        // NOTE: The jQuery Datepicker block was removed to avoid using jQuery 
-        // and because there are no date fields in this form.
     });
 </script>
 @endsection

@@ -342,8 +342,73 @@
 
 @section('javascript')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- 1. Quill Initialization ---
+    // --- 3. Hide Note (Vanilla JS AJAX) ---
+    window.hideNote = function(noteid) {
+        const noteElement = document.getElementById('note_' + noteid);
+        if (!noteElement) return;
+
+        fetch('/notes/hide/' + noteid)
+            .then(response => {
+                if (response.ok) {
+                    noteElement.style.transition = 'opacity 0.5s ease-out, height 0.5s ease-out';
+                    noteElement.style.opacity = '0';
+                    noteElement.style.height = noteElement.offsetHeight + 'px';
+
+                    setTimeout(() => {
+                        noteElement.style.height = '0';
+                        noteElement.style.margin = '0';
+                    }, 100);
+
+                    setTimeout(() => {
+                        noteElement.remove();
+                    }, 600);
+                    
+                } else {
+                    console.error('Failed to hide note');
+                }
+            })
+            .catch(error => console.error('Error hiding note:', error));
+    }
+
+    // --- 4. Watch Ticket (Vanilla JS AJAX) ---
+    const watchButton = document.getElementById('watch-ticket');
+    const alertDiv = document.getElementById('js-alert');
+    const alertMessage = document.getElementById('js-alert-message');
+    const ticketId = {{ $ticket->id }};
+
+    watchButton.addEventListener('click', function() {
+        fetch('/users/watch/' + ticketId)
+            .then(response => response.text())
+            .then(data => {
+                alertMessage.innerHTML = data;
+                alertDiv.style.display = 'block';
+                alertDiv.classList.add('show');
+            })
+            .catch(error => {
+                alertMessage.textContent = 'Error watching ticket.';
+                alertDiv.style.display = 'block';
+                alertDiv.classList.add('show');
+                console.error('Watch error:', error);
+            });
+    });
+
+    // --- 5. Custom Alert Close (Vanilla JS) ---
+    document.getElementById('js-alert-close').addEventListener('click', function() {
+        alertDiv.classList.remove('show');
+        setTimeout(() => {
+            alertDiv.style.display = 'none';
+        }, 150);
+    });
+
+    // --- 6. Apply responsive class to images in description (Vanilla JS) ---
+    document.querySelectorAll('.ticket-description-content img').forEach(img => {
+        img.classList.add('img-fluid');
+    });
+</script>
+<script type="module">
+    document.addEventListener('DOMContentLoaded', async function() {
+        const Quill = await window.loadQuill();
+        
         const quillToolbarOptions = [
             ['bold', 'italic', 'underline', 'strike'], 
             ['blockquote', 'code-block'],
@@ -358,81 +423,12 @@
             placeholder: 'Add a note or status update...'
         });
         
-        // --- 2. Form Submission Handler (Quill Content) ---
         const noteForm = document.getElementById('note-update-form');
         const hiddenInput = document.getElementById('note_body_hidden');
 
         noteForm.addEventListener('submit', function() {
-            // Get the content as HTML and set it to the hidden input
             hiddenInput.value = quill.root.innerHTML;
         });
-
-        // --- 3. Hide Note (Vanilla JS AJAX) ---
-        window.hideNote = function(noteid) {
-            const noteElement = document.getElementById('note_' + noteid);
-            if (!noteElement) return;
-
-            // Simple AJAX using fetch (replace jQuery.load)
-            fetch('/notes/hide/' + noteid)
-                .then(response => {
-                    if (response.ok) {
-                        noteElement.style.transition = 'opacity 0.5s ease-out, height 0.5s ease-out';
-                        noteElement.style.opacity = '0';
-                        noteElement.style.height = noteElement.offsetHeight + 'px'; // Set height before collapsing
-
-                        // Wait for transition, then collapse and remove
-                        setTimeout(() => {
-                            noteElement.style.height = '0';
-                            noteElement.style.margin = '0';
-                        }, 100);
-
-                        setTimeout(() => {
-                            noteElement.remove();
-                        }, 600);
-                        
-                    } else {
-                        console.error('Failed to hide note');
-                    }
-                })
-                .catch(error => console.error('Error hiding note:', error));
-        }
-
-        // --- 4. Watch Ticket (Vanilla JS AJAX) ---
-        const watchButton = document.getElementById('watch-ticket');
-        const alertDiv = document.getElementById('js-alert');
-        const alertMessage = document.getElementById('js-alert-message');
-        const ticketId = {{ $ticket->id }}; // Directly use the Blade variable
-
-        watchButton.addEventListener('click', function() {
-            fetch('/users/watch/' + ticketId)
-                .then(response => response.text())
-                .then(data => {
-                    alertMessage.innerHTML = data;
-                    alertDiv.style.display = 'block';
-                    alertDiv.classList.add('show');
-                })
-                .catch(error => {
-                    alertMessage.textContent = 'Error watching ticket.';
-                    alertDiv.style.display = 'block';
-                    alertDiv.classList.add('show');
-                    console.error('Watch error:', error);
-                });
-        });
-
-        // --- 5. Custom Alert Close (Vanilla JS) ---
-        document.getElementById('js-alert-close').addEventListener('click', function() {
-            alertDiv.classList.remove('show');
-            // Give time for fade transition before hiding display
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 150);
-        });
-
-        // --- 6. Apply responsive class to images in description (Vanilla JS) ---
-        document.querySelectorAll('.ticket-description-content img').forEach(img => {
-            img.classList.add('img-fluid'); // Bootstrap 5 equivalent of img-responsive
-        });
-        
     });
 </script>
 @endsection

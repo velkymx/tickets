@@ -60,8 +60,9 @@
 @endsection
 
 @section('javascript')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+<script type="module">
+    document.addEventListener('DOMContentLoaded', async function() {
+        const Quill = await window.loadQuill();
         
         const quillToolbarOptions = [
             [{ 'header': [1, 2, 3, 4, 5, 6, false] }], 

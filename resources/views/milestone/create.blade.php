@@ -82,10 +82,10 @@
 @endsection
 
 @section('javascript')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+<script type="module">
+    document.addEventListener('DOMContentLoaded', async function() {
+        const Quill = await window.loadQuill();
         
-        // --- 1. Quill Initialization ---
         const quillToolbarOptions = [
             ['bold', 'italic', 'underline', 'strike'], 
             ['blockquote', 'code-block'],
@@ -100,26 +100,17 @@
             placeholder: 'Enter milestone description here...'
         });
         
-        // Load old content into the editor if it exists
         const initialContent = document.getElementById('description_hidden').value;
         if (initialContent) {
             quill.clipboard.dangerouslyPasteHTML(initialContent);
         }
 
-        // --- 2. Form Submission Handler (Quill Content) ---
         const form = document.getElementById('milestone_form');
         const hiddenInput = document.getElementById('description_hidden');
 
         form.addEventListener('submit', function() {
-            // Get the HTML content from the editor and put it into the hidden input
             hiddenInput.value = quill.root.innerHTML;
         });
-
-        // NOTE on Validation: The original jQuery validation has been removed. 
-        // We now rely on native HTML5 validation (using the `required` attribute).
-        
-        // NOTE on Datepicker: The original jQuery datepicker has been removed. 
-        // We now use the native HTML5 date input (<input type="date">) for a pure vanilla JS solution.
     });
 </script>
 @endsection
