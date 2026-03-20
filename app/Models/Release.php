@@ -6,13 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Release extends Model
 {
-    public function tickets()
-      {
-          return $this->hasMany('App\Models\ReleaseTicket', 'release_id');
-      }    
+    protected $fillable = [
+        'title', 'body', 'started_at', 'completed_at', 'user_id',
+    ];
 
-      public function owner()
-      {
-          return $this->hasOne('App\Models\User');
-      }      
+    public function tickets()
+    {
+        return $this->hasMany('App\Models\ReleaseTicket', 'release_id');
+    }
+
+    public function owner()
+    {
+        return $this->belongsTo('App\Models\User', 'user_id');
+    }
 }
