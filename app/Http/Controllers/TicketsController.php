@@ -363,6 +363,9 @@ class TicketsController extends Controller
 
     public function estimate(Request $request, $ticket_id)
     {
+        $request->validate([
+            'storypoints' => 'required|integer|min:0',
+        ]);
 
         $check = TicketEstimate::where('ticket_id', $ticket_id)->where('user_id', Auth::id())->first();
 
