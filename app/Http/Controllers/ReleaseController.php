@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Release;
 use App\Models\ReleaseTicket;
 use App\Models\Type;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,16 +45,16 @@ class ReleaseController extends Controller
         $release->title = $request->title;
         $release->body = $request->body;
 
-        if ($request->started_at != '') {
+        if (! empty($request->started_at)) {
             $release->started_at = date('Y-m-d', strtotime($request->started_at));
         } else {
-            $release->started_at = '';
+            $release->started_at = null;
         }
 
-        if ($request->completed_at != '') {
+        if (! empty($request->completed_at)) {
             $release->completed_at = date('Y-m-d', strtotime($request->completed_at));
         } else {
-            $release->completed_at = '';
+            $release->completed_at = null;
         }
 
         $release->save();
@@ -93,8 +92,8 @@ class ReleaseController extends Controller
         $release = new Release;
 
         $release->title = $request->title;
-        $release->started_at = new Carbon($request->started_at);
-        $release->completed_at = new Carbon($request->completed_at);
+        $release->started_at = ! empty($request->started_at) ? date('Y-m-d', strtotime($request->started_at)) : null;
+        $release->completed_at = ! empty($request->completed_at) ? date('Y-m-d', strtotime($request->completed_at)) : null;
         $release->body = $request->body;
         $release->user_id = Auth::id();
 
