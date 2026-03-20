@@ -3,12 +3,30 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Importance;
+use App\Models\Milestone;
 use App\Models\Note;
+use App\Models\Project;
+use App\Models\Status;
 use App\Models\Ticket;
+use App\Models\Type;
 use Illuminate\Http\Request;
 
 class TicketController extends Controller
 {
+    public function lookups()
+    {
+        return response()->json([
+            'data' => [
+                'statuses' => Status::orderBy('name')->get(['id', 'name']),
+                'types' => Type::orderBy('name')->get(['id', 'name']),
+                'importance' => Importance::orderBy('name')->get(['id', 'name']),
+                'projects' => Project::where('active', 1)->orderBy('name')->get(['id', 'name']),
+                'milestones' => Milestone::orderBy('name')->get(['id', 'name']),
+            ],
+        ]);
+    }
+
     public function index(Request $request)
     {
         $query = Ticket::with(['status', 'importance']);
