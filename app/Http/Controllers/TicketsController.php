@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\TicketResource;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -18,6 +17,7 @@ use App\Models\Type;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class TicketsController extends Controller
@@ -232,9 +232,7 @@ class TicketsController extends Controller
 
         $insert = Ticket::create($data);
 
-        $request->session()->flash('status', 'Task was created successfully!');
-
-        return redirect('tickets/'.$insert->id);
+        return redirect('tickets/'.$insert->id)->with('status', 'Task was created successfully!');
     }
 
     public function upload(Request $request)
@@ -350,17 +348,17 @@ class TicketsController extends Controller
 
     private function lookups()
     {
-        return [
-
-            'types' => Type::orderBy('name')->pluck('name', 'id'),
-            'milestones' => Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
-            'importances' => Importance::orderBy('name')->pluck('name', 'id'),
-            'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
-            'statuses' => Status::orderBy('name')->pluck('name', 'id'),
-            'releases' => Release::orderBy('title')->pluck('title', 'id'),
-            'users' => User::orderBy('name')->pluck('name', 'id'),
-
-        ];
+        return Cache::remember('ticket_lookups', now()->addMinutes(60), function () {
+            return [
+                'types' => Type::orderBy('name')->pluck('name', 'id'),
+                'milestones' => Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
+                'importances' => Importance::orderBy('name')->pluck('name', 'id'),
+                'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
+                'statuses' => Status::orderBy('name')->pluck('name', 'id'),
+                'releases' => Release::orderBy('title')->pluck('title', 'id'),
+                'users' => User::orderBy('name')->pluck('name', 'id'),
+            ];
+        });
     }
 
     public function estimate(Request $request, $ticket_id)
