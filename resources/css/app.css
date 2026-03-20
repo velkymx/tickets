@@ -1,10 +1,8 @@
 /* Import Bootstrap */
 @import 'bootstrap/dist/css/bootstrap.min.css';
 
-/* Import Bootswatch theme (overrides Bootstrap) */
-@import 'bootswatch/dist/yeti/bootstrap.min.css';
-
-/* Font Awesome already imported via JS */
+/* Quill rich text editor (lazy loaded in JS) */
+@import 'quill/dist/quill.snow.css';
 
 /* Custom styles */
 body {
