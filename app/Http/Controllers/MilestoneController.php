@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Milestone;
+use App\Models\MilestoneWatcher;
 use App\Models\Status;
 use App\Models\Type;
 use App\Models\User;
