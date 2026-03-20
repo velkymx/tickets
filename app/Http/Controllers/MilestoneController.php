@@ -181,7 +181,7 @@ class MilestoneController extends Controller
     {
         $milestone = Milestone::with(['owner', 'scrummaster'])->findOrFail($id);
         $tickets = $milestone->tickets()
-            ->with(['status', 'type', 'assignee', 'notes'])
+            ->with(['status', 'type', 'assignee', 'notes.user'])
             ->get();
 
         $closedStatusIds = [5, 8, 9];
@@ -255,7 +255,7 @@ class MilestoneController extends Controller
             $daysInSprint = $startDate->diffInDays($sprintEnd) + 1;
             $pointsPerDay = $totalStoryPoints / max($daysInSprint, 1);
 
-            for ($i = 0; $i <= min($daysInSprint, 30); $i++) {
+            for ($i = 0; $i <= $daysInSprint; $i++) {
                 $date = $startDate->copy()->addDays($i);
                 $dates[] = $date->format('M j');
                 $idealBurndown[] = max(0, $totalStoryPoints - ($pointsPerDay * $i));
@@ -263,9 +263,8 @@ class MilestoneController extends Controller
 
             $closedAtDates = $tickets->whereIn('status_id', $closedStatusIds)
                 ->whereNotNull('closed_at')
-                ->groupBy(function ($ticket) {
-                    return Carbon::parse($ticket->closed_at)->format('Y-m-d');
-                })
+                ->get()
+                ->groupBy(fn ($ticket) => $ticket->closed_at->format('Y-m-d'))
                 ->sortKeys();
 
             $cumulativeClosed = 0;
@@ -275,8 +274,7 @@ class MilestoneController extends Controller
                 $runningDates[$dateStr] = $cumulativeClosed;
             }
 
-            $actualIndex = 0;
-            for ($i = 0; $i <= min($daysInSprint, 30); $i++) {
+            for ($i = 0; $i <= $daysInSprint; $i++) {
                 $date = $startDate->copy()->addDays($i)->format('Y-m-d');
                 $actualBurndown[] = max(0, $totalStoryPoints - ($runningDates[$date] ?? 0));
             }
