@@ -16,9 +16,6 @@
         "bootstrap": "^5.3.3",
         "bootswatch": "^5.3.8",
         "chart.js": "^4.4.1",
-        "jquery": "^3.7.1",
-        "jquery-ui": "^1.13.2",
-        "jquery-validation": "^1.20.0",
         "quill": "^2.0.3"
     }
 }

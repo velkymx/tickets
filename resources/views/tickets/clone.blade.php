@@ -100,14 +100,14 @@
             {{-- Due Date (Cloned) --}}
             <div class="col-md-4">
                 <label for="due_at" class="form-label">Due Date</label>
-                <input type="text" name="due_at" id="due_at" class="form-control datepicker" 
+                <input type="date" name="due_at" id="due_at" class="form-control" 
                        value="{{ old('due_at', $ticket->due_at) }}">
             </div>
             
             {{-- Completed Date (Cloned) --}}
             <div class="col-md-4">
                 <label for="closed_at" class="form-label">Completed Date</label>
-                <input type="text" name="closed_at" id="closed_at" class="form-control datepicker" 
+                <input type="date" name="closed_at" id="closed_at" class="form-control" 
                        value="{{ old('closed_at', $ticket->closed_at) }}">
             </div>
 
@@ -130,22 +130,10 @@
 @stop
 
 @section('javascript')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+<script type="module">
+    document.addEventListener('DOMContentLoaded', async function() {
+        const Quill = await window.loadQuill();
         
-        // --- 1. Datepicker Initialization ---
-        // Retaining the standard approach for Datepicker, assuming a functional library is loaded.
-        if (typeof jQuery !== 'undefined' && typeof jQuery.ui !== 'undefined' && typeof jQuery.ui.datepicker !== 'undefined') {
-            $( ".datepicker" ).datepicker();
-        } else {
-            // Basic Vanilla JS placeholder logic if datepicker is not globally available
-            document.querySelectorAll('.datepicker').forEach(input => {
-                input.setAttribute('type', 'date');
-            });
-        }
-
-
-        // --- 2. Quill Initialization ---
         const quillToolbarOptions = [
             ['bold', 'italic', 'underline', 'strike'], 
             ['blockquote', 'code-block'],
@@ -161,18 +149,15 @@
             placeholder: 'Enter ticket details here...'
         });
         
-        // Load initial content (the cloned description)
         const initialContent = document.getElementById('description_hidden').value;
         if (initialContent) {
             quill.clipboard.dangerouslyPasteHTML(initialContent);
         }
 
-        // --- 3. Form Submission Handler (Quill Content) ---
         const form = document.getElementById('ticket-form');
         const hiddenInput = document.getElementById('description_hidden');
 
         form.addEventListener('submit', function() {
-            // Get the HTML content from the editor and put it into the hidden input
             hiddenInput.value = quill.root.innerHTML;
         });
     });

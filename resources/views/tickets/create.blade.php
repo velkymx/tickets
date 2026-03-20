@@ -101,7 +101,7 @@
             {{-- Due Date --}}
             <div class="col-md-6">
                 <label for="due_at" class="form-label">Due Date</label>
-                <input type="text" name="due_at" id="due_at" class="form-control datepicker" value="{{ old('due_at') }}">
+                <input type="date" name="due_at" id="due_at" class="form-control" value="{{ old('due_at') }}">
             </div>
             
             {{-- Time Estimate --}}
@@ -120,62 +120,43 @@
 @stop
 
 @section('javascript')
-{{-- Datepicker --}}
-<script>
-    $(function() {
-      $( ".datepicker" ).datepicker();
-    });
-</script>
-
-{{-- 3. Quill Initialization and Form Submission Logic --}}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+{{-- Quill Initialization and Form Submission Logic --}}
+<script type="module">
+    document.addEventListener('DOMContentLoaded', async function() {
+        const Quill = await window.loadQuill();
         
-        // --- Quill Initialization ---
         const toolbarOptions = [
-            ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+            ['bold', 'italic', 'underline', 'strike'],
             ['blockquote', 'code-block'],
-
-            [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+            [{ 'header': 1 }, { 'header': 2 }],
             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-            [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-            [{ 'direction': 'rtl' }],                         // text direction
-
-            [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'direction': 'rtl' }],
+            [{ 'size': ['small', false, 'large', 'huge'] }],
             [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-            [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+            [{ 'color': [] }, { 'background': [] }],
             [{ 'font': [] }],
             [{ 'align': [] }],
-            
-            ['link', 'image'], // added link and image handlers
-
-            ['clean']                                         // remove formatting button
+            ['link', 'image'],
+            ['clean']
         ];
 
         const quill = new Quill('#editor-container', {
-            modules: {
-                toolbar: toolbarOptions
-            },
-            theme: 'snow', // snow theme is clean and standard
+            modules: { toolbar: toolbarOptions },
+            theme: 'snow',
             placeholder: 'Enter ticket details here...'
         });
         
-        // Load old content into the editor if it exists
         const initialContent = document.getElementById('description_hidden').value;
         if (initialContent) {
-            // Using clipboard module to insert HTML content
             quill.clipboard.dangerouslyPasteHTML(initialContent);
         }
 
-        // --- Form Submission Handler ---
         const form = document.getElementById('ticket-form');
         const hiddenInput = document.getElementById('description_hidden');
 
         form.addEventListener('submit', function() {
-            // Get the content as HTML and set it to the hidden input
-            // This ensures the rich content is sent to the backend
             hiddenInput.value = quill.root.innerHTML;
         });
     });
