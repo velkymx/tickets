@@ -42,6 +42,38 @@ class TicketController extends Controller
         return response()->json(['data' => $data]);
     }
 
+    public function store(Request $request)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+        ]);
+
+        $ticket = Ticket::create([
+            'subject' => $request->subject,
+            'description' => $request->description ?? '',
+            'type_id' => $request->type_id ?? 1,
+            'importance_id' => $request->importance_id ?? 1,
+            'project_id' => $request->project_id ?? 1,
+            'milestone_id' => $request->milestone_id ?? 1,
+            'due_at' => $request->due_at ?? null,
+            'estimate' => $request->estimate ?? 0,
+            'storypoints' => $request->storypoints ?? 0,
+            'user_id' => $request->user()->id,
+            'user_id2' => $request->user()->id,
+            'status_id' => 1,
+        ]);
+
+        return response()->json([
+            'message' => 'Ticket created successfully',
+            'ticket' => [
+                'id' => $ticket->id,
+                'subject' => $ticket->subject,
+                'status' => 'new',
+                'link' => "/api/v1/tickets/{$ticket->id}",
+            ],
+        ], 201);
+    }
+
     public function show(Request $request, $id)
     {
         $ticket = Ticket::with(['status', 'type', 'importance', 'milestone', 'project', 'assignee', 'notes.user'])
