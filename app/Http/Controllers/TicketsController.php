@@ -34,17 +34,20 @@ class TicketsController extends Controller
 
     public function home()
     {
+        $statusIds = Status::whereNotIn('id', [5, 8, 9])->pluck('id')->toArray();
 
-        $statuses = Status::whereNotIn('id', [5, 8, 9])->pluck('name', 'id');
+        $tickets = Ticket::where('user_id2', Auth::id())
+            ->whereIn('status_id', $statusIds)
+            ->with('status')
+            ->get()
+            ->groupBy('status_id');
 
-        foreach ($statuses as $status => $val) {
-
-            $alltickets[$val] = Ticket::where('user_id2', Auth::id())->where('status_id', $status)->get();
-
-            if (count($alltickets[$val]) == 0) {
-                unset($alltickets[$val]);
+        $alltickets = [];
+        foreach ($tickets as $statusId => $ticketGroup) {
+            $statusName = $ticketGroup->first()->status->name ?? null;
+            if ($statusName) {
+                $alltickets[$statusName] = $ticketGroup;
             }
-
         }
 
         return View('home', compact('alltickets'));
