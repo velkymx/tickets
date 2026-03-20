@@ -136,9 +136,7 @@ class TicketsController extends Controller
 
         $this->notate($ticket->id, '', $change_list);
 
-        \Session::flash('info_message', 'You are assigned to Ticket #'.$id);
-
-        return redirect('tickets/'.$id);
+        return redirect('tickets/'.$id)->with('info_message', 'You are assigned to Ticket #'.$id);
     }
 
     public function show($id)
@@ -214,9 +212,7 @@ class TicketsController extends Controller
 
         $this->notate($ticket->id, '', $change_list);
 
-        \Session::flash('info_message', 'Ticket #'.$id.' updated');
-
-        return redirect('tickets/'.$id);
+        return redirect('tickets/'.$id)->with('info_message', 'Ticket #'.$id.' updated');
     }
 
     public function store(Request $request)
@@ -289,9 +285,7 @@ class TicketsController extends Controller
             $i++;
         }
 
-        \Session::flash('info_message', $i.' ticket(s) updated');
-
-        return redirect('tickets');
+        return redirect('tickets')->with('info_message', $i.' ticket(s) updated');
     }
 
     public function board()
