@@ -10,9 +10,12 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
+     * Configure via TRUST_PROXIES env variable or set specific IPs.
+     * Use '*' only in development. In production, list specific proxy IPs.
+     *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = env('TRUST_PROXIES', null);
 
     /**
      * The headers that should be used to detect proxies.
