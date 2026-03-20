@@ -39,9 +39,19 @@ class TicketController extends Controller
 
     public function show(Request $request, $id)
     {
-        $ticket = Ticket::with(['status', 'type', 'importance', 'milestone', 'project', 'assignee'])
+        $ticket = Ticket::with(['status', 'type', 'importance', 'milestone', 'project', 'assignee', 'notes.user'])
             ->where('user_id2', $request->user()->id)
             ->findOrFail($id);
+
+        $notes = $ticket->notes->map(function ($note) {
+            return [
+                'id' => $note->id,
+                'user' => $note->user->name ?? null,
+                'body' => $note->body,
+                'hours' => $note->hours,
+                'created_at' => $note->created_at->toDateTimeString(),
+            ];
+        });
 
         return response()->json(['data' => [
             'id' => $ticket->id,
@@ -58,6 +68,7 @@ class TicketController extends Controller
             'due_at' => $ticket->due_at,
             'closed_at' => $ticket->closed_at,
             'created_at' => $ticket->created_at->toDateString(),
+            'notes' => $notes,
         ]]);
     }
 
