@@ -10,14 +10,8 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/tickets.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/yeti/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    @auth
-    @if (Auth::user()->theme && (strtolower(Auth::user()->theme) == '/css/bootstrap.darkly.min.css'))
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/darkly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    @endif
-    @endauth
+    
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body id="app-layout">
 <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
@@ -26,20 +20,17 @@
             <span class="text-primary">Tickets</span>
         </a>
 
-        {{-- Toggler Button: data-bs-target now points to the new ID --}}
         <button class="navbar-toggler" type="button" 
                 data-bs-toggle="collapse" 
-                data-bs-target="#navbarSupportedContent" {{-- CORRECTED ID --}}
+                data-bs-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" 
                 aria-expanded="false" 
                 aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        {{-- Collapsable Content: The ID must match the data-bs-target --}}
-        <div class="collapse navbar-collapse" id="navbarSupportedContent"> {{-- CORRECTED ID --}}
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
             
-            {{-- Left Side: Navigation Links (me-auto pushes it left) --}}
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="{{ url('/home') }}">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/tickets') }}">All Tickets</a></li>
@@ -48,7 +39,6 @@
                 <li class="nav-item"><a class="nav-link" href="{{ url('/projects') }}">Projects</a></li>
             </ul>
 
-            {{-- Right Side: Authentication/User Links (ms-auto pushes it right) --}}
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 @guest
                     <li class="nav-item"><a class="nav-link" href="{{ url('/login') }}">Login</a></li>
@@ -112,14 +102,6 @@
         </p>
     </footer>
 
-    {{-- Keep jQuery for legacy code (jquery-ui/jquery-validate) if necessary, 
-         but Bootstrap 5.3 does not require it. Load it first if needed. --}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    
     @yield('javascript')
 </body>
 </html>
