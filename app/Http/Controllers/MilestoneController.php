@@ -246,8 +246,7 @@ class MilestoneController extends Controller
         $duration = $startDate && $endDate ? $startDate->diffInDays($endDate) : 0;
 
         $burndownData = [];
-        if ($startDate && $endDate && $totalStoryPoints > 0) {
-            $today = Carbon::now();
+        if ($startDate && $endDate) {
             $sprintEnd = $endDate;
 
             $idealBurndown = [];
@@ -256,6 +255,7 @@ class MilestoneController extends Controller
 
             $daysInSprint = $startDate->diffInDays($sprintEnd) + 1;
             $pointsPerDay = $totalStoryPoints / max($daysInSprint, 1);
+            $pointsPerDay = $pointsPerDay > 0 ? $pointsPerDay : 0;
 
             for ($i = 0; $i <= $daysInSprint; $i++) {
                 $date = $startDate->copy()->addDays($i);
