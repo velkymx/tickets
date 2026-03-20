@@ -35,6 +35,17 @@
         </div>
     @endif
 
+    @auth
+        @php
+            $isWatching = $ticket->watchers->contains('user_id', auth()->id());
+        @endphp
+        <div class="mb-3">
+            <a href="/tickets/watch/{{ $ticket->id }}" class="btn btn-sm {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
+                {{ $isWatching ? 'Unwatch' : 'Watch' }}
+            </a>
+        </div>
+    @endauth
+
     <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-8">

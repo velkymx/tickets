@@ -2,16 +2,35 @@
 
 namespace App\Models;
 
+use App\Notifications\WatcherNotification;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Ticket extends Model
 {
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updated(function ($ticket) {
+            $ticket->notifyWatchers('Ticket');
+        });
+    }
+
+    private function notifyWatchers(string $type, ?int $exceptUserId = null): void
+    {
+        $url = url("/tickets/{$this->id}");
+        $message = "The {$type} '{$this->subject}' has been updated.";
+
+        $this->watchers->each(function ($watcher) use ($type, $message, $url, $exceptUserId) {
+            if ($watcher->user_id !== $exceptUserId && $watcher->user?->email) {
+                $watcher->user->notify(new WatcherNotification($type, $message, $url));
+            }
+        });
+    }
     //
 
     protected $fillable = [
-        'subject', 'description', 'type_id', 'user_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'user_id2', 'due_at', 'closed_at','estimate','storypoints'
+        'subject', 'description', 'type_id', 'user_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'user_id2', 'due_at', 'closed_at', 'estimate', 'storypoints',
     ];
 
     public function type()
@@ -57,7 +76,7 @@ class Ticket extends Model
     public function userstorypoints()
     {
         return $this->hasMany('App\Models\TicketEstimate');
-    }    
+    }
 
     public function watchers()
     {
@@ -68,5 +87,4 @@ class Ticket extends Model
     {
         return $this->hasMany('App\Models\TicketView');
     }
-
 }

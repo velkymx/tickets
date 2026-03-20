@@ -1,14 +1,14 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TicketsController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\NotesController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ReleaseController;
-use App\Http\Controllers\ImportController;
+use App\Http\Controllers\TicketsController;
 use App\Http\Controllers\UsersController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +27,7 @@ Route::get('/', function () {
 
 // --- Authenticated Routes Group ---
 Route::middleware('auth')->group(function () {
-    
+
     // Dashboard & Profile
     Route::get('/dashboard', function () {
         return view('dashboard');
@@ -41,7 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', [TicketsController::class, 'home'])->name('home');
 
     // --- Tickets Routes (CRITICAL: Static routes must come before dynamic routes) ---
-    
+
     // Static Routes (Creation, Import, API Access)
     Route::get('/ticket/create', [TicketsController::class, 'create'])->name('tickets.create');
     Route::get('/tickets/import', [ImportController::class, 'index'])->name('tickets.import'); // FIX: MOVED UP
@@ -51,10 +51,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/claim/{id}', [TicketsController::class, 'claim'])->name('tickets.claim');
     Route::get('/tickets/clone/{id}', [TicketsController::class, 'clone'])->name('tickets.clone');
     Route::get('/tickets/edit/{id}', [TicketsController::class, 'edit'])->name('tickets.edit');
+    Route::get('/tickets/watch/{id}', [TicketsController::class, 'toggleWatcher'])->name('tickets.watch');
 
     // Base/Index Route
     Route::get('/tickets', [TicketsController::class, 'index'])->name('tickets.list');
-    
+
     // Dynamic Show Route (Must be last under the /tickets prefix)
     Route::get('/tickets/{id}', [TicketsController::class, 'show'])->name('tickets.show');
 
@@ -84,7 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/user/edit', [UsersController::class, 'edit'])->name('user.edit');
     Route::get('/users/{id}', [UsersController::class, 'show'])->name('user.show');
     Route::get('/users/watch/{id}', [UsersController::class, 'watch'])->name('users.watch');
-    
+
     // --- POST/PUT/PATCH Routes ---
 
     // Tickets
@@ -94,20 +95,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/import', [ImportController::class, 'create'])->name('tickets.storeimport');
     Route::put('/tickets/update/{id}', [TicketsController::class, 'update'])->name('tickets.update');
     Route::post('/tickets/upload', [TicketsController::class, 'upload'])->name('tickets.upload');
-    
+
     // Milestone
     Route::post('/milestone/store/{id}', [MilestoneController::class, 'store'])->name('milestone.store');
     Route::put('/milestone/update/{id}', [MilestoneController::class, 'update'])->name('milestone.update');
-    
+
     // Notes
     Route::post('/notes', [TicketsController::class, 'note'])->name('notes.store');
-    
+
     // Projects
     Route::post('/projects/store/{id}', [ProjectsController::class, 'store'])->name('projects.update');
 
     // Release
     Route::put('/release/edit/{id}', [ReleaseController::class, 'put'])->name('release.update');
-    Route::post('/release/store', [ReleaseController::class, 'store'])->name('release.store'); 
+    Route::post('/release/store', [ReleaseController::class, 'store'])->name('release.store');
 
     // User
     Route::post('/user/update', [UsersController::class, 'update'])->name('user.update');
