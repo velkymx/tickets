@@ -27,10 +27,9 @@ class Ticket extends Model
             }
         });
     }
-    //
 
     protected $fillable = [
-        'subject', 'description', 'type_id', 'user_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'user_id2', 'due_at', 'closed_at', 'estimate', 'storypoints',
+        'subject', 'description', 'type_id', 'user_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'user_id2', 'due_at', 'closed_at', 'estimate', 'storypoints', 'actual',
     ];
 
     public function type()
