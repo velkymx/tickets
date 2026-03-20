@@ -37,6 +37,11 @@ class Ticket extends Model
         return $this->belongsTo('App\Models\Type');
     }
 
+    public function getActualHoursAttribute()
+    {
+        return $this->notes()->sum('hours');
+    }
+
     public function milestone()
     {
         return $this->belongsTo('App\Models\Milestone');

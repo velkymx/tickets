@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\TicketResource;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -338,8 +339,7 @@ class TicketsController extends Controller
 
             $this->notate($ticket->id, $request->body, $change_list, $request->hours);
 
-            $ticket->actual = Note::where('ticket_id', $ticket->id)->sum('hours');
-
+            $ticket->actual = $ticket->actual_hours;
             $ticket->save();
         }
 
