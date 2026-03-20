@@ -11,8 +11,13 @@ class TicketController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Ticket::with(['status', 'importance'])
-            ->where('user_id2', $request->user()->id);
+        $query = Ticket::with(['status', 'importance']);
+
+        if ($request->boolean('unassigned')) {
+            $query->whereNull('user_id2')->orWhere('user_id2', 0);
+        } else {
+            $query->where('user_id2', $request->user()->id);
+        }
 
         if ($request->has('status')) {
             $query->where('status_id', $request->status);
@@ -74,8 +79,12 @@ class TicketController extends Controller
 
     public function note(Request $request, $id)
     {
-        $ticket = Ticket::where('user_id2', $request->user()->id)
-            ->findOrFail($id);
+        $ticket = Ticket::findOrFail($id);
+
+        if ($request->boolean('claim')) {
+            $ticket->user_id2 = $request->user()->id;
+            $ticket->save();
+        }
 
         if ($request->has('status_id') && $request->status_id != $ticket->status_id) {
             $ticket->status_id = $request->status_id;
@@ -97,13 +106,14 @@ class TicketController extends Controller
             ]);
         }
 
-        $ticket->load('status');
+        $ticket->load(['status', 'assignee']);
 
         return response()->json([
             'message' => 'Note added successfully',
             'ticket' => [
                 'id' => $ticket->id,
                 'status' => $ticket->status->name ?? null,
+                'assignee' => $ticket->assignee->name ?? null,
             ],
         ]);
     }
