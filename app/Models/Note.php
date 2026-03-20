@@ -7,19 +7,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Note extends Model
 {
-  protected $fillable = [
-      'body', 'created_at', 'user_id', 'ticket_id','hours','notetype'
+    protected $fillable = [
+        'body', 'user_id', 'ticket_id', 'hours', 'notetype', 'hide',
+    ];
 
-  ];
+    protected $casts = [
+        'hours' => 'decimal:2',
+        'hide' => 'boolean',
+    ];
 
-  public function user()
-  {
-      return $this->belongsTo('App\Models\User');
-  }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo('App\Models\User');
+    }
 
-  public function ticket()
-  {
-      return $this->belongsTo('App\Models\Ticket');
-  }
-
+    public function ticket(): BelongsTo
+    {
+        return $this->belongsTo('App\Models\Ticket');
+    }
 }
