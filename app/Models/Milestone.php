@@ -47,12 +47,12 @@ class Milestone extends Model
 
     public function owner()
     {
-        return $this->hasOne('App\Models\User', 'id', 'owner_user_id');
+        return $this->belongsTo('App\Models\User', 'owner_user_id');
     }
 
     public function scrummaster()
     {
-        return $this->hasOne('App\Models\User', 'id', 'scrummaster_user_id');
+        return $this->belongsTo('App\Models\User', 'scrummaster_user_id');
     }
 
     public function watchers()
