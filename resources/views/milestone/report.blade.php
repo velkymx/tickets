@@ -31,7 +31,7 @@
                     @if($milestone->end_at && $milestone->end_at != '0000-00-00')
                         <strong>Released:</strong> {{ date('M j, Y', strtotime($milestone->end_at)) }}<br>
                     @endif
-                    <strong>Duration:</strong> {{ $duration }} days
+                    <strong>Duration:</strong> {{ $duration > 0 ? $duration . ' days' : 'N/A' }}
                 </p>
                 @if($milestone->end_at && $milestone->end_at != '0000-00-00')
                     <span class="badge bg-success">Released</span>

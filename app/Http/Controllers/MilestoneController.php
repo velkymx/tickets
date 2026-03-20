@@ -264,8 +264,13 @@ class MilestoneController extends Controller
             }
 
             $closedAtDates = $tickets->whereIn('status_id', $closedStatusIds)
-                ->whereNotNull('closed_at')
                 ->get()
+                ->map(function ($ticket) {
+                    $ticket->closed_at = $ticket->closed_at ?? $ticket->updated_at;
+
+                    return $ticket;
+                })
+                ->filter(fn ($ticket) => $ticket->closed_at)
                 ->groupBy(fn ($ticket) => $ticket->closed_at->format('Y-m-d'))
                 ->sortKeys();
 
