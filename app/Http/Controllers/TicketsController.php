@@ -62,7 +62,7 @@ class TicketsController extends Controller
             $perpage = (int) $request->perpage;
         }
 
-        $filters = ['milestone_id', 'project_id', 'sprint_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q'];
+        $filters = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q'];
 
         $tickets = new Ticket;
 
