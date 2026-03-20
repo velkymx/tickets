@@ -14,6 +14,7 @@
                 {{ $isWatching ? 'Unwatch' : 'Watch' }}
             </a>
         @endauth
+        <a href="/milestone/report/{{ $milestone->id }}" class="btn btn-sm btn-info">Report</a>
         <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-sm btn-primary">Edit Milestone</a>
         <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a>
     </div>
