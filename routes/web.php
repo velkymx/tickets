@@ -45,7 +45,7 @@ Route::middleware('auth')->group(function () {
     // Static Routes (Creation, Import, API Access)
     Route::get('/ticket/create', [TicketsController::class, 'create'])->name('tickets.create');
     Route::get('/tickets/import', [ImportController::class, 'index'])->name('tickets.import'); // FIX: MOVED UP
-    Route::get('/tickets/api/{id}', [TicketsController::class, 'api'])->name('tickets.api');
+    Route::post('/tickets/api/{id}', [TicketsController::class, 'api'])->name('tickets.api');
 
     // Action/Modifier Routes
     Route::get('/tickets/clone/{id}', [TicketsController::class, 'clone'])->name('tickets.clone');

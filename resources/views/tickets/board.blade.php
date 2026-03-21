@@ -71,9 +71,16 @@
                     placeholder.remove();
                 }
 
-                const url = `/tickets/api/${ticketId}/?status=${newStatusId}`;
+                const url = `/tickets/api/${ticketId}`;
 
-                fetch(url)
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: `status=${newStatusId}`,
+                })
                     .then(response => response.text())
                     .then(data => {
                         // Display success message from the API call
