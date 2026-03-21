@@ -69,6 +69,81 @@ class UpdateTicketRequestTest extends TestCase
     }
 
     #[Test]
+    public function it_validates_description_is_nullable_string(): void
+    {
+        $validator = $this->makeValidator(['description' => null]);
+        $this->assertFalse($validator->fails());
+
+        $validator = $this->makeValidator(['description' => 'Updated description']);
+        $this->assertFalse($validator->fails());
+
+        $validator = $this->makeValidator(['description' => 123]);
+        $this->assertTrue($validator->fails());
+    }
+
+    #[Test]
+    public function it_validates_importance_id_exists_when_provided(): void
+    {
+        $validator = $this->makeValidator(['importance_id' => 999]);
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('importance_id', $validator->errors()->toArray());
+    }
+
+    #[Test]
+    public function it_validates_milestone_id_exists_when_provided(): void
+    {
+        $validator = $this->makeValidator(['milestone_id' => 999]);
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('milestone_id', $validator->errors()->toArray());
+    }
+
+    #[Test]
+    public function it_validates_project_id_exists_when_provided(): void
+    {
+        $validator = $this->makeValidator(['project_id' => 999]);
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('project_id', $validator->errors()->toArray());
+    }
+
+    #[Test]
+    public function it_validates_due_at_is_date(): void
+    {
+        $validator = $this->makeValidator(['due_at' => 'not-a-date']);
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('due_at', $validator->errors()->toArray());
+    }
+
+    #[Test]
+    public function it_validates_estimate_is_numeric_min_zero(): void
+    {
+        $validator = $this->makeValidator(['estimate' => -1]);
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('estimate', $validator->errors()->toArray());
+
+        $validator = $this->makeValidator(['estimate' => 5.5]);
+        $this->assertFalse($validator->fails());
+    }
+
+    #[Test]
+    public function it_validates_actual_is_numeric_min_zero(): void
+    {
+        $validator = $this->makeValidator(['actual' => -1]);
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('actual', $validator->errors()->toArray());
+
+        $validator = $this->makeValidator(['actual' => 10.5]);
+        $this->assertFalse($validator->fails());
+    }
+
+    #[Test]
+    public function it_limits_subject_to_255_characters(): void
+    {
+        $validator = $this->makeValidator(['subject' => str_repeat('a', 256)]);
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('subject', $validator->errors()->toArray());
+    }
+
+    #[Test]
     public function it_authorizes_authenticated_users(): void
     {
         $request = new UpdateTicketRequest;
