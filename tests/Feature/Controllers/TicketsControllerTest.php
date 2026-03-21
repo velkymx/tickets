@@ -694,6 +694,95 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_formats_due_at(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+            'subject' => $ticket->subject,
+            'description' => $ticket->description ?? '',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'milestone_id' => $ticket->milestone_id,
+            'project_id' => $ticket->project_id,
+            'due_at' => '2024-06-15 10:30:00',
+        ]);
+
+        $ticket->refresh();
+        $this->assertStringStartsWith('2024-06-15', $ticket->due_at);
+    }
+
+    #[Test]
+    public function update_formats_closed_at(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+            'subject' => $ticket->subject,
+            'description' => $ticket->description ?? '',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'milestone_id' => $ticket->milestone_id,
+            'project_id' => $ticket->project_id,
+            'closed_at' => '2024-06-15 10:30:00',
+        ]);
+
+        $ticket->refresh();
+        $this->assertStringStartsWith('2024-06-15', $ticket->closed_at);
+    }
+
+    #[Test]
+    public function update_nullifies_empty_closed_at(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'closed_at' => now(),
+        ]);
+
+        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+            'subject' => $ticket->subject,
+            'description' => $ticket->description ?? '',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'milestone_id' => $ticket->milestone_id,
+            'project_id' => $ticket->project_id,
+            'closed_at' => '',
+        ]);
+
+        $ticket->refresh();
+        $this->assertNull($ticket->closed_at);
+    }
+
+    #[Test]
+    public function update_creates_changelog_note_on_changes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $newStatus = Status::factory()->create();
+
+        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+            'subject' => $ticket->subject,
+            'description' => $ticket->description ?? '',
+            'type_id' => $ticket->type_id,
+            'status_id' => $newStatus->id,
+            'importance_id' => $ticket->importance_id,
+            'milestone_id' => $ticket->milestone_id,
+            'project_id' => $ticket->project_id,
+        ]);
+
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
+    }
+
+    #[Test]
     public function claim_requires_authentication(): void
     {
         $ticket = Ticket::factory()->create();
@@ -1202,6 +1291,34 @@ class TicketsControllerTest extends TestCase
             'ticket_id' => $ticket->id,
             'notetype' => 'changelog',
         ]);
+    }
+
+    #[Test]
+    public function estimate_handles_single_voter(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $this->actingAs($user)->post("/tickets/estimate/{$ticket->id}", [
+            'storypoints' => 3,
+        ]);
+
+        $ticket->refresh();
+        $this->assertEquals(3, $ticket->storypoints);
+    }
+
+    #[Test]
+    public function estimate_handles_zero_storypoints(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $this->actingAs($user)->post("/tickets/estimate/{$ticket->id}", [
+            'storypoints' => 0,
+        ]);
+
+        $ticket->refresh();
+        $this->assertEquals(0, $ticket->storypoints);
     }
 
     #[Test]
