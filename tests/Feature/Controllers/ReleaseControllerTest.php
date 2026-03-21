@@ -257,4 +257,98 @@ class ReleaseControllerTest extends TestCase
         $release = Release::first();
         $this->assertEquals($user->id, $release->user_id);
     }
+
+    #[Test]
+    public function edit_denies_non_owner(): void
+    {
+        $owner = User::factory()->create();
+        $nonOwner = User::factory()->create();
+        $release = Release::factory()->create(['user_id' => $owner->id]);
+
+        $response = $this->actingAs($nonOwner)->get("/release/edit/{$release->id}");
+
+        $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function put_denies_non_owner(): void
+    {
+        $owner = User::factory()->create();
+        $nonOwner = User::factory()->create();
+        $release = Release::factory()->create(['user_id' => $owner->id]);
+
+        $response = $this->actingAs($nonOwner)->put("/release/edit/{$release->id}", [
+            'title' => 'Hacked Title',
+            'body' => 'Hacked Body',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function put_formats_dates(): void
+    {
+        $user = User::factory()->create();
+        $release = Release::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)->put("/release/edit/{$release->id}", [
+            'title' => 'Updated',
+            'body' => 'Body',
+            'started_at' => '2024-06-15 10:30:00',
+            'completed_at' => '2024/06/20',
+        ]);
+
+        $release->refresh();
+        $this->assertStringStartsWith('2024-06-15', $release->started_at);
+        $this->assertStringStartsWith('2024-06-20', $release->completed_at);
+    }
+
+    #[Test]
+    public function put_nullifies_empty_dates(): void
+    {
+        $user = User::factory()->create();
+        $release = Release::factory()->create([
+            'user_id' => $user->id,
+            'started_at' => '2024-01-01',
+            'completed_at' => '2024-01-31',
+        ]);
+
+        $this->actingAs($user)->put("/release/edit/{$release->id}", [
+            'title' => 'Updated',
+            'body' => 'Body',
+            'started_at' => '',
+            'completed_at' => '',
+        ]);
+
+        $release->refresh();
+        $this->assertNull($release->started_at);
+        $this->assertNull($release->completed_at);
+    }
+
+    #[Test]
+    public function store_rejects_empty_title(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/release/store', [
+            'title' => '',
+            'body' => 'Some body',
+        ]);
+
+        $response->assertSessionHasErrors('title');
+    }
+
+    #[Test]
+    public function put_rejects_empty_title(): void
+    {
+        $user = User::factory()->create();
+        $release = Release::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->put("/release/edit/{$release->id}", [
+            'title' => '',
+            'body' => 'Some body',
+        ]);
+
+        $response->assertSessionHasErrors('title');
+    }
 }

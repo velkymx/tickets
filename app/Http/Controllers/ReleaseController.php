@@ -6,7 +6,6 @@ use App\Http\Requests\StoreReleaseRequest;
 use App\Models\Release;
 use App\Models\ReleaseTicket;
 use App\Models\Type;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ReleaseController extends Controller
@@ -33,22 +32,24 @@ class ReleaseController extends Controller
         return View('release/edit', compact('release'));
     }
 
-    public function put(Request $request, $id)
+    public function put(StoreReleaseRequest $request, $id)
     {
         $release = Release::findOrFail($id);
         $this->authorize('update', $release);
 
-        $release->title = $request->title;
-        $release->body = $request->body;
+        $validated = $request->validated();
 
-        if (! empty($request->started_at)) {
-            $release->started_at = date('Y-m-d', strtotime($request->started_at));
+        $release->title = $validated['title'];
+        $release->body = $validated['body'] ?? null;
+
+        if (! empty($validated['started_at'])) {
+            $release->started_at = $validated['started_at'];
         } else {
             $release->started_at = null;
         }
 
-        if (! empty($request->completed_at)) {
-            $release->completed_at = date('Y-m-d', strtotime($request->completed_at));
+        if (! empty($validated['completed_at'])) {
+            $release->completed_at = $validated['completed_at'];
         } else {
             $release->completed_at = null;
         }
