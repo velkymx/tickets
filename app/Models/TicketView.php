@@ -7,18 +7,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketView extends Model
 {
-  protected $fillable = [
-      'user_id', 'ticket_id'
-  ];
+    protected $table = 'ticket_views';
 
+    protected $fillable = [
+        'user_id', 'ticket_id',
+    ];
 
-  public function user()
-  {
-      return $this->belongsTo('App\Models\User');
-  }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo('App\Models\User');
+    }
 
-  public function ticket()
-  {
-      return $this->belongsTo('App\Models\Ticket');
-  }
+    public function ticket(): BelongsTo
+    {
+        return $this->belongsTo('App\Models\Ticket');
+    }
 }
