@@ -1,15 +1,24 @@
 <?php
-namespace App\Models;
 
-use App\Exceptions\ImportException;
-use App\Type;
+namespace App\Services;
+
+use App\Models\Importance;
+use App\Models\Milestone;
+use App\Models\Project;
+use App\Models\Status;
+use App\Models\Ticket;
+use App\Models\Type;
+use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 
-class Importer {
+class Importer
+{
+    private array $models = [];
 
-    private $models = [];
+    private ?Milestone $milestone = null;
 
-    public function call(int $milestoneId, string $filePath, bool $hasHeader)
+    public function call(int $milestoneId, string $filePath, bool $hasHeader): void
     {
         $this->milestone = Milestone::findOrFail($milestoneId);
         $file = fopen($filePath, 'r');
@@ -17,16 +26,18 @@ class Importer {
         while ($row = fgetcsv($file)) {
             if ($i === 0 && $hasHeader) {
                 $i++;
+
                 continue;
             }
             $this->importRow($row);
             $i++;
         }
+        fclose($file);
     }
 
-    private function importRow(array $row)
+    private function importRow(array $row): void
     {
-        $ticket = new Ticket();
+        $ticket = new Ticket;
         $ticket->milestone_id = $this->milestone->id;
         $ticket->type_id = $this->relation(Type::class, $row[0]);
         $ticket->subject = $row[1];
@@ -39,22 +50,22 @@ class Importer {
 
         $ticket->saveOrFail();
     }
-    
-    private function relation(string $class, string $value)
+
+    private function relation(string $class, string $value): ?int
     {
-        $key = $class . '|' . $value;
+        $key = $class.'|'.$value;
         if (isset($this->models[$key])) {
             return $this->models[$key]->id;
         }
 
         $model = $class::where('name', $value)->first();
 
-        if (!$model) {
-            throw new ImportException(class_basename($class) . " $value does not exist.");
+        if (! $model) {
+            throw new Exception(class_basename($class)." $value does not exist.");
         }
-        
+
         $this->models[$key] = $model;
 
-        return $model ? $model->id : null;
+        return $model->id;
     }
 }

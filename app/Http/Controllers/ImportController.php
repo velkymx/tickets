@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Importer;
-use App\Exceptions\ImportException;
-use Illuminate\Support\Facades\DB;
-
-
 use App\Models\Milestone;
-
+use App\Services\Importer;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ImportController extends Controller
 {
@@ -21,27 +18,30 @@ class ImportController extends Controller
     public function index(Request $request)
     {
         $milestones = Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id');
+
         return view('import.index', compact('milestones'));
     }
-    
+
     public function create(Request $request)
     {
         DB::beginTransaction();
         try {
-            (new Importer())->call(
+            (new Importer)->call(
                 (int) $request->milestone_id,
                 $request->csv->path(),
-                (string) $request->hasHeader,
+                (bool) $request->hasHeader,
             );
-        } catch (ImportException $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             $errors = [
-                $e->getMessage()
+                $e->getMessage(),
             ];
+
             return redirect('/tickets/import')->withErrors($errors)->withInput();
         }
         DB::commit();
-        return redirect('/milestone/show/' . $request->milestone_id)
-            ->with("info_message", "Tickets Successfully Imported");
+
+        return redirect('/milestone/show/'.$request->milestone_id)
+            ->with('info_message', 'Tickets Successfully Imported');
     }
 }
