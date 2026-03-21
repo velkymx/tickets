@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ReleaseController extends Controller
 {
-
     public function index()
     {
 
@@ -60,9 +59,13 @@ class ReleaseController extends Controller
 
     public function show(Request $request)
     {
-        $release = Release::findOrFail($request->id);
+        $release = Release::with('owner')->findOrFail($request->id);
 
-        $release_tickets = ReleaseTicket::where('release_id', $release->id)->get();
+        $release_tickets = ReleaseTicket::with([
+            'ticket' => function ($q) {
+                $q->with(['project', 'type', 'status', 'assignee']);
+            },
+        ])->where('release_id', $release->id)->get();
 
         $tickets = [];
         $projects = [];
