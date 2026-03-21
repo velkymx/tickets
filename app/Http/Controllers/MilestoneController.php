@@ -132,35 +132,19 @@ class MilestoneController extends Controller
         return view('milestone.edit', compact('milestone', 'users'));
     }
 
-    public function store(Request $request)
+    public function store(StoreMilestoneRequest $request)
     {
-
-        $post = $request->toArray();
-
-        foreach (['start_at', 'due_at', 'end_at'] as $date) {
-
-            if (isset($post[$date]) && $post[$date] != '') {
-
-                $post[$date] = date('Y-m-d', strtotime($post[$date]));
-
-            } else {
-
-                $post[$date] = null;
-            }
-        }
+        $validated = $request->validated();
 
         if ($request->id == 'new') {
+            $validated['active'] = 1;
 
-            $post['active'] = 1;
-
-            Milestone::create($post);
+            Milestone::create($validated);
 
         } else {
-
             $milestone = Milestone::findOrFail($request->id);
 
-            $milestone->update($post);
-
+            $milestone->update($validated);
         }
 
         return redirect('milestone');
