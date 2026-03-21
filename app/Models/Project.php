@@ -13,6 +13,13 @@ class Project extends Model
         'name', 'description', 'active',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'active' => 'boolean',
+        ];
+    }
+
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
