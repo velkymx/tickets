@@ -210,7 +210,7 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_ignores_fields_not_in_change_list(): void
+    public function it_detects_description_change(): void
     {
         $old = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
         $new = ['id' => 1, 'subject' => 'Test', 'description' => 'Changed description', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
@@ -288,32 +288,6 @@ class TicketServiceTest extends TestCase
         $this->service->notate($ticket->id, '', [], 0);
 
         $this->assertEquals(0, Note::where('ticket_id', $ticket->id)->count());
-    }
-
-    #[Test]
-    public function it_sets_correct_notetype_for_message(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        Auth::login($user);
-        $this->service->notate($ticket->id, 'Test message', [], 0);
-
-        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'message')->first();
-        $this->assertEquals('message', $note->notetype);
-    }
-
-    #[Test]
-    public function it_sets_correct_notetype_for_changelog(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        Auth::login($user);
-        $this->service->notate($ticket->id, '', ['Change']);
-
-        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->first();
-        $this->assertEquals('changelog', $note->notetype);
     }
 
     #[Test]

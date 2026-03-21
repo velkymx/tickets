@@ -72,7 +72,7 @@ class TicketLifecycleTest extends TestCase
             'milestone_id' => $this->milestone->id,
         ]);
 
-        $this->assertTrue($response->isRedirect() || $response->status() === 302);
+        $response->assertRedirect();
     }
 
     #[Test]

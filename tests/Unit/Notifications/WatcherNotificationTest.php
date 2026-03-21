@@ -42,6 +42,8 @@ class WatcherNotificationTest extends TestCase
         $mail = $notification->toMail($user);
 
         $this->assertNotNull($mail);
+        $this->assertStringContainsString('example.com/ticket/1', $mail->actionUrl);
+        $this->assertNotEmpty($mail->actionText);
     }
 
     #[Test]

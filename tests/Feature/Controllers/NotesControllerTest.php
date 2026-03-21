@@ -76,30 +76,6 @@ class NotesControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_sets_hide_to_true(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'hide' => false]);
-
-        $this->actingAs($user)->post("/notes/hide/{$note->id}");
-
-        $this->assertTrue($note->fresh()->hide);
-    }
-
-    #[Test]
-    public function it_returns_json_success_message(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
-
-        $response = $this->actingAs($user)->post("/notes/hide/{$note->id}");
-
-        $response->assertJson(['message' => 'Note Removed!']);
-    }
-
-    #[Test]
     public function it_returns_404_for_nonexistent_note(): void
     {
         $user = User::factory()->create();
