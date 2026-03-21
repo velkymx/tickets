@@ -148,7 +148,7 @@ class TicketController extends Controller
     {
         $user = $request->attributes->get('api_user');
 
-        $ticket = Ticket::findOrFail($id);
+        $ticket = Ticket::where('user_id2', $user->id)->findOrFail($id);
 
         if ($request->boolean('claim')) {
             $ticket->user_id2 = $user->id;
