@@ -12,6 +12,9 @@ class PreventRequestsDuringMaintenance extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        '/up',
+        '/api/v1/health',
+        '/health',
+        '_ignition/health-check',
     ];
 }
