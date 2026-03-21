@@ -12,6 +12,14 @@ class Release extends Model
         'title', 'body', 'started_at', 'completed_at', 'user_id',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'started_at' => 'datetime',
+            'completed_at' => 'datetime',
+        ];
+    }
+
     public function tickets(): HasMany
     {
         return $this->hasMany(ReleaseTicket::class, 'release_id');
