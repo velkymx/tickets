@@ -220,9 +220,9 @@ class TicketsController extends Controller
         return redirect('tickets/'.$id)->with('info_message', 'Ticket #'.$id.' updated');
     }
 
-    public function store(Request $request)
+    public function store(StoreTicketRequest $request)
     {
-        $data = $request->only(['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'due_at', 'estimate', 'storypoints']);
+        $data = $request->validated();
 
         $data['user_id'] = Auth::id();
         $data['user_id2'] = Auth::id();
@@ -366,11 +366,9 @@ class TicketsController extends Controller
         });
     }
 
-    public function estimate(Request $request, $ticket_id)
+    public function estimate(EstimateTicketRequest $request, $ticket_id)
     {
-        $request->validate([
-            'storypoints' => 'required|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         $check = TicketEstimate::where('ticket_id', $ticket_id)->where('user_id', Auth::id())->first();
 
@@ -378,16 +376,16 @@ class TicketsController extends Controller
             TicketEstimate::create([
                 'ticket_id' => $ticket_id,
                 'user_id' => Auth::id(),
-                'storypoints' => $request->storypoints,
+                'storypoints' => $validated['storypoints'],
             ]);
         } else {
 
-            if ($check->storypoints == $request->storypoints) {
+            if ($check->storypoints == $validated['storypoints']) {
 
                 return redirect('tickets/'.$ticket_id);
             }
 
-            $check->storypoints = $request->storypoints;
+            $check->storypoints = $validated['storypoints'];
             $check->save();
         }
 
