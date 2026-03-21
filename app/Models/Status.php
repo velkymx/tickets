@@ -15,6 +15,6 @@ class Status extends Model
 
     public static function isClosed(int $statusId): bool
     {
-        return in_array($statusId, self::closedStatusIds());
+        return in_array($statusId, self::closedStatusIds(), true);
     }
 }

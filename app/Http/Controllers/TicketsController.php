@@ -330,8 +330,10 @@ class TicketsController extends Controller
 
             if ($ticket->status_id != $request->status_id) {
 
-                if ($request->status_id == 5) {
-                    $ticket->closed_at = date('Y-m-d H:i:s');
+                if (Status::isClosed($request->status_id)) {
+                    $ticket->closed_at = now();
+                } else {
+                    $ticket->closed_at = null;
                 }
 
                 $ticket->status_id = $request->status_id;
