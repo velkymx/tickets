@@ -89,7 +89,7 @@ class UsersController extends Controller
             'Africa' => \DateTimeZone::AFRICA,
             'America' => \DateTimeZone::AMERICA,
             'Antarctica' => \DateTimeZone::ANTARCTICA,
-            'Aisa' => \DateTimeZone::ASIA,
+            'Asia' => \DateTimeZone::ASIA,
             'Atlantic' => \DateTimeZone::ATLANTIC,
             'Europe' => \DateTimeZone::EUROPE,
             'Indian' => \DateTimeZone::INDIAN,
