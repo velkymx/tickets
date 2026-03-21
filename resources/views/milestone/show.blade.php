@@ -50,7 +50,7 @@
             
             {{-- Dynamic Status Tabs --}}
             @foreach ($statuscodes as $code_id => $code)
-                @if (!in_array($code_id, [5, 8, 9]) && $milestone->tickets()->where('status_id', $code_id)->count() > 0)
+                @if (!in_array($code_id, \App\Models\Status::closedStatusIds()) && $milestone->tickets()->where('status_id', $code_id)->count() > 0)
                     @php
                         $available_status[$code_id] = $code['slug'];
                         $i++;
@@ -96,7 +96,7 @@
                    role="tab" 
                    aria-controls="closed" 
                    aria-selected="false">
-                    Closed <span class="badge text-bg-secondary ms-1">{{ $milestone->tickets->whereIn('status_id', ['5', '8', '9'])->count() }}</span>
+                    Closed <span class="badge text-bg-secondary ms-1">{{ $milestone->tickets->whereIn('status_id', \App\Models\Status::closedStatusIds())->count() }}</span>
                 </a>
             </li>
         </ul>
@@ -200,7 +200,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($milestone->tickets->whereIn('status_id', ['5', '8', '9'])->sortByDesc('importance_id') as $tick)
+                            @foreach ($milestone->tickets->whereIn('status_id', \App\Models\Status::closedStatusIds())->sortByDesc('importance_id') as $tick)
                             <tr>
                                 <td class="text-{{ $tick->importance->class }}"><i class="{{ $tick->type->icon }}" title="{{ $tick->type->name }}"></i> <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-{{ $tick->importance->class }}">#{{ $tick->id }} {{ $tick->subject }}</a></td>        
                                 <td><span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}"><i class="{{ $tick->importance->icon }}"></i></span></td>
@@ -280,7 +280,7 @@
                         </div>
                     </div>
                 </li>
-                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $milestone->tickets()->whereIn('status_id', [5, 9])->count() }}</span></li>
+                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $milestone->tickets()->whereIn('status_id', \App\Models\Status::closedStatusIds())->count() }}</span></li>
                 <li class="list-group-item">Actual Time: <span class="badge text-bg-info">{{ $milestone->tickets->sum('actual') }} Hrs</span></li>
             </ul>
         </div>

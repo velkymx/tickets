@@ -31,7 +31,7 @@
                         <td class="text-center">
                             {{-- Replaced old badge class with B5 badge class --}}
                             <span class="badge text-bg-info">
-                                {{ $milestone->tickets()->whereNotIn('status_id',[5,8,9])->count() }} / {{ $milestone->tickets()->count() }}
+                                {{ $milestone->tickets()->whereNotIn('status_id',\App\Models\Status::closedStatusIds())->count() }} / {{ $milestone->tickets()->count() }}
                             </span>
                         </td>
                         
@@ -72,7 +72,7 @@
                         <td class="text-center">
                             {{-- Replaced old badge class with B5 badge class --}}
                             <span class="badge text-bg-secondary">
-                                {{ $milestone->tickets()->whereNotIn('status_id',[5,8,9])->count() }} / {{ $milestone->tickets()->count() }}
+                                {{ $milestone->tickets()->whereNotIn('status_id',\App\Models\Status::closedStatusIds())->count() }} / {{ $milestone->tickets()->count() }}
                             </span>
                         </td>
 
