@@ -11,6 +11,7 @@ use App\Models\Type;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class Importer
 {
@@ -22,17 +23,28 @@ class Importer
     {
         $this->milestone = Milestone::findOrFail($milestoneId);
         $file = fopen($filePath, 'r');
-        $i = 0;
-        while ($row = fgetcsv($file)) {
-            if ($i === 0 && $hasHeader) {
-                $i++;
 
-                continue;
-            }
-            $this->importRow($row);
-            $i++;
+        try {
+            DB::transaction(function () use ($file, $hasHeader) {
+                $i = 0;
+                while ($row = fgetcsv($file)) {
+                    if ($i === 0 && $hasHeader) {
+                        $i++;
+
+                        continue;
+                    }
+
+                    if (count($row) < 7) {
+                        throw new Exception('CSV row must have at least 7 columns. Row '.($i + 1).' has '.count($row).' columns.');
+                    }
+
+                    $this->importRow($row);
+                    $i++;
+                }
+            });
+        } finally {
+            fclose($file);
         }
-        fclose($file);
     }
 
     private function importRow(array $row): void
