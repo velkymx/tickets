@@ -2,23 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use App\Models\Note;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class NotesController extends Controller
 {
+    public function hide($id)
+    {
 
-    public function hide($id){
+        $note = Note::with('ticket')->findOrFail($id);
 
-      $note = Note::findOrFail($id);
+        $canHide = $note->user_id === Auth::id()
+            || $note->ticket->user_id === Auth::id()
+            || $note->ticket->user_id2 === Auth::id();
 
-      $note->hide = 1;
+        if (! $canHide) {
+            abort(Response::HTTP_FORBIDDEN, 'You cannot hide this note');
+        }
 
-      $note->update();
+        $note->hide = true;
+        $note->save();
 
-      return "Note Removed!";
-
+        return response()->json(['message' => 'Note Removed!']);
     }
 }
