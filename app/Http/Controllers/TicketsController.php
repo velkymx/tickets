@@ -32,7 +32,9 @@ class TicketsController extends Controller
 
         $tickets = Ticket::where('user_id2', Auth::id())
             ->whereIn('status_id', $statusIds)
-            ->with('status')
+            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
+                $q->where('hide', 0)->where('notetype', 'message');
+            }])
             ->get()
             ->groupBy('status_id');
 
@@ -57,7 +59,7 @@ class TicketsController extends Controller
 
         $filters = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q'];
 
-        $tickets = new Ticket;
+        $query = Ticket::query();
 
         $queryfilter = [];
 
@@ -67,21 +69,26 @@ class TicketsController extends Controller
 
             if ($request->has($filter) && is_numeric($request->$filter)) {
 
-                $tickets = $tickets->where($filter, $request->$filter);
+                $query = $query->where($filter, $request->$filter);
             }
 
-            if ($filter == 'q') {
-                $tickets = $tickets->where('subject', 'like', '%'.$request->$filter.'%');
+            if ($filter == 'q' && $request->filled('q')) {
+                $query = $query->where('subject', 'like', '%'.$request->$filter.'%');
             }
 
             if ($filter == 'status_id' && $request->status_id == 'none') {
 
-                $tickets = $tickets->whereNotIn('status_id', Status::closedStatusIds());
+                $query = $query->whereNotIn('status_id', Status::closedStatusIds());
 
             }
         }
 
-        $tickets = $tickets->orderBy('importance_id', 'DESC')->paginate($perpage);
+        $tickets = $query
+            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
+                $q->where('hide', 0)->where('notetype', 'message');
+            }])
+            ->orderBy('importance_id', 'DESC')
+            ->paginate($perpage);
 
         $lookups = $this->lookups();
 
@@ -139,11 +146,21 @@ class TicketsController extends Controller
 
     public function show($id)
     {
-        $ticket = Ticket::with('watchers.user')->findOrFail($id);
+        $ticket = Ticket::with([
+            'status', 'type', 'importance', 'project', 'assignee', 'user',
+            'watchers.user',
+            'notes' => function ($q) {
+                $q->where('hide', 0)->orderBy('created_at', 'desc');
+            },
+            'notes.user',
+        ])->findOrFail($id);
 
         $lookups = $this->lookups();
 
-        TicketView::create(['user_id' => Auth::id(), 'ticket_id' => $ticket->id]);
+        TicketView::firstOrCreate([
+            'user_id' => Auth::id(),
+            'ticket_id' => $ticket->id,
+        ]);
 
         return view('tickets.show', compact('ticket', 'lookups'));
     }
@@ -293,7 +310,8 @@ class TicketsController extends Controller
     public function board()
     {
         $perpage = 50;
-        $tickets = Ticket::with(['status', 'type', 'assignee'])->paginate($perpage);
+        $tickets = Ticket::with(['status', 'type', 'importance', 'project', 'assignee'])
+            ->paginate($perpage);
 
         $lookups = $this->lookups();
 
