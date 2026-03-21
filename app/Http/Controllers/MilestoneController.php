@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreMilestoneRequest;
 use App\Models\Milestone;
 use App\Models\MilestoneWatcher;
 use App\Models\Status;

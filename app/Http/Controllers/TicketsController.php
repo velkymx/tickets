@@ -99,7 +99,7 @@ class TicketsController extends Controller
         $lookups['users'][0] = 'No Change';
         $lookups['releases'][0] = 'No Change';
 
-        $viewfilters = $this->lookups();
+        $viewfilters = $this->ticketService->getLookups();
 
         $viewfilters['statuses']['none'] = 'Any Active Status';
         $viewfilters['statuses']['all'] = 'Any Status';

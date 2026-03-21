@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreReleaseRequest;
 use App\Models\Release;
 use App\Models\ReleaseTicket;
 use App\Models\Type;
