@@ -24,18 +24,18 @@ class ReleaseController extends Controller
         return View('release/create');
     }
 
-    public function edit(Request $request)
+    public function edit($id)
     {
-
-        $release = Release::findOrFail($request->id);
+        $release = Release::findOrFail($id);
+        $this->authorize('update', $release);
 
         return View('release/edit', compact('release'));
     }
 
-    public function put(Request $request)
+    public function put(Request $request, $id)
     {
-
-        $release = Release::findOrFail($request->id);
+        $release = Release::findOrFail($id);
+        $this->authorize('update', $release);
 
         $release->title = $request->title;
         $release->body = $request->body;
@@ -57,9 +57,9 @@ class ReleaseController extends Controller
         return redirect('release/'.$release->id)->with('info_message', 'Release Saved');
     }
 
-    public function show(Request $request)
+    public function show($id)
     {
-        $release = Release::with('owner')->findOrFail($request->id);
+        $release = Release::with('owner')->findOrFail($id);
 
         $release_tickets = ReleaseTicket::with([
             'ticket' => function ($q) {
@@ -88,6 +88,8 @@ class ReleaseController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', Release::class);
+
         $release = new Release;
 
         $release->title = $request->title;

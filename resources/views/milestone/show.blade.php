@@ -10,9 +10,12 @@
             @php
                 $isWatching = $milestone->watchers->contains('user_id', auth()->id());
             @endphp
-            <a href="/milestone/watch/{{ $milestone->id }}" class="btn btn-sm {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
-                {{ $isWatching ? 'Unwatch' : 'Watch' }}
-            </a>
+            <form action="/milestone/watch/{{ $milestone->id }}" method="POST" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-sm {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
+                    {{ $isWatching ? 'Unwatch' : 'Watch' }}
+                </button>
+            </form>
         @endauth
         <a href="/milestone/report/{{ $milestone->id }}" class="btn btn-sm btn-info">Report</a>
         <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-sm btn-primary">Edit Milestone</a>

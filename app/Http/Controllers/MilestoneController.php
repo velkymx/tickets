@@ -23,14 +23,14 @@ class MilestoneController extends Controller
 
     }
 
-    public function print(Request $request)
+    public function print($id)
     {
 
         $milestone = Milestone::with([
             'tickets' => function ($q) {
                 $q->with(['project', 'type', 'status', 'assignee']);
             },
-        ])->findOrFail($request->id);
+        ])->findOrFail($id);
 
         $projects = [];
 
@@ -44,7 +44,7 @@ class MilestoneController extends Controller
 
     }
 
-    public function getShow(Request $request)
+    public function getShow($id)
     {
 
         $milestone = Milestone::with([
@@ -54,7 +54,7 @@ class MilestoneController extends Controller
                     $noteQ->where('hide', 0)->where('notetype', 'message');
                 }]);
             },
-        ])->findOrFail($request->id);
+        ])->findOrFail($id);
 
         $tmpcodes = Status::get();
 
@@ -123,9 +123,9 @@ class MilestoneController extends Controller
             ->with('success', 'Milestone "'.$milestone->name.'" updated successfully!');
     }
 
-    public function edit(Request $request, $id)
+    public function edit($id)
     {
-        $milestone = Milestone::findOrFail($request->id);
+        $milestone = Milestone::findOrFail($id);
 
         $users = User::pluck('name', 'id');
 

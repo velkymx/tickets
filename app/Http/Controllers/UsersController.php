@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Status;
 use App\Models\Ticket;
-use App\Models\TicketUserWatcher;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -81,31 +80,6 @@ class UsersController extends Controller
         $user->save();
 
         return redirect('users/'.Auth::id())->with('info_message', 'Profile Changes Saved');
-
-    }
-
-    public function watch($id)
-    {
-
-        $ticket = Ticket::findOrFail($id);
-
-        $watch = TicketUserWatcher::where('ticket_id', $id)->where('user_id', Auth::id())->first();
-
-        if ($watch) {
-
-            $watch->delete();
-
-            $message = 'Watch stopped for this ticket';
-
-        } else {
-
-            TicketUserWatcher::create(['user_id' => Auth::id(), 'ticket_id' => $id]);
-
-            $message = 'Watch started for this ticket';
-
-        }
-
-        return $message;
 
     }
 

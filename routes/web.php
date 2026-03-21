@@ -48,10 +48,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/api/{id}', [TicketsController::class, 'api'])->name('tickets.api');
 
     // Action/Modifier Routes
-    Route::get('/tickets/claim/{id}', [TicketsController::class, 'claim'])->name('tickets.claim');
     Route::get('/tickets/clone/{id}', [TicketsController::class, 'clone'])->name('tickets.clone');
     Route::get('/tickets/edit/{id}', [TicketsController::class, 'edit'])->name('tickets.edit');
-    Route::get('/tickets/watch/{id}', [TicketsController::class, 'toggleWatcher'])->name('tickets.watch');
 
     // Base/Index Route
     Route::get('/tickets', [TicketsController::class, 'index'])->name('tickets.list');
@@ -65,11 +63,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/milestone/edit/{id}', [MilestoneController::class, 'edit'])->name('milestone.edit');
     Route::get('/milestone/print/{id}', [MilestoneController::class, 'print'])->name('milestone.print');
     Route::get('/milestone/show/{id}', [MilestoneController::class, 'getShow'])->name('milestone.show');
-    Route::get('/milestone/watch/{id}', [MilestoneController::class, 'toggleWatcher'])->name('milestone.watch');
+    Route::post('/milestone/watch/{id}', [MilestoneController::class, 'toggleWatcher'])->name('milestone.watch');
     Route::get('/milestone/report/{id}', [MilestoneController::class, 'report'])->name('milestone.report');
 
     // --- Notes Routes ---
-    Route::get('/notes/hide/{id}', [NotesController::class, 'hide'])->name('notes.hide');
+    Route::post('/notes/hide/{id}', [NotesController::class, 'hide'])->name('notes.hide');
 
     // --- Projects Routes ---
     Route::get('/projects', [ProjectsController::class, 'index'])->name('projects.list');
@@ -86,12 +84,13 @@ Route::middleware('auth')->group(function () {
     // --- Users Routes ---
     Route::get('/user/edit', [UsersController::class, 'edit'])->name('user.edit');
     Route::get('/users/{id}', [UsersController::class, 'show'])->name('user.show');
-    Route::get('/users/watch/{id}', [UsersController::class, 'watch'])->name('users.watch');
 
     // --- POST/PUT/PATCH Routes ---
 
     // Tickets
     Route::post('/tickets', [TicketsController::class, 'store'])->name('tickets.store');
+    Route::post('/tickets/claim/{id}', [TicketsController::class, 'claim'])->name('tickets.claim');
+    Route::post('/tickets/watch/{id}', [TicketsController::class, 'toggleWatcher'])->name('tickets.watch');
     Route::post('/tickets/estimate/{ticket_id}', [TicketsController::class, 'estimate'])->name('tickets.estimate');
     Route::post('/tickets/batch', [TicketsController::class, 'batch'])->name('tickets.batch');
     Route::post('/tickets/import', [ImportController::class, 'create'])->name('tickets.storeimport');

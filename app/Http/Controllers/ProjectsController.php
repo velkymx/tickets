@@ -66,15 +66,23 @@ class ProjectsController extends Controller
         return view('projects.create');
     }
 
-    public function edit(Request $request)
+    public function edit($id)
     {
-        $project = Project::findOrFail($request->id);
+        $project = Project::findOrFail($id);
+        $this->authorize('update', $project);
 
         return view('projects.edit', compact('project'));
     }
 
     public function store(Request $request)
     {
+        if ($request->id == 'new') {
+            $this->authorize('create', Project::class);
+        } else {
+            $project = Project::findOrFail($request->id);
+            $this->authorize('update', $project);
+        }
+
         if ($request->id == 'new') {
             $post = $request->toArray();
 

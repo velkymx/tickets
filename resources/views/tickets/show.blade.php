@@ -31,7 +31,10 @@
     @if($ticket->assignee->name == 'Unassigned')
         <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert"> 
             <span>This Ticket is currently unassigned.</span>
-            <a href="/tickets/claim/{{ $ticket->id }}" class="btn btn-warning btn-sm">Claim Ticket</a>
+            <form action="/tickets/claim/{{ $ticket->id }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-warning btn-sm">Claim Ticket</button>
+            </form>
         </div>
     @endif
 
@@ -40,9 +43,12 @@
             $isWatching = $ticket->watchers->contains('user_id', auth()->id());
         @endphp
         <div class="mb-3">
-            <a href="/tickets/watch/{{ $ticket->id }}" class="btn btn-sm {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
-                {{ $isWatching ? 'Unwatch' : 'Watch' }}
-            </a>
+            <form action="/tickets/watch/{{ $ticket->id }}" method="POST" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-sm {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
+                    {{ $isWatching ? 'Unwatch' : 'Watch' }}
+                </button>
+            </form>
         </div>
     @endauth
 
@@ -347,7 +353,13 @@
         const noteElement = document.getElementById('note_' + noteid);
         if (!noteElement) return;
 
-        fetch('/notes/hide/' + noteid)
+        fetch('/notes/hide/' + noteid, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json',
+            },
+        })
             .then(response => {
                 if (response.ok) {
                     noteElement.style.transition = 'opacity 0.5s ease-out, height 0.5s ease-out';
@@ -377,7 +389,13 @@
     const ticketId = {{ json_encode($ticket->id) }};
 
     watchButton.addEventListener('click', function() {
-        fetch('/users/watch/' + ticketId)
+        fetch('/tickets/watch/' + ticketId, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json',
+            },
+        })
             .then(response => response.text())
             .then(data => {
                 alertMessage.textContent = data;
