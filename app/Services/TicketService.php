@@ -26,8 +26,11 @@ class TicketService
         $change_list = [];
 
         foreach ($changes as $change) {
+            if (! array_key_exists($change, $new)) {
+                continue;
+            }
 
-            if ($old[$change] != $new[$change]) {
+            if (isset($old[$change]) && $old[$change] != $new[$change]) {
 
                 $label = $change;
 
@@ -65,13 +68,13 @@ class TicketService
         }
 
         $oldDueAt = $old['due_at'] ? strtotime($old['due_at']) : null;
-        $newDueAt = $new['due_at'] ? strtotime($new['due_at']) : null;
+        $newDueAt = array_key_exists('due_at', $new) && $new['due_at'] ? strtotime($new['due_at']) : null;
         if ($oldDueAt !== $newDueAt && ($oldDueAt !== null || $newDueAt !== null)) {
             $change_list[] = 'Due date changed to '.($new['due_at'] ? date('M jS, Y', strtotime($new['due_at'])) : 'N/A');
         }
 
         $oldClosedAt = $old['closed_at'] ? strtotime($old['closed_at']) : null;
-        $newClosedAt = $new['closed_at'] ? strtotime($new['closed_at']) : null;
+        $newClosedAt = array_key_exists('closed_at', $new) && $new['closed_at'] ? strtotime($new['closed_at']) : null;
         if ($oldClosedAt !== $newClosedAt && ($oldClosedAt !== null || $newClosedAt !== null)) {
             $change_list[] = 'Ticket closed on '.($new['closed_at'] ? date('M jS, Y', strtotime($new['closed_at'])) : 'N/A');
         }

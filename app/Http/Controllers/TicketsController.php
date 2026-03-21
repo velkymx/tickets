@@ -366,9 +366,11 @@ class TicketsController extends Controller
 
             $change_list = $this->ticketService->changes($old, $ticket->toArray());
 
-            $this->ticketService->notate($ticket->id, $request->body, $change_list, $request->hours);
+            $this->ticketService->notate($ticket->id, $request->body ?? '', $change_list, $request->hours ?? 0);
 
-            $ticket->actual = $ticket->actual_hours;
+            $ticket->unsetRelation('notes');
+            $ticket->loadSum('notes', 'hours');
+            $ticket->actual = $ticket->notes_sum_hours ?? 0;
             $ticket->save();
         }
 
