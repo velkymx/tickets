@@ -2,31 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BatchUpdateTicketRequest;
 use App\Http\Requests\EstimateTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Http\Resources\TicketResource;
-use App\Models\Importance;
-use App\Models\Milestone;
-use App\Models\Note;
-use App\Models\Project;
-use App\Models\Release;
 use App\Models\ReleaseTicket;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\TicketEstimate;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
-use App\Models\Type;
-use App\Models\User;
+use App\Services\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class TicketsController extends Controller
 {
+    public function __construct(
+        private TicketService $ticketService
+    ) {}
+
     public function home()
     {
         $statusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
@@ -91,7 +89,7 @@ class TicketsController extends Controller
             ->orderBy('importance_id', 'DESC')
             ->paginate($perpage);
 
-        $lookups = $this->lookups();
+        $lookups = $this->ticketService->getLookups();
 
         $lookups['types'][0] = 'No Change';
         $lookups['milestones'][0] = 'No Change';
@@ -136,11 +134,11 @@ class TicketsController extends Controller
 
         $request['user_id2'] = Auth::id();
 
-        $change_list = $this->changes($ticket->toArray(), $request);
+        $change_list = $this->ticketService->changes($ticket->toArray(), $request);
 
         $ticket->update($request);
 
-        $this->notate($ticket->id, '', $change_list);
+        $this->ticketService->notate($ticket->id, '', $change_list);
 
         return redirect('tickets/'.$id)->with('info_message', 'You are assigned to Ticket #'.$id);
     }
@@ -156,7 +154,7 @@ class TicketsController extends Controller
             'notes.user',
         ])->findOrFail($id);
 
-        $lookups = $this->lookups();
+        $lookups = $this->ticketService->getLookups();
 
         TicketView::firstOrCreate([
             'user_id' => Auth::id(),
@@ -168,7 +166,7 @@ class TicketsController extends Controller
 
     public function create($value = '')
     {
-        $lookups = $this->lookups();
+        $lookups = $this->ticketService->getLookups();
 
         return view('tickets.create', compact('lookups'));
     }
@@ -177,7 +175,7 @@ class TicketsController extends Controller
     {
         $ticket = Ticket::findOrFail($id);
 
-        $lookups = $this->lookups();
+        $lookups = $this->ticketService->getLookups();
 
         if (! empty($ticket->closed_at)) {
             $ticket->closed_at = date('m/d/Y', strtotime($ticket->closed_at));
@@ -194,7 +192,7 @@ class TicketsController extends Controller
     {
         $ticket = Ticket::findOrFail($id);
 
-        $lookups = $this->lookups();
+        $lookups = $this->ticketService->getLookups();
 
         if (! empty($ticket->closed_at)) {
             $ticket->closed_at = date('m/d/Y', strtotime($ticket->closed_at));
@@ -227,11 +225,11 @@ class TicketsController extends Controller
             $data['closed_at'] = null;
         }
 
-        $change_list = $this->changes($ticket->toArray(), $data);
+        $change_list = $this->ticketService->changes($ticket->toArray(), $data);
 
         $ticket->update($data);
 
-        $this->notate($ticket->id, '', $change_list);
+        $this->ticketService->notate($ticket->id, '', $change_list);
 
         return redirect('tickets/'.$id)->with('info_message', 'Ticket #'.$id.' updated');
     }
@@ -321,7 +319,7 @@ class TicketsController extends Controller
         $tickets = Ticket::with(['status', 'type', 'importance', 'project', 'assignee'])
             ->paginate($perpage);
 
-        $lookups = $this->lookups();
+        $lookups = $this->ticketService->getLookups();
 
         return view('tickets.board', compact('tickets', 'lookups'));
     }
@@ -337,7 +335,7 @@ class TicketsController extends Controller
         if ($request['status'] != $ticket->status_id) {
             $ticket->update(['status_id' => $request['status']]);
 
-            $this->notate($ticket->id, '', ['Status Changed to '.$ticket->status->name]);
+            $this->ticketService->notate($ticket->id, '', ['Status Changed to '.$ticket->status->name]);
 
             return response()->json(['status' => 'success']);
         }
@@ -366,30 +364,15 @@ class TicketsController extends Controller
                 $ticket->save();
             }
 
-            $change_list = $this->changes($old, $ticket->toArray());
+            $change_list = $this->ticketService->changes($old, $ticket->toArray());
 
-            $this->notate($ticket->id, $request->body, $change_list, $request->hours);
+            $this->ticketService->notate($ticket->id, $request->body, $change_list, $request->hours);
 
             $ticket->actual = $ticket->actual_hours;
             $ticket->save();
         }
 
         return redirect('tickets/'.$request['ticket_id']);
-    }
-
-    private function lookups()
-    {
-        return Cache::remember('ticket_lookups', now()->addMinutes(60), function () {
-            return [
-                'types' => Type::orderBy('name')->pluck('name', 'id'),
-                'milestones' => Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
-                'importances' => Importance::orderBy('name')->pluck('name', 'id'),
-                'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
-                'statuses' => Status::orderBy('name')->pluck('name', 'id'),
-                'releases' => Release::orderBy('title')->pluck('title', 'id'),
-                'users' => User::orderBy('name')->pluck('name', 'id'),
-            ];
-        });
     }
 
     public function estimate(EstimateTicketRequest $request, $ticket_id)
@@ -442,122 +425,11 @@ class TicketsController extends Controller
 
         $ticket->save();
 
-        $change_list = $this->changes($old->toArray(), $ticket->toArray());
+        $change_list = $this->ticketService->changes($old->toArray(), $ticket->toArray());
 
-        $this->notate($ticket->id, '', ['Story Points changed to '.$request->storypoints]);
+        $this->ticketService->notate($ticket->id, '', ['Story Points changed to '.$request->storypoints]);
 
         return redirect('tickets/'.$ticket_id);
-    }
-
-    private function changes($old, $new)
-    {
-
-        $changes = ['subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'estimate', 'user_id2', 'storypoints'];
-
-        $lookups = $this->lookups();
-
-        $change_list = [];
-
-        foreach ($changes as $change) {
-
-            if ($old[$change] != $new[$change]) {
-
-                $label = $change;
-
-                if (substr($change, -3, 3) == '_id' || substr($change, -3, 3) == 'id2') {
-
-                    $label = substr($change, 0, strlen($change) - 3);
-
-                    $lookup = $label.'s';
-
-                    if ($change == 'status_id') {
-                        $lookup = 'statuses';
-                    }
-
-                    if ($change == 'storypoints') {
-                        $label = 'Story points';
-                    }
-
-                    if ($change == 'user_id2') {
-                        $lookup = 'users';
-                        $label = 'Assigned user';
-
-                        // set a watcher
-
-                        $watch = TicketUserWatcher::where('ticket_id', $old['id'])->where('user_id', $new[$change])->first();
-
-                        if (! $watch) {
-                            TicketUserWatcher::create(['user_id' => $new[$change], 'ticket_id' => $old['id']]);
-                        }
-
-                    }
-
-                    $change_list[] = ucwords($label).' changed to '.$lookups[$lookup][$new[$change]];
-                } else {
-                    $change_list[] = ucwords($change).' changed to '.$new[$change];
-                }
-            }
-        }
-
-        $oldDueAt = $old['due_at'] ? strtotime($old['due_at']) : null;
-        $newDueAt = $new['due_at'] ? strtotime($new['due_at']) : null;
-        if ($oldDueAt !== $newDueAt && ($oldDueAt !== null || $newDueAt !== null)) {
-            $change_list[] = 'Due date changed to '.($new['due_at'] ? date('M jS, Y', strtotime($new['due_at'])) : 'N/A');
-        }
-
-        $oldClosedAt = $old['closed_at'] ? strtotime($old['closed_at']) : null;
-        $newClosedAt = $new['closed_at'] ? strtotime($new['closed_at']) : null;
-        if ($oldClosedAt !== $newClosedAt && ($oldClosedAt !== null || $newClosedAt !== null)) {
-            $change_list[] = 'Ticket closed on '.($new['closed_at'] ? date('M jS, Y', strtotime($new['closed_at'])) : 'N/A');
-        }
-
-        return $change_list;
-    }
-
-    private function notate($ticket_id, $message, $changes, $addhours = 0)
-    {
-        $hasMessage = strlen($message) > 0;
-        $hasHours = $addhours > 0;
-        $hasChanges = is_array($changes) && count($changes) > 0;
-
-        if (! $hasMessage && ! $hasHours && ! $hasChanges) {
-            return;
-        }
-
-        $insert = [
-            'user_id' => Auth::id(),
-            'ticket_id' => $ticket_id,
-            'body' => $message,
-            'hours' => $addhours,
-        ];
-
-        $ticket = Ticket::findOrFail($ticket_id);
-
-        if (strlen($message) > 0) {
-
-            $insert['notetype'] = 'message';
-
-            Note::create($insert);
-        }
-
-        if ($addhours > 0) {
-            $changes[] = 'Time or Quantity adjusted by '.$addhours;
-        }
-
-        if (is_array($changes) && count($changes) > 0) {
-
-            $change_list = '';
-
-            foreach ($changes as $change) {
-                $change_list .= '<li>'.$change.'</li>';
-            }
-
-            $insert['body'] = '<ul>'.$change_list.'</ul>';
-            $insert['notetype'] = 'changelog';
-            $insert['hours'] = 0;
-
-            Note::create($insert);
-        }
     }
 
     public function fetch(Request $request)
