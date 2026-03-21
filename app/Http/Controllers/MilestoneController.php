@@ -14,7 +14,6 @@ use Illuminate\Support\Str;
 
 class MilestoneController extends Controller
 {
-
     public function index()
     {
 
@@ -67,7 +66,7 @@ class MilestoneController extends Controller
 
         $percent = 0;
 
-        if ($total !== 0 && $completed !== 0) {
+        if ($total > 0) {
 
             $percent = (round($completed / $total, 2) * 100);
 
