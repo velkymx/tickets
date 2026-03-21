@@ -26,7 +26,11 @@ class MilestoneController extends Controller
     public function print(Request $request)
     {
 
-        $milestone = Milestone::with('tickets.project')->findOrFail($request->id);
+        $milestone = Milestone::with([
+            'tickets' => function ($q) {
+                $q->with(['project', 'type', 'status', 'assignee']);
+            },
+        ])->findOrFail($request->id);
 
         $projects = [];
 
@@ -43,7 +47,14 @@ class MilestoneController extends Controller
     public function getShow(Request $request)
     {
 
-        $milestone = Milestone::with(['watchers.user', 'tickets'])->findOrFail($request->id);
+        $milestone = Milestone::with([
+            'watchers.user',
+            'tickets' => function ($q) {
+                $q->with(['project', 'type', 'status', 'importance', 'assignee', 'notes' => function ($noteQ) {
+                    $noteQ->where('hide', 0)->where('notetype', 'message');
+                }]);
+            },
+        ])->findOrFail($request->id);
 
         $tmpcodes = Status::get();
 
@@ -60,7 +71,7 @@ class MilestoneController extends Controller
 
         $completed = 0;
 
-        $completed = $milestone->tickets()->whereIn('status_id', ['5', '8', '9'])->count();
+        $completed = $milestone->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
 
         $total = $milestone->tickets->count();
 
@@ -177,7 +188,13 @@ class MilestoneController extends Controller
         // Any authenticated user can view milestone reports
         $milestone = Milestone::with(['owner', 'scrummaster'])->findOrFail($id);
         $tickets = $milestone->tickets()
-            ->with(['status', 'type', 'assignee', 'notes.user'])
+            ->with([
+                'status', 'type', 'importance', 'project', 'assignee',
+                'notes' => function ($q) {
+                    $q->where('hide', 0);
+                },
+                'notes.user',
+            ])
             ->get();
 
         $closedStatusIds = Status::closedStatusIds();
