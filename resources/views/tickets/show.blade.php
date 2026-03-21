@@ -75,12 +75,6 @@
                 <div class="my-5"></div>
             </div>
 
-            {{-- Custom Alert for JS Actions (No longer jQuery-based) --}}
-            <div class="alert alert-info alert-dismissible fade" role="alert" id="js-alert" style="display:none">
-                <div id="js-alert-message"></div>
-                <button type="button" class="btn-close" aria-label="Close" id="js-alert-close"></button>
-            </div>
-
             {{-- Bootstrap 5 Nav Tabs --}}
             <ul class="nav nav-tabs mb-3" id="ticketTabs" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -185,11 +179,6 @@
             
             {{-- Action Buttons --}}
             <div class="row g-2 mb-4 text-center">
-                <div class="col-4">
-                    <button type="button" class="btn btn-block btn-info w-100" id="watch-ticket">
-                        <i class="fas fa-eye"></i> Watch
-                    </button>
-                </div>
                 <div class="col-4">
                     <a href="/tickets/edit/{{ $ticket->id }}" class="btn btn-block btn-secondary w-100">
                         <i class="fas fa-edit"></i> Edit
@@ -348,7 +337,7 @@
 
 @section('javascript')
 <script>
-    // --- 3. Hide Note (Vanilla JS AJAX) ---
+    // --- Hide Note (Vanilla JS AJAX) ---
     window.hideNote = function(noteid) {
         const noteElement = document.getElementById('note_' + noteid);
         if (!noteElement) return;
@@ -382,43 +371,7 @@
             .catch(error => console.error('Error hiding note:', error));
     }
 
-    // --- 4. Watch Ticket (Vanilla JS AJAX) ---
-    const watchButton = document.getElementById('watch-ticket');
-    const alertDiv = document.getElementById('js-alert');
-    const alertMessage = document.getElementById('js-alert-message');
-    const ticketId = {{ json_encode($ticket->id) }};
-
-    watchButton.addEventListener('click', function() {
-        fetch('/tickets/watch/' + ticketId, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Content-Type': 'application/json',
-            },
-        })
-            .then(response => response.text())
-            .then(data => {
-                alertMessage.textContent = data;
-                alertDiv.style.display = 'block';
-                alertDiv.classList.add('show');
-            })
-            .catch(error => {
-                alertMessage.textContent = 'Error watching ticket.';
-                alertDiv.style.display = 'block';
-                alertDiv.classList.add('show');
-                console.error('Watch error:', error);
-            });
-    });
-
-    // --- 5. Custom Alert Close (Vanilla JS) ---
-    document.getElementById('js-alert-close').addEventListener('click', function() {
-        alertDiv.classList.remove('show');
-        setTimeout(() => {
-            alertDiv.style.display = 'none';
-        }, 150);
-    });
-
-    // --- 6. Apply responsive class to images in description (Vanilla JS) ---
+    // --- Apply responsive class to images in description (Vanilla JS) ---
     document.querySelectorAll('.ticket-description-content img').forEach(img => {
         img.classList.add('img-fluid');
     });
