@@ -22,7 +22,7 @@
         <label for="editor-container" class="form-label">Describe Project</label>
         {{-- Quill editor container --}}
         <div id="editor-container" style="height: 250px;">
-            {!! old('description', $project->description) !!}
+            {!! clean(old('description', $project->description)) !!}
         </div>
         {{-- Hidden input to hold the HTML content submitted by Quill --}}
         <input type="hidden" name="description" id="description-input" value="{{ old('description', $project->description) }}">

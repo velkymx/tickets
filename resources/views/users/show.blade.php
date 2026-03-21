@@ -28,7 +28,7 @@
     @if ($user->bio)
     <h3>Bio</h3>
     <div class="mb-4">
-        {!! $user->bio !!}
+        {!! clean($user->bio) !!}
     </div>
     @endif
 </div>

@@ -58,7 +58,7 @@
                 @if($ticket->description)
                     <hr>
                     <div class="ticket-description-content">
-                        {!! html_entity_decode($ticket->description) !!}
+                        {!! clean($ticket->description) !!}
                     </div>
                 @else
                     {{-- Replaced panel panel-default with card --}}
@@ -107,7 +107,7 @@
                                     <button onclick="hideNote('{{ $note->id }}');" class="btn btn-outline-danger btn-sm float-end">Remove</button>
                                 </div>
                                 <div class="card-body">
-                                    {!! html_entity_decode($note->body) !!}
+                                    {!! clean($note->body) !!}
                                 </div>
                             </div>
                         @endforeach
@@ -129,7 +129,7 @@
                                     <button onclick="hideNote('{{ $change->id }}');" class="btn btn-outline-danger btn-sm float-end">Remove</button>
                                 </div>
                                 <div class="card-body">
-                                    {!! html_entity_decode($change->body) !!}
+                                    {!! clean($change->body) !!}
                                 </div>
                             </div>
                         @endforeach
@@ -374,13 +374,13 @@
     const watchButton = document.getElementById('watch-ticket');
     const alertDiv = document.getElementById('js-alert');
     const alertMessage = document.getElementById('js-alert-message');
-    const ticketId = {{ $ticket->id }};
+    const ticketId = {{ json_encode($ticket->id) }};
 
     watchButton.addEventListener('click', function() {
         fetch('/users/watch/' + ticketId)
             .then(response => response.text())
             .then(data => {
-                alertMessage.innerHTML = data;
+                alertMessage.textContent = data;
                 alertDiv.style.display = 'block';
                 alertDiv.classList.add('show');
             })
