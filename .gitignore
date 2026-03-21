@@ -19,3 +19,4 @@ yarn-error.log
 /.vscode
 *.md
 public/build/manifest.json
+todo.md
