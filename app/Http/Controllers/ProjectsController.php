@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 
 class ProjectsController extends Controller
 {
-
     public function index()
     {
         $projects = Project::orderBy('name')->get();
@@ -23,7 +22,7 @@ class ProjectsController extends Controller
 
         $perpage = 10;
 
-        $filters = ['milestone_id', 'project_id', 'sprint_id', 'status_id', 'type_id', 'user_id', 'importance_id'];
+        $filters = ['milestone_id', 'status_id', 'type_id', 'user_id', 'importance_id'];
 
         $queryfilter = [];
 
@@ -33,17 +32,19 @@ class ProjectsController extends Controller
             }
         }
 
+        $query = Ticket::query()->where('project_id', $project->id);
+
         if (is_array($queryfilter) && count($queryfilter) > 0) {
-            $tickets = new Ticket;
-
             foreach ($queryfilter as $filter => $value) {
-                $tickets = $tickets->where($filter, $value);
+                $query = $query->where($filter, $value);
             }
-
-            $tickets = $tickets->paginate($perpage);
-        } else {
-            $tickets = Ticket::where('project_id', $project->id)->paginate($perpage);
         }
+
+        $tickets = $query
+            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
+                $q->where('hide', 0)->where('notetype', 'message');
+            }])
+            ->paginate($perpage);
 
         $statuscodes = Status::get();
 
