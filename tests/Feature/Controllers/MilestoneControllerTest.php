@@ -525,4 +525,17 @@ class MilestoneControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('milestone.report');
     }
+
+    #[Test]
+    public function store_rejects_empty_name(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/milestone/store/new', [
+            'id' => 'new',
+            'name' => '',
+        ]);
+
+        $response->assertSessionHasErrors('name');
+    }
 }

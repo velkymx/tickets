@@ -132,7 +132,7 @@ class TicketServiceTest extends TestCase
 
         $changes = $this->service->changes($old, $new);
 
-        $this->assertNotEmpty(array_filter($changes, fn ($c) => str_contains($c, 'changed to 5')));
+        $this->assertNotEmpty(array_filter($changes, fn ($c) => str_contains($c, 'Storypoints changed to 5')));
     }
 
     #[Test]

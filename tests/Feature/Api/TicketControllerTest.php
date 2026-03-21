@@ -305,6 +305,8 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function note_claims_ticket_when_requested(): void
     {
+        // API note endpoint filters tickets by user_id2 = api_user,
+        // so claim sets user_id2 to current user (redundant but idempotent)
         $ticket = Ticket::factory()->create([
             'user_id2' => $this->user->id,
             'user_id' => $this->user->id,
