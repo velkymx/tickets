@@ -3,6 +3,8 @@
 namespace Tests\Feature\Controllers;
 
 use App\Models\Project;
+use App\Models\Status;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,7 +15,7 @@ class ProjectsControllerTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_requires_authentication(): void
+    public function index_requires_authentication(): void
     {
         $response = $this->get('/projects');
 
@@ -21,7 +23,7 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_projects_ordered_by_name(): void
+    public function index_returns_projects_ordered_by_name(): void
     {
         $user = User::factory()->create();
         Project::factory()->create(['name' => 'Zebra']);
@@ -34,6 +36,84 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_requires_authentication(): void
+    {
+        $project = Project::factory()->create();
+
+        $response = $this->get("/projects/show/{$project->id}");
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function show_shows_project_with_paginated_tickets(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        Ticket::factory()->count(15)->create(['project_id' => $project->id]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('project');
+        $response->assertViewHas('tickets');
+    }
+
+    #[Test]
+    public function show_filters_tickets_by_query_parameters(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $status = Status::factory()->create();
+        Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $status->id]);
+        Ticket::factory()->create(['project_id' => $project->id]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}?status_id={$status->id}");
+
+        $response->assertStatus(200);
+    }
+
+    #[Test]
+    public function show_calculates_completion_percentage(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $closedStatus = Status::factory()->create(['id' => 5]);
+        $openStatus = Status::factory()->create();
+
+        Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $closedStatus->id]);
+        Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $openStatus->id]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('percent', 50);
+    }
+
+    #[Test]
+    public function show_eager_loads_ticket_relationships(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        Ticket::factory()->create(['project_id' => $project->id]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $tickets = $response->viewData('tickets');
+        $this->assertTrue($tickets[0]->relationLoaded('status'));
+        $this->assertTrue($tickets[0]->relationLoaded('type'));
+    }
+
+    #[Test]
+    public function create_requires_authentication(): void
+    {
+        $response = $this->get('/projects/create');
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
     public function it_returns_create_view(): void
     {
         $user = User::factory()->create();
@@ -41,6 +121,17 @@ class ProjectsControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/projects/create');
 
         $response->assertStatus(200);
+        $response->assertViewIs('projects.create');
+    }
+
+    #[Test]
+    public function edit_requires_authentication(): void
+    {
+        $project = Project::factory()->create();
+
+        $response = $this->get("/projects/edit/{$project->id}");
+
+        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -63,6 +154,17 @@ class ProjectsControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/projects/edit/{$project->id}");
 
         $response->assertViewHas('project');
+    }
+
+    #[Test]
+    public function store_requires_authentication(): void
+    {
+        $response = $this->post('/projects/store/new', [
+            'id' => 'new',
+            'name' => 'Test',
+        ]);
+
+        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -92,6 +194,19 @@ class ProjectsControllerTest extends TestCase
 
         $response->assertRedirect('/projects');
         $this->assertDatabaseHas('projects', ['id' => $project->id, 'name' => 'Updated Name']);
+    }
+
+    #[Test]
+    public function store_rejects_empty_name(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/projects/store/new', [
+            'id' => 'new',
+            'name' => '',
+        ]);
+
+        $response->assertSessionHasErrors('name');
     }
 
     #[Test]
