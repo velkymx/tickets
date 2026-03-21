@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\EstimateTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
+use App\Http\Requests\UpdateTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Importance;
 use App\Models\Milestone;
@@ -25,7 +26,6 @@ use Illuminate\Support\Str;
 
 class TicketsController extends Controller
 {
-
     public function home()
     {
         $statusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
@@ -189,25 +189,29 @@ class TicketsController extends Controller
         return view('tickets.edit', compact('ticket', 'lookups'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateTicketRequest $request, $id)
     {
         $ticket = Ticket::findOrFail($id);
 
         $this->authorize('update', $ticket);
 
-        $request = $request->toArray();
+        $data = $request->validated();
 
-        if (isset($request['due_at']) && $request['due_at'] != '') {
-            $request['due_at'] = date('Y-m-d', strtotime($request['due_at']));
+        if (! empty($data['due_at'])) {
+            $data['due_at'] = date('Y-m-d', strtotime($data['due_at']));
+        } else {
+            $data['due_at'] = null;
         }
 
-        if (isset($request['closed_at']) && $request['closed_at'] != '') {
-            $request['closed_at'] = date('Y-m-d H:i:s', strtotime($request['closed_at']));
+        if (! empty($data['closed_at'])) {
+            $data['closed_at'] = date('Y-m-d H:i:s', strtotime($data['closed_at']));
+        } else {
+            $data['closed_at'] = null;
         }
 
-        $change_list = $this->changes($ticket->toArray(), $request);
+        $change_list = $this->changes($ticket->toArray(), $data);
 
-        $ticket->update($request);
+        $ticket->update($data);
 
         $this->notate($ticket->id, '', $change_list);
 
