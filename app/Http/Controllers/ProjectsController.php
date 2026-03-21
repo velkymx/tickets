@@ -74,25 +74,21 @@ class ProjectsController extends Controller
         return view('projects.edit', compact('project'));
     }
 
-    public function store(Request $request)
+    public function store(StoreProjectRequest $request)
     {
+        $validated = $request->validated();
+
         if ($request->id == 'new') {
             $this->authorize('create', Project::class);
+
+            $validated['active'] = 1;
+
+            Project::create($validated);
         } else {
             $project = Project::findOrFail($request->id);
             $this->authorize('update', $project);
-        }
 
-        if ($request->id == 'new') {
-            $post = $request->toArray();
-
-            $post['active'] = 1;
-
-            Project::create($post);
-        } else {
-            $project = Project::findOrFail($request->id);
-
-            $project->update($request->toArray());
+            $project->update($validated);
         }
 
         return redirect('projects');

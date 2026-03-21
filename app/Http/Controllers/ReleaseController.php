@@ -86,19 +86,19 @@ class ReleaseController extends Controller
         return View('release/show', compact('release', 'projects', 'types', 'release_tickets'));
     }
 
-    public function store(Request $request)
+    public function store(StoreReleaseRequest $request)
     {
         $this->authorize('create', Release::class);
 
-        $release = new Release;
+        $validated = $request->validated();
 
-        $release->title = $request->title;
-        $release->started_at = ! empty($request->started_at) ? date('Y-m-d', strtotime($request->started_at)) : null;
-        $release->completed_at = ! empty($request->completed_at) ? date('Y-m-d', strtotime($request->completed_at)) : null;
-        $release->body = $request->body;
-        $release->user_id = Auth::id();
-
-        $release->save();
+        $release = Release::create([
+            'title' => $validated['title'],
+            'started_at' => $validated['started_at'] ?? null,
+            'completed_at' => $validated['completed_at'] ?? null,
+            'body' => $validated['body'] ?? null,
+            'user_id' => Auth::id(),
+        ]);
 
         return redirect('release/'.$release->id)->with('info_message', 'Release Saved');
 
