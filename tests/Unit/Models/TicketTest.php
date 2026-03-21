@@ -13,9 +13,11 @@ use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\Type;
 use App\Models\User;
+use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -336,5 +338,53 @@ class TicketTest extends TestCase
         ]);
 
         $this->assertEquals(2, $ticket->actual_hours);
+    }
+
+    #[Test]
+    public function it_notifies_watchers_on_update(): void
+    {
+        Notification::fake();
+
+        $creator = User::factory()->create();
+        $watcher = User::factory()->create();
+
+        $ticket = Ticket::factory()->create([
+            'user_id' => $creator->id,
+            'user_id2' => $creator->id,
+        ]);
+
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $watcher->id,
+        ]);
+
+        $ticket = $ticket->fresh()->load('watchers');
+        $ticket->subject = 'Updated Subject';
+        $ticket->save();
+
+        Notification::assertSentTo($watcher, WatcherNotification::class);
+    }
+
+    #[Test]
+    public function it_skips_watchers_with_no_user(): void
+    {
+        Notification::fake();
+
+        $creator = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $creator->id,
+            'user_id2' => $creator->id,
+        ]);
+
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => 99999,
+        ]);
+
+        $ticket = $ticket->fresh()->load('watchers');
+        $ticket->subject = 'Updated Subject';
+        $ticket->save();
+
+        Notification::assertNothingSent();
     }
 }
