@@ -350,7 +350,7 @@ class TicketsController extends Controller
 
         if ($request->has('status_id') && $request->has('ticket_id')) {
 
-            $ticket = Ticket::findOrFail($request->ticket_id);
+            $ticket = Ticket::withSum('notes', 'hours')->findOrFail($request->ticket_id);
 
             $old = $ticket->toArray();
 
