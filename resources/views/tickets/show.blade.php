@@ -239,9 +239,9 @@
                                 
                                 <strong class="me-2">{{ $ticket->storypoints }} Points</strong>
                                 
-                                @if($ticket->userstorypoints->isNotEmpty())
+                                @if($ticket->estimates->isNotEmpty())
                                     <ul class="list-group list-group-flush mt-2">
-                                        @foreach($ticket->userstorypoints as $usp)
+                                        @foreach($ticket->estimates as $usp)
                                             <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                                                 {{ $usp->storypoints }} points 
                                                 <span class="badge bg-secondary">{{ $usp->user->name }}</span>
