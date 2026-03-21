@@ -57,16 +57,42 @@ class StoreReleaseRequestTest extends TestCase
     #[Test]
     public function it_formats_dates_to_y_m_d_format(): void
     {
-        $dateString = 'Jan 15, 2024';
-        $formatted = ! empty($dateString) ? date('Y-m-d', strtotime($dateString)) : null;
-        $this->assertEquals('2024-01-15', $formatted);
+        $request = new StoreReleaseRequest;
+        $request->merge([
+            'title' => 'Test Release',
+            'started_at' => 'Jan 15, 2024 10:30:00',
+            'completed_at' => '2024/01/20',
+        ]);
+        $request->setContainer($this->app);
+        $request->setValidator(Validator::make(
+            $request->all(),
+            $request->rules(),
+        ));
+
+        $validated = $request->validated();
+
+        $this->assertEquals('2024-01-15', $validated['started_at']);
+        $this->assertEquals('2024-01-20', $validated['completed_at']);
     }
 
     #[Test]
     public function it_nullifies_empty_date_values(): void
     {
-        $input = '';
-        $validated = ! empty($input) ? date('Y-m-d', strtotime($input)) : null;
-        $this->assertNull($validated);
+        $request = new StoreReleaseRequest;
+        $request->merge([
+            'title' => 'Test Release',
+            'started_at' => '',
+            'completed_at' => '',
+        ]);
+        $request->setContainer($this->app);
+        $request->setValidator(Validator::make(
+            $request->all(),
+            $request->rules(),
+        ));
+
+        $validated = $request->validated();
+
+        $this->assertNull($validated['started_at']);
+        $this->assertNull($validated['completed_at']);
     }
 }

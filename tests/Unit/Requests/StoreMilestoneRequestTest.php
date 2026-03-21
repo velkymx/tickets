@@ -95,16 +95,72 @@ class StoreMilestoneRequestTest extends TestCase
     #[Test]
     public function it_formats_dates_to_y_m_d_format(): void
     {
-        $dateString = 'Jan 15, 2024';
-        $formatted = date('Y-m-d', strtotime($dateString));
-        $this->assertEquals('2024-01-15', $formatted);
+        $request = new StoreMilestoneRequest;
+        $request->merge([
+            'id' => 'new',
+            'name' => 'Test',
+            'start_at' => 'Jan 15, 2024 10:30:00',
+            'due_at' => '2024/01/20',
+            'end_at' => '2024-01-25 15:00:00',
+        ]);
+        $request->setContainer($this->app);
+        $request->setValidator(Validator::make(
+            $request->all(),
+            $request->rules(),
+        ));
+
+        $validated = $request->validated();
+
+        $this->assertEquals('2024-01-15', $validated['start_at']);
+        $this->assertEquals('2024-01-20', $validated['due_at']);
+        $this->assertEquals('2024-01-25', $validated['end_at']);
     }
 
     #[Test]
     public function it_nullifies_empty_date_values(): void
     {
-        $input = '';
-        $validated = $input !== '' ? date('Y-m-d', strtotime($input)) : null;
-        $this->assertNull($validated);
+        $request = new StoreMilestoneRequest;
+        $request->merge([
+            'id' => 'new',
+            'name' => 'Test',
+            'start_at' => '',
+            'due_at' => '',
+            'end_at' => '',
+        ]);
+        $request->setContainer($this->app);
+        $request->setValidator(Validator::make(
+            $request->all(),
+            $request->rules(),
+        ));
+
+        $validated = $request->validated();
+
+        $this->assertNull($validated['start_at']);
+        $this->assertNull($validated['due_at']);
+        $this->assertNull($validated['end_at']);
+    }
+
+    #[Test]
+    public function it_passes_through_valid_date_strings(): void
+    {
+        $request = new StoreMilestoneRequest;
+        $request->merge([
+            'id' => 'new',
+            'name' => 'Test',
+            'start_at' => '2024-06-15',
+            'due_at' => '2024-06-20',
+            'end_at' => '2024-06-30',
+        ]);
+        $request->setContainer($this->app);
+        $request->setValidator(Validator::make(
+            $request->all(),
+            $request->rules(),
+        ));
+
+        $validated = $request->validated();
+
+        $this->assertEquals('2024-06-15', $validated['start_at']);
+        $this->assertEquals('2024-06-20', $validated['due_at']);
+        $this->assertEquals('2024-06-30', $validated['end_at']);
     }
 }
