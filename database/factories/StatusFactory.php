@@ -13,21 +13,16 @@ class StatusFactory extends Factory
     {
         return [
             'name' => $this->faker->word(),
-            'slug' => $this->faker->slug(2),
         ];
     }
 
     public function closed(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'id' => $this->faker->randomElement([5, 8, 9]),
-        ]);
+        return $this->state(fn (array $attributes) => []);
     }
 
     public function open(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'id' => $this->faker->randomElement([1, 2, 3, 4, 6, 7]),
-        ]);
+        return $this->state(fn (array $attributes) => []);
     }
 }
