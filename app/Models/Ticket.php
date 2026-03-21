@@ -40,7 +40,7 @@ class Ticket extends Model
             'due_at' => 'datetime',
             'closed_at' => 'datetime',
             'estimate' => 'decimal:2',
-            'actual' => 'decimal:2',
+            'actual' => 'integer',
             'storypoints' => 'integer',
         ];
     }
