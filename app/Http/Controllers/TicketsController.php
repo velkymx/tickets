@@ -22,6 +22,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class TicketsController extends Controller
@@ -269,37 +270,44 @@ class TicketsController extends Controller
         return '/'.$path;
     }
 
-    public function batch(Request $request)
+    public function batch(BatchUpdateTicketRequest $request)
     {
-        $post = $request->toArray();
+        $validated = $request->validated();
 
-        $tickets = $post['tickets'];
+        $ticketIds = array_keys($validated['tickets']);
 
-        unset($post['tickets']);
+        $tickets = Ticket::whereIn('id', $ticketIds)->get()->keyBy('id');
 
-        if (count($tickets) == 0) {
-            return redirect('tickets');
-        }
-
-        foreach ($post as $k => $v) {
-            if ($v == 0) {
-                unset($post[$k]);
-            }
-        }
+        $updateFields = array_filter([
+            'type_id' => $validated['type_id'] ?? null,
+            'status_id' => $validated['status_id'] ?? null,
+            'importance_id' => $validated['importance_id'] ?? null,
+            'milestone_id' => $validated['milestone_id'] ?? null,
+            'project_id' => $validated['project_id'] ?? null,
+            'user_id2' => $validated['user_id2'] ?? null,
+        ], fn ($value) => $value !== null && $value !== 0);
 
         $i = 0;
 
-        foreach ($tickets as $ticket) {
-            $update = Ticket::findOrFail($ticket);
-
-            if ($request->has('release_id') && $request->release_id > 0) {
-                $release_ticket = new ReleaseTicket;
-                $release_ticket->release_id = $request->release_id;
-                $release_ticket->ticket_id = $ticket;
-                $release_ticket->save();
+        foreach ($ticketIds as $ticketId) {
+            if (! $tickets->has($ticketId)) {
+                continue;
             }
 
-            $update->update($post);
+            $ticket = $tickets->get($ticketId);
+
+            Gate::authorize('update', $ticket);
+
+            if (! empty($validated['release_id']) && $validated['release_id'] > 0) {
+                ReleaseTicket::firstOrCreate([
+                    'release_id' => $validated['release_id'],
+                    'ticket_id' => $ticketId,
+                ]);
+            }
+
+            if (! empty($updateFields)) {
+                $ticket->update($updateFields);
+            }
 
             $i++;
         }
