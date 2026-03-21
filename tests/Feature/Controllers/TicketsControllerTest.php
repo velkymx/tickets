@@ -854,7 +854,7 @@ class TicketsControllerTest extends TestCase
             'status' => 99999,
         ]);
 
-        $response->assertStatus(302);
+        $response->assertSessionHasErrors('status');
     }
 
     #[Test]
@@ -947,7 +947,7 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post('/notes', []);
 
-        $response->assertStatus(302);
+        $response->assertRedirect('/tickets');
     }
 
     #[Test]
