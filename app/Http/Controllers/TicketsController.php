@@ -131,6 +131,8 @@ class TicketsController extends Controller
     {
         $ticket = Ticket::findOrFail($id);
 
+        $this->authorize('claim', $ticket);
+
         $request = $ticket->toArray();
 
         $request['user_id2'] = Auth::id();
@@ -198,8 +200,9 @@ class TicketsController extends Controller
 
     public function update(Request $request, $id)
     {
-
         $ticket = Ticket::findOrFail($id);
+
+        $this->authorize('update', $ticket);
 
         $request = $request->toArray();
 
