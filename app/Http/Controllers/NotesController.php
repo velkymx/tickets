@@ -10,16 +10,6 @@ use App\Models\Note;
 class NotesController extends Controller
 {
 
-  /**
-   * Create a new controller instance.
-   *
-   * @return void
-   */
-  public function __construct()
-  {
-      $this->middleware('auth');
-  }    
-
     public function hide($id){
 
       $note = Note::findOrFail($id);

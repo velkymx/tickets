@@ -15,6 +15,6 @@ class Project extends Model
 
     public function tickets(): HasMany
     {
-        return $this->hasMany('App\Models\Ticket');
+        return $this->hasMany(Ticket::class);
     }
 }

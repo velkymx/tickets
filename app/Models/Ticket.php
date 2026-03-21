@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Notifications\WatcherNotification;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
@@ -32,17 +34,20 @@ class Ticket extends Model
         'subject', 'description', 'type_id', 'user_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'user_id2', 'due_at', 'closed_at', 'estimate', 'storypoints', 'actual',
     ];
 
-    protected $casts = [
-        'due_at' => 'datetime',
-        'closed_at' => 'datetime',
-        'estimate' => 'decimal:2',
-        'actual' => 'decimal:2',
-        'storypoints' => 'integer',
-    ];
-
-    public function type()
+    protected function casts(): array
     {
-        return $this->belongsTo('App\Models\Type');
+        return [
+            'due_at' => 'datetime',
+            'closed_at' => 'datetime',
+            'estimate' => 'decimal:2',
+            'actual' => 'decimal:2',
+            'storypoints' => 'integer',
+        ];
+    }
+
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(Type::class);
     }
 
     public function getActualHoursAttribute()
@@ -50,53 +55,53 @@ class Ticket extends Model
         return $this->notes()->sum('hours');
     }
 
-    public function milestone()
+    public function milestone(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Milestone');
+        return $this->belongsTo(Milestone::class);
     }
 
-    public function project()
+    public function project(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Project');
+        return $this->belongsTo(Project::class);
     }
 
-    public function status()
+    public function status(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Status');
+        return $this->belongsTo(Status::class);
     }
 
-    public function importance()
+    public function importance(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Importance');
+        return $this->belongsTo(Importance::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User');
+        return $this->belongsTo(User::class);
     }
 
-    public function assignee()
+    public function assignee(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User', 'user_id2');
+        return $this->belongsTo(User::class, 'user_id2');
     }
 
-    public function notes()
+    public function notes(): HasMany
     {
-        return $this->hasMany('App\Models\Note');
+        return $this->hasMany(Note::class);
     }
 
-    public function userstorypoints()
+    public function userstorypoints(): HasMany
     {
-        return $this->hasMany('App\Models\TicketEstimate');
+        return $this->hasMany(TicketEstimate::class);
     }
 
-    public function watchers()
+    public function watchers(): HasMany
     {
-        return $this->hasMany('App\Models\TicketUserWatcher');
+        return $this->hasMany(TicketUserWatcher::class);
     }
 
-    public function views()
+    public function views(): HasMany
     {
-        return $this->hasMany('App\Models\TicketView');
+        return $this->hasMany(TicketView::class);
     }
 }

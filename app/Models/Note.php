@@ -11,18 +11,21 @@ class Note extends Model
         'body', 'user_id', 'ticket_id', 'hours', 'notetype', 'hide',
     ];
 
-    protected $casts = [
-        'hours' => 'decimal:2',
-        'hide' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'hours' => 'decimal:2',
+            'hide' => 'boolean',
+        ];
+    }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User');
+        return $this->belongsTo(User::class);
     }
 
     public function ticket(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Ticket');
+        return $this->belongsTo(Ticket::class);
     }
 }

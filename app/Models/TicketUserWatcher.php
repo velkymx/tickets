@@ -15,11 +15,11 @@ class TicketUserWatcher extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User');
+        return $this->belongsTo(User::class);
     }
 
     public function ticket(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Ticket');
+        return $this->belongsTo(Ticket::class);
     }
 }

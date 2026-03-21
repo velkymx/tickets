@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Notifications\WatcherNotification;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Milestone extends Model
 {
@@ -40,19 +42,19 @@ class Milestone extends Model
         });
     }
 
-    public function tickets()
+    public function tickets(): HasMany
     {
-        return $this->hasMany('App\Models\Ticket');
+        return $this->hasMany(Ticket::class);
     }
 
-    public function owner()
+    public function owner(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User', 'owner_user_id');
+        return $this->belongsTo(User::class, 'owner_user_id');
     }
 
-    public function scrummaster()
+    public function scrummaster(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User', 'scrummaster_user_id');
+        return $this->belongsTo(User::class, 'scrummaster_user_id');
     }
 
     public function watchers()
