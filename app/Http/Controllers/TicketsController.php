@@ -66,8 +66,6 @@ class TicketsController extends Controller
 
         $tickets = new Ticket;
 
-        // this search filter needs to be reworked
-
         $queryfilter = [];
 
         foreach ($filters as $filter) {

@@ -31,10 +31,10 @@ class UsersController extends Controller
         $timezone = $user->timezone ?? config('app.timezone');
         $time = new \DateTime(null, new \DateTimeZone($timezone));
 
-        // Us dumb Americans can't handle millitary time
+        // Add 12-hour format time for display
         $ampm = $time->format('H') > 12 ? ' ('.$time->format('g:i a').')' : '';
 
-        // Remove region name and add a sample time
+        // Add sample time for current timezone
         $currenttime = $time->format('H:i').$ampm;
 
         return View('users.show', compact('user', 'alltickets', 'currenttime'));
@@ -126,13 +126,13 @@ class UsersController extends Controller
         foreach ($regions as $name => $mask) {
             $zones = \DateTimeZone::listIdentifiers($mask);
             foreach ($zones as $timezone) {
-                // Lets sample the time there right now
+                // Get current time in this timezone
                 $time = new \DateTime(null, new \DateTimeZone($timezone));
 
-                // Us dumb Americans can't handle millitary time
+                // Add 12-hour format for display
                 $ampm = $time->format('H') > 12 ? ' ('.$time->format('g:i a').')' : '';
 
-                // Remove region name and add a sample time
+                // Format timezone name with current time
                 $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$time->format('H:i').$ampm;
             }
         }
