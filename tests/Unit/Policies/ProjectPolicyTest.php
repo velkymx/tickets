@@ -1,0 +1,58 @@
+<?php
+
+namespace Tests\Unit\Policies;
+
+use App\Models\Project;
+use App\Models\User;
+use App\Policies\ProjectPolicy;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+class ProjectPolicyTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected ProjectPolicy $policy;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->policy = new ProjectPolicy;
+    }
+
+    #[Test]
+    public function it_allows_any_user_to_view(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+
+        $this->assertTrue($this->policy->view($user, $project));
+    }
+
+    #[Test]
+    public function it_allows_any_user_to_create(): void
+    {
+        $user = User::factory()->create();
+
+        $this->assertTrue($this->policy->create($user));
+    }
+
+    #[Test]
+    public function it_allows_any_user_to_update(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+
+        $this->assertTrue($this->policy->update($user, $project));
+    }
+
+    #[Test]
+    public function it_allows_any_user_to_delete(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+
+        $this->assertTrue($this->policy->delete($user, $project));
+    }
+}
