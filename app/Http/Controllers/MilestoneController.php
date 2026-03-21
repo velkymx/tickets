@@ -82,11 +82,11 @@ class MilestoneController extends Controller
 
             $percent = (round($completed / $total, 2) * 100);
 
-        }
+            if ($completed == $total) {
 
-        if ($completed == $total) {
+                $percent = 100;
 
-            $percent = 100;
+            }
 
         }
 
@@ -260,7 +260,6 @@ class MilestoneController extends Controller
             }
 
             $closedAtDates = $tickets->whereIn('status_id', $closedStatusIds)
-                ->get()
                 ->map(function ($ticket) {
                     $ticket->closed_at = $ticket->closed_at ?? $ticket->updated_at;
 

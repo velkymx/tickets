@@ -10,7 +10,9 @@ use App\Policies\MilestonePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ReleasePolicy;
 use App\Policies\TicketPolicy;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,5 +34,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Milestone::class, MilestonePolicy::class);
         Gate::policy(Release::class, ReleasePolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
+
+        RateLimiter::for('api', function ($request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }
