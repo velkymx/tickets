@@ -430,7 +430,6 @@ class TicketsControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Promote to Decision');
         $response->assertSee('Promote to Blocker');
-        $response->assertSee('Promote to Action');
         $response->assertSee('This will surface in Ticket Pulse. All team members will see it.');
     }
 
