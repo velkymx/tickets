@@ -25,7 +25,7 @@
     @endauth
 </head>
 <body id="app-layout">
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+<nav class="navbar navbar-expand-lg {{ Auth::check() && Auth::user()->theme === 'darkly' ? 'navbar-dark bg-dark' : 'navbar-light bg-light' }} shadow-sm">
     <div class="container">
         <a class="navbar-brand" href="{{ url('/') }}">
             <span class="text-primary">Tickets</span>
