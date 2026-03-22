@@ -4,6 +4,15 @@
 
 @section('content')
 
+    <div data-keyboard-shortcuts="true">
+
+    {{-- Keyboard shortcut help icon --}}
+    <div class="position-fixed bottom-0 end-0 mb-3 me-3" style="z-index: 1000;">
+        <button class="keyboard-icon btn btn-sm btn-outline-secondary rounded-circle" data-bs-toggle="modal" data-bs-target="#composerHelpModal" title="Keyboard shortcuts (?)">
+            <i class="fas fa-keyboard"></i>
+        </button>
+    </div>
+
     {{-- Bootstrap 5 Breadcrumb --}}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -358,6 +367,8 @@
         </div>
     </div>
 
+    </div>{{-- /data-keyboard-shortcuts --}}
+
 @endsection
 
 @section('javascript')
@@ -400,6 +411,54 @@
     document.querySelectorAll('.ticket-description-content img').forEach(img => {
         img.classList.add('img-fluid');
     });
+
+    // --- Global keyboard shortcuts ---
+    document.addEventListener('keydown', function(e) {
+        // Ignore when typing in inputs/textareas
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+            if (e.key === 'Escape') {
+                e.target.blur();
+            }
+            return;
+        }
+
+        switch(e.key) {
+            case '?':
+                e.preventDefault();
+                new bootstrap.Modal(document.getElementById('composerHelpModal')).show();
+                break;
+            case 'r':
+                e.preventDefault();
+                document.getElementById('note-textarea')?.focus();
+                break;
+            case '/':
+                e.preventDefault();
+                const textarea = document.getElementById('note-textarea');
+                if (textarea) {
+                    textarea.focus();
+                    textarea.value = '/';
+                }
+                break;
+            case 'j':
+                e.preventDefault();
+                navigateComments(1);
+                break;
+            case 'k':
+                e.preventDefault();
+                navigateComments(-1);
+                break;
+        }
+    });
+
+    let currentCommentIndex = -1;
+    function navigateComments(direction) {
+        const entries = document.querySelectorAll('.timeline-entry');
+        if (!entries.length) return;
+        currentCommentIndex = Math.max(0, Math.min(entries.length - 1, currentCommentIndex + direction));
+        entries[currentCommentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        entries[currentCommentIndex].classList.add('ring');
+        setTimeout(() => entries[currentCommentIndex].classList.remove('ring'), 1000);
+    }
 </script>
 <script>
     // --- Markdown Composer: Cmd+Enter to submit ---
