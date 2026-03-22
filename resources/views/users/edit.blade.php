@@ -95,7 +95,4 @@
         });
     });
 </script>
-<style>
-    .error { color:red }
-</style>
 @endsection
