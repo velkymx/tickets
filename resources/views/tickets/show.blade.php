@@ -180,12 +180,12 @@
             {{-- Action Buttons --}}
             <div class="row g-2 mb-4 text-center">
                 <div class="col-4">
-                    <a href="/tickets/edit/{{ $ticket->id }}" class="btn btn-block btn-secondary w-100">
+                    <a href="/tickets/edit/{{ $ticket->id }}" class="btn btn-secondary w-100">
                         <i class="fas fa-edit"></i> Edit
                     </a>
                 </div>
                 <div class="col-4">
-                    <a href="/tickets/clone/{{ $ticket->id }}" class="btn btn-block btn-secondary w-100">
+                    <a href="/tickets/clone/{{ $ticket->id }}" class="btn btn-secondary w-100">
                         <i class="fas fa-copy"></i> Clone
                     </a>
                 </div>

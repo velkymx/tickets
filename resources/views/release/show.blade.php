@@ -5,11 +5,11 @@ Releases List
 @section('content')
 <h1>{{ $release->title }}</h1>
 <hr>
-<div class="row-fluid">
+<div class="row">
     Release Date: {{ $release->completed_at ? date_format($release->completed_at, 'm/d/Y') : 'Not set' }}
 </div>
 <hr>
-<div class="row-fluid">
+<div class="row">
     {!! clean($release->body ?? '') !!}
 </div>
 <hr>

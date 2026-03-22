@@ -5,7 +5,7 @@ User Tickets
 @section('content')
 <h1>My List</h1>
 <hr />
-<?php if(count($alltickets) == 0){ ?>
+<?php if (count($alltickets) == 0) { ?>
     <div class="panel panel-default">
   <div class="panel-body">
     No Tickets Found
@@ -37,12 +37,12 @@ User Tickets
       <td><a href="/tickets/{{$tick->id}}">#{{$tick->id}} {{$tick->subject}}</a></td>
       <td>{{$tick->type->name}}</td>
       <td>{{$tick->importance->name}}</td>
-      <td align="center"><span class="label label-default">{{$tick->status->name}}</span></td>
+      <td class="text-center"><span class="badge text-bg-secondary">{{$tick->status->name}}</span></td>
       <td>{{$tick->project->name}}</td>
       <td>{{$tick->assignee->name}}</td>
       <td>
         @if ($tick->notes()->where('hide','0')->count() > 0)
-          <span class="badge">{{$tick->notes()->where('hide','0')->count()}}</span>
+          <span class="badge text-bg-info">{{$tick->notes()->where('hide','0')->count()}}</span>
         @endif
     </td>
       <td>{{date('M jS, Y g:ia',strtotime($tick->created_at))}}</td>
