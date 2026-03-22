@@ -93,6 +93,34 @@
                              <div class="card mb-3" id="note_{{ $note->id }}">
                                  <div class="card-header bg-body-secondary">
                                      <strong><a href="/users/{{ $note->user->id }}">{{ $note->user->name }}</a></strong> | posted {{ date('M jS, Y g:ia', strtotime($note->created_at)) }}
+                                     <div class="btn-group float-end ms-2">
+                                         <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                             Actions
+                                         </button>
+                                         <ul class="dropdown-menu dropdown-menu-end">
+                                             <li>
+                                                 <form method="POST" action="/notes/{{ $note->id }}/promote" onsubmit="return confirm('This will surface in Ticket Pulse. All team members will see it.');">
+                                                     @csrf
+                                                     <input type="hidden" name="type" value="decision">
+                                                     <button type="submit" class="dropdown-item">Promote to Decision</button>
+                                                 </form>
+                                             </li>
+                                             <li>
+                                                 <form method="POST" action="/notes/{{ $note->id }}/promote" onsubmit="return confirm('This will surface in Ticket Pulse. All team members will see it.');">
+                                                     @csrf
+                                                     <input type="hidden" name="type" value="blocker">
+                                                     <button type="submit" class="dropdown-item">Promote to Blocker</button>
+                                                 </form>
+                                             </li>
+                                             <li>
+                                                 <form method="POST" action="/notes/{{ $note->id }}/promote" onsubmit="return confirm('This will surface in Ticket Pulse. All team members will see it.');">
+                                                     @csrf
+                                                     <input type="hidden" name="type" value="action">
+                                                     <button type="submit" class="dropdown-item">Promote to Action</button>
+                                                 </form>
+                                             </li>
+                                         </ul>
+                                     </div>
                                      <button onclick="hideNote('{{ $note->id }}');" class="btn btn-outline-danger btn-sm float-end">Remove</button>
                                  </div>
                                  <div class="card-body">

@@ -411,6 +411,30 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_promote_actions_for_message_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'This note should be promotable to a signal.',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Promote to Decision');
+        $response->assertSee('Promote to Blocker');
+        $response->assertSee('Promote to Action');
+        $response->assertSee('This will surface in Ticket Pulse. All team members will see it.');
+    }
+
+    #[Test]
     public function show_passes_ticket_pulse_to_the_view(): void
     {
         $user = User::factory()->create();

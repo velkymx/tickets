@@ -84,4 +84,99 @@ class NotesControllerTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    #[Test]
+    public function it_requires_authentication_to_promote_a_note(): void
+    {
+        $response = $this->post('/notes/1/promote', [
+            'type' => 'decision',
+        ]);
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function it_promotes_a_message_note_to_decision_when_substantive(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'Use Redis-backed advisory locks for all write serialization.',
+        ]);
+
+        $response = $this->actingAs($user)->post("/notes/{$note->id}/promote", [
+            'type' => 'decision',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $this->assertEquals('decision', $note->fresh()->notetype);
+    }
+
+    #[Test]
+    public function it_rejects_short_decision_promotions(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'ok lets do it',
+        ]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'decision',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasErrors(['type']);
+        $this->assertEquals('message', $note->fresh()->notetype);
+    }
+
+    #[Test]
+    public function it_requires_an_assignee_to_promote_a_note_to_action(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'Verify the staging deploy before release.',
+        ]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasErrors(['type']);
+        $this->assertEquals('message', $note->fresh()->notetype);
+    }
+
+    #[Test]
+    public function it_can_promote_a_note_to_action_with_a_prompted_assignee(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create(['name' => 'sarah']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'Verify the staging deploy before release.',
+        ]);
+
+        $response = $this->actingAs($user)->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+            'assignee' => 'sarah',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $this->assertEquals('action', $note->fresh()->notetype);
+        $this->assertStringContainsString('@sarah', $note->fresh()->body);
+    }
 }
