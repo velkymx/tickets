@@ -10,11 +10,15 @@ class MentionService
 {
     public function parseMentions(string $markdown): array
     {
-        preg_match_all('/(?<![\w])@([\w.\-]+)/u', $markdown, $matches);
+        preg_match_all('/@\[([^\]]+)\]/u', $markdown, $matches);
+
+        if (empty($matches[1])) {
+            return [];
+        }
 
         return array_values(array_unique(array_map(
-            fn (string $username) => rtrim($username, '.,;:!?'),
-            $matches[1] ?? []
+            fn (string $token) => preg_replace('/\s*\([^)]*\)$/', '', trim($token)),
+            $matches[1]
         )));
     }
 
