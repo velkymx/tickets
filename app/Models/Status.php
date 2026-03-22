@@ -16,6 +16,11 @@ class Status extends Model
         return [5, 8, 9];
     }
 
+    public static function activeStatusIds(): array
+    {
+        return self::whereNotIn('id', self::closedStatusIds())->pluck('id')->toArray();
+    }
+
     public static function isClosed(int $statusId): bool
     {
         return in_array($statusId, self::closedStatusIds(), true);

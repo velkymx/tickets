@@ -34,7 +34,7 @@
                 // Fetch tickets specific to this milestone, project, and type, excluding closed/invalid statuses
                 $tickets = $milestone->tickets()
                     ->where('type_id', $type->id)
-                    ->whereNotIn('status_id', [8, 9])
+                    ->whereNotIn('status_id', \App\Models\Status::closedStatusIds())
                     ->where('project_id', $project_id)
                     ->orderBy('subject')
                     ->get();

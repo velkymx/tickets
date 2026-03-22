@@ -31,7 +31,7 @@
                 <td>
                     {{-- Status counts shown using B5 badge classes --}}
                     <span class="badge text-bg-secondary me-2">
-                        {{ $project->tickets()->whereIn('status_id',['1','2','3','6'])->count() }}
+                        {{ $project->tickets()->whereIn('status_id', \App\Models\Status::activeStatusIds())->count() }}
                     </span>
                     /
                     <span class="badge text-bg-secondary ms-2">
