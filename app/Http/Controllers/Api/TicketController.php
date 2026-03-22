@@ -157,9 +157,15 @@ class TicketController extends Controller
 
     public function note(Request $request, $id)
     {
+        $request->validate([
+            'status_id' => 'nullable|integer|exists:statuses,id',
+            'hours' => 'nullable|numeric|min:0|max:999',
+            'body' => 'nullable|string|max:65535',
+        ]);
+
         $user = $request->attributes->get('api_user');
 
-        $ticket = Ticket::where('user_id2', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
 
         if ($request->boolean('claim')) {
             $ticket->user_id2 = $user->id;
