@@ -327,6 +327,40 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_status_time_dropdown_renders_all_available_statuses_even_with_stale_cache(): void
+    {
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $user = User::factory()->create();
+        $openStatus = Status::factory()->create(['name' => 'Open']);
+        $inProgressStatus = Status::factory()->create(['name' => 'In Progress']);
+        $closedStatus = Status::factory()->create(['name' => 'Closed']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+            'status_id' => $openStatus->id,
+        ]);
+
+        \Illuminate\Support\Facades\Cache::put('ticket_lookups', [
+            'types' => collect(),
+            'milestones' => collect(),
+            'importances' => collect(),
+            'projects' => collect(),
+            'statuses' => collect([$openStatus->id => $openStatus->name]),
+            'releases' => collect(),
+            'users' => collect([$user->id => $user->name]),
+        ], now()->addMinutes(60));
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertOk();
+        $response->assertSee('name="status_id"', false);
+        $response->assertSee('>Open</option>', false);
+        $response->assertSee('>In Progress</option>', false);
+        $response->assertSee('>Closed</option>', false);
+    }
+
+    #[Test]
     public function show_allows_authenticated_users_who_are_not_owner_or_assignee(): void
     {
         $user = User::factory()->create();

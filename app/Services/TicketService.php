@@ -262,16 +262,29 @@ class TicketService
 
     public function getLookups(): array
     {
-        return Cache::remember('ticket_lookups', now()->addMinutes(60), function () {
-            return [
-                'types' => Type::orderBy('name')->pluck('name', 'id'),
-                'milestones' => Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
-                'importances' => Importance::orderBy('name')->pluck('name', 'id'),
-                'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
-                'statuses' => Status::orderBy('name')->pluck('name', 'id'),
-                'releases' => Release::orderBy('title')->pluck('title', 'id'),
-                'users' => User::orderBy('name')->pluck('name', 'id'),
-            ];
-        });
+        $lookups = Cache::remember('ticket_lookups', now()->addMinutes(60), fn () => $this->buildLookups());
+
+        $cachedStatuses = $lookups['statuses'] ?? collect();
+        $statusCount = Status::count();
+
+        if ($cachedStatuses->count() !== $statusCount) {
+            Cache::forget('ticket_lookups');
+            $lookups = Cache::remember('ticket_lookups', now()->addMinutes(60), fn () => $this->buildLookups());
+        }
+
+        return $lookups;
+    }
+
+    private function buildLookups(): array
+    {
+        return [
+            'types' => Type::orderBy('name')->pluck('name', 'id'),
+            'milestones' => Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
+            'importances' => Importance::orderBy('name')->pluck('name', 'id'),
+            'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
+            'statuses' => Status::orderBy('name')->pluck('name', 'id'),
+            'releases' => Release::orderBy('title')->pluck('title', 'id'),
+            'users' => User::orderBy('name')->pluck('name', 'id'),
+        ];
     }
 }

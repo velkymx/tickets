@@ -562,4 +562,29 @@ class TicketServiceTest extends TestCase
 
         $this->assertEquals(['Apple', 'Banana', 'Zebra'], $lookups['types']->values()->toArray());
     }
+
+    #[Test]
+    public function it_rebuilds_stale_cached_status_lookups(): void
+    {
+        Cache::flush();
+
+        $open = Status::factory()->create(['name' => 'Open']);
+        $closed = Status::factory()->create(['name' => 'Closed']);
+
+        Cache::put('ticket_lookups', [
+            'types' => collect(),
+            'milestones' => collect(),
+            'importances' => collect(),
+            'projects' => collect(),
+            'statuses' => collect([$open->id => $open->name]),
+            'releases' => collect(),
+            'users' => collect(),
+        ], now()->addMinutes(60));
+
+        $lookups = $this->service->getLookups();
+
+        $this->assertSame(2, $lookups['statuses']->count());
+        $this->assertTrue($lookups['statuses']->contains($open->name));
+        $this->assertTrue($lookups['statuses']->contains($closed->name));
+    }
 }
