@@ -13,6 +13,10 @@ class UsersController extends Controller
     public function show($id)
     {
 
+        if ((int) $id !== Auth::id()) {
+            abort(403);
+        }
+
         $user = User::findOrFail($id);
 
         $statuses = Status::pluck('name', 'id');
