@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Importance;
 use App\Models\Milestone;
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
@@ -281,6 +282,31 @@ class TicketControllerTest extends TestCase
                     'notes',
                 ],
             ]);
+    }
+
+    #[Test]
+    public function show_excludes_hidden_notes(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Visible note',
+            'hide' => false,
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Hidden note',
+            'hide' => true,
+        ]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $notes = $response->json('data.notes');
+        $this->assertCount(1, $notes);
+        $this->assertEquals('Visible note', $notes[0]['body']);
     }
 
     #[Test]

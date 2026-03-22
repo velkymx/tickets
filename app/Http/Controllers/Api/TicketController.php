@@ -111,7 +111,9 @@ class TicketController extends Controller
     {
         $user = $request->attributes->get('api_user');
 
-        $ticket = Ticket::with(['status', 'type', 'importance', 'milestone', 'project', 'assignee', 'notes.user'])
+        $ticket = Ticket::with(['status', 'type', 'importance', 'milestone', 'project', 'assignee', 'notes' => function ($q) {
+            $q->where('hide', 0)->with('user');
+        }])
             ->where('user_id2', $user->id)
             ->findOrFail($id);
 
