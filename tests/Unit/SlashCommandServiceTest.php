@@ -35,6 +35,27 @@ class SlashCommandServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_rejects_status_changes_when_the_ticket_has_an_active_blocker()
+    {
+        $ticket = Ticket::factory()->create();
+        $author = User::factory()->create();
+        $status = Status::factory()->create(['name' => 'Testing']);
+
+        Note::create([
+            'body' => 'Blocked on API rollout',
+            'user_id' => $author->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $result = $this->service->handle($ticket, '/status Testing');
+
+        $this->assertNotEquals($status->id, $ticket->fresh()->status_id);
+        $this->assertContains('Status change rejected while ticket is blocked', $result['changes']);
+    }
+
+    #[Test]
     public function it_can_assign_user_via_slash_command()
     {
         $ticket = Ticket::factory()->create();

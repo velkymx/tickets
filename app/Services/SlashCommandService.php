@@ -49,6 +49,11 @@ class SlashCommandService
 
         switch ($command) {
             case 'status':
+                if ($ticket->notes()->where('notetype', 'blocker')->where('resolved', false)->exists()) {
+                    $result['change'] = 'Status change rejected while ticket is blocked';
+                    break;
+                }
+
                 $status = Status::where('name', 'like', "%{$args}%")->first();
                 if ($status) {
                     $ticket->status_id = $status->id;
