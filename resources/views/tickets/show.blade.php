@@ -191,9 +191,9 @@
                 </div>
             </div>
 
-            {{-- Ticket Details Card (Replaced panel panel-default) --}}
+            {{-- Ticket Details Card --}}
             <div class="card">  
-                <div class="card-header">Ticket Details</div>
+                <div class="card-header bg-body-secondary">Ticket Details</div>
                 <table class="table table-sm mb-0">
                     <tbody>
                         @if ($ticket->due_at) {{-- Check if due_at is set --}}
