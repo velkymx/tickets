@@ -60,7 +60,7 @@ class UsersController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => 'required|email|max:255|unique:users,email,'.Auth::id(),
             'phone' => 'nullable|string|max:50',
             'timezone' => 'nullable|string|max:100',
             'theme' => 'nullable|string|max:255',

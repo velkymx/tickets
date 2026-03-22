@@ -190,4 +190,39 @@ class UsersControllerTest extends TestCase
 
         $response->assertRedirect("/users/{$user->id}");
     }
+
+    #[Test]
+    public function update_rejects_duplicate_email(): void
+    {
+        $existingUser = User::factory()->create(['email' => 'taken@example.com']);
+        $user = User::factory()->create(['email' => 'me@example.com']);
+
+        $response = $this->actingAs($user)->post('/user/update', [
+            'name' => 'Test User',
+            'email' => 'taken@example.com',
+            'timezone' => 'UTC',
+            'theme' => 'simplex',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+    }
+
+    #[Test]
+    public function update_allows_keeping_own_email(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'me@example.com',
+            'timezone' => 'UTC',
+            'theme' => 'simplex',
+        ]);
+
+        $response = $this->actingAs($user)->post('/user/update', [
+            'name' => 'Updated Name',
+            'email' => 'me@example.com',
+            'timezone' => 'UTC',
+            'theme' => 'simplex',
+        ]);
+
+        $response->assertRedirect("/users/{$user->id}");
+    }
 }
