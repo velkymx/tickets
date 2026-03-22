@@ -525,6 +525,39 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_returns_pulse_object(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        // Create a blocker note so pulse has interesting data
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Waiting on API key from vendor',
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $pulse = $response->json('data.pulse');
+        $this->assertNotNull($pulse, 'Response should include pulse object');
+        $this->assertArrayHasKey('execution_state', $pulse);
+        $this->assertArrayHasKey('is_blocked', $pulse);
+        $this->assertArrayHasKey('blocker_reason', $pulse);
+        $this->assertArrayHasKey('latest_blocker', $pulse);
+        $this->assertArrayHasKey('latest_decision', $pulse);
+        $this->assertArrayHasKey('open_threads', $pulse);
+        $this->assertArrayHasKey('last_activity_at', $pulse);
+
+        $this->assertTrue($pulse['is_blocked']);
+        $this->assertEquals('BLOCKED', $pulse['execution_state']);
+        $this->assertStringContainsString('API key', $pulse['blocker_reason']);
+    }
+
+    #[Test]
     public function note_returns_updated_ticket_info(): void
     {
         $ticket = Ticket::factory()->create([

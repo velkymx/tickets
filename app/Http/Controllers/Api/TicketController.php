@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Importance;
+use App\Services\TicketPulseService;
 use App\Models\Milestone;
 use App\Models\Note;
 use App\Models\Project;
@@ -135,6 +136,8 @@ class TicketController extends Controller
         $apiUserId = $user->id;
         $notes = $ticket->notes->map(fn ($note) => $this->formatNote($note, $apiUserId));
 
+        $pulse = app(TicketPulseService::class)->getPulse($ticket)->toArray();
+
         return response()->json(['data' => [
             'id' => $ticket->id,
             'subject' => $ticket->subject,
@@ -150,6 +153,7 @@ class TicketController extends Controller
             'due_at' => $ticket->due_at,
             'closed_at' => $ticket->closed_at,
             'created_at' => $ticket->created_at->toDateString(),
+            'pulse' => $pulse,
             'notes' => $notes,
         ]]);
     }
