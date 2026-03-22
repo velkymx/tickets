@@ -24,12 +24,20 @@ class MilestonePolicy
 
     public function update(User $user, Milestone $milestone): bool
     {
+        if ($milestone->scrummaster_user_id === null && $milestone->owner_user_id === null) {
+            return true;
+        }
+
         return $user->id === $milestone->scrummaster_user_id
             || $user->id === $milestone->owner_user_id;
     }
 
     public function delete(User $user, Milestone $milestone): bool
     {
+        if ($milestone->scrummaster_user_id === null && $milestone->owner_user_id === null) {
+            return true;
+        }
+
         return $user->id === $milestone->scrummaster_user_id
             || $user->id === $milestone->owner_user_id;
     }

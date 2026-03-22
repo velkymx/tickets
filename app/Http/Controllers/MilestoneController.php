@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMilestoneRequest;
+use App\Http\Requests\UpdateMilestoneRequest;
 use App\Models\Milestone;
 use App\Models\MilestoneWatcher;
 use App\Models\Status;

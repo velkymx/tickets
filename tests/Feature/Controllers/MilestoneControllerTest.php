@@ -227,6 +227,20 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function edit_allows_authenticated_users_when_milestone_has_no_owner_or_scrummaster(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create([
+            'owner_user_id' => null,
+            'scrummaster_user_id' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get("/milestone/edit/{$milestone->id}");
+
+        $response->assertStatus(200);
+    }
+
+    #[Test]
     public function update_requires_authentication(): void
     {
         $milestone = Milestone::factory()->create();
