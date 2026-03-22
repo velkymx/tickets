@@ -13,7 +13,7 @@
         ];
     @endphp
 
-    <section class="mx-auto" style="max-width: 960px;">
+    <section>
         <div class="card shadow-sm border-0 overflow-hidden">
             <div class="card-body p-4 p-lg-5">
                 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
