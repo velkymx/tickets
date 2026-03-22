@@ -123,11 +123,15 @@ class TicketController extends Controller
 
         $ticket = Ticket::with([
             'status', 'type', 'importance', 'milestone', 'project', 'assignee',
-            'notes' => function ($q) {
+            'notes' => function ($q) use ($request) {
                 $q->where('hide', 0)
                     ->whereNull('parent_id')
                     ->orderBy('created_at', 'asc')
                     ->with(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+
+                if ($request->has('notetype')) {
+                    $q->where('notetype', $request->notetype);
+                }
             },
         ])
             ->where('user_id2', $user->id)

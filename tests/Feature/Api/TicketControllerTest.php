@@ -525,6 +525,51 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_filters_notes_by_notetype(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'A regular message',
+            'notetype' => 'message',
+        ]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Use Redis for caching',
+            'notetype' => 'decision',
+        ]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Waiting on vendor',
+            'notetype' => 'blocker',
+        ]);
+
+        // Filter to decisions only
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}?notetype=decision", $this->apiHeaders());
+        $response->assertStatus(200);
+        $notes = $response->json('data.notes');
+        $this->assertCount(1, $notes);
+        $this->assertEquals('decision', $notes[0]['notetype']);
+
+        // Filter to blockers only
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}?notetype=blocker", $this->apiHeaders());
+        $notes = $response->json('data.notes');
+        $this->assertCount(1, $notes);
+        $this->assertEquals('blocker', $notes[0]['notetype']);
+
+        // No filter returns all
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
+        $notes = $response->json('data.notes');
+        $this->assertCount(3, $notes);
+    }
+
+    #[Test]
     public function show_returns_pulse_object(): void
     {
         $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
