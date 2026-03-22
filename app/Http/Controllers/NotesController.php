@@ -11,6 +11,7 @@ use App\Services\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 
 class NotesController extends Controller
@@ -63,7 +64,7 @@ class NotesController extends Controller
                 $validator->errors()->add('type', 'Decision notes must be at least 20 characters.');
             }
 
-            if ($type === 'action' && ! preg_match('/@([\w.\-]+)/', $body) && ! request('assignee')) {
+            if ($type === 'action' && ! preg_match('/@\[([^\]]+)\]/u', $body) && ! request('assignee')) {
                 $validator->errors()->add('type', 'Actions require exactly one @assignee');
             }
         });
@@ -72,8 +73,9 @@ class NotesController extends Controller
             return redirect('tickets/'.$note->ticket_id)->withErrors($validator)->withInput();
         }
 
-        if (request('type') === 'action' && request('assignee') && ! preg_match('/@([\w.\-]+)/', $note->body)) {
-            $note->body = rtrim($note->body).' @'.ltrim((string) request('assignee'), '@');
+        if (request('type') === 'action' && request('assignee') && ! preg_match('/@\[([^\]]+)\]/u', $note->body)) {
+            $assigneeName = ltrim((string) request('assignee'), '@');
+            $note->body = rtrim($note->body).' @['.$assigneeName.']';
         }
 
         $note->notetype = request('type');
@@ -174,7 +176,9 @@ class NotesController extends Controller
             'edited_at' => now(),
         ]);
 
-        $mentions->createMentions($note, $mentions->parseMentions($validated['body']));
+        $usernames = $mentions->parseMentions($validated['body']);
+        $userIds = User::whereIn('name', $usernames)->pluck('id')->all();
+        $mentions->createMentions($note, $userIds);
 
         return response()->json([
             'body' => $note->body,

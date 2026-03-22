@@ -178,7 +178,7 @@ class NotesControllerTest extends TestCase
 
         $response->assertRedirect("/tickets/{$ticket->id}");
         $this->assertEquals('action', $note->fresh()->notetype);
-        $this->assertStringContainsString('@sarah', $note->fresh()->body);
+        $this->assertStringContainsString('@[sarah]', $note->fresh()->body);
     }
 
     // --- Reply Tests ---
@@ -707,6 +707,27 @@ class NotesControllerTest extends TestCase
         $this->assertStringContainsString('<strong>Deploy</strong>', $reply->body);
         $this->assertDatabaseHas('mentions', [
             'note_id' => $reply->id,
+            'user_id' => $mentioned->id,
+        ]);
+    }
+
+    #[Test]
+    public function editing_a_note_creates_mentions_for_bracket_format(): void
+    {
+        $author = User::factory()->create();
+        $mentioned = User::factory()->create(['name' => 'Alice Jones', 'title' => 'PM']);
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $author->id]);
+
+        $this->actingAs($author);
+
+        $response = $this->putJson("/notes/{$note->id}", [
+            'body' => 'Updated: @[Alice Jones (PM)] check this',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('mentions', [
+            'note_id' => $note->id,
             'user_id' => $mentioned->id,
         ]);
     }
