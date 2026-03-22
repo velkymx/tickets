@@ -63,6 +63,8 @@ class ReleaseController extends Controller
     {
         $release = Release::with('owner')->findOrFail($id);
 
+        $this->authorize('view', $release);
+
         $release_tickets = ReleaseTicket::with([
             'ticket' => function ($q) {
                 $q->with(['project', 'type', 'status', 'assignee']);
