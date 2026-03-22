@@ -462,6 +462,35 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_ticket_pulse_in_the_sidebar_between_actions_and_ticket_details(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertOk();
+
+        $content = $response->getContent();
+        $watchPosition = strpos($content, 'Unwatch');
+        if ($watchPosition === false) {
+            $watchPosition = strpos($content, 'Watch');
+        }
+
+        $pulsePosition = strpos($content, 'id="ticket-pulse-panel"');
+        $detailsPosition = strpos($content, 'Ticket Details');
+
+        $this->assertNotFalse($watchPosition);
+        $this->assertNotFalse($pulsePosition);
+        $this->assertNotFalse($detailsPosition);
+        $this->assertTrue($watchPosition < $pulsePosition);
+        $this->assertTrue($pulsePosition < $detailsPosition);
+    }
+
+    #[Test]
     public function show_renders_promote_actions_for_message_notes(): void
     {
         $user = User::factory()->create();

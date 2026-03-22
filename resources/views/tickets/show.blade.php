@@ -47,9 +47,6 @@
         </div>
     @endif
 
-    {{-- Ticket Pulse (Real-Time Decision Log) --}}
-    <x-ticket-pulse :ticket="$ticket" :pulse="$pulse->toArray()" />
-
     <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-8">
@@ -206,6 +203,9 @@
                     @endauth
                 </div>
             </div>
+
+            {{-- Ticket Pulse (Real-Time Decision Log) --}}
+            <x-ticket-pulse :ticket="$ticket" :pulse="$pulse->toArray()" />
 
             {{-- Ticket Details Card --}}
             <div class="card shadow-sm mb-4">
