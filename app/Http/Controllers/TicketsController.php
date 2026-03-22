@@ -13,6 +13,7 @@ use App\Models\Ticket;
 use App\Models\TicketEstimate;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
+use App\Services\TicketPulseService;
 use App\Services\TicketService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -198,7 +199,9 @@ class TicketsController extends Controller
             ->with('user')
             ->get();
 
-        return view('tickets.show', compact('ticket', 'lookups', 'ticketViews'));
+        $pulse = app(TicketPulseService::class)->getPulse($ticket);
+
+        return view('tickets.show', compact('ticket', 'lookups', 'ticketViews', 'pulse'));
     }
 
     public function create($value = '')
