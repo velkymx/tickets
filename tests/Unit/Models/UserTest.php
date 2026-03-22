@@ -2,6 +2,9 @@
 
 namespace Tests\Unit\Models;
 
+use App\Models\Mention;
+use App\Models\Note;
+use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\User;
 use Carbon\Carbon;
@@ -23,6 +26,7 @@ class UserTest extends TestCase
         $this->assertContains('name', $fillable);
         $this->assertContains('email', $fillable);
         $this->assertContains('password', $fillable);
+        $this->assertContains('avatar', $fillable);
         $this->assertContains('phone', $fillable);
         $this->assertContains('timezone', $fillable);
         $this->assertContains('theme', $fillable);
@@ -97,5 +101,56 @@ class UserTest extends TestCase
         $token2 = $user->generateApiToken();
 
         $this->assertNotEquals($token1, $token2);
+    }
+
+    #[Test]
+    public function it_returns_a_storage_url_when_an_avatar_is_present(): void
+    {
+        $user = User::factory()->make([
+            'avatar' => 'avatars/alice.png',
+        ]);
+
+        $this->assertStringEndsWith('/avatars/alice.png', $user->avatarUrl());
+    }
+
+    #[Test]
+    public function it_returns_a_gravatar_url_when_avatar_is_missing(): void
+    {
+        $user = User::factory()->make([
+            'email' => 'test@example.com',
+            'avatar' => null,
+        ]);
+
+        $expected = 'https://www.gravatar.com/avatar/'.md5('test@example.com').'?s=46&d=mp';
+
+        $this->assertSame($expected, $user->avatarUrl());
+    }
+
+    #[Test]
+    public function it_has_many_mentions_and_reactions(): void
+    {
+        $user = User::factory()->create();
+        $author = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+        ]);
+
+        $mention = Mention::create([
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+        ]);
+        $reaction = NoteReaction::create([
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+            'emoji' => 'thumbsup',
+        ]);
+
+        $this->assertTrue($user->mentions->contains($mention));
+        $this->assertTrue($user->reactions->contains($reaction));
     }
 }
