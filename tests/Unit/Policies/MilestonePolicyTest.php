@@ -5,9 +5,9 @@ namespace Tests\Unit\Policies;
 use App\Models\Milestone;
 use App\Models\User;
 use App\Policies\MilestonePolicy;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class MilestonePolicyTest extends TestCase
 {
@@ -84,6 +84,24 @@ class MilestonePolicyTest extends TestCase
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
 
         $this->assertFalse($this->policy->delete($unrelated, $milestone));
+    }
+
+    #[Test]
+    public function it_denies_anyone_from_updating_unassigned_milestone(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['scrummaster_user_id' => null, 'owner_user_id' => null]);
+
+        $this->assertFalse($this->policy->update($user, $milestone));
+    }
+
+    #[Test]
+    public function it_denies_anyone_from_deleting_unassigned_milestone(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['scrummaster_user_id' => null, 'owner_user_id' => null]);
+
+        $this->assertFalse($this->policy->delete($user, $milestone));
     }
 
     #[Test]
