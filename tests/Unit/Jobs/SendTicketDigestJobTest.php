@@ -5,6 +5,7 @@ namespace Tests\Unit\Jobs;
 use App\Jobs\SendTicketDigestJob;
 use App\Models\User;
 use App\Notifications\TicketDigestNotification;
+use App\Services\NotificationBatchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
@@ -41,9 +42,19 @@ class SendTicketDigestJobTest extends TestCase
             ],
         ], now()->addMinutes(10));
 
-        (new SendTicketDigestJob($user->id, 142))->handle(app(\App\Services\NotificationBatchService::class));
+        (new SendTicketDigestJob($user->id, 142))->handle(app(NotificationBatchService::class));
 
         Notification::assertSentTo($user, TicketDigestNotification::class);
         $this->assertNull(Cache::get($key));
+    }
+
+    #[Test]
+    public function it_handles_empty_entries_without_crashing(): void
+    {
+        $notification = new TicketDigestNotification(142, []);
+
+        $mail = $notification->toMail(User::factory()->make());
+
+        $this->assertNotNull($mail);
     }
 }
