@@ -20,6 +20,7 @@
     {{-- Header --}}
     <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center py-2">
         <div class="d-flex align-items-center gap-2">
+            <x-avatar :user="$note->user" :size="32" />
             <strong><a href="/users/{{ $note->user->id }}" class="text-decoration-none">{{ $note->user->name }}</a></strong>
             @if(isset($signalBadges[$note->notetype]))
                 <span class="badge {{ $signalBadges[$note->notetype]['class'] }} badge-sm">{{ $signalBadges[$note->notetype]['text'] }}</span>

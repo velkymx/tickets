@@ -825,6 +825,25 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_avatar_component_for_note_authors(): void
+    {
+        $user = User::factory()->create(['email' => 'test@example.com']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'Comment with avatar',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('rounded-circle', false);
+        $response->assertSee('gravatar.com', false);
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
