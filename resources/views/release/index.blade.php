@@ -24,9 +24,9 @@
             <thead class="table-light">
                 <tr>
                     <th>Name</th>
-                    <th style="width: 150px;">Tickets</th>
-                    <th style="width: 150px;">Date</th>
-                    <th style="width: 150px;"></th>
+                    <th class="col-2">Tickets</th>
+                    <th class="col-2">Date</th>
+                    <th class="col-2"></th>
                 </tr>
             </thead>
             <tbody>

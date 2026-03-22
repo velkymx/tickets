@@ -48,9 +48,9 @@
                         <th>Status</th>
                         <th>Project</th>
                         <th>Assignee</th>
-                        <th style="width: 80px;">Notes</th>
-                        <th style="width: 150px;">Created</th>
-                        <th style="width: 150px;">Updated</th>
+                        <th class="col-1">Notes</th>
+                        <th class="col-2">Created</th>
+                        <th class="col-2">Updated</th>
                     </tr>
                 </thead>
                 <tbody>
