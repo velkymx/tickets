@@ -31,10 +31,7 @@
                             </h2>
                             
                             {{-- Note Body --}}
-                            @if($ticket->notes()->where('ticket_id', $ticket->id)->orderBy('created_at', 'desc')->first())
-                                @php
-                                    $latestNote = $ticket->notes()->where('ticket_id', $ticket->id)->orderBy('created_at', 'desc')->first();
-                                @endphp
+                            @if(isset($latestNote) && $latestNote)
                                 <div style="background-color: #f8f9fa; border-left: 4px solid #0d6efd; padding: 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
                                     {!! clean($latestNote->body ?? '') !!}
                                 </div>
