@@ -18,6 +18,14 @@
             </tr>
         </thead>
         <tbody>
+            @if($projects->isEmpty())
+                <tr>
+                    <td colspan="3" class="text-center p-4">
+                        <p class="text-muted mb-2">No projects found.</p>
+                        <a href="/projects/create" class="btn btn-sm btn-primary">Create Project</a>
+                    </td>
+                </tr>
+            @else
             @foreach ($projects as $project)
             <tr>
                 <td>{{ $project->name }}</td>
@@ -40,6 +48,7 @@
                 </td>
             </tr>
             @endforeach
+            @endif
         </tbody>
     </table>
 </div>
