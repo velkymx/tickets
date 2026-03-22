@@ -24,11 +24,11 @@ class ProjectPolicy
 
     public function update(User $user, Project $project): bool
     {
-        return true;
+        return $project->active;
     }
 
     public function delete(User $user, Project $project): bool
     {
-        return true;
+        return ! $project->active;
     }
 }

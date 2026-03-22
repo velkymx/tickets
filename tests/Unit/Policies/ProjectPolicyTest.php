@@ -48,10 +48,19 @@ class ProjectPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_any_user_to_delete(): void
+    public function it_denies_deleting_active_project(): void
     {
         $user = User::factory()->create();
-        $project = Project::factory()->create();
+        $project = Project::factory()->create(['active' => true]);
+
+        $this->assertFalse($this->policy->delete($user, $project));
+    }
+
+    #[Test]
+    public function it_allows_deleting_inactive_project(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create(['active' => false]);
 
         $this->assertTrue($this->policy->delete($user, $project));
     }

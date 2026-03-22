@@ -47,21 +47,43 @@ class MilestonePolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_any_user_to_update(): void
+    public function it_allows_scrummaster_to_update(): void
     {
         $user = User::factory()->create();
-        $milestone = Milestone::factory()->create();
+        $milestone = Milestone::factory()->create(['scrummaster_user_id' => $user->id]);
 
         $this->assertTrue($this->policy->update($user, $milestone));
     }
 
     #[Test]
-    public function it_allows_any_user_to_delete(): void
+    public function it_denies_unrelated_user_from_updating(): void
+    {
+        $unrelated = User::factory()->create();
+        $scrummaster = User::factory()->create();
+        $owner = User::factory()->create();
+        $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
+
+        $this->assertFalse($this->policy->update($unrelated, $milestone));
+    }
+
+    #[Test]
+    public function it_allows_owner_to_delete(): void
     {
         $user = User::factory()->create();
-        $milestone = Milestone::factory()->create();
+        $milestone = Milestone::factory()->create(['owner_user_id' => $user->id]);
 
         $this->assertTrue($this->policy->delete($user, $milestone));
+    }
+
+    #[Test]
+    public function it_denies_unrelated_user_from_deleting(): void
+    {
+        $unrelated = User::factory()->create();
+        $scrummaster = User::factory()->create();
+        $owner = User::factory()->create();
+        $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
+
+        $this->assertFalse($this->policy->delete($unrelated, $milestone));
     }
 
     #[Test]

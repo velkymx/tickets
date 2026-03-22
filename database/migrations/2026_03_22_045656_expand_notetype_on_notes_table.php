@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,7 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE notes MODIFY COLUMN notetype ENUM('message', 'changelog', 'misc', 'decision', 'blocker', 'update', 'action') NOT NULL DEFAULT 'message'");
+        // SQLite doesn't support ALTER COLUMN with ENUM, so we skip
+        // This migration only applies to MySQL/PostgreSQL
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
+        Schema::table('notes', function (Blueprint $table) {
+            $table->string('notetype', 20)->default('message')->change();
+        });
     }
 
     /**
@@ -20,6 +27,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE notes MODIFY COLUMN notetype ENUM('message', 'changelog', 'misc') NOT NULL DEFAULT 'message'");
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
+        Schema::table('notes', function (Blueprint $table) {
+            $table->string('notetype', 20)->default('message')->change();
+        });
     }
 };
