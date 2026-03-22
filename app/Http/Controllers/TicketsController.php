@@ -426,24 +426,10 @@ class TicketsController extends Controller
         $ticket = Ticket::findOrFail($ticket_id);
         $this->authorize('estimate', $ticket);
 
-        $check = TicketEstimate::where('ticket_id', $ticket_id)->where('user_id', Auth::id())->first();
-
-        if ($check === null) {
-            TicketEstimate::create([
-                'ticket_id' => $ticket_id,
-                'user_id' => Auth::id(),
-                'storypoints' => $validated['storypoints'],
-            ]);
-        } else {
-
-            if ($check->storypoints == $validated['storypoints']) {
-
-                return redirect('tickets/'.$ticket_id);
-            }
-
-            $check->storypoints = $validated['storypoints'];
-            $check->save();
-        }
+        $check = TicketEstimate::updateOrCreate(
+            ['ticket_id' => $ticket_id, 'user_id' => Auth::id()],
+            ['storypoints' => $validated['storypoints']]
+        );
 
         $getAvg = TicketEstimate::where('ticket_id', $ticket_id)->get();
 
