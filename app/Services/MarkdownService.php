@@ -18,25 +18,39 @@ class MarkdownService
         $lines = explode("\n", $text);
         foreach ($lines as &$line) {
             if (str_starts_with(trim($line), '/')) {
-                $line = '<code class="slash-command">' . e(trim($line)) . '</code>';
+                $line = '<code class="slash-command">'.e(trim($line)).'</code>';
             }
         }
         $text = implode("\n", $lines);
 
         $html = Str::markdown($text);
 
-        $html = preg_replace_callback('/@([\w\.]+)/', function ($matches) {
-            $username = $matches[1];
-            $user = User::where('name', $username)->first();
-            
-            if ($user) {
-                return '<a class="mention" href="/users/' . $user->id . '">@' . $username . '</a>';
-            }
-            
-            return $matches[0];
-        }, $html);
+        $html = $this->replaceMentions($html);
 
         return $this->decorateChecklistItems($html);
+    }
+
+    private function replaceMentions(string $html): string
+    {
+        preg_match_all('/@([\w\.]+)/', $html, $matches);
+
+        if (empty($matches[1])) {
+            return $html;
+        }
+
+        $usernames = array_unique($matches[1]);
+        $users = User::whereIn('name', $usernames)->get()->keyBy('name');
+
+        return preg_replace_callback('/@([\w\.]+)/', function ($matches) use ($users) {
+            $username = $matches[1];
+            $user = $users[$username] ?? null;
+
+            if ($user) {
+                return '<a class="mention" href="/users/'.$user->id.'">@'.$username.'</a>';
+            }
+
+            return $matches[0];
+        }, $html);
     }
 
     private function wrapStackTrace(string $text): string
