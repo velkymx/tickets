@@ -165,17 +165,17 @@
             
             {{-- Action Buttons --}}
             <div class="row g-2 mb-4 text-center">
-                <div class="col-4">
+                <div class="col-6">
                     <a href="/tickets/edit/{{ $ticket->id }}" class="btn btn-secondary w-100">
                         <i class="fas fa-edit"></i> Edit
                     </a>
                 </div>
-                <div class="col-4">
+                <div class="col-6">
                     <a href="/tickets/clone/{{ $ticket->id }}" class="btn btn-secondary w-100">
                         <i class="fas fa-copy"></i> Clone
                     </a>
                 </div>
-                <div class="col-4">
+                <div class="col-6">
                     @auth
                         @php
                             $isWatching = $ticket->watchers->contains('user_id', auth()->id());
@@ -191,103 +191,127 @@
             </div>
 
             {{-- Ticket Details Card --}}
-            <div class="card">  
-                <div class="card-header bg-body-secondary">Ticket Details</div>
-                <table class="table table-sm mb-0">
-                    <tbody>
-                        @if ($ticket->due_at) {{-- Check if due_at is set --}}
-                        <tr>
-                            <td>Due</td>
-                            <td>{{ date('M jS, Y', strtotime($ticket->due_at)) }}</td>
-                        </tr>
-                        @endif
-                        <tr>
-                            <td>Importance</td>
-                            <td><span class="text-{{ $ticket->importance->class }}" title="{{ $ticket->importance->name }}"><i class="{{ $ticket->importance->icon }}"></i> {{ $ticket->importance->name }}</span></td>
-                        </tr>
-                        <tr>
-                            <td>Status</td>
-                            <td>{{ $ticket->status->name }}</td>
-                        </tr>
-                        <tr>
-                            <td>Assignee</td>
-                            <td><a href="/users/{{ $ticket->assignee->id }}">{{ $ticket->assignee->name }}</a></td>
-                        </tr>
-                        <tr>
-                            <td>Type</td>
-                            <td><i class="{{ $ticket->type->icon }}" title="{{ $ticket->type->name }}"></i> {{ $ticket->type->name }}</td>
-                        </tr>
-                        <tr>
-                            <td>Owner</td>
-                            <td><a href="/users/{{ $ticket->user->id }}">{{ $ticket->user->name }}</a></td>
-                        </tr>
-                        <tr>
-                            <td>Milestone</td>
-                            <td><a href="/milestone/show/{{ $ticket->milestone->id }}">{{ $ticket->milestone->name }}</a></td>
-                        </tr>
-                        <tr>
-                            <td>Project</td>
-                            <td><a href="/projects/show/{{ $ticket->project->id }}">{{ $ticket->project->name }}</a></td>
-                        </tr>
-                        <tr>
-                            <td>Story Points</td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-outline-secondary float-end" data-bs-toggle="modal" data-bs-target="#estimateModal">
-                                    Estimate
-                                </button>
-                                
-                                <strong class="me-2">{{ $ticket->storypoints }} Points</strong>
-                                
-                                @if($ticket->estimates->isNotEmpty())
-                                    <ul class="list-group list-group-flush mt-2">
-                                        @foreach($ticket->estimates as $usp)
-                                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                                {{ $usp->storypoints }} points 
-                                                <span class="badge text-bg-secondary">{{ $usp->user->name }}</span>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Time Estimate</td>
-                            <td>{{ $ticket->estimate }} hours</td>
-                        </tr>
-                        <tr>
-                            <td>Time Actual</td>
-                            <td>{{ $ticket->notes()->where('hide', 0)->sum('hours') }} hours</td>
-                        </tr>
-                        <tr>
-                            <td>Created</td>
-                            <td>{{ date('M jS, Y g:ia', strtotime($ticket->created_at)) }}</td>
-                        </tr>
-                        <tr>
-                            <td>Updated</td>
-                            <td>{{ date('M jS, Y g:ia', strtotime($ticket->updated_at)) }}</td>
-                        </tr>
-                        @if($ticket->closed_at)
-                        <tr>
-                            <td>Closed</td>
-                            <td>{{ date('M jS, Y g:ia', strtotime($ticket->closed_at)) }}</td>
-                        </tr>
-                        @endif
-                        @foreach ($ticket->watchers as $watcher)
-                        <tr>
-                            <td>Watcher</td>
-                            <td><a href="mailto:{{ $watcher->user->email }}?subject=Ticket #{{ $ticket->id }}">{{ $watcher->user->name }}</a></td>
-                        </tr>
-                        @endforeach
-                        {{-- Laravel/DB query logic retained, assuming DB/Carbon are available --}}
-                        @foreach ($ticketViews as $view)
-                        <tr>
-                            <td>User View</td>
-                            <td>{{ $view->user->name }} - {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-body-secondary">
+                    Ticket Details
+                </div>
+                <ul class="list-group list-group-flush">
+                    @if ($ticket->due_at)
+                        <li class="list-group-item">
+                            <strong>Due:</strong> {{ date('M jS, Y', strtotime($ticket->due_at)) }}
+                        </li>
+                    @endif
+                    <li class="list-group-item">
+                        <strong>Importance:</strong>
+                        <span class="text-{{ $ticket->importance->class }}">
+                            <i class="{{ $ticket->importance->icon }}"></i> {{ $ticket->importance->name }}
+                        </span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Status:</strong> <span class="badge text-bg-secondary">{{ $ticket->status->name }}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Type:</strong> <i class="{{ $ticket->type->icon }}"></i> {{ $ticket->type->name }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Assignee:</strong>
+                        <a href="/users/{{ $ticket->assignee->id }}" class="text-decoration-none">{{ $ticket->assignee->name }}</a>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Owner:</strong>
+                        <a href="/users/{{ $ticket->user->id }}" class="text-decoration-none">{{ $ticket->user->name }}</a>
+                    </li>
+                </ul>
             </div>
+
+            {{-- Project & Milestone Card --}}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-body-secondary">
+                    Project & Milestone
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>Project:</strong>
+                        <a href="/projects/show/{{ $ticket->project->id }}" class="text-decoration-none">{{ $ticket->project->name }}</a>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Milestone:</strong>
+                        <a href="/milestone/show/{{ $ticket->milestone->id }}" class="text-decoration-none">{{ $ticket->milestone->name }}</a>
+                    </li>
+                </ul>
+            </div>
+
+            {{-- Effort & Estimates Card --}}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center">
+                    Effort & Estimates
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#estimateModal">
+                        Estimate
+                    </button>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        Story Points: <span class="badge text-bg-primary">{{ $ticket->storypoints }} Points</span>
+                    </li>
+                    @if($ticket->estimates->isNotEmpty())
+                        @foreach($ticket->estimates as $usp)
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ $usp->storypoints }} points
+                                <span class="badge text-bg-secondary">{{ $usp->user->name }}</span>
+                            </li>
+                        @endforeach
+                    @endif
+                    <li class="list-group-item">
+                        Time Estimate: <span class="badge text-bg-primary">{{ $ticket->estimate }} Hrs</span>
+                    </li>
+                    <li class="list-group-item">
+                        Time Actual: <span class="badge text-bg-info">{{ $ticket->notes()->where('hide', 0)->sum('hours') }} Hrs</span>
+                    </li>
+                </ul>
+            </div>
+
+            {{-- Timeline Card --}}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-body-secondary">
+                    Timeline
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>Created:</strong> {{ date('M jS, Y g:ia', strtotime($ticket->created_at)) }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Updated:</strong> {{ date('M jS, Y g:ia', strtotime($ticket->updated_at)) }}
+                    </li>
+                    @if($ticket->closed_at)
+                        <li class="list-group-item">
+                            <strong>Closed:</strong> {{ date('M jS, Y g:ia', strtotime($ticket->closed_at)) }}
+                        </li>
+                    @endif
+                </ul>
+            </div>
+
+            {{-- Watchers & Activity Card --}}
+            @if($ticket->watchers->isNotEmpty() || count($ticketViews) > 0)
+            <div class="card shadow-sm">
+                <div class="card-header bg-body-secondary">
+                    Watchers & Activity
+                </div>
+                <ul class="list-group list-group-flush">
+                    @foreach ($ticket->watchers as $watcher)
+                        <li class="list-group-item">
+                            <i class="fas fa-eye me-2"></i>
+                            <a href="mailto:{{ $watcher->user->email }}?subject=Ticket #{{ $ticket->id }}" class="text-decoration-none">{{ $watcher->user->name }}</a>
+                        </li>
+                    @endforeach
+                    @foreach ($ticketViews as $view)
+                        <li class="list-group-item text-muted small">
+                            <i class="fas fa-user me-2"></i>
+                            {{ $view->user->name }} - {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
         </div>
     </div>
 
