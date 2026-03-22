@@ -690,12 +690,12 @@ class NotesControllerTest extends TestCase
         $response = $this->actingAs($user)->postJson('/notes/reply', [
             'ticket_id' => $ticket->id,
             'parent_id' => $thread->id,
-            'body' => '**Deploy** looks good, @alex',
+            'body' => '**Deploy** looks good, @[alex]',
         ]);
 
         $response->assertOk();
         $response->assertJsonPath('parent_id', $thread->id);
-        $response->assertJsonPath('body_markdown', '**Deploy** looks good, @alex');
+        $response->assertJsonPath('body_markdown', '**Deploy** looks good, @[alex]');
         $response->assertJsonPath('user.name', 'sarah');
         $response->assertJsonPath('ticket_id', $ticket->id);
         $this->assertStringContainsString('replies-section', $response->json('replies_html'));
