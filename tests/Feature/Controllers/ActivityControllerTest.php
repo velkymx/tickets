@@ -145,7 +145,9 @@ class ActivityControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/activity');
 
         $response->assertOk();
-        $response->assertSee('Notifications');
+        $response->assertSee('id="notificationsDropdown"', false);
+        $response->assertSee('fas fa-bell', false);
+        $response->assertSee('6 unread');
         $response->assertSee('View all');
         $response->assertSee('/activity', false);
         $response->assertSee('Mention 6');
@@ -153,5 +155,17 @@ class ActivityControllerTest extends TestCase
         $response->assertViewHas('notifications', function ($notifications) {
             return $notifications->count() === 6;
         });
+    }
+
+    #[Test]
+    public function authenticated_layout_renders_outlined_bell_when_there_are_no_unread_notifications(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/activity');
+
+        $response->assertOk();
+        $response->assertSee('far fa-bell', false);
+        $response->assertDontSee('fas fa-bell', false);
     }
 }
