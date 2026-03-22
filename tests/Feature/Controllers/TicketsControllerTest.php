@@ -1031,6 +1031,21 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_paste_detection_support(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        // The textarea should exist for paste handling
+        $response->assertSee('note-textarea', false);
+        // JS paste handler should be in the page
+        $response->assertSee('paste', false);
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');

@@ -478,6 +478,46 @@
         }
     });
 
+    // --- Smart paste detection ---
+    document.getElementById('note-textarea')?.addEventListener('paste', function(e) {
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        if (!text) return;
+
+        // Stack trace detection
+        const stackTracePattern = /^\s*(at |Traceback|Exception|Error:|Fatal|#\d+ |\.php:\d+|\.js:\d+|\.py:\d+)/m;
+        if (stackTracePattern.test(text) && text.split('\n').length > 3) {
+            e.preventDefault();
+            const wrapped = '```\n' + text.trim() + '\n```';
+            insertAtCursor(this, wrapped);
+            return;
+        }
+
+        // JSON detection
+        try {
+            const parsed = JSON.parse(text);
+            if (typeof parsed === 'object') {
+                e.preventDefault();
+                const formatted = '```json\n' + JSON.stringify(parsed, null, 2) + '\n```';
+                insertAtCursor(this, formatted);
+                return;
+            }
+        } catch (_) {}
+
+        // URL detection
+        const urlPattern = /^https?:\/\/\S+$/;
+        if (urlPattern.test(text.trim())) {
+            e.preventDefault();
+            insertAtCursor(this, '[' + text.trim() + '](' + text.trim() + ')');
+        }
+    });
+
+    function insertAtCursor(textarea, text) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        textarea.value = textarea.value.substring(0, start) + text + textarea.value.substring(end);
+        textarea.setSelectionRange(start + text.length, start + text.length);
+    }
+
     // --- Signal nudge: blocker keyword detection ---
     document.getElementById('note-textarea')?.addEventListener('input', function() {
         const nudge = document.getElementById('signal-nudge');
