@@ -889,6 +889,25 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function all_api_routes_are_registered(): void
+    {
+        $routes = collect(\Illuminate\Support\Facades\Route::getRoutes()->getRoutes())
+            ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/'))
+            ->map(fn ($route) => $route->methods()[0].' '.$route->uri())
+            ->sort()
+            ->values()
+            ->toArray();
+
+        $this->assertContains('GET api/v1/tickets/{id}', $routes);
+        $this->assertContains('GET api/v1/tickets/{id}/pulse', $routes);
+        $this->assertContains('POST api/v1/tickets/{id}/note', $routes);
+        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/react', $routes);
+        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/reply', $routes);
+        $this->assertContains('PUT api/v1/tickets/{id}/notes/{noteId}', $routes);
+        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/resolve', $routes);
+    }
+
+    #[Test]
     public function index_includes_pulse_summary_when_requested(): void
     {
         $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
