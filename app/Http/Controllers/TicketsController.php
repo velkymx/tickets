@@ -439,8 +439,8 @@ class TicketsController extends Controller
             }
         }
 
-        $old = Ticket::find($ticket_id);
         $ticket = Ticket::find($ticket_id);
+        $old = clone $ticket;
 
         $ticket->storypoints = $sp;
 
