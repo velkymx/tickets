@@ -400,7 +400,7 @@ class TicketsControllerTest extends TestCase
     public function clone_returns_clone_view_with_ticket_data(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get("/tickets/clone/{$ticket->id}");
 
@@ -433,7 +433,7 @@ class TicketsControllerTest extends TestCase
     public function edit_returns_edit_view_with_ticket_data(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get("/tickets/edit/{$ticket->id}");
 
@@ -937,7 +937,7 @@ class TicketsControllerTest extends TestCase
     public function api_validates_status_exists(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->post("/tickets/api/{$ticket->id}", [
             'status' => 99999,
@@ -950,7 +950,7 @@ class TicketsControllerTest extends TestCase
     public function api_updates_ticket_status(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $newStatus = Status::factory()->create();
 
         $response = $this->actingAs($user)->post("/tickets/api/{$ticket->id}", [
@@ -965,7 +965,7 @@ class TicketsControllerTest extends TestCase
     public function api_creates_changelog_note(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $newStatus = Status::factory()->create();
 
         $this->actingAs($user)->post("/tickets/api/{$ticket->id}", [
@@ -982,7 +982,7 @@ class TicketsControllerTest extends TestCase
     public function api_returns_json_success(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $newStatus = Status::factory()->create();
 
         $response = $this->actingAs($user)->post("/tickets/api/{$ticket->id}", [
@@ -996,7 +996,7 @@ class TicketsControllerTest extends TestCase
     public function api_returns_400_when_status_unchanged(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->post("/tickets/api/{$ticket->id}", [
             'status' => $ticket->status_id,
@@ -1043,7 +1043,7 @@ class TicketsControllerTest extends TestCase
     public function note_updates_status_when_changed(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $newStatus = Status::factory()->create();
 
         $response = $this->actingAs($user)->post('/notes', [
@@ -1060,7 +1060,7 @@ class TicketsControllerTest extends TestCase
     public function note_sets_closed_at_when_status_is_closed(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $closedStatus = Status::factory()->closed()->create();
 
         $this->actingAs($user)->post('/notes', [
@@ -1080,6 +1080,7 @@ class TicketsControllerTest extends TestCase
         $openStatus = Status::factory()->create(['name' => 'Open']);
         $closedStatus = Status::factory()->closed()->create();
         $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
             'status_id' => $closedStatus->id,
             'closed_at' => now(),
         ]);
@@ -1098,7 +1099,7 @@ class TicketsControllerTest extends TestCase
     public function note_creates_note_with_body(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
@@ -1118,7 +1119,7 @@ class TicketsControllerTest extends TestCase
     public function note_creates_changelog_on_changes(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $newStatus = Status::factory()->create();
 
         $this->actingAs($user)->post('/notes', [
@@ -1137,7 +1138,7 @@ class TicketsControllerTest extends TestCase
     public function note_updates_actual_hours(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         Note::factory()->create([
             'ticket_id' => $ticket->id,
@@ -1159,7 +1160,7 @@ class TicketsControllerTest extends TestCase
     public function note_redirects_to_ticket(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,

@@ -143,6 +143,7 @@ class TicketLifecycleTest extends TestCase
     public function it_clones_ticket(): void
     {
         $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
             'subject' => 'Original Ticket',
             'description' => 'Original description',
             'type_id' => $this->type->id,
