@@ -8,6 +8,7 @@ use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ReleaseController;
 use App\Http\Controllers\TicketsController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\TicketPulseController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -41,6 +42,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', [TicketsController::class, 'home'])->name('home');
 
     // --- Tickets Routes (CRITICAL: Static routes must come before dynamic routes) ---
+
+    // Pulse Route (New)
+    Route::get('/tickets/{ticket}/pulse', [TicketPulseController::class, 'show'])->name('tickets.pulse');
 
     // Static Routes (Creation, Import, API Access)
     Route::get('/ticket/create', [TicketsController::class, 'create'])->name('tickets.create');
