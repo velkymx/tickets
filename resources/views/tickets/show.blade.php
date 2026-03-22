@@ -244,7 +244,7 @@
                                         @foreach($ticket->estimates as $usp)
                                             <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                                                 {{ $usp->storypoints }} points 
-                                                <span class="badge bg-secondary">{{ $usp->user->name }}</span>
+                                                <span class="badge text-bg-secondary">{{ $usp->user->name }}</span>
                                             </li>
                                         @endforeach
                                     </ul>

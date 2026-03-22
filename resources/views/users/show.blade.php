@@ -57,8 +57,8 @@
                     @foreach ($tickets as $tick)
                     <tr>
                         <td><a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-body">#{{ $tick->id }} {{ $tick->subject }}</a></td>
-                        <td><span class="badge text-bg-light border text-secondary">{{ $tick->type->name }}</span></td>
-                        <td><span class="badge text-bg-light border text-secondary">{{ $tick->importance->name }}</span></td>
+                        <td><span class="badge text-bg-secondary">{{ $tick->type->name }}</span></td>
+                        <td><span class="badge text-bg-secondary">{{ $tick->importance->name }}</span></td>
                         <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                         <td>{{ $tick->project->name }}</td>
                         <td>{{ $tick->assignee->name }}</td>

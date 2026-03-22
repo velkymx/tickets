@@ -34,9 +34,9 @@
                     <strong>Duration:</strong> {{ $duration > 0 ? $duration . ' days' : 'N/A' }}
                 </p>
                 @if($milestone->end_at && $milestone->end_at != '0000-00-00')
-                    <span class="badge bg-success">Released</span>
+                    <span class="badge text-bg-success">Released</span>
                 @else
-                    <span class="badge bg-warning">In Progress</span>
+                    <span class="badge text-bg-warning">In Progress</span>
                 @endif
             </div>
         </div>
