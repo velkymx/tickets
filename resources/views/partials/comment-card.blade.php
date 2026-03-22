@@ -105,20 +105,7 @@
 
     {{-- Footer: Reactions + Edited --}}
     <div class="card-footer bg-transparent border-0 py-1 d-flex align-items-center gap-2 small">
-        {{-- Reactions --}}
-        @if($note->reactions && $note->reactions->isNotEmpty())
-            @php $grouped = $note->groupedReactions(); @endphp
-            @foreach($grouped as $emoji => $data)
-                <form method="POST" action="/notes/{{ $note->id }}/react" class="d-inline">
-                    @csrf
-                    <input type="hidden" name="emoji" value="{{ $emoji }}">
-                    <button type="submit" class="btn btn-sm rounded-pill {{ $data['reacted'] ? 'btn-primary' : 'btn-outline-secondary' }}">
-                        @if($emoji === 'thumbsup')👍@elseif($emoji === 'eyes')👀@endif
-                        {{ $data['count'] }}
-                    </button>
-                </form>
-            @endforeach
-        @endif
+        @include('partials.reaction-bar', ['note' => $note])
 
         {{-- Edited indicator --}}
         @if($note->isEdited())

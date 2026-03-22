@@ -761,6 +761,70 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_reaction_bar_displays_emoji_counts(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        \App\Models\NoteReaction::create(['note_id' => $note->id, 'user_id' => $user->id, 'emoji' => 'thumbsup']);
+        \App\Models\NoteReaction::create(['note_id' => $note->id, 'user_id' => $other->id, 'emoji' => 'thumbsup']);
+        \App\Models\NoteReaction::create(['note_id' => $note->id, 'user_id' => $other->id, 'emoji' => 'eyes']);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('reaction-bar', false);
+        // Thumbsup count 2, eyes count 1
+        $response->assertSeeInOrder(['👍', '2'], false);
+        $response->assertSeeInOrder(['👀', '1'], false);
+    }
+
+    #[Test]
+    public function show_reaction_bar_highlights_user_reaction(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        \App\Models\NoteReaction::create(['note_id' => $note->id, 'user_id' => $user->id, 'emoji' => 'thumbsup']);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        // User has reacted, so btn-primary should appear (highlighted)
+        $response->assertSee('btn-primary', false);
+    }
+
+    #[Test]
+    public function show_reaction_bar_always_shows_buttons_for_adding(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        // Even with no reactions, the add-reaction buttons should show
+        $response->assertSee('reaction-bar', false);
+        $response->assertSee('add-reaction', false);
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
