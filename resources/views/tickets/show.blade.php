@@ -82,7 +82,7 @@
             <hr class="mt-4 mb-4" />
 
             {{-- Markdown Composer --}}
-            <div class="markdown-composer" data-users="{{ json_encode($allUsers) }}">
+            <div class="markdown-composer" data-users="@json($allUsers)">
                 <form method="POST" action="{{ url('notes') }}" id="note-update-form">
                     @csrf
 
@@ -115,7 +115,7 @@
                                     ['cmd' => '/pin', 'desc' => 'Pin this note'],
                                 ];
                             @endphp
-                            <div class="slash-autocomplete dropdown-menu position-absolute d-none" data-commands="{{ json_encode($slashCommands) }}">
+                            <div class="slash-autocomplete dropdown-menu position-absolute d-none" data-commands="@json($slashCommands)">
                                 @foreach($slashCommands as $cmd)
                                     <button type="button" class="dropdown-item" data-command="{{ $cmd['cmd'] }}">
                                         <code>{{ $cmd['cmd'] }}</code> <span class="text-muted small">{{ $cmd['desc'] }}</span>
