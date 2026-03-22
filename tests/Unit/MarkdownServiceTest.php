@@ -34,12 +34,69 @@ class MarkdownServiceTest extends TestCase
     public function it_converts_mentions_to_links()
     {
         $user = User::factory()->create(['name' => 'JohnDoe']);
-        $input = "Hello @JohnDoe!";
-        
+        $input = "Hello @[JohnDoe]!";
+
         $output = $this->service->parse($input);
 
         $this->assertStringContainsString(
             '<a class="mention" href="/users/' . $user->id . '">@JohnDoe</a>',
+            $output
+        );
+    }
+
+    #[Test]
+    public function it_converts_bracket_mentions_to_links(): void
+    {
+        $user = User::factory()->create(['name' => 'John Smith']);
+        $input = 'Hey @[John Smith (Developer)] check this';
+
+        $output = $this->service->parse($input);
+
+        $this->assertStringContainsString(
+            '<a class="mention" href="/users/' . $user->id . '">@John Smith</a>',
+            $output
+        );
+        $this->assertStringNotContainsString('Developer', $output);
+        $this->assertStringNotContainsString('[', $output);
+    }
+
+    #[Test]
+    public function it_renders_bracket_mention_without_title(): void
+    {
+        $user = User::factory()->create(['name' => 'Jane Doe']);
+        $input = 'Ask @[Jane Doe] about this';
+
+        $output = $this->service->parse($input);
+
+        $this->assertStringContainsString(
+            '<a class="mention" href="/users/' . $user->id . '">@Jane Doe</a>',
+            $output
+        );
+    }
+
+    #[Test]
+    public function it_renders_unmatched_bracket_mention_as_plain_text(): void
+    {
+        $input = 'Hey @[Nobody Here (Ghost)] check this';
+
+        $output = $this->service->parse($input);
+
+        $this->assertStringContainsString('@Nobody Here', $output);
+        $this->assertStringNotContainsString('<a', $output);
+        $this->assertStringNotContainsString('[', $output);
+    }
+
+    #[Test]
+    public function it_does_not_mangle_bracket_mentions_through_markdown_parser(): void
+    {
+        $user = User::factory()->create(['name' => 'Alice Jones']);
+        $input = "**Bold** and @[Alice Jones (PM)] in same paragraph";
+
+        $output = $this->service->parse($input);
+
+        $this->assertStringContainsString('<strong>Bold</strong>', $output);
+        $this->assertStringContainsString(
+            '<a class="mention" href="/users/' . $user->id . '">@Alice Jones</a>',
             $output
         );
     }

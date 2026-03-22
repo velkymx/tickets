@@ -15,6 +15,14 @@ class MarkdownService
 
         $text = $this->wrapStackTrace($text);
 
+        // Extract @[...] mention tokens before Markdown parsing (brackets are link syntax)
+        $mentionMap = [];
+        $text = preg_replace_callback('/@\[([^\]]+)\]/u', function ($match) use (&$mentionMap) {
+            $placeholder = '%%MENTION_' . count($mentionMap) . '%%';
+            $mentionMap[$placeholder] = $match[1];
+            return $placeholder;
+        }, $text);
+
         $lines = explode("\n", $text);
         foreach ($lines as &$line) {
             if (str_starts_with(trim($line), '/')) {
@@ -25,32 +33,37 @@ class MarkdownService
 
         $html = Str::markdown($text);
 
-        $html = $this->replaceMentions($html);
+        $html = $this->replaceMentions($html, $mentionMap);
 
         return $this->decorateChecklistItems($html);
     }
 
-    private function replaceMentions(string $html): string
+    private function replaceMentions(string $html, array $mentionMap): string
     {
-        preg_match_all('/@([\w\.]+)/', $html, $matches);
-
-        if (empty($matches[1])) {
+        if (empty($mentionMap)) {
             return $html;
         }
 
-        $usernames = array_unique($matches[1]);
-        $users = User::whereIn('name', $usernames)->get()->keyBy('name');
+        // Strip title parenthetical to get bare names
+        $namesByPlaceholder = [];
+        foreach ($mentionMap as $placeholder => $token) {
+            $namesByPlaceholder[$placeholder] = preg_replace('/\s*\([^)]*\)$/', '', trim($token));
+        }
 
-        return preg_replace_callback('/@([\w\.]+)/', function ($matches) use ($users) {
-            $username = $matches[1];
-            $user = $users[$username] ?? null;
+        $names = array_unique(array_values($namesByPlaceholder));
+        $users = User::whereIn('name', $names)->get()->keyBy('name');
 
+        foreach ($namesByPlaceholder as $placeholder => $name) {
+            $user = $users[$name] ?? null;
             if ($user) {
-                return '<a class="mention" href="/users/'.$user->id.'">@'.$username.'</a>';
+                $replacement = '<a class="mention" href="/users/'.$user->id.'">@'.e($name).'</a>';
+            } else {
+                $replacement = '@'.e($name);
             }
+            $html = str_replace($placeholder, $replacement, $html);
+        }
 
-            return $matches[0];
-        }, $html);
+        return $html;
     }
 
     private function wrapStackTrace(string $text): string
