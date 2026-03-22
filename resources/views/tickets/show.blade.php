@@ -137,6 +137,9 @@
                         </div>
                     </div>
 
+                    {{-- Signal Nudge --}}
+                    <div class="signal-nudge text-muted small d-none mb-2" id="signal-nudge"></div>
+
                     {{-- Action Preview Bar --}}
                     <div id="action-preview" class="alert alert-light border d-none mb-3">
                         <strong>Actions:</strong>
@@ -472,6 +475,19 @@
         if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
             e.preventDefault();
             this.closest('form').submit();
+        }
+    });
+
+    // --- Signal nudge: blocker keyword detection ---
+    document.getElementById('note-textarea')?.addEventListener('input', function() {
+        const nudge = document.getElementById('signal-nudge');
+        if (!nudge) return;
+        const blockerKeywords = /\b(blocked|waiting on|depends on|can't proceed|cannot proceed)\b/i;
+        if (blockerKeywords.test(this.value)) {
+            nudge.textContent = 'Tip: Use /blocker to make this visible in Ticket Pulse';
+            nudge.classList.remove('d-none');
+        } else {
+            nudge.classList.add('d-none');
         }
     });
 
