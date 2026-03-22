@@ -261,6 +261,69 @@ class NotesControllerTest extends TestCase
         $response->assertJsonValidationErrors(['parent_id']);
     }
 
+    // --- Edit Tests ---
+
+    #[Test]
+    public function it_allows_author_to_edit_own_note(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => '<p>Original</p>',
+            'body_markdown' => 'Original',
+            'notetype' => 'message',
+        ]);
+
+        $response = $this->actingAs($user)->putJson("/notes/{$note->id}", [
+            'body' => 'Updated content',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('body_markdown', 'Updated content');
+        $this->assertNotNull($note->fresh()->edited_at);
+    }
+
+    #[Test]
+    public function it_denies_non_author_from_editing(): void
+    {
+        $author = User::factory()->create();
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'notetype' => 'message',
+        ]);
+
+        $response = $this->actingAs($other)->putJson("/notes/{$note->id}", [
+            'body' => 'Hacked',
+        ]);
+
+        $response->assertForbidden();
+    }
+
+    #[Test]
+    public function it_blocks_editing_decision_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'decision',
+            'body' => 'We decided to use Redis locks for all write serialization.',
+        ]);
+
+        $response = $this->actingAs($user)->putJson("/notes/{$note->id}", [
+            'body' => 'Changed my mind',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('message', 'Decisions cannot be edited. Use /decision to create a new superseding decision.');
+    }
+
     // --- Reaction Tests ---
 
     #[Test]

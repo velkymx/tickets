@@ -118,6 +118,41 @@ class NotesController extends Controller
         return response()->json(['note' => $note], 201);
     }
 
+    public function update($id, Request $request, MarkdownService $markdown, MentionService $mentions)
+    {
+        $note = Note::findOrFail($id);
+
+        if ((int) $note->user_id !== (int) Auth::id()) {
+            abort(Response::HTTP_FORBIDDEN, 'Only the author can edit this note.');
+        }
+
+        if ($note->notetype === 'decision') {
+            return response()->json([
+                'message' => 'Decisions cannot be edited. Use /decision to create a new superseding decision.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'body' => 'required|string|min:1',
+        ]);
+
+        $html = $markdown->parse($validated['body']);
+
+        $note->update([
+            'body' => $html,
+            'body_markdown' => $validated['body'],
+            'edited_at' => now(),
+        ]);
+
+        $mentions->createMentions($note, $mentions->parseMentions($validated['body']));
+
+        return response()->json([
+            'body' => $note->body,
+            'body_markdown' => $note->body_markdown,
+            'edited_at' => $note->edited_at,
+        ]);
+    }
+
     public function toggleReaction($id)
     {
         $validated = request()->validate([
