@@ -13,6 +13,7 @@ use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
 use App\Notifications\MentionNotification;
+use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
 use App\Services\TicketService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -405,6 +406,60 @@ class TicketServiceTest extends TestCase
 
         Notification::assertSentTo($mentioned, MentionNotification::class);
         Notification::assertNotSentTo($author, MentionNotification::class);
+    }
+
+    #[Test]
+    public function it_notifies_the_parent_author_when_creating_a_reply(): void
+    {
+        Notification::fake();
+
+        $parentAuthor = User::factory()->create();
+        $replier = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $replier->id,
+            'user_id2' => $replier->id,
+        ]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $parentAuthor->id,
+            'body' => 'Original thread',
+            'notetype' => 'message',
+        ]);
+
+        Auth::login($replier);
+        $this->service->notate($ticket->id, 'I pushed the fix.', [], 0, $parent->id);
+
+        Notification::assertSentTo($parentAuthor, ReplyNotification::class);
+        Notification::assertNotSentTo($replier, ReplyNotification::class);
+    }
+
+    #[Test]
+    public function it_skips_reply_notifications_for_users_already_watching_the_ticket(): void
+    {
+        Notification::fake();
+
+        $parentAuthor = User::factory()->create();
+        $replier = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $replier->id,
+            'user_id2' => $replier->id,
+        ]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $parentAuthor->id,
+            'body' => 'Original thread',
+            'notetype' => 'message',
+        ]);
+
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $parentAuthor->id,
+        ]);
+
+        Auth::login($replier);
+        $this->service->notate($ticket->id, 'I pushed the fix.', [], 0, $parent->id);
+
+        Notification::assertNotSentTo($parentAuthor, ReplyNotification::class);
     }
 
     #[Test]

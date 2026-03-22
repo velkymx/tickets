@@ -13,6 +13,7 @@ use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
 use App\Notifications\MentionNotification;
+use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -95,7 +96,7 @@ class TicketService
         return $change_list;
     }
 
-    public function notate(int $ticketId, string $message, array $changes, int $addHours = 0): void
+    public function notate(int $ticketId, string $message, array $changes, int $addHours = 0, ?int $parentId = null): void
     {
         $ticket = Ticket::findOrFail($ticketId);
         $commandResults = $this->slashCommandService->handle($ticket, $message);
@@ -118,6 +119,7 @@ class TicketService
             'user_id' => Auth::id(),
             'ticket_id' => $ticketId,
             'body' => $message,
+            'parent_id' => $parentId,
             'hours' => $addHours,
         ];
         $createdActivity = false;
@@ -131,6 +133,7 @@ class TicketService
             $note = Note::create($insert);
             $this->createMentions($note, $message);
             $this->notifyMentionedUsers($note);
+            $this->notifyParentAuthor($note);
             $createdActivity = true;
         }
 
@@ -205,6 +208,42 @@ class TicketService
                 ));
             }
         });
+    }
+
+    private function notifyParentAuthor(Note $note): void
+    {
+        if (! $note->parent_id) {
+            return;
+        }
+
+        $parent = Note::query()->find($note->parent_id);
+
+        if (! $parent || $parent->user_id === $note->user_id) {
+            return;
+        }
+
+        $isWatcher = TicketUserWatcher::query()
+            ->where('ticket_id', $note->ticket_id)
+            ->where('user_id', $parent->user_id)
+            ->exists();
+
+        if ($isWatcher) {
+            return;
+        }
+
+        $recipient = User::query()->find($parent->user_id);
+
+        if (! $recipient) {
+            return;
+        }
+
+        $recipient->notify(new ReplyNotification(
+            $note->user,
+            $note->ticket_id,
+            $note->id,
+            trim(strip_tags($note->body_markdown ?: $note->body)),
+            url("/tickets/{$note->ticket_id}#note_{$note->id}")
+        ));
     }
 
     public function getLookups(): array
