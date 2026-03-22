@@ -225,7 +225,7 @@
         </div> {{-- End Row g-3 --}}
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-info float-end">Save and Update Checked Tickets</button>
+            <button type="submit" class="btn btn-primary float-end">Save and Update Checked Tickets</button>
         </div>
 
     </form>

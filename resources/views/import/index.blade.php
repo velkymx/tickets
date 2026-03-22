@@ -38,7 +38,7 @@ Import Tickets
         <label class="form-check-label" for="hasHeader">Has Header Row</label>
     </div>
     <div class="mb-3">
-        <button type="submit" class="btn btn-info text-white">Import</button>
+        <button type="submit" class="btn btn-primary">Import</button>
     </div>
 </form>
 @endsection

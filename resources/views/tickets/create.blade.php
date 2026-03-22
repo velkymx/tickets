@@ -113,7 +113,7 @@
 
         {{-- Save Button --}}
         <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-info">Save Ticket</button>
+            <button type="submit" class="btn btn-primary">Save Ticket</button>
         </div>
         
     </form>

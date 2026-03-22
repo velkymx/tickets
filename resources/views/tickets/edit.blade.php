@@ -130,7 +130,7 @@
 
         {{-- Save Button (Replaces Form::submit) --}}
         <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-info">Save Ticket</button>
+            <button type="submit" class="btn btn-success">Save Ticket</button>
         </div>
         
     </form>
