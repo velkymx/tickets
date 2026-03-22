@@ -82,6 +82,21 @@ class ActivityControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_uses_theme_aware_notification_card_backgrounds(): void
+    {
+        $user = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Sarah']);
+
+        $user->notifyNow(new MentionNotification($actor, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+
+        $response = $this->actingAs($user)->get('/activity');
+
+        $response->assertOk();
+        $response->assertSee('bg-body', false);
+        $response->assertDontSee('bg-white', false);
+    }
+
+    #[Test]
     public function read_marks_a_single_notification_as_read(): void
     {
         $user = User::factory()->create();

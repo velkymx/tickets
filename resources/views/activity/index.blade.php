@@ -61,7 +61,7 @@
                             };
                         @endphp
 
-                        <article class="border rounded-4 p-3 p-lg-4 {{ $notification->read_at ? 'bg-body-tertiary' : 'bg-white' }}">
+                        <article class="border rounded-4 p-3 p-lg-4 {{ $notification->read_at ? 'bg-body-tertiary' : 'bg-body' }}">
                             <div class="d-flex gap-3 align-items-start">
                                 <div class="rounded-circle {{ $dotClass }} d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 2.5rem; height: 2.5rem;">
                                     {{ $notification->read_at ? '•' : '●' }}
