@@ -160,7 +160,7 @@ class TicketController extends Controller
                 }
             },
         ])
-            ->where('user_id2', $user->id)
+            ->where('user_id2', $user->id)->orWhere('user_id', $user->id)
             ->findOrFail($id);
 
         $apiUserId = $user->id;

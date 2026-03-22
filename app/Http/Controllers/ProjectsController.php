@@ -62,9 +62,8 @@ class ProjectsController extends Controller
 
         $percent = 0;
 
-        $completed = $project->tickets->whereIn('status_id', Status::closedStatusIds())->count();
-
-        $total = $project->tickets->count();
+        $total = $project->tickets()->count();
+        $completed = $project->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
 
         if ($total !== 0) {
             $percent = round($completed / $total, 2) * 100;
