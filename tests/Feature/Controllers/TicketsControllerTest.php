@@ -411,6 +411,24 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_passes_ticket_pulse_to_the_view(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('pulse', function ($pulse) use ($ticket) {
+            return $pulse instanceof \App\ValueObjects\TicketPulse
+                && $pulse->id === $ticket->id;
+        });
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
