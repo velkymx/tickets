@@ -1,4 +1,12 @@
 @php
+    $showCheckbox = $showCheckbox ?? false;
+    $showType = $showType ?? false;
+    $showEstimate = $showEstimate ?? false;
+    $showCreated = $showCreated ?? true;
+    $showUpdated = $showUpdated ?? true;
+    $small = $small ?? false;
+    $emptyMessage = $emptyMessage ?? null;
+    
     $colCount = 1 + ($showCheckbox ? 1 : 0) + ($showType ? 1 : 0) + 1 + 1 + 1 + 1 + ($showEstimate ? 1 : 0) + 1 + ($showCreated ? 1 : 0) + ($showUpdated ? 1 : 0);
 @endphp
 
