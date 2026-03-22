@@ -38,7 +38,7 @@ class Importer
                         throw new Exception('CSV row must have at least 7 columns. Row '.($i + 1).' has '.count($row).' columns.');
                     }
 
-                    $this->importRow($row);
+                    $this->importRow($row, $i + 1);
                     $i++;
                 }
             });
@@ -81,7 +81,7 @@ class Importer
         $model = $class::where('name', $value)->first();
 
         if (! $model) {
-            throw new Exception("Row $rowIndex: ".class_basename($class)." '$value' does not exist.");
+            throw new Exception(class_basename($class)." $value does not exist.");
         }
 
         $this->models[$key] = $model;

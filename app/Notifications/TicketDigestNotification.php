@@ -30,7 +30,7 @@ class TicketDigestNotification extends Notification
             $mail->line('- '.$entry['subject']);
         }
 
-        $lastEntry = empty($this->entries) ? null : end($this->entries);
+        $lastEntry = empty($this->entries) ? null : $this->entries[array_key_last($this->entries)];
         $url = $lastEntry ? ($lastEntry['url'] ?? url("/tickets/{$this->ticketId}")) : url("/tickets/{$this->ticketId}");
 
         return $mail->action('View Ticket', $url);

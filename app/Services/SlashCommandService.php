@@ -90,7 +90,7 @@ class SlashCommandService
                     break;
                 }
 
-                $status = Status::where('name', 'like', "%{$args}%")->first();
+                $status = $this->findByName(Status::class, $args);
                 if ($status) {
                     $ticket->status_id = $status->id;
                     $ticket->save();
@@ -101,7 +101,7 @@ class SlashCommandService
 
             case 'assign':
                 $username = ltrim($args, '@');
-                $user = User::where('name', $username)->first();
+                $user = $this->findByName(User::class, $username);
                 if ($user) {
                     $ticket->user_id2 = $user->id;
                     $ticket->save();
@@ -143,7 +143,7 @@ class SlashCommandService
 
             case 'priority':
             case 'importance':
-                $importance = Importance::where('name', 'like', "%{$args}%")->first();
+                $importance = $this->findByName(Importance::class, $args);
                 if ($importance) {
                     $ticket->importance_id = $importance->id;
                     $ticket->save();
@@ -153,7 +153,7 @@ class SlashCommandService
                 break;
 
             case 'milestone':
-                $milestone = Milestone::where('name', 'like', "%{$args}%")->first();
+                $milestone = $this->findByName(Milestone::class, $args);
                 if ($milestone) {
                     $ticket->milestone_id = $milestone->id;
                     $ticket->save();
@@ -222,6 +222,19 @@ class SlashCommandService
         preg_match_all('/@([\w.\-]+)/', $text, $matches);
 
         return array_values(array_unique($matches[1] ?? []));
+    }
+
+    protected function findByName(string $class, string $value): mixed
+    {
+        $trimmed = trim($value);
+
+        return $class::query()
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
+            ->first()
+            ?? $class::query()
+                ->where('name', 'like', "%{$trimmed}%")
+                ->orderBy('id')
+                ->first();
     }
 
     public function getSignalType(string $text): string

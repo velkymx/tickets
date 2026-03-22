@@ -11,6 +11,24 @@ class StatusTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Seed statuses matching the default_lookup_values seeder
+        Status::insert([
+            ['id' => 1, 'name' => 'new'],
+            ['id' => 2, 'name' => 'active'],
+            ['id' => 3, 'name' => 'testing'],
+            ['id' => 4, 'name' => 'ready to deploy'],
+            ['id' => 5, 'name' => 'completed'],
+            ['id' => 6, 'name' => 'waiting'],
+            ['id' => 7, 'name' => 'reopened'],
+            ['id' => 8, 'name' => 'duplicte'],
+            ['id' => 9, 'name' => 'declined'],
+        ]);
+    }
+
     #[Test]
     public function it_has_timestamps_disabled(): void
     {
@@ -22,7 +40,11 @@ class StatusTest extends TestCase
     #[Test]
     public function it_returns_closed_status_ids(): void
     {
-        $this->assertEquals([5, 8, 9], Status::closedStatusIds());
+        $closedIds = Status::closedStatusIds();
+
+        sort($closedIds);
+
+        $this->assertEquals([5, 8, 9], $closedIds);
     }
 
     #[Test]
@@ -33,6 +55,18 @@ class StatusTest extends TestCase
         $this->assertTrue(Status::isClosed(9));
         $this->assertFalse(Status::isClosed(1));
         $this->assertFalse(Status::isClosed(2));
+        $this->assertFalse(Status::isClosed(3));
+        $this->assertFalse(Status::isClosed(6));
+    }
+
+    #[Test]
+    public function it_returns_active_status_ids(): void
+    {
+        $activeIds = Status::activeStatusIds();
+
+        sort($activeIds);
+
+        $this->assertEquals([1, 2, 3, 4, 6, 7], $activeIds);
     }
 
     #[Test]
