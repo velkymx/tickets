@@ -626,6 +626,133 @@
         });
     });
 
+    // --- @Mention Autocomplete ---
+    (function() {
+        const textarea = document.getElementById('note-textarea');
+        const composer = textarea?.closest('.markdown-composer');
+        if (!textarea || !composer) return;
+
+        const dropdown = composer.querySelector('.mention-autocomplete');
+        const users = JSON.parse(composer.dataset.users || '[]');
+        let mentionStart = -1;
+        let activeIndex = -1;
+
+        function buildDropdown(filter) {
+            const lower = filter.toLowerCase();
+            const filtered = lower === ''
+                ? users
+                : users.filter(u => u.name.toLowerCase().includes(lower));
+
+            dropdown.innerHTML = '';
+            activeIndex = -1;
+
+            if (filtered.length === 0) {
+                hide();
+                return;
+            }
+
+            filtered.forEach((u, i) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'dropdown-item';
+                btn.dataset.userId = u.id;
+                btn.dataset.userName = u.name;
+                btn.dataset.userTitle = u.title || '';
+                btn.textContent = u.title ? `${u.name} (${u.title})` : u.name;
+                btn.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    selectUser(u);
+                });
+                dropdown.appendChild(btn);
+            });
+
+            dropdown.classList.remove('d-none');
+            dropdown.classList.add('show');
+            setActive(0);
+        }
+
+        function selectUser(u) {
+            const token = u.title ? `@[${u.name} (${u.title})]` : `@[${u.name}]`;
+            const before = textarea.value.substring(0, mentionStart);
+            const after = textarea.value.substring(textarea.selectionStart);
+            textarea.value = before + token + ' ' + after;
+            const cursorPos = before.length + token.length + 1;
+            textarea.setSelectionRange(cursorPos, cursorPos);
+            hide();
+            textarea.focus();
+        }
+
+        function setActive(index) {
+            const items = dropdown.querySelectorAll('.dropdown-item');
+            items.forEach(i => i.classList.remove('active'));
+            if (index >= 0 && index < items.length) {
+                activeIndex = index;
+                items[index].classList.add('active');
+                items[index].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function hide() {
+            dropdown.classList.add('d-none');
+            dropdown.classList.remove('show');
+            mentionStart = -1;
+            activeIndex = -1;
+        }
+
+        textarea.addEventListener('input', function() {
+            const pos = this.selectionStart;
+            const text = this.value.substring(0, pos);
+
+            const lastAt = text.lastIndexOf('@');
+            if (lastAt === -1 || (lastAt > 0 && /\w/.test(text[lastAt - 1]))) {
+                hide();
+                return;
+            }
+
+            const afterAt = text.substring(lastAt);
+            if (afterAt.includes(']')) {
+                hide();
+                return;
+            }
+
+            mentionStart = lastAt;
+            const filter = text.substring(lastAt + 1);
+            buildDropdown(filter);
+        });
+
+        textarea.addEventListener('keydown', function(e) {
+            if (mentionStart === -1) return;
+
+            const items = dropdown.querySelectorAll('.dropdown-item');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActive(Math.min(activeIndex + 1, items.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActive(Math.max(activeIndex - 1, 0));
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                const item = items[activeIndex];
+                selectUser({
+                    id: item.dataset.userId,
+                    name: item.dataset.userName,
+                    title: item.dataset.userTitle
+                });
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                hide();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target) && e.target !== textarea) {
+                hide();
+            }
+        });
+    })();
+
     // --- Presence heartbeat (15s interval) ---
     (function() {
         const ticketId = document.querySelector('.presence-indicator')?.dataset.ticketId;
