@@ -11,7 +11,7 @@ class Note extends Model
     use HasFactory;
 
     protected $fillable = [
-        'body', 'user_id', 'ticket_id', 'hours', 'notetype', 'hide',
+        'body', 'user_id', 'ticket_id', 'parent_id', 'hours', 'notetype', 'hide',
     ];
 
     protected function casts(): array
@@ -30,5 +30,15 @@ class Note extends Model
     public function ticket(): BelongsTo
     {
         return $this->belongsTo(Ticket::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Note::class, 'parent_id');
+    }
+
+    public function replies(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Note::class, 'parent_id');
     }
 }
