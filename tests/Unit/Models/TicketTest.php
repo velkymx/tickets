@@ -58,14 +58,14 @@ class TicketTest extends TestCase
         $this->assertContains('subject', $fillable);
         $this->assertContains('description', $fillable);
         $this->assertContains('type_id', $fillable);
-        $this->assertContains('user_id', $fillable);
+        $this->assertNotContains('user_id', $fillable);
         $this->assertContains('status_id', $fillable);
         $this->assertContains('importance_id', $fillable);
         $this->assertContains('milestone_id', $fillable);
         $this->assertContains('project_id', $fillable);
-        $this->assertContains('user_id2', $fillable);
+        $this->assertNotContains('user_id2', $fillable);
         $this->assertContains('due_at', $fillable);
-        $this->assertContains('closed_at', $fillable);
+        $this->assertNotContains('closed_at', $fillable);
         $this->assertContains('estimate', $fillable);
         $this->assertContains('storypoints', $fillable);
     }

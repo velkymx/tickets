@@ -118,15 +118,15 @@
                             {{-- Assignee --}}
                             <td>{{$tick->assignee->name}}</td>
                             
-                            {{-- Notes --}}
-                            <td>
-                                @php
-                                    $noteCount = $tick->notes()->where('hide','0')->where('notetype','message')->count();
-                                @endphp
-                                @if ($noteCount > 0)
-                                    <span class="badge text-bg-info rounded-pill">{{ $noteCount }}</span>
-                                @endif
-                            </td>
+                             {{-- Notes --}}
+                             <td>
+                                 @php
+                                     $noteCount = $tick->notes->where('hide','0')->where('notetype','message')->count();
+                                 @endphp
+                                 @if ($noteCount > 0)
+                                     <span class="badge text-bg-info rounded-pill">{{ $noteCount }}</span>
+                                 @endif
+                             </td>
                             
                             {{-- Created --}}
                             <td>{{date('M jS, Y g:ia',strtotime($tick->created_at))}}</td>
