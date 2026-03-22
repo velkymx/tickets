@@ -25,7 +25,7 @@ return new class extends Migration
             $table->index('notetype');
         });
 
-        Schema::table('ticket_watchers', function (Blueprint $table) {
+        Schema::table('ticket_user_watchers', function (Blueprint $table) {
             $table->index(['ticket_id', 'user_id']);
         });
 
@@ -58,7 +58,7 @@ return new class extends Migration
             $table->dropIndex(['notetype']);
         });
 
-        Schema::table('ticket_watchers', function (Blueprint $table) {
+        Schema::table('ticket_user_watchers', function (Blueprint $table) {
             $table->dropIndex(['ticket_id', 'user_id']);
         });
 
