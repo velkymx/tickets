@@ -56,22 +56,37 @@
         </div>
     </div>
 </div>
-<div id="github-section" class="p-5 mb-4 bg-dark text-white rounded-3 shadow-lg">
+<div id="github-section" class="p-5 mb-4 bg-body-tertiary rounded-3 shadow-lg">
     <div class="container-fluid py-5">
         <h2 class="fw-bold mb-4">Found a Bug? Have an Idea?</h2>
         <p class="fs-5 mb-4">
-            We use GitHub for all external contributions, feature requests, and bug reports. Here’s how you can help improve the platform:
+            We use GitHub for all external contributions, feature requests, and bug reports. Here's how you can help improve the platform:
         </p>
         
         <div class="row g-4">
             {{-- Step 1 --}}
             <div class="col-md-4">
-                <h3 class="h5">1. <i class="fab fa-github me-2"></i> Visit the Repository</h3>
-                <p class="small text-white-50">Navigate to our official project repository on GitHub.</p>
-                <a href="https://github.com/velkymx/tickets" target="_blank" class="btn btn-outline-light btn-sm">
-                    Go to Repo <i class="fas fa-arrow-right ms-2"></i>
+                <h3 class="h5">1. <i class="fab fa-github me-2" aria-hidden="true"></i> Visit the Repository</h3>
+                <p class="small text-muted">Navigate to our official project repository on GitHub.</p>
+                <a href="https://github.com/velkymx/tickets" target="_blank" class="btn btn-outline-primary btn-sm">
+                    Go to Repo <i class="fas fa-arrow-right ms-2" aria-hidden="true"></i>
                 </a>
             </div>
+            
+            {{-- Step 2 --}}
+            <div class="col-md-4">
+                <h3 class="h5">2. <i class="fas fa-bug me-2" aria-hidden="true"></i> Open a New Issue</h3>
+                <p class="small text-muted">Click the 'Issues' tab and then click 'New issue'. Choose the appropriate template (Bug Report or Feature Request).</p>
+            </div>
+
+            {{-- Step 3 --}}
+            <div class="col-md-4">
+                <h3 class="h5">3. <i class="fas fa-edit me-2" aria-hidden="true"></i> Describe Your Finding</h3>
+                <p class="small text-muted">Provide all necessary details, including steps to reproduce the bug or a clear explanation of your feature idea. Submit and we'll take a look!</p>
+            </div>
+        </div>
+    </div>
+</div>
             
             {{-- Step 2 --}}
             <div class="col-md-4">
