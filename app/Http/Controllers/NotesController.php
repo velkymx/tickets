@@ -153,6 +153,38 @@ class NotesController extends Controller
         ]);
     }
 
+    public function togglePin($id)
+    {
+        $note = Note::findOrFail($id);
+        $note->update(['pinned' => ! $note->pinned]);
+
+        return response()->json(['pinned' => $note->pinned]);
+    }
+
+    public function resolve($id, Request $request)
+    {
+        $note = Note::with('ticket')->findOrFail($id);
+
+        $canResolve = (int) $note->user_id === (int) Auth::id()
+            || (int) $note->ticket->user_id2 === (int) Auth::id();
+
+        if (! $canResolve) {
+            abort(Response::HTTP_FORBIDDEN, 'Only the thread author or ticket assignee can resolve.');
+        }
+
+        $validated = $request->validate([
+            'resolution_message' => 'required|string|min:1',
+        ]);
+
+        $note->update([
+            'resolved' => true,
+            'resolved_by' => Auth::id(),
+            'resolution_message' => $validated['resolution_message'],
+        ]);
+
+        return response()->json(['resolved' => true]);
+    }
+
     public function toggleReaction($id)
     {
         $validated = request()->validate([

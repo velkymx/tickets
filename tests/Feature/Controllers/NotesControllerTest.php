@@ -324,6 +324,87 @@ class NotesControllerTest extends TestCase
         $response->assertJsonPath('message', 'Decisions cannot be edited. Use /decision to create a new superseding decision.');
     }
 
+    // --- Pin/Resolve Tests ---
+
+    #[Test]
+    public function it_toggles_pin_on_a_note(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'pinned' => false,
+        ]);
+
+        $response = $this->actingAs($user)->postJson("/notes/{$note->id}/pin");
+
+        $response->assertOk();
+        $this->assertTrue($note->fresh()->pinned);
+
+        // Toggle off
+        $response = $this->actingAs($user)->postJson("/notes/{$note->id}/pin");
+        $this->assertFalse($note->fresh()->pinned);
+    }
+
+    #[Test]
+    public function it_resolves_a_thread_with_message(): void
+    {
+        $author = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'resolved' => false,
+        ]);
+
+        $response = $this->actingAs($author)->postJson("/notes/{$parent->id}/resolve", [
+            'resolution_message' => 'Fixed in commit abc123',
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($parent->fresh()->resolved);
+        $this->assertEquals($author->id, $parent->fresh()->resolved_by);
+        $this->assertEquals('Fixed in commit abc123', $parent->fresh()->resolution_message);
+    }
+
+    #[Test]
+    public function it_rejects_resolve_without_message(): void
+    {
+        $author = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'resolved' => false,
+        ]);
+
+        $response = $this->actingAs($author)->postJson("/notes/{$note->id}/resolve", []);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['resolution_message']);
+    }
+
+    #[Test]
+    public function it_denies_resolve_by_non_author_non_assignee(): void
+    {
+        $author = User::factory()->create();
+        $assignee = User::factory()->create();
+        $outsider = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $assignee->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'resolved' => false,
+        ]);
+
+        $response = $this->actingAs($outsider)->postJson("/notes/{$note->id}/resolve", [
+            'resolution_message' => 'Trying to resolve',
+        ]);
+
+        $response->assertForbidden();
+    }
+
     // --- Reaction Tests ---
 
     #[Test]
