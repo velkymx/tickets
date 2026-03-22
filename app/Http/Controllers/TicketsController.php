@@ -99,7 +99,8 @@ class TicketsController extends Controller
             }
 
             if ($filter == 'q' && $request->filled('q')) {
-                $query = $query->where('subject', 'like', '%'.$request->$filter.'%');
+                $search = str_replace(['%', '_'], ['\\%', '\\_'], $request->$filter);
+                $query = $query->where('subject', 'like', '%'.$search.'%');
             }
 
             if ($filter == 'status_id' && $request->status_id == 'none') {
