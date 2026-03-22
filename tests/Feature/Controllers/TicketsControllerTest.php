@@ -367,6 +367,50 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_the_ticket_pulse_panel(): void
+    {
+        $user = User::factory()->create(['name' => 'John']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $thread = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => "Race condition discussion\nMore detail",
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => $thread->id,
+            'body' => 'Reply',
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'decision',
+            'body' => 'Use Redis locks',
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'action',
+            'body' => 'QA verification @john',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Ticket Pulse');
+        $response->assertSee('position: sticky', false);
+        $response->assertSee('Next Action');
+        $response->assertSee('Latest Decision');
+        $response->assertSee('Open Threads');
+        $response->assertSee('Last Update');
+        $response->assertSee('Pulse Summary');
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
