@@ -467,6 +467,38 @@ class NotesControllerTest extends TestCase
         $response->assertJsonValidationErrors(['file']);
     }
 
+    // --- Presence Tests ---
+
+    #[Test]
+    public function it_records_presence_heartbeat(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->postJson("/tickets/{$ticket->id}/presence");
+
+        $response->assertOk();
+        $response->assertJsonStructure(['viewers', 'count']);
+        $response->assertJsonPath('count', 1);
+    }
+
+    #[Test]
+    public function it_returns_current_viewers(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user1->id, 'user_id2' => $user1->id]);
+
+        // Both users send heartbeat
+        $this->actingAs($user1)->postJson("/tickets/{$ticket->id}/presence");
+        $this->actingAs($user2)->postJson("/tickets/{$ticket->id}/presence");
+
+        $response = $this->actingAs($user1)->getJson("/tickets/{$ticket->id}/presence");
+
+        $response->assertOk();
+        $response->assertJsonPath('count', 2);
+    }
+
     // --- Reaction Tests ---
 
     #[Test]

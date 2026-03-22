@@ -10,6 +10,7 @@ use App\Http\Controllers\ReleaseController;
 use App\Http\Controllers\TicketsController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\TicketPulseController;
+use App\Http\Controllers\PresenceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -85,6 +86,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/notes/{id}/pin', [NotesController::class, 'togglePin'])->name('notes.pin');
     Route::post('/notes/{id}/resolve', [NotesController::class, 'resolve'])->name('notes.resolve');
     Route::post('/notes/{id}/attachments', [NotesController::class, 'attach'])->name('notes.attach');
+    Route::post('/tickets/{ticketId}/presence', [PresenceController::class, 'heartbeat'])->name('tickets.presence.heartbeat');
+    Route::get('/tickets/{ticketId}/presence', [PresenceController::class, 'show'])->name('tickets.presence.show');
 
     // --- Projects Routes ---
     Route::get('/projects', [ProjectsController::class, 'index'])->name('projects.list');
