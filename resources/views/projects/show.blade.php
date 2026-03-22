@@ -55,7 +55,7 @@
 <div class="table-responsive">
     {{-- Replaced table-striped with B5 table-hover --}}
     <table class="table table-striped table-hover align-middle">
-        <thead class="table-light">
+        <thead>
             <tr>
                 <th>Title</th>
                 <th>P</th>

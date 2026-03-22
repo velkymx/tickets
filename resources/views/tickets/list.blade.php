@@ -76,7 +76,7 @@
         
         <div class="table-responsive">
             <table class="table table-striped align-middle"> {{-- Added align-middle for vertical alignment --}}
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Title</th>
                         <th>P</th>

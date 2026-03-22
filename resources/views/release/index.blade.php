@@ -18,7 +18,7 @@
 @else
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle">
-            <thead class="table-light">
+            <thead>
                 <tr>
                     <th>Name</th>
                     <th class="col-2">Tickets</th>

@@ -9,9 +9,8 @@
     </div>
 
     <div class="table-responsive">
-    <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
-            <thead class="table-light">
+    <table class="table table-striped table-hover align-middle">
+        <thead>
                 <tr>
                     <th>Name</th>
                     <th class="text-center">Tickets</th>
