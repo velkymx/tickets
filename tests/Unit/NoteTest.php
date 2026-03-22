@@ -56,4 +56,23 @@ class NoteTest extends TestCase
             $this->assertEquals($type, $note->notetype);
         }
     }
+
+    /** @test */
+    public function it_can_have_an_edited_at_timestamp()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $now = now()->toDateTimeString();
+
+        $note = Note::create([
+            'body' => 'Test note',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+            'edited_at' => $now,
+        ]);
+
+        $this->assertEquals($now, $note->edited_at->toDateTimeString());
+    }
 }

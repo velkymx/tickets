@@ -11,7 +11,7 @@ class Note extends Model
     use HasFactory;
 
     protected $fillable = [
-        'body', 'user_id', 'ticket_id', 'parent_id', 'hours', 'notetype', 'hide',
+        'body', 'user_id', 'ticket_id', 'parent_id', 'hours', 'notetype', 'hide', 'edited_at',
     ];
 
     protected function casts(): array
@@ -19,6 +19,7 @@ class Note extends Model
         return [
             'hours' => 'decimal:2',
             'hide' => 'boolean',
+            'edited_at' => 'datetime',
         ];
     }
 
