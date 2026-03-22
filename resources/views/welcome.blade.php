@@ -87,19 +87,4 @@
         </div>
     </div>
 </div>
-            
-            {{-- Step 2 --}}
-            <div class="col-md-4">
-                <h3 class="h5">2. <i class="fas fa-bug me-2"></i> Open a New Issue</h3>
-                <p class="small text-white-50">Click the 'Issues' tab and then click 'New issue'. Choose the appropriate template (Bug Report or Feature Request).</p>
-            </div>
-
-            {{-- Step 3 --}}
-            <div class="col-md-4">
-                <h3 class="h5">3. <i class="fas fa-edit me-2"></i> Describe Your Finding</h3>
-                <p class="small text-white-50">Provide all necessary details, including steps to reproduce the bug or a clear explanation of your feature idea. Submit and we'll take a look!</p>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
