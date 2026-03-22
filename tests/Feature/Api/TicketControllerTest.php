@@ -830,6 +830,65 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function resolve_marks_note_resolved(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/resolve", [
+            'resolution_message' => 'Fixed in commit abc123',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('note.resolved'));
+
+        $note->refresh();
+        $this->assertTrue($note->resolved);
+        $this->assertEquals($this->user->id, $note->resolved_by);
+        $this->assertEquals('Fixed in commit abc123', $note->resolution_message);
+    }
+
+    #[Test]
+    public function resolve_requires_resolution_message(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/resolve", [], $this->apiHeaders());
+
+        $response->assertStatus(422);
+    }
+
+    #[Test]
+    public function resolve_enforces_author_or_assignee(): void
+    {
+        $otherUser = User::factory()->create();
+        // API user created the ticket but is not the assignee and not the note author
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $otherUser->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $otherUser->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/resolve", [
+            'resolution_message' => 'Trying to resolve',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(403);
+    }
+
+    #[Test]
     public function edit_enforces_author_only(): void
     {
         $otherUser = User::factory()->create();

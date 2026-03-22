@@ -317,6 +317,51 @@ class TicketController extends Controller
         return response()->json($response);
     }
 
+    public function resolveNote(Request $request, $id, $noteId)
+    {
+        $request->validate([
+            'resolution_message' => 'required|string|max:65535',
+        ]);
+
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
+
+        // Only thread author or ticket assignee can resolve
+        $isAuthor = (int) $note->user_id === (int) $user->id;
+        $isAssignee = (int) $ticket->user_id2 === (int) $user->id;
+
+        if (! $isAuthor && ! $isAssignee) {
+            return response()->json(['message' => 'Forbidden: only the thread author or ticket assignee can resolve'], 403);
+        }
+
+        $note->update([
+            'resolved' => true,
+            'resolved_by' => $user->id,
+            'resolution_message' => $request->resolution_message,
+        ]);
+
+        // Create resolution reply
+        $markdownService = app(MarkdownService::class);
+        Note::create([
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'parent_id' => $note->id,
+            'body' => $request->resolution_message,
+            'body_markdown' => $markdownService->parse($request->resolution_message),
+            'notetype' => 'message',
+        ]);
+
+        app(TicketPulseService::class)->invalidatePulse($ticket->id);
+
+        $note->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+
+        return response()->json([
+            'message' => 'Note resolved successfully',
+            'note' => $this->formatNote($note, $user->id),
+        ]);
+    }
+
     public function editNote(Request $request, $id, $noteId)
     {
         $request->validate([
