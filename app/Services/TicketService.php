@@ -46,7 +46,7 @@ class TicketService
                 continue;
             }
 
-            if (array_key_exists($change, $old) && $old[$change] != $new[$change]) {
+            if (array_key_exists($change, $old) && $old[$change] !== $new[$change]) {
 
                 $label = $change;
 
