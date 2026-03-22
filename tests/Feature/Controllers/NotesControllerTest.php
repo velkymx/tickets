@@ -212,8 +212,9 @@ class NotesControllerTest extends TestCase
             'body' => 'This is a reply',
         ]);
 
-        $response->assertCreated();
-        $response->assertJsonPath('note.body', fn ($body) => str_contains($body, 'This is a reply'));
+        $response->assertOk();
+        $response->assertJsonPath('parent_id', $parent->id);
+        $response->assertJsonPath('body_markdown', 'This is a reply');
         $this->assertDatabaseHas('notes', [
             'parent_id' => $parent->id,
             'ticket_id' => $ticket->id,
@@ -586,6 +587,101 @@ class NotesControllerTest extends TestCase
             'note_id' => $note->id,
             'user_id' => $user->id,
             'emoji' => 'eyes',
+        ]);
+    }
+
+    #[Test]
+    public function it_requires_authentication_to_reply_to_a_note(): void
+    {
+        $response = $this->postJson('/notes/reply', [
+            'ticket_id' => 1,
+            'parent_id' => 1,
+            'body' => 'Reply body',
+        ]);
+
+        $response->assertStatus(401);
+    }
+
+    #[Test]
+    public function it_requires_the_parent_note_to_belong_to_the_same_ticket(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $otherTicket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $otherTicket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body' => 'Reply body',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['parent_id']);
+    }
+
+    #[Test]
+    public function it_requires_the_parent_note_to_be_top_level(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $thread = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+        ]);
+        $reply = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => $thread->id,
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $reply->id,
+            'body' => 'Reply body',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['parent_id']);
+    }
+
+    #[Test]
+    public function it_creates_a_reply_with_markdown_and_mentions_and_returns_json(): void
+    {
+        $user = User::factory()->create(['name' => 'sarah']);
+        $mentioned = User::factory()->create(['name' => 'alex']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $thread = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+            'notetype' => 'message',
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $thread->id,
+            'body' => '**Deploy** looks good, @alex',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('parent_id', $thread->id);
+        $response->assertJsonPath('body_markdown', '**Deploy** looks good, @alex');
+        $response->assertJsonPath('user.name', 'sarah');
+        $response->assertJsonPath('ticket_id', $ticket->id);
+
+        $reply = Note::query()->where('ticket_id', $ticket->id)->where('parent_id', $thread->id)->latest('id')->first();
+
+        $this->assertNotNull($reply);
+        $this->assertStringContainsString('<strong>Deploy</strong>', $reply->body);
+        $this->assertDatabaseHas('mentions', [
+            'note_id' => $reply->id,
+            'user_id' => $mentioned->id,
         ]);
     }
 }

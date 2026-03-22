@@ -6,6 +6,7 @@ use App\Models\Note;
 use App\Models\NoteReaction;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
+use App\Services\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -80,7 +81,7 @@ class NotesController extends Controller
         return redirect('tickets/'.$note->ticket_id);
     }
 
-    public function reply(Request $request, MarkdownService $markdown, MentionService $mentions)
+    public function reply(Request $request, TicketService $ticketService)
     {
         $validated = $request->validate([
             'ticket_id' => 'required|exists:tickets,id',
@@ -98,24 +99,34 @@ class NotesController extends Controller
             return response()->json(['errors' => ['parent_id' => ['Cannot reply to a reply. Only top-level notes accept replies.']]], 422);
         }
 
-        $html = $markdown->parse($validated['body']);
+        $ticketService->notate(
+            (int) $validated['ticket_id'],
+            $validated['body'],
+            [],
+            0,
+            (int) $parent->id
+        );
 
-        $note = Note::create([
-            'ticket_id' => $validated['ticket_id'],
-            'parent_id' => $parent->id,
-            'user_id' => Auth::id(),
-            'body' => $html,
-            'body_markdown' => $validated['body'],
-            'notetype' => 'message',
-            'hours' => 0,
-            'hide' => false,
-        ]);
-
-        $mentions->createMentions($note, $mentions->parseMentions($validated['body']));
+        $note = Note::query()
+            ->where('ticket_id', $validated['ticket_id'])
+            ->where('parent_id', $parent->id)
+            ->where('user_id', Auth::id())
+            ->latest('id')
+            ->firstOrFail();
 
         $note->load('user');
 
-        return response()->json(['note' => $note], 201);
+        return response()->json([
+            'id' => $note->id,
+            'ticket_id' => $note->ticket_id,
+            'parent_id' => $note->parent_id,
+            'body' => $note->body,
+            'body_markdown' => $note->body_markdown,
+            'user' => [
+                'id' => $note->user->id,
+                'name' => $note->user->name,
+            ],
+        ]);
     }
 
     public function update($id, Request $request, MarkdownService $markdown, MentionService $mentions)
