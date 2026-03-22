@@ -100,8 +100,8 @@ class SlashCommandService
                 break;
 
             case 'assign':
-                $username = ltrim($args, '@');
-                $user = $this->findByName(User::class, $username);
+                $name = $this->parseMentionOrBareName($args);
+                $user = $this->findByName(User::class, $name);
                 if ($user) {
                     $ticket->user_id2 = $user->id;
                     $ticket->save();
@@ -219,9 +219,12 @@ class SlashCommandService
 
     protected function extractMentions(string $text): array
     {
-        preg_match_all('/@([\w.\-]+)/', $text, $matches);
+        preg_match_all('/@\[([^\]]+)\]/u', $text, $matches);
 
-        return array_values(array_unique($matches[1] ?? []));
+        return array_values(array_unique(array_map(
+            fn (string $token) => preg_replace('/\s*\([^)]*\)$/', '', trim($token)),
+            $matches[1] ?? []
+        )));
     }
 
     protected function findByName(string $class, string $value): mixed
@@ -238,6 +241,17 @@ class SlashCommandService
                 ->where('name', 'like', "%{$trimmed}%")
                 ->orderByDesc('id')
                 ->first();
+    }
+
+    protected function parseMentionOrBareName(string $args): string
+    {
+        // Try bracket format first: @[Name (Title)]
+        if (preg_match('/@\[([^\]]+)\]/u', $args, $match)) {
+            return preg_replace('/\s*\([^)]*\)$/', '', trim($match[1]));
+        }
+
+        // Fall back to bare name (strip leading @)
+        return ltrim(trim($args), '@');
     }
 
     public function getSignalType(string $text): string

@@ -66,7 +66,7 @@ class SlashCommandServiceTest extends TestCase
         $ticket = Ticket::factory()->create();
         $user = User::factory()->create(['name' => 'JohnDoe']);
 
-        $result = $this->service->handle($ticket, '/assign @JohnDoe');
+        $result = $this->service->handle($ticket, '/assign @[JohnDoe]');
 
         $this->assertEquals($user->id, $ticket->fresh()->user_id2);
         $this->assertSame([
@@ -157,12 +157,12 @@ class SlashCommandServiceTest extends TestCase
         $assignee = User::factory()->create(['name' => 'john']);
         $status = Status::factory()->create(['name' => 'Testing']);
 
-        $result = $this->service->handle($ticket, "/assign @john\n/status Testing\n/action Verify fix on staging @john\nFound the root cause in the payment handler.");
+        $result = $this->service->handle($ticket, "/assign @[john]\n/status Testing\n/action Verify fix on staging @[john]\nFound the root cause in the payment handler.");
 
         $this->assertEquals($assignee->id, $ticket->fresh()->user_id2);
         $this->assertEquals($status->id, $ticket->fresh()->status_id);
         $this->assertSame('action', $result['note_type']);
-        $this->assertStringContainsString('Verify fix on staging @john', $result['body']);
+        $this->assertStringContainsString('Verify fix on staging @[john]', $result['body']);
         $this->assertStringContainsString('Found the root cause in the payment handler.', $result['body']);
         $this->assertSame([
             ['action' => 'assigned', 'to' => 'john'],
@@ -177,7 +177,7 @@ class SlashCommandServiceTest extends TestCase
         $ticket = Ticket::factory()->create();
 
         $missing = $this->service->handle($ticket, '/action Verify fix');
-        $multiple = $this->service->handle($ticket, '/action Verify fix @john @sarah');
+        $multiple = $this->service->handle($ticket, '/action Verify fix @[john] @[sarah]');
 
         $this->assertContains('Actions require exactly one @assignee', $missing['changes']);
         $this->assertContains('Actions require exactly one @assignee', $multiple['changes']);
@@ -197,7 +197,7 @@ class SlashCommandServiceTest extends TestCase
             'resolved' => false,
         ]);
 
-        $result = $this->service->handle($ticket, '/action Verify fix @john');
+        $result = $this->service->handle($ticket, '/action Verify fix @[john]');
 
         $this->assertContains('Too many open actions. Resolve or overwrite an existing action before creating a new one', $result['changes']);
     }
@@ -208,7 +208,7 @@ class SlashCommandServiceTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id2' => 999999]);
         $assignee = User::factory()->create(['name' => 'sarah']);
 
-        $result = $this->service->handle($ticket, '/action Verify fix @sarah');
+        $result = $this->service->handle($ticket, '/action Verify fix @[sarah]');
 
         $this->assertEquals($assignee->id, $ticket->fresh()->user_id2);
         $this->assertContains(['action' => 'assigned', 'to' => 'sarah'], $result['actions']);
@@ -235,6 +235,43 @@ class SlashCommandServiceTest extends TestCase
         $this->assertContains('Unknown command: /statsu — will be treated as text', $result['warnings']);
         $this->assertStringContainsString('/statsu testing', $result['body']);
         $this->assertStringContainsString('Message body', $result['body']);
+    }
+
+    #[Test]
+    public function it_can_assign_user_via_bracket_mention(): void
+    {
+        $ticket = Ticket::factory()->create();
+        $user = User::factory()->create(['name' => 'John Smith']);
+
+        $result = $this->service->handle($ticket, '/assign @[John Smith (Developer)]');
+
+        $this->assertEquals($user->id, $ticket->fresh()->user_id2);
+        $this->assertSame([
+            ['action' => 'assigned', 'to' => 'John Smith'],
+        ], $result['actions']);
+    }
+
+    #[Test]
+    public function it_extracts_bracket_mentions_in_action_commands(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        $assignee = User::factory()->create(['name' => 'Sarah Lee']);
+
+        $result = $this->service->handle($ticket, '/action Verify fix @[Sarah Lee (QA)]');
+
+        $this->assertEquals($assignee->id, $ticket->fresh()->user_id2);
+        $this->assertSame('action', $result['note_type']);
+    }
+
+    #[Test]
+    public function it_falls_back_to_bare_name_for_assign(): void
+    {
+        $ticket = Ticket::factory()->create();
+        $user = User::factory()->create(['name' => 'John Smith']);
+
+        $result = $this->service->handle($ticket, '/assign John Smith');
+
+        $this->assertEquals($user->id, $ticket->fresh()->user_id2);
     }
 
     #[Test]
