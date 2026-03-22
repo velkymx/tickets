@@ -53,10 +53,16 @@
     <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-8">
-            <h2 class="mb-3">
-                <i class="{{ $ticket->type->icon }}" title="{{ $ticket->type->name }}" aria-hidden="true"></i> 
-                {{ $ticket->subject }}
-            </h2>
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h2 class="mb-0">
+                    <i class="{{ $ticket->type->icon }}" title="{{ $ticket->type->name }}" aria-hidden="true"></i>
+                    {{ $ticket->subject }}
+                </h2>
+                {{-- Presence Indicator --}}
+                <div class="presence-indicator d-flex align-items-center" data-ticket-id="{{ $ticket->id }}" id="presence-viewers">
+                    {{-- Populated by JS polling --}}
+                </div>
+            </div>
 
             <div id="ticket_body">
                 @if($ticket->description)
@@ -483,5 +489,65 @@
             textarea.setSelectionRange(start + md.length, end + md.length);
         });
     });
+
+    // --- Presence heartbeat (15s interval) ---
+    (function() {
+        const ticketId = document.querySelector('.presence-indicator')?.dataset.ticketId;
+        if (!ticketId) return;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+        function sendHeartbeat() {
+            const composing = document.activeElement?.id === 'note-textarea';
+            fetch(`/tickets/${ticketId}/presence`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ composing })
+            })
+            .then(r => r.json())
+            .then(data => updatePresenceUI(data.viewers))
+            .catch(() => {});
+        }
+
+        function updatePresenceUI(viewers) {
+            const container = document.getElementById('presence-viewers');
+            if (!container || !viewers) return;
+            const maxShow = 3;
+            let html = '<div class="d-flex" style="margin-left: -8px;">';
+            viewers.slice(0, maxShow).forEach((v, i) => {
+                const hash = v.email ? md5(v.email.toLowerCase().trim()) : '';
+                const composingDot = v.composing ? '<span class="position-absolute bottom-0 end-0 badge bg-success rounded-circle" style="width:8px;height:8px;padding:0;">…</span>' : '';
+                html += `<div class="position-relative" style="margin-left:-8px;z-index:${maxShow - i};" title="${v.name}">
+                    <img src="https://www.gravatar.com/avatar/${hash}?s=28&d=mp" class="rounded-circle border border-2 border-white" width="28" height="28">
+                    ${composingDot}
+                </div>`;
+            });
+            if (viewers.length > maxShow) {
+                html += `<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center small" style="width:28px;height:28px;margin-left:-8px;">+${viewers.length - maxShow}</div>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        sendHeartbeat();
+        setInterval(sendHeartbeat, 15000);
+    })();
+
+    // --- New activity polling (30s interval) ---
+    (function() {
+        const ticketId = document.querySelector('.presence-indicator')?.dataset.ticketId;
+        if (!ticketId) return;
+        let lastChecked = new Date().toISOString();
+
+        setInterval(() => {
+            fetch(`/tickets/${ticketId}/presence`, {
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                // Activity polling handled via presence endpoint for now
+            })
+            .catch(() => {});
+        }, 30000);
+    })();
 </script>
 @endsection
