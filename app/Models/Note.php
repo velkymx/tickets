@@ -55,4 +55,9 @@ class Note extends Model
     {
         return $this->hasMany(NoteAttachment::class);
     }
+
+    public function mentions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Mention::class);
+    }
 }

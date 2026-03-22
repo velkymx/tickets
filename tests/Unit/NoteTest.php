@@ -177,4 +177,28 @@ class NoteTest extends TestCase
         $this->assertCount(1, $note->attachments);
         $this->assertTrue($note->attachments->first()->is($attachment));
     }
+
+    /** @test */
+    public function it_can_have_mentions()
+    {
+        $user = User::factory()->create();
+        $mentionedUser = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $note = Note::create([
+            'body' => "Hello @{$mentionedUser->name}",
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+        ]);
+
+        $mention = \App\Models\Mention::create([
+            'note_id' => $note->id,
+            'user_id' => $mentionedUser->id,
+        ]);
+
+        $this->assertCount(1, $note->mentions);
+        $this->assertTrue($note->mentions->first()->is($mention));
+        $this->assertTrue($note->mentions->first()->user->is($mentionedUser));
+    }
 }
