@@ -37,7 +37,7 @@ class MilestoneLifecycleTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->openStatus = Status::factory()->create(['name' => 'Open']);
-        $this->closedStatus = Status::factory()->create(['id' => 5]);
+        $this->closedStatus = Status::factory()->closed()->create();
         $this->type = Type::factory()->create();
         $this->importance = Importance::factory()->create();
         $this->project = Project::factory()->create();

@@ -25,16 +25,28 @@ class TicketTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected Status $openStatus;
+
+    protected Status $closedStatus;
+
+    protected Type $type;
+
+    protected Importance $importance;
+
+    protected Project $project;
+
+    protected Milestone $milestone;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        Status::factory()->create(['id' => 1, 'name' => 'New']);
-        Status::factory()->create(['id' => 5, 'name' => 'Closed']);
-        Type::factory()->create(['id' => 1, 'name' => 'Bug']);
-        Importance::factory()->create(['id' => 1, 'name' => 'Critical']);
-        Project::factory()->create(['id' => 1, 'name' => 'Test Project']);
-        Milestone::factory()->create(['id' => 1, 'name' => 'Sprint 1']);
+        $this->openStatus = Status::factory()->create(['name' => 'New']);
+        $this->closedStatus = Status::factory()->closed()->create();
+        $this->type = Type::factory()->create(['name' => 'Bug']);
+        $this->importance = Importance::factory()->create(['name' => 'Critical']);
+        $this->project = Project::factory()->create(['name' => 'Test Project']);
+        $this->milestone = Milestone::factory()->create(['name' => 'Sprint 1']);
     }
 
     #[Test]
@@ -149,7 +161,7 @@ class TicketTest extends TestCase
         $ticket = Ticket::factory()->create([
             'user_id' => $user->id,
             'user_id2' => $user->id,
-            'status_id' => 1,
+            'status_id' => $this->openStatus->id,
         ]);
 
         $this->assertInstanceOf(Status::class, $ticket->status);

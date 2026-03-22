@@ -59,7 +59,7 @@ class TicketsControllerTest extends TestCase
         $user = User::factory()->create();
 
         $openStatus = Status::factory()->create(['name' => 'Open Status']);
-        $closedStatus = Status::factory()->create(['name' => 'Closed', 'id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
 
         $openTicket = Ticket::factory()->create([
             'user_id2' => $user->id,
@@ -247,7 +247,7 @@ class TicketsControllerTest extends TestCase
         $user = User::factory()->create();
 
         $openStatus = Status::factory()->create(['name' => 'Open Status']);
-        $closedStatus = Status::factory()->create(['name' => 'Closed', 'id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
 
         $openTicket = Ticket::factory()->create([
             'status_id' => $openStatus->id,
@@ -1061,7 +1061,7 @@ class TicketsControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create();
-        $closedStatus = Status::factory()->create(['id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
 
         $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
@@ -1078,7 +1078,7 @@ class TicketsControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $openStatus = Status::factory()->create(['name' => 'Open']);
-        $closedStatus = Status::factory()->create(['id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
         $ticket = Ticket::factory()->create([
             'status_id' => $closedStatus->id,
             'closed_at' => now(),
@@ -1319,6 +1319,56 @@ class TicketsControllerTest extends TestCase
 
         $ticket->refresh();
         $this->assertEquals(0, $ticket->storypoints);
+    }
+
+    #[Test]
+    public function fetch_returns_tickets_within_date_range(): void
+    {
+        $user = User::factory()->create();
+
+        Ticket::factory()->create(['closed_at' => '2024-06-10 00:00:00']);
+        Ticket::factory()->create(['closed_at' => '2024-06-20 00:00:00']);
+        Ticket::factory()->create(['closed_at' => '2024-07-01 00:00:00']);
+
+        $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(2, $data);
+    }
+
+    #[Test]
+    public function fetch_returns_ticket_resource_collection(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['closed_at' => '2024-06-15 00:00:00']);
+
+        $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'data' => [
+                '*' => [
+                    'id',
+                    'subject',
+                    'status_id',
+                    'project_id',
+                    'created_at',
+                ],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function fetch_returns_empty_when_no_tickets_in_range(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['closed_at' => '2024-07-01 00:00:00']);
+
+        $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
+
+        $response->assertStatus(200);
+        $this->assertEmpty($response->json('data'));
     }
 
     #[Test]

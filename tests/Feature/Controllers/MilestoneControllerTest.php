@@ -105,7 +105,7 @@ class MilestoneControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $openStatus = Status::factory()->create(['name' => 'Open']);
-        $closedStatus = Status::factory()->create(['id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
         $milestone = Milestone::factory()->create();
 
         Ticket::factory()->create([
@@ -127,7 +127,7 @@ class MilestoneControllerTest extends TestCase
     public function get_show_returns_100_percent_when_all_complete(): void
     {
         $user = User::factory()->create();
-        $closedStatus = Status::factory()->create(['id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
         $milestone = Milestone::factory()->create();
 
         Ticket::factory()->create([
@@ -396,7 +396,7 @@ class MilestoneControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $openStatus = Status::factory()->create(['name' => 'Open']);
-        $closedStatus = Status::factory()->create(['id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
         $milestone = Milestone::factory()->create();
 
         Ticket::factory()->create(['milestone_id' => $milestone->id, 'status_id' => $openStatus->id]);
@@ -414,7 +414,7 @@ class MilestoneControllerTest extends TestCase
     public function report_calculates_storypoint_statistics(): void
     {
         $user = User::factory()->create();
-        $closedStatus = Status::factory()->create(['id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
         $milestone = Milestone::factory()->create();
 
         Ticket::factory()->create([

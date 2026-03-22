@@ -339,7 +339,7 @@ class TicketServiceTest extends TestCase
         $lookups = $this->service->getLookups();
 
         $this->assertTrue($lookups['projects']->contains('Active Project'));
-        $this->assertFalse($lookups['projects']->has('Inactive Project'));
+        $this->assertFalse($lookups['projects']->contains('Inactive Project'));
     }
 
     #[Test]
@@ -351,7 +351,7 @@ class TicketServiceTest extends TestCase
         $lookups = $this->service->getLookups();
 
         $this->assertTrue($lookups['milestones']->contains('Open Milestone'));
-        $this->assertFalse($lookups['milestones']->has('Closed Milestone'));
+        $this->assertFalse($lookups['milestones']->contains('Closed Milestone'));
     }
 
     #[Test]

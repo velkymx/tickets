@@ -26,15 +26,15 @@ class ApiRoutesTest extends TestCase
     public function it_prefixes_all_routes_with_v1(): void
     {
         $routes = Route::getRoutes();
-        $hasV1Prefix = false;
+        $apiRoutes = [];
 
         foreach ($routes as $route) {
             if (str_starts_with($route->uri(), 'api/')) {
-                $hasV1Prefix = true;
-                break;
+                $apiRoutes[] = $route->uri();
+                $this->assertStringStartsWith('api/v1/', $route->uri(), "API route {$route->uri()} should be prefixed with api/v1/");
             }
         }
 
-        $this->assertTrue($hasV1Prefix);
+        $this->assertNotEmpty($apiRoutes, 'Expected at least one API route to exist');
     }
 }

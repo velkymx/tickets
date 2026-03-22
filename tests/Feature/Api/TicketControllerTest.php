@@ -138,7 +138,7 @@ class TicketControllerTest extends TestCase
     public function index_filters_by_status(): void
     {
         $openStatus = Status::factory()->create(['name' => 'Open']);
-        $closedStatus = Status::factory()->create(['id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
         Ticket::factory()->create(['user_id2' => $this->user->id, 'status_id' => $openStatus->id]);
         Ticket::factory()->create(['user_id2' => $this->user->id, 'status_id' => $closedStatus->id]);
 
@@ -326,7 +326,7 @@ class TicketControllerTest extends TestCase
     public function note_updates_status(): void
     {
         $openStatus = Status::factory()->create(['name' => 'Open']);
-        $closedStatus = Status::factory()->create(['id' => 5]);
+        $closedStatus = Status::factory()->closed()->create();
         $ticket = Ticket::factory()->create([
             'user_id2' => $this->user->id,
             'status_id' => $openStatus->id,

@@ -57,4 +57,26 @@ class WebRoutesTest extends TestCase
             }
         }
     }
+
+    #[Test]
+    public function it_uses_put_for_update_operations(): void
+    {
+        $routes = Route::getRoutes();
+        $expectedPutRoutes = [
+            'tickets/update/{id}',
+            'milestone/update/{id}',
+            'release/edit/{id}',
+        ];
+
+        $actualPutRoutes = [];
+        foreach ($routes as $route) {
+            if (in_array('PUT', $route->methods())) {
+                $actualPutRoutes[] = $route->uri();
+            }
+        }
+
+        foreach ($expectedPutRoutes as $expected) {
+            $this->assertContains($expected, $actualPutRoutes, "Expected PUT route {$expected} not found");
+        }
+    }
 }
