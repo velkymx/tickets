@@ -14,7 +14,7 @@ class TicketPulseController extends Controller
     {
         $presenceService->updatePresence($ticket->id, Auth::user());
         
-        $pulse = $pulseService->getPulse($ticket);
+        $pulse = $pulseService->getPulse($ticket)->toArray();
         $pulse['viewers'] = $presenceService->getViewers($ticket->id);
         
         return response()->json($pulse);

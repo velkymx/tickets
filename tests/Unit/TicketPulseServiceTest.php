@@ -6,6 +6,7 @@ use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\TicketPulseService;
+use App\ValueObjects\TicketPulse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -30,7 +31,7 @@ class TicketPulseServiceTest extends TestCase
 
         $pulse = $this->service->getPulse($ticket);
 
-        $this->assertNotNull($pulse);
+        $this->assertInstanceOf(TicketPulse::class, $pulse);
         $this->assertTrue(Cache::has($cacheKey));
         $this->assertEquals($pulse, Cache::get($cacheKey));
     }
@@ -64,9 +65,9 @@ class TicketPulseServiceTest extends TestCase
 
         $pulse = $this->service->getPulse($ticket);
 
-        $this->assertTrue($pulse['is_blocked']);
-        $this->assertEquals('Waiting on API', $pulse['blocker_reason']);
-        $this->assertEquals('BLOCKED', $pulse['status']);
+        $this->assertTrue($pulse->is_blocked);
+        $this->assertEquals('Waiting on API', $pulse->blocker_reason);
+        $this->assertEquals('BLOCKED', $pulse->status);
     }
 
     /** @test */
@@ -76,13 +77,13 @@ class TicketPulseServiceTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $pulse = $this->service->getPulse($ticket);
-        $this->assertEquals('Owner: Sarah', $pulse['owner_label']);
+        $this->assertEquals('Owner: Sarah', $pulse->owner_label);
 
         // Unassigned
-        $unassignedTicket = Ticket::factory()->create(['user_id2' => 1]); // Assuming 1 is Unassigned user
+        $unassignedTicket = Ticket::factory()->create(['user_id2' => 999999]);
         $this->service->invalidatePulse($unassignedTicket->id);
         $pulse = $this->service->getPulse($unassignedTicket);
-        $this->assertEquals('Unassigned', $pulse['owner_label']);
+        $this->assertEquals('Unassigned', $pulse->owner_label);
     }
 
     /** @test */
@@ -111,7 +112,7 @@ class TicketPulseServiceTest extends TestCase
 
         $pulse = $this->service->getPulse($ticket);
 
-        $this->assertEquals('Latest action', $pulse['next_action']['body']);
+        $this->assertEquals('Latest action', $pulse->next_action['body']);
     }
 
     /** @test */
@@ -137,6 +138,41 @@ class TicketPulseServiceTest extends TestCase
 
         $pulse = $this->service->getPulse($ticket);
 
-        $this->assertEquals('Latest decision', $pulse['latest_decision']['body']);
+        $this->assertEquals('Latest decision', $pulse->latest_decision['body']);
+    }
+
+    /** @test */
+    public function it_invalidates_cached_pulse_when_a_ticket_changes()
+    {
+        $ticket = Ticket::factory()->create();
+        $cacheKey = "ticket_pulse:{$ticket->id}";
+
+        $this->service->getPulse($ticket);
+        $this->assertTrue(Cache::has($cacheKey));
+
+        $ticket->subject = 'Updated subject';
+        $ticket->save();
+
+        $this->assertFalse(Cache::has($cacheKey));
+    }
+
+    /** @test */
+    public function it_invalidates_cached_pulse_when_a_note_changes()
+    {
+        $ticket = Ticket::factory()->create();
+        $user = User::factory()->create();
+        $cacheKey = "ticket_pulse:{$ticket->id}";
+
+        $this->service->getPulse($ticket);
+        $this->assertTrue(Cache::has($cacheKey));
+
+        Note::create([
+            'body' => 'New activity',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+        ]);
+
+        $this->assertFalse(Cache::has($cacheKey));
     }
 }

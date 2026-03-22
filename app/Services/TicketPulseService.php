@@ -4,11 +4,12 @@ namespace App\Services;
 
 use App\Models\Ticket;
 use App\Models\Note;
+use App\ValueObjects\TicketPulse;
 use Illuminate\Support\Facades\Cache;
 
 class TicketPulseService
 {
-    public function getPulse(Ticket $ticket): array
+    public function getPulse(Ticket $ticket): TicketPulse
     {
         return Cache::remember("ticket_pulse:{$ticket->id}", now()->addHours(24), function () use ($ticket) {
             return $this->computePulse($ticket);
@@ -20,7 +21,7 @@ class TicketPulseService
         Cache::forget("ticket_pulse:{$ticketId}");
     }
 
-    protected function computePulse(Ticket $ticket): array
+    protected function computePulse(Ticket $ticket): TicketPulse
     {
         $activeBlocker = $ticket->notes()
             ->where('notetype', 'blocker')
@@ -52,25 +53,25 @@ class TicketPulseService
         $assigneeName = $ticket->assignee->name ?? 'Unassigned';
         $ownerLabel = $assigneeName === 'Unassigned' ? 'Unassigned' : "Owner: {$assigneeName}";
 
-        return [
-            'id' => $ticket->id,
-            'status' => $status,
-            'is_blocked' => $activeBlocker !== null,
-            'blocker_reason' => $activeBlocker?->body,
-            'owner_id' => $ticket->user_id2,
-            'owner_label' => $ownerLabel,
-            'next_action' => $latestAction ? [
+        return new TicketPulse(
+            id: $ticket->id,
+            status: $status,
+            is_blocked: $activeBlocker !== null,
+            blocker_reason: $activeBlocker?->body,
+            owner_id: $ticket->user_id2,
+            owner_label: $ownerLabel,
+            next_action: $latestAction ? [
                 'id' => $latestAction->id,
                 'body' => $latestAction->body,
                 'created_at' => $latestAction->created_at,
             ] : null,
-            'latest_decision' => $latestDecision ? [
+            latest_decision: $latestDecision ? [
                 'id' => $latestDecision->id,
                 'body' => $latestDecision->body,
                 'created_at' => $latestDecision->created_at,
             ] : null,
-            'execution_state' => $this->deriveExecutionState($ticket, $activeBlocker, $latestAction),
-        ];
+            execution_state: $this->deriveExecutionState($ticket, $activeBlocker, $latestAction),
+        );
     }
 
     protected function deriveExecutionState(Ticket $ticket, ?Note $activeBlocker, ?Note $latestAction): string
