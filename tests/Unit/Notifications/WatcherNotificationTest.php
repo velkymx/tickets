@@ -18,7 +18,7 @@ class WatcherNotificationTest extends TestCase
         $user = User::factory()->create();
         $notification = new WatcherNotification('Ticket', 'Test message', 'http://example.com/ticket/1');
 
-        $this->assertContains('mail', $notification->via($user));
+        $this->assertSame(['mail', 'database'], $notification->via($user));
     }
 
     #[Test]
@@ -56,5 +56,19 @@ class WatcherNotificationTest extends TestCase
 
         $this->assertNotEmpty($mail->introLines);
         $this->assertStringContainsString('Sprint 1', $mail->introLines[0]);
+    }
+
+    #[Test]
+    public function it_returns_structured_database_payload(): void
+    {
+        $user = User::factory()->create();
+        $notification = new WatcherNotification('Ticket', 'Test message', 'http://example.com/ticket/1');
+
+        $payload = $notification->toArray($user);
+
+        $this->assertSame('watching', $payload['type']);
+        $this->assertSame('Ticket', $payload['subject_type']);
+        $this->assertSame('Test message', $payload['message']);
+        $this->assertSame('http://example.com/ticket/1', $payload['url']);
     }
 }

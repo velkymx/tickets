@@ -26,7 +26,7 @@ class WatcherNotification extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail($notifiable)
@@ -35,5 +35,15 @@ class WatcherNotification extends Notification implements ShouldQueue
             ->subject("{$this->type} Updated")
             ->line($this->message)
             ->action('View', $this->url);
+    }
+
+    public function toArray($notifiable): array
+    {
+        return [
+            'type' => 'watching',
+            'subject_type' => $this->type,
+            'message' => $this->message,
+            'url' => $this->url,
+        ];
     }
 }
