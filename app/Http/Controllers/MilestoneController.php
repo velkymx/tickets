@@ -276,9 +276,13 @@ class MilestoneController extends Controller
                 $runningDates[$dateStr] = $cumulativeClosed;
             }
 
+            $lastClosed = 0;
             for ($i = 0; $i <= $daysInSprint; $i++) {
                 $date = $startDate->copy()->addDays($i)->format('Y-m-d');
-                $actualBurndown[] = max(0, $totalStoryPoints - ($runningDates[$date] ?? 0));
+                if (isset($runningDates[$date])) {
+                    $lastClosed = $runningDates[$date];
+                }
+                $actualBurndown[] = max(0, $totalStoryPoints - $lastClosed);
             }
 
             $burndownData = [
