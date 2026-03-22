@@ -11,14 +11,14 @@ use App\Models\Type;
 use App\Models\User;
 use App\Services\Importer;
 use Exception;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ImporterTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected Importer $importer;
 

@@ -9,14 +9,14 @@ use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class NoteTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_has_correct_fillable_fields(): void

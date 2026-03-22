@@ -5,13 +5,13 @@ namespace Tests\Unit\Policies;
 use App\Models\Project;
 use App\Models\User;
 use App\Policies\ProjectPolicy;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ProjectPolicyTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected ProjectPolicy $policy;
 

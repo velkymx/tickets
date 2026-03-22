@@ -5,14 +5,14 @@ namespace Tests\Unit\Requests;
 use App\Http\Requests\BatchUpdateTicketRequest;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BatchUpdateTicketRequestTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected function makeValidator(array $data): \Illuminate\Validation\Validator
     {

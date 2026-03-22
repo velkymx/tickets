@@ -8,7 +8,7 @@ use App\Models\Project;
 use App\Models\Status;
 use App\Models\Type;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class ImportLifecycleTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected User $user;
 

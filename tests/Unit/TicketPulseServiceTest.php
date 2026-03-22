@@ -8,14 +8,14 @@ use App\Models\User;
 use App\Models\Status;
 use App\Services\TicketPulseService;
 use App\ValueObjects\TicketPulse;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TicketPulseServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     private TicketPulseService $service;
 

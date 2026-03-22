@@ -6,13 +6,13 @@ use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ActivityControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function index_requires_authentication(): void

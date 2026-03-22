@@ -42,7 +42,7 @@ class Ticket extends Model
 
     protected $fillable = [
         'subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id',
-        'due_at', 'estimate', 'storypoints', 'actual',
+        'due_at', 'estimate', 'storypoints', 'actual', 'user_id', 'user_id2',
     ];
 
     protected function casts(): array

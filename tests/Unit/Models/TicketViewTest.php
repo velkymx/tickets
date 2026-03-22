@@ -6,13 +6,13 @@ use App\Models\Ticket;
 use App\Models\TicketView;
 use App\Models\User;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TicketViewTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_has_correct_fillable_fields(): void

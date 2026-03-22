@@ -16,14 +16,14 @@ use App\Models\User;
 use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TicketTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected Status $openStatus;
 
@@ -58,12 +58,12 @@ class TicketTest extends TestCase
         $this->assertContains('subject', $fillable);
         $this->assertContains('description', $fillable);
         $this->assertContains('type_id', $fillable);
-        $this->assertNotContains('user_id', $fillable);
+        $this->assertContains('user_id', $fillable);
         $this->assertContains('status_id', $fillable);
         $this->assertContains('importance_id', $fillable);
         $this->assertContains('milestone_id', $fillable);
         $this->assertContains('project_id', $fillable);
-        $this->assertNotContains('user_id2', $fillable);
+        $this->assertContains('user_id2', $fillable);
         $this->assertContains('due_at', $fillable);
         $this->assertNotContains('closed_at', $fillable);
         $this->assertContains('estimate', $fillable);

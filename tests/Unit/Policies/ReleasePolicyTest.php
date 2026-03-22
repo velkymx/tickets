@@ -5,13 +5,13 @@ namespace Tests\Unit\Policies;
 use App\Models\Release;
 use App\Models\User;
 use App\Policies\ReleasePolicy;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReleasePolicyTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected ReleasePolicy $policy;
 

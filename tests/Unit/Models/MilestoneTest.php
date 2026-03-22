@@ -7,14 +7,14 @@ use App\Models\MilestoneWatcher;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Notifications\WatcherNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MilestoneTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_has_correct_fillable_fields(): void

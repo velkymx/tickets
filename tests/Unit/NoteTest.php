@@ -5,13 +5,13 @@ namespace Tests\Unit;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class NoteTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function a_note_can_have_a_parent_note()

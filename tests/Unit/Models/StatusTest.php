@@ -3,30 +3,17 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Status;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class StatusTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Seed statuses matching the default_lookup_values seeder
-        Status::insert([
-            ['id' => 1, 'name' => 'new'],
-            ['id' => 2, 'name' => 'active'],
-            ['id' => 3, 'name' => 'testing'],
-            ['id' => 4, 'name' => 'ready to deploy'],
-            ['id' => 5, 'name' => 'completed'],
-            ['id' => 6, 'name' => 'waiting'],
-            ['id' => 7, 'name' => 'reopened'],
-            ['id' => 8, 'name' => 'duplicte'],
-            ['id' => 9, 'name' => 'declined'],
-        ]);
     }
 
     #[Test]

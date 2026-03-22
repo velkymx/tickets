@@ -8,13 +8,13 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\User;
 use App\Services\MentionService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MentionServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected MentionService $service;
 

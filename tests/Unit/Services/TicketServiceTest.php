@@ -16,16 +16,16 @@ use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
 use App\Services\TicketService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TicketServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected TicketService $service;
 
@@ -552,15 +552,18 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_returns_lookups_sorted_by_name(): void
+    public function it_returns_lookups_with_seeded_values(): void
     {
-        Type::factory()->create(['name' => 'Zebra']);
-        Type::factory()->create(['name' => 'Apple']);
-        Type::factory()->create(['name' => 'Banana']);
-
         $lookups = $this->service->getLookups();
 
-        $this->assertEquals(['Apple', 'Banana', 'Zebra'], $lookups['types']->values()->toArray());
+        // Types ordered by id
+        $this->assertEquals(['bug', 'enhancement', 'task', 'proposal'], $lookups['types']->values()->toArray());
+
+        // Statuses ordered by id
+        $this->assertEquals(['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined'], $lookups['statuses']->values()->toArray());
+
+        // Importances ordered by id
+        $this->assertEquals(['trivial', 'minor', 'major', 'critical', 'blocker'], $lookups['importances']->values()->toArray());
     }
 
     #[Test]
@@ -583,28 +586,26 @@ class TicketServiceTest extends TestCase
 
         $lookups = $this->service->getLookups();
 
-        $this->assertSame(2, $lookups['statuses']->count());
+        // 9 seeded statuses + 2 created by test = 11
+        $this->assertSame(11, $lookups['statuses']->count());
         $this->assertTrue($lookups['statuses']->contains($open->name));
         $this->assertTrue($lookups['statuses']->contains($closed->name));
     }
 
     #[Test]
-    public function it_returns_statuses_in_database_status_code_order(): void
+    public function it_returns_statuses_in_database_id_order(): void
     {
         Cache::flush();
 
-        Status::factory()->create(['id' => 1, 'name' => 'new']);
-        Status::factory()->create(['id' => 2, 'name' => 'active']);
-        Status::factory()->create(['id' => 3, 'name' => 'testing']);
-
         $lookups = $this->service->getLookups();
 
+        // Seeded statuses in ID order
         $this->assertSame(
-            [1, 2, 3],
+            [1, 2, 3, 4, 5, 6, 7, 8, 9],
             $lookups['statuses']->keys()->values()->all()
         );
         $this->assertSame(
-            ['new', 'active', 'testing'],
+            ['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined'],
             $lookups['statuses']->values()->all()
         );
     }

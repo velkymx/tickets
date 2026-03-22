@@ -13,7 +13,7 @@ use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\Type;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,7 +21,7 @@ use Tests\TestCase;
 
 class TicketsControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected function setUp(): void
     {

@@ -4,14 +4,14 @@ namespace Tests\Unit;
 
 use App\Models\User;
 use App\Services\PresenceService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PresenceServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     private PresenceService $service;
 

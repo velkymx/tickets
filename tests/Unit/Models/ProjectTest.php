@@ -4,13 +4,13 @@ namespace Tests\Unit\Models;
 
 use App\Models\Project;
 use App\Models\Ticket;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ProjectTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_has_correct_fillable_fields(): void

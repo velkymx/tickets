@@ -5,7 +5,7 @@ namespace Tests\Feature\Database;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class NotesStatusAndDecisionFieldsMigrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_adds_status_and_decision_columns_to_notes(): void

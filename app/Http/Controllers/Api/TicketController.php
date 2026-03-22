@@ -17,6 +17,7 @@ use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TicketController extends Controller
 {
@@ -97,7 +98,11 @@ class TicketController extends Controller
 
     public function store(Request $request)
     {
-        $user = $request->attributes->get('api_user');
+        $user = $request->attributes->get('api_user') ?? Auth::user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
 
         $request->validate([
             'subject' => 'required|string|max:255',
@@ -124,7 +129,7 @@ class TicketController extends Controller
             'storypoints' => $request->storypoints ?? 0,
             'user_id' => $user->id,
             'user_id2' => $user->id,
-            'status_id' => 1,
+            'status_id' => $request->status_id ?? 1,
         ]);
 
         return response()->json([

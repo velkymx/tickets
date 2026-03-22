@@ -9,13 +9,13 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SlashCommandService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SlashCommandServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     private SlashCommandService $service;
 

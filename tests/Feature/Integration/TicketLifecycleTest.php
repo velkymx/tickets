@@ -10,13 +10,13 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TicketLifecycleTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected User $user;
 

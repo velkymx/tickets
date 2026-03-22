@@ -5,13 +5,13 @@ namespace Tests\Unit\Policies;
 use App\Models\Milestone;
 use App\Models\User;
 use App\Policies\MilestonePolicy;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MilestonePolicyTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected MilestonePolicy $policy;
 

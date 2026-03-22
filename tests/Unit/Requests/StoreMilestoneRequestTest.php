@@ -3,14 +3,14 @@
 namespace Tests\Unit\Requests;
 
 use App\Http\Requests\StoreMilestoneRequest;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class StoreMilestoneRequestTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected function makeValidator(array $data): \Illuminate\Validation\Validator
     {

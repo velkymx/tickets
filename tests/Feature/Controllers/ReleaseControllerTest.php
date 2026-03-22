@@ -7,14 +7,14 @@ use App\Models\ReleaseTicket;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ReleaseControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected function setUp(): void
     {

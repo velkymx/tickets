@@ -4,13 +4,13 @@ namespace Tests\Unit\Notifications;
 
 use App\Models\User;
 use App\Notifications\WatcherNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class WatcherNotificationTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_sends_via_mail_channel(): void

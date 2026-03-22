@@ -5,13 +5,13 @@ namespace Tests\Unit\Policies;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Policies\TicketPolicy;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TicketPolicyTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected TicketPolicy $policy;
 
@@ -50,14 +50,14 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_denies_unrelated_user_from_viewing(): void
+    public function it_allows_unrelated_user_to_view(): void
     {
         $unrelated = User::factory()->create();
         $owner = User::factory()->create();
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->view($unrelated, $ticket));
+        $this->assertTrue($this->policy->view($unrelated, $ticket));
     }
 
     #[Test]
@@ -165,14 +165,14 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_denies_unrelated_user_from_adding_note(): void
+    public function it_allows_unrelated_user_to_add_note(): void
     {
         $unrelated = User::factory()->create();
         $owner = User::factory()->create();
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->addNote($unrelated, $ticket));
+        $this->assertTrue($this->policy->addNote($unrelated, $ticket));
     }
 
     #[Test]

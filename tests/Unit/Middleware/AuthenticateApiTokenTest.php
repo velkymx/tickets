@@ -4,7 +4,7 @@ namespace Tests\Unit\Middleware;
 
 use App\Http\Middleware\AuthenticateApiToken;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use PHPUnit\Framework\Attributes\Test;
@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class AuthenticateApiTokenTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     protected AuthenticateApiToken $middleware;
 

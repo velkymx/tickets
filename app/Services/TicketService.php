@@ -278,13 +278,13 @@ class TicketService
     private function buildLookups(): array
     {
         return [
-            'types' => Type::orderBy('name')->pluck('name', 'id'),
-            'milestones' => Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id'),
-            'importances' => Importance::orderBy('name')->pluck('name', 'id'),
-            'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
+            'types' => Type::orderBy('id')->pluck('name', 'id'),
+            'milestones' => Milestone::orderBy('id')->where('end_at', null)->pluck('name', 'id'),
+            'importances' => Importance::orderBy('id')->pluck('name', 'id'),
+            'projects' => Project::orderBy('id')->where('active', 1)->pluck('name', 'id'),
             'statuses' => Status::orderBy('id')->pluck('name', 'id'),
-            'releases' => Release::orderBy('title')->pluck('title', 'id'),
-            'users' => User::orderBy('name')->pluck('name', 'id'),
+            'releases' => Release::orderBy('id')->pluck('title', 'id'),
+            'users' => User::orderBy('id')->pluck('name', 'id'),
         ];
     }
 }

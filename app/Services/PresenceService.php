@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\TicketView;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 
 class PresenceService
 {
@@ -11,42 +11,30 @@ class PresenceService
 
     public function updatePresence(int $ticketId, User $user): void
     {
-        $key = "ticket_presence:{$ticketId}";
-        $presence = Cache::get($key, []);
-        
-        // Remove old entries for this user
-        $presence = array_filter($presence, function ($viewer) use ($user) {
-            return $viewer['user_id'] !== $user->id;
-        });
-        
-        // Add new entry
-        $presence[] = [
+        $view = TicketView::firstOrCreate([
+            'ticket_id' => $ticketId,
             'user_id' => $user->id,
-            'name' => $user->name,
-            'avatar_url' => $user->avatarUrl(),
-            'last_seen' => now()->timestamp,
-        ];
+        ]);
 
-        // Filter out expired entries
-        $presence = $this->filterExpired($presence);
-        
-        Cache::put($key, $presence, 60); // Cache key lasts 60s, individual entries filtered manually
+        $view->touch();
     }
 
     public function getViewers(int $ticketId): array
     {
-        $key = "ticket_presence:{$ticketId}";
-        $presence = Cache::get($key, []);
-        
-        return $this->filterExpired($presence);
-    }
-
-    protected function filterExpired(array $presence): array
-    {
-        $threshold = now()->subSeconds(self::TTL)->timestamp;
-        
-        return array_values(array_filter($presence, function ($viewer) use ($threshold) {
-            return $viewer['last_seen'] > $threshold;
-        }));
+        return TicketView::query()
+            ->with('user')
+            ->where('ticket_id', $ticketId)
+            ->where('updated_at', '>', now()->subSeconds(self::TTL))
+            ->orderByDesc('updated_at')
+            ->get()
+            ->filter(fn (TicketView $view) => $view->user !== null)
+            ->map(fn (TicketView $view) => [
+                'user_id' => $view->user_id,
+                'name' => $view->user->name,
+                'avatar_url' => $view->user->avatarUrl(),
+                'last_seen' => $view->updated_at->timestamp,
+            ])
+            ->values()
+            ->all();
     }
 }

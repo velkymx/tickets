@@ -3,7 +3,7 @@
 namespace Tests\Feature\Database;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class UsersAvatarMigrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_adds_a_nullable_avatar_column_to_users(): void

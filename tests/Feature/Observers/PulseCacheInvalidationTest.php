@@ -7,14 +7,14 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\TicketPulseService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PulseCacheInvalidationTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     private TicketPulseService $service;
 

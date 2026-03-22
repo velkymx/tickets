@@ -229,11 +229,14 @@ class SlashCommandService
         $trimmed = trim($value);
 
         return $class::query()
+            ->where('name', $trimmed)
+            ->first()
+            ?? $class::query()
             ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
             ->first()
             ?? $class::query()
                 ->where('name', 'like', "%{$trimmed}%")
-                ->orderBy('id')
+                ->orderByDesc('id')
                 ->first();
     }
 

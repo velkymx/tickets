@@ -3,7 +3,7 @@
 namespace Tests\Feature\Database;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class NotificationsTableTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_creates_the_notifications_table_with_the_expected_columns(): void

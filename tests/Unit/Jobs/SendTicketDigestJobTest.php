@@ -6,7 +6,7 @@ use App\Jobs\SendTicketDigestJob;
 use App\Models\User;
 use App\Notifications\TicketDigestNotification;
 use App\Services\NotificationBatchService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,7 +14,7 @@ use Tests\TestCase;
 
 class SendTicketDigestJobTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_sends_a_single_digest_notification_and_clears_the_batch(): void

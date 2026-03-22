@@ -19,8 +19,7 @@ class StatusFactory extends Factory
     public function closed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'id' => 5,
-            'name' => 'Closed',
+            'name' => 'completed',
         ]);
     }
 

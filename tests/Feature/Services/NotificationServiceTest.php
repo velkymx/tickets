@@ -8,14 +8,14 @@ use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\User;
 use App\Services\NotificationService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class NotificationServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_does_not_email_the_comment_author(): void

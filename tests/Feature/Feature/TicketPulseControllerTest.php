@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 

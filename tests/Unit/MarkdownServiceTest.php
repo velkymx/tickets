@@ -4,13 +4,13 @@ namespace Tests\Unit;
 
 use App\Models\User;
 use App\Services\MarkdownService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MarkdownServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     private MarkdownService $service;
 

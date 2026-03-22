@@ -11,9 +11,21 @@ class Status extends Model
 
     public $timestamps = false;
 
+    protected const CLOSED_STATUS_NAMES = [
+        'completed',
+        'duplicate',
+        'declined',
+        'closed',
+        'resolved',
+        'done',
+    ];
+
     public static function closedStatusIds(): array
     {
-        return self::whereIn('name', ['completed', 'duplicte', 'declined'])->pluck('id')->toArray();
+        return self::query()
+            ->whereIn(\DB::raw('LOWER(name)'), self::CLOSED_STATUS_NAMES)
+            ->pluck('id')
+            ->toArray();
     }
 
     public static function activeStatusIds(): array

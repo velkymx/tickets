@@ -5,7 +5,7 @@ namespace Tests\Unit\Services;
 use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Services\NotificationBatchService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
@@ -14,7 +14,7 @@ use Tests\TestCase;
 
 class NotificationBatchServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use SeedsDatabase;
 
     #[Test]
     public function it_sends_database_notifications_immediately(): void
