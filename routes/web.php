@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
     // --- Notes Routes ---
     Route::post('/notes/hide/{id}', [NotesController::class, 'hide'])->name('notes.hide');
     Route::post('/notes/{id}/promote', [NotesController::class, 'promote'])->name('notes.promote');
+    Route::post('/notes/{id}/react', [NotesController::class, 'toggleReaction'])->name('notes.react');
 
     // --- Projects Routes ---
     Route::get('/projects', [ProjectsController::class, 'index'])->name('projects.list');

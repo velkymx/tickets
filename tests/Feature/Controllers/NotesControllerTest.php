@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controllers;
 
 use App\Models\Note;
+use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -178,5 +179,93 @@ class NotesControllerTest extends TestCase
         $response->assertRedirect("/tickets/{$ticket->id}");
         $this->assertEquals('action', $note->fresh()->notetype);
         $this->assertStringContainsString('@sarah', $note->fresh()->body);
+    }
+
+    #[Test]
+    public function it_requires_authentication_to_toggle_a_reaction(): void
+    {
+        $response = $this->post('/notes/1/react', [
+            'emoji' => 'thumbsup',
+        ]);
+
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function it_validates_allowed_reaction_emojis(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->postJson("/notes/{$note->id}/react", [
+            'emoji' => 'fire',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['emoji']);
+    }
+
+    #[Test]
+    public function it_adds_a_reaction_and_returns_grouped_counts(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $other->id,
+        ]);
+
+        NoteReaction::create([
+            'note_id' => $note->id,
+            'user_id' => $other->id,
+            'emoji' => 'thumbsup',
+        ]);
+
+        $response = $this->actingAs($user)->postJson("/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('reactions.thumbsup.count', 2);
+        $response->assertJsonPath('reactions.thumbsup.reacted', true);
+        $this->assertDatabaseHas('note_reactions', [
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+            'emoji' => 'thumbsup',
+        ]);
+    }
+
+    #[Test]
+    public function it_removes_an_existing_reaction_when_toggled_again(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        NoteReaction::create([
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+            'emoji' => 'eyes',
+        ]);
+
+        $response = $this->actingAs($user)->postJson("/notes/{$note->id}/react", [
+            'emoji' => 'eyes',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['reactions' => []]);
+        $this->assertDatabaseMissing('note_reactions', [
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+            'emoji' => 'eyes',
+        ]);
     }
 }

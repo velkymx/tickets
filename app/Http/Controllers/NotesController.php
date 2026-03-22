@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Note;
+use App\Models\NoteReaction;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -74,5 +75,36 @@ class NotesController extends Controller
         $note->save();
 
         return redirect('tickets/'.$note->ticket_id);
+    }
+
+    public function toggleReaction($id)
+    {
+        $validated = request()->validate([
+            'emoji' => 'required|in:'.implode(',', NoteReaction::ALLOWED_EMOJIS),
+        ]);
+
+        $note = Note::findOrFail($id);
+
+        $reaction = NoteReaction::query()
+            ->where('note_id', $note->id)
+            ->where('user_id', Auth::id())
+            ->where('emoji', $validated['emoji'])
+            ->first();
+
+        if ($reaction) {
+            $reaction->delete();
+        } else {
+            NoteReaction::create([
+                'note_id' => $note->id,
+                'user_id' => Auth::id(),
+                'emoji' => $validated['emoji'],
+            ]);
+        }
+
+        $note->load('reactions');
+
+        return response()->json([
+            'reactions' => $note->groupedReactions(),
+        ]);
     }
 }
