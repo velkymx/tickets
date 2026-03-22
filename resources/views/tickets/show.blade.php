@@ -38,21 +38,7 @@
         </div>
     @endif
 
-    @auth
-        @php
-            $isWatching = $ticket->watchers->contains('user_id', auth()->id());
-        @endphp
-        <div class="mb-3">
-            <form action="/tickets/watch/{{ $ticket->id }}" method="POST" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-sm {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
-                    {{ $isWatching ? 'Unwatch' : 'Watch' }}
-                </button>
-            </form>
-        </div>
-    @endauth
-
-    <div class="row">
+        <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-8">
             <h2 class="mb-3">
@@ -188,6 +174,19 @@
                     <a href="/tickets/clone/{{ $ticket->id }}" class="btn btn-secondary w-100">
                         <i class="fas fa-copy"></i> Clone
                     </a>
+                </div>
+                <div class="col-4">
+                    @auth
+                        @php
+                            $isWatching = $ticket->watchers->contains('user_id', auth()->id());
+                        @endphp
+                        <form action="/tickets/watch/{{ $ticket->id }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-sm w-100 {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
+                                {{ $isWatching ? 'Unwatch' : 'Watch' }}
+                            </button>
+                        </form>
+                    @endauth
                 </div>
             </div>
 
