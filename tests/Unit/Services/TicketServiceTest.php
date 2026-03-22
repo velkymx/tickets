@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use App\Notifications\MentionNotification;
 use App\Notifications\WatcherNotification;
 use App\Services\TicketService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -384,6 +385,26 @@ class TicketServiceTest extends TestCase
 
         Notification::assertSentTo($watcher, WatcherNotification::class);
         Notification::assertNotSentTo($author, WatcherNotification::class);
+    }
+
+    #[Test]
+    public function it_notifies_mentioned_users_with_a_mention_notification(): void
+    {
+        Notification::fake();
+
+        $author = User::factory()->create(['name' => 'sarah']);
+        $mentioned = User::factory()->create(['name' => 'alex']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+            'subject' => 'Mention Ticket',
+        ]);
+
+        Auth::login($author);
+        $this->service->notate($ticket->id, 'Can you check the deploy, @alex?', []);
+
+        Notification::assertSentTo($mentioned, MentionNotification::class);
+        Notification::assertNotSentTo($author, MentionNotification::class);
     }
 
     #[Test]

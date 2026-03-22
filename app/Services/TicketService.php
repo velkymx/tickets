@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use App\Notifications\MentionNotification;
 use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -129,6 +130,7 @@ class TicketService
 
             $note = Note::create($insert);
             $this->createMentions($note, $message);
+            $this->notifyMentionedUsers($note);
             $createdActivity = true;
         }
 
@@ -181,6 +183,26 @@ class TicketService
         $ticket->watchers->each(function ($watcher) use ($message, $url, $exceptUserId) {
             if ($watcher->user_id !== $exceptUserId && $watcher->user?->email) {
                 $watcher->user->notify(new WatcherNotification('Ticket', $message, $url));
+            }
+        });
+    }
+
+    private function notifyMentionedUsers(Note $note): void
+    {
+        $note->load('mentions.user', 'user');
+
+        $url = url("/tickets/{$note->ticket_id}#note_{$note->id}");
+        $excerpt = trim(strip_tags($note->body_markdown ?: $note->body));
+
+        $note->mentions->each(function ($mention) use ($note, $url, $excerpt) {
+            if ($mention->user_id !== $note->user_id && $mention->user) {
+                $mention->user->notify(new MentionNotification(
+                    $note->user,
+                    $note->ticket_id,
+                    $note->id,
+                    $excerpt,
+                    $url
+                ));
             }
         });
     }
