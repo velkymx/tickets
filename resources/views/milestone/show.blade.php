@@ -90,7 +90,7 @@
                 <div class="tab-pane fade @if($i == 1) show active @endif" id="{{ $code }}" role="tabpanel" aria-labelledby="{{ $code }}-tab">
                     <div class="table-responsive">
                         {{-- Replaced table-striped with B5 table classes --}}
-                        <table class="table table-hover table-sm align-middle">
+                        <table class="table table-striped table-hover table-sm align-middle">
                             <thead>
                                 <tr>
                                     <th>Title</th>        
@@ -129,7 +129,7 @@
             {{-- All Tickets Content --}}
             <div class="tab-pane fade @if($i == 0) show active @endif" id="all" role="tabpanel" aria-labelledby="all-tab">
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm align-middle">
+                    <table class="table table-striped table-hover table-sm align-middle">
                         <thead>
                             <tr>
                                 <th>Title</th>        
@@ -167,7 +167,7 @@
             {{-- Closed Tickets Content --}}
             <div class="tab-pane fade" id="closed" role="tabpanel" aria-labelledby="closed-tab">
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm align-middle">
+                    <table class="table table-striped table-hover table-sm align-middle">
                         <thead>
                             <tr>
                                 <th>Title</th>        

@@ -42,10 +42,3 @@ Import Tickets
     </div>
 </form>
 @endsection
-
-@section('javascript')
-<style>
-</style>
-<script>
-</script>
-@endsection
