@@ -19,7 +19,7 @@
                         <input type="checkbox" class="form-check-input" id="selectAll">
                     </th>
                 @endif
-                <th>Title</th>
+                <th class="text-nowrap">Title</th>
                 @if($showType)
                     <th class="col-1">T</th>
                 @endif
