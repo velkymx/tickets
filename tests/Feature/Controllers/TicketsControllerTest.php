@@ -844,6 +844,39 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_markdown_composer_replacing_quill(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        // Markdown textarea present
+        $response->assertSee('markdown-composer', false);
+        $response->assertSee('note-textarea', false);
+        // Status & time section
+        $response->assertSee('status-time-section', false);
+        // Submit button
+        $response->assertSee('Post Update');
+        // allUsers JSON for @mention autocomplete
+        $response->assertSee('data-users', false);
+    }
+
+    #[Test]
+    public function show_does_not_render_quill_editor(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertDontSee('note-editor-container', false);
+        $response->assertDontSee('loadQuill', false);
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');

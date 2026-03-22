@@ -68,40 +68,60 @@
             @include('partials.activity-timeline')
 
             <hr class="mt-4 mb-4" />
-            
-            {{-- Ticket Update/Note Form --}}
-            <form method="POST" action="{{ url('notes') }}" id="note-update-form">
-                @csrf
-                
-                {{-- Rich Text Editor (Quill.js) --}}
-                <div class="mb-3">
-                    <label for="body" class="form-label">Status Update and Notes</label>
-                    {{-- Hidden input for Quill content --}}
-                    <input type="hidden" name="body" id="note_body_hidden">
-                    {{-- Quill Editor Container --}}
-                    <div id="note-editor-container" class="editor-sm"></div>
-                </div>
 
-                {{-- Change Status (Replaces Form::select) --}}
-                <div class="mb-3">
-                    <label for="status_id" class="form-label">Change Status</label>
-                    <select name="status_id" id="status_id" class="form-select" required>
-                        @foreach ($lookups['statuses'] as $id => $name)
-                            <option value="{{ $id }}" @selected($ticket->status->id == $id)>{{ $name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                {{-- Add Time/Quantity (Replaces Form::text) --}}
-                <div class="mb-3">
-                    <label for="hours" class="form-label">Add Time or Quantity (hours)</label>
-                    <input type="text" name="hours" id="hours" class="form-control" value="{{ old('hours', 0) }}" required>
-                </div>
+            {{-- Markdown Composer --}}
+            <div class="markdown-composer" data-users="{{ json_encode($allUsers) }}">
+                <form method="POST" action="{{ url('notes') }}" id="note-update-form">
+                    @csrf
 
-                <input type="hidden" name="ticket_id" value="{{ $ticket->id }}">
-                
-                <button type="submit" class="btn btn-success">Save Note</button>
-            </form>
+                    {{-- Markdown Textarea --}}
+                    <div class="mb-3">
+                        <label for="note" class="form-label">Status Update and Notes</label>
+                        <div class="d-flex gap-1 mb-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-md="**" title="Bold"><i class="fas fa-bold"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-md="*" title="Italic"><i class="fas fa-italic"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-md="`" title="Code"><i class="fas fa-code"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-md="link" title="Link"><i class="fas fa-link"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-md="list" title="List"><i class="fas fa-list"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="attach" title="Attach"><i class="fas fa-paperclip"></i></button>
+                        </div>
+                        <textarea name="note" id="note-textarea" class="form-control" rows="5" placeholder="Add a note or status update... (Markdown supported, / for commands, @ for mentions)">{{ old('note') }}</textarea>
+                    </div>
+
+                    {{-- Action Preview Bar --}}
+                    <div id="action-preview" class="alert alert-light border d-none mb-3">
+                        <strong>Actions:</strong>
+                        <ul id="action-preview-list" class="mb-0 small"></ul>
+                    </div>
+
+                    {{-- Status & Time (collapsible) --}}
+                    <div class="status-time-section mb-3">
+                        <a class="text-decoration-none small" data-bs-toggle="collapse" href="#statusTimeCollapse" role="button" aria-expanded="false">
+                            Status & Time
+                        </a>
+                        <div class="collapse show" id="statusTimeCollapse">
+                            <div class="row g-2 mt-1">
+                                <div class="col">
+                                    <select name="status_id" id="status_id" class="form-select form-select-sm">
+                                        @foreach ($lookups['statuses'] as $id => $name)
+                                            <option value="{{ $id }}" @selected($ticket->status->id == $id)>{{ $name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <input type="text" name="hours" id="hours" class="form-control form-control-sm" value="{{ old('hours', 0) }}" placeholder="Hours" style="width: 80px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="ticket_id" value="{{ $ticket->id }}">
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-success">Post Update</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         {{-- Right Column (Details) --}}
@@ -343,29 +363,27 @@
         img.classList.add('img-fluid');
     });
 </script>
-<script type="module">
-    document.addEventListener('DOMContentLoaded', async function() {
-        const Quill = await window.loadQuill();
-        
-        const quillToolbarOptions = [
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['link', 'image'],
-            ['clean']
-        ];
+<script>
+    // --- Markdown Composer: Cmd+Enter to submit ---
+    document.getElementById('note-textarea')?.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            this.closest('form').submit();
+        }
+    });
 
-        const quill = new Quill('#note-editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Add a note or status update...'
-        });
-        
-        const noteForm = document.getElementById('note-update-form');
-        const hiddenInput = document.getElementById('note_body_hidden');
-
-        noteForm.addEventListener('submit', function() {
-            hiddenInput.value = quill.root.innerHTML;
+    // --- Markdown toolbar buttons ---
+    document.querySelectorAll('.markdown-composer [data-md]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const textarea = document.getElementById('note-textarea');
+            if (!textarea) return;
+            const md = this.dataset.md;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selected = textarea.value.substring(start, end);
+            textarea.value = textarea.value.substring(0, start) + md + selected + md + textarea.value.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start + md.length, end + md.length);
         });
     });
 </script>
