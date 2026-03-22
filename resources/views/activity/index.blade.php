@@ -15,7 +15,7 @@
 
     <section>
         <div class="card shadow-sm border-0 overflow-hidden">
-            <div class="card-body p-4 p-lg-5">
+            <div class="card-body">
                 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
                     <div>
                         <p class="text-uppercase small text-muted fw-semibold mb-2">Inbox</p>
