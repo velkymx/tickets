@@ -579,6 +579,135 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_comment_card_displays_signal_type_styling(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'decision',
+            'body' => 'We decided on Redis',
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'blocker',
+            'body' => 'Waiting on API key',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('border-success', false);
+        $response->assertSee('Decision', false);
+        $response->assertSee('border-danger', false);
+        $response->assertSee('Blocker', false);
+    }
+
+    #[Test]
+    public function show_comment_card_displays_edited_indicator(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'Edited comment',
+            'edited_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Edited');
+    }
+
+    #[Test]
+    public function show_comment_card_displays_hours_badge(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'hours' => 2.5,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('2.50');
+    }
+
+    #[Test]
+    public function show_comment_card_displays_replies(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'Parent comment',
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => $parent->id,
+            'body' => 'Reply to parent',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Reply to parent');
+        $response->assertSee('replies-section', false);
+    }
+
+    #[Test]
+    public function show_comment_card_displays_resolved_badge(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'A resolved thread',
+            'resolved' => true,
+            'resolved_by' => $user->id,
+            'resolution_message' => 'Done',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Resolved', false);
+    }
+
+    #[Test]
+    public function show_comment_card_displays_kebab_menu(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'A comment with menu',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('kebab-menu', false);
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
