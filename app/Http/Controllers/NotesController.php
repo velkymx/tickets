@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Note;
+use App\Models\NoteAttachment;
 use App\Models\NoteReaction;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
@@ -184,7 +185,15 @@ class NotesController extends Controller
 
     public function attach($id, Request $request)
     {
-        $note = Note::findOrFail($id);
+        $note = Note::with('ticket')->findOrFail($id);
+
+        $canAttach = $note->user_id === Auth::id()
+            || $note->ticket->user_id === Auth::id()
+            || $note->ticket->user_id2 === Auth::id();
+
+        if (! $canAttach) {
+            abort(Response::HTTP_FORBIDDEN, 'You cannot attach files to this note');
+        }
 
         $validated = $request->validate([
             'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,zip,txt,log,csv,md',
@@ -193,7 +202,7 @@ class NotesController extends Controller
         $file = $validated['file'];
         $path = $file->store("attachments/{$note->ticket_id}", 'public');
 
-        $attachment = \App\Models\NoteAttachment::create([
+        $attachment = NoteAttachment::create([
             'note_id' => $note->id,
             'user_id' => Auth::id(),
             'ticket_id' => $note->ticket_id,
@@ -214,7 +223,16 @@ class NotesController extends Controller
 
     public function togglePin($id)
     {
-        $note = Note::findOrFail($id);
+        $note = Note::with('ticket')->findOrFail($id);
+
+        $canPin = $note->user_id === Auth::id()
+            || $note->ticket->user_id === Auth::id()
+            || $note->ticket->user_id2 === Auth::id();
+
+        if (! $canPin) {
+            abort(Response::HTTP_FORBIDDEN, 'You cannot pin this note');
+        }
+
         $note->update(['pinned' => ! $note->pinned]);
 
         return response()->json(['pinned' => $note->pinned]);
