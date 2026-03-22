@@ -125,6 +125,18 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_view_includes_a_description_form_field(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/projects/create');
+
+        $response->assertStatus(200);
+        $response->assertSee('name="description"', false);
+        $response->assertSee('<textarea', false);
+    }
+
+    #[Test]
     public function edit_requires_authentication(): void
     {
         $project = Project::factory()->create();
