@@ -327,6 +327,23 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_allows_authenticated_users_who_are_not_owner_or_assignee(): void
+    {
+        $user = User::factory()->create();
+        $owner = User::factory()->create();
+        $assignee = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $owner->id,
+            'user_id2' => $assignee->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertOk();
+        $response->assertSee($ticket->subject);
+    }
+
+    #[Test]
     public function show_creates_ticket_view_record(): void
     {
         $user = User::factory()->create();
