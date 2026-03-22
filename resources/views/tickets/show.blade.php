@@ -516,6 +516,66 @@
                 }
             });
     });
+
+    document.addEventListener('submit', function(e) {
+        const form = e.target.closest('.reply-form');
+        if (!form) {
+            return;
+        }
+
+        e.preventDefault();
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        const textarea = form.querySelector('textarea[name="body"]');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: new FormData(form),
+        })
+            .then(async response => {
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error((data.errors && Object.values(data.errors).flat()[0]) || 'Failed to add reply');
+                }
+
+                return data;
+            })
+            .then(data => {
+                const noteCard = form.closest('.card');
+                const composer = form.closest('.reply-composer');
+                const existingReplies = noteCard?.querySelector('.replies-section');
+
+                if (existingReplies && data.replies_html) {
+                    existingReplies.outerHTML = data.replies_html;
+                } else if (composer && data.replies_html) {
+                    composer.insertAdjacentHTML('beforebegin', data.replies_html);
+                }
+
+                form.reset();
+                if (textarea) {
+                    textarea.focus();
+                }
+            })
+            .catch(error => {
+                console.error('Error adding reply:', error);
+            })
+            .finally(() => {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+            });
+    });
 </script>
 <script>
     // --- Markdown Composer: Cmd+Enter to submit ---

@@ -116,30 +116,12 @@
 
     {{-- Replies --}}
     @if($note->replies && $note->replies->count() > 0)
-        <div class="replies-section border-top ms-4 me-2 mb-2">
-            @foreach($note->replies as $reply)
-                <div class="d-flex gap-2 py-2 {{ !$loop->last ? 'border-bottom' : '' }}">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center gap-2">
-                            <strong class="small"><a href="/users/{{ $reply->user->id }}" class="text-decoration-none">{{ $reply->user->name }}</a></strong>
-                            <span class="text-muted small">{{ $reply->created_at->diffForHumans() }}</span>
-                        </div>
-                        <div class="small">
-                            @if($reply->body_markdown)
-                                {!! $reply->body_markdown !!}
-                            @else
-                                {!! clean($reply->body) !!}
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
+        @include('partials.replies-section', ['note' => $note])
     @endif
 
     {{-- Inline Reply Composer --}}
     <div class="reply-composer border-top px-3 py-2">
-        <form method="POST" action="/notes/reply" class="d-flex gap-2 align-items-start">
+        <form method="POST" action="/notes/reply" class="d-flex gap-2 align-items-start reply-form" data-parent-id="{{ $note->id }}">
             @csrf
             <input type="hidden" name="ticket_id" value="{{ $note->ticket_id }}">
             <input type="hidden" name="parent_id" value="{{ $note->id }}">

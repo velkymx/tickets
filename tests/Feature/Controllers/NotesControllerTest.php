@@ -698,6 +698,8 @@ class NotesControllerTest extends TestCase
         $response->assertJsonPath('body_markdown', '**Deploy** looks good, @alex');
         $response->assertJsonPath('user.name', 'sarah');
         $response->assertJsonPath('ticket_id', $ticket->id);
+        $this->assertStringContainsString('replies-section', $response->json('replies_html'));
+        $this->assertStringContainsString('sarah', $response->json('replies_html'));
 
         $reply = Note::query()->where('ticket_id', $ticket->id)->where('parent_id', $thread->id)->latest('id')->first();
 
@@ -706,6 +708,32 @@ class NotesControllerTest extends TestCase
         $this->assertDatabaseHas('mentions', [
             'note_id' => $reply->id,
             'user_id' => $mentioned->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_redirects_back_to_the_parent_thread_when_replying_without_json(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $thread = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+            'notetype' => 'message',
+        ]);
+
+        $response = $this->actingAs($user)->post('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $thread->id,
+            'body' => 'Reply body',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}#note_{$thread->id}");
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $thread->id,
+            'body_markdown' => 'Reply body',
         ]);
     }
 }

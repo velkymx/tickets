@@ -92,10 +92,22 @@ class NotesController extends Controller
         $parent = Note::findOrFail($validated['parent_id']);
 
         if ((int) $parent->ticket_id !== (int) $validated['ticket_id']) {
+            if (! ($request->expectsJson() || $request->ajax())) {
+                return redirect("/tickets/{$validated['ticket_id']}#note_{$validated['parent_id']}")
+                    ->withErrors(['parent_id' => 'Parent note does not belong to this ticket.'])
+                    ->withInput();
+            }
+
             return response()->json(['errors' => ['parent_id' => ['Parent note does not belong to this ticket.']]], 422);
         }
 
         if ($parent->parent_id !== null) {
+            if (! ($request->expectsJson() || $request->ajax())) {
+                return redirect("/tickets/{$validated['ticket_id']}#note_{$parent->id}")
+                    ->withErrors(['parent_id' => 'Cannot reply to a reply. Only top-level notes accept replies.'])
+                    ->withInput();
+            }
+
             return response()->json(['errors' => ['parent_id' => ['Cannot reply to a reply. Only top-level notes accept replies.']]], 422);
         }
 
@@ -115,18 +127,24 @@ class NotesController extends Controller
             ->firstOrFail();
 
         $note->load('user');
+        $parent->load('replies.user');
 
-        return response()->json([
-            'id' => $note->id,
-            'ticket_id' => $note->ticket_id,
-            'parent_id' => $note->parent_id,
-            'body' => $note->body,
-            'body_markdown' => $note->body_markdown,
-            'user' => [
-                'id' => $note->user->id,
-                'name' => $note->user->name,
-            ],
-        ]);
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'id' => $note->id,
+                'ticket_id' => $note->ticket_id,
+                'parent_id' => $note->parent_id,
+                'body' => $note->body,
+                'body_markdown' => $note->body_markdown,
+                'user' => [
+                    'id' => $note->user->id,
+                    'name' => $note->user->name,
+                ],
+                'replies_html' => view('partials.replies-section', ['note' => $parent])->render(),
+            ]);
+        }
+
+        return redirect("/tickets/{$note->ticket_id}#note_{$parent->id}");
     }
 
     public function update($id, Request $request, MarkdownService $markdown, MentionService $mentions)
