@@ -19,7 +19,11 @@ class ProjectsController extends Controller
 
     public function show(Request $request, $id)
     {
-        $project = Project::findOrFail($id);
+        $project = Project::with(['tickets' => function ($q) {
+            $q->with(['notes' => function ($noteQ) {
+                $noteQ->where('hide', 0)->where('notetype', 'message');
+            }]);
+        }])->findOrFail($id);
 
         $this->authorize('view', $project);
 
@@ -53,7 +57,7 @@ class ProjectsController extends Controller
 
         $percent = 0;
 
-        $completed = $project->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
+        $completed = $project->tickets->whereIn('status_id', Status::closedStatusIds())->count();
 
         $total = $project->tickets->count();
 

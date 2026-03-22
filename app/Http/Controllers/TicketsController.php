@@ -175,6 +175,7 @@ class TicketsController extends Controller
         $ticket = Ticket::with([
             'status', 'type', 'importance', 'project', 'assignee', 'user',
             'watchers.user',
+            'estimates.user',
             'notes' => function ($q) {
                 $q->where('hide', 0)->orderBy('created_at', 'desc');
             },

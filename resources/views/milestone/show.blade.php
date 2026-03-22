@@ -33,15 +33,15 @@
                 $available_status = [];
             @endphp
             
-            {{-- Dynamic Status Tabs --}}
-            @foreach ($statuscodes as $code_id => $code)
-                @if (!in_array($code_id, \App\Models\Status::closedStatusIds()) && $milestone->tickets()->where('status_id', $code_id)->count() > 0)
-                    @php
-                        $available_status[$code_id] = $code['slug'];
-                        $i++;
-                        $active_class = ($i === 1) ? ' active' : '';
-                        $ticket_count = $milestone->tickets()->where('status_id', $code_id)->count();
-                    @endphp
+             {{-- Dynamic Status Tabs --}}
+             @foreach ($statuscodes as $code_id => $code)
+                 @if (!in_array($code_id, \App\Models\Status::closedStatusIds()) && $milestone->tickets->where('status_id', $code_id)->count() > 0)
+                     @php
+                         $available_status[$code_id] = $code['slug'];
+                         $i++;
+                         $active_class = ($i === 1) ? ' active' : '';
+                         $ticket_count = $milestone->tickets->where('status_id', $code_id)->count();
+                     @endphp
                     <li class="nav-item" role="presentation">
                         <a class="nav-link{{ $active_class }}" 
                            id="{{ $code['slug'] }}-tab" 
@@ -115,13 +115,13 @@
                                     <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                                     <td>{{ $tick->project->name }}</td>
                                     <td>{{ $tick->assignee->name }}</td>
-                                    <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
-                                    <td>
-                                        @if ($tick->notes()->where('hide', '0')->where('notetype', 'message')->count() > 0)
-                                            <span class="badge text-bg-info">{{ $tick->notes()->where('hide', '0')->where('notetype', 'message')->count() }}</span>
-                                        @endif
-                                    </td>        
-                                    <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
+                                     <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
+                                  <td>
+                                      @if ($tick->notes->where('hide', '0')->where('notetype', 'message')->count() > 0)
+                                          <span class="badge text-bg-info">{{ $tick->notes->where('hide', '0')->where('notetype', 'message')->count() }}</span>
+                                      @endif
+                                  </td>
+                                     <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($ticket->updated_at)) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -156,8 +156,9 @@
                                 <td>{{ $tick->assignee->name }}</td>
                                 <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
                                 <td>
-                                    @if ($tick->notes()->where('hide', '0')->where('notetype', 'message')->count() > 0)
-                                        <span class="badge text-bg-info">{{ $tick->notes()->where('hide', '0')->where('notetype', 'message')->count() }}</span>
+                                    @php $noteCount = $tick->notes->where('hide', '0')->where('notetype', 'message')->count(); @endphp
+                                    @if ($noteCount > 0)
+                                        <span class="badge text-bg-info">{{ $noteCount }}</span>
                                     @endif
                                 </td>        
                                 <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
@@ -194,8 +195,9 @@
                                 <td>{{ $tick->assignee->name }}</td>
                                 <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
                                 <td>
-                                    @if ($tick->notes()->where('hide', '0')->where('notetype', 'message')->count() > 0)
-                                        <span class="badge text-bg-info">{{ $tick->notes()->where('hide', '0')->where('notetype', 'message')->count() }}</span>
+                                    @php $noteCount = $tick->notes->where('hide', '0')->where('notetype', 'message')->count(); @endphp
+                                    @if ($noteCount > 0)
+                                        <span class="badge text-bg-info">{{ $noteCount }}</span>
                                     @endif
                                 </td>        
                                 <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
@@ -288,17 +290,17 @@
                 <li class="list-group-item text-success">
                     <strong>Progress: {{ $percent }}% Complete</strong>
                     {{-- Replaced old progress structure with B5 --}}
-                    <div class="progress mt-2" style="height: 10px;">
-                        <div class="progress-bar bg-success" 
-                             role="progressbar" 
-                             style="width:{{ $percent }}%;" 
-                             aria-valuenow="{{ $percent }}" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100">
-                        </div>
-                    </div>
+                     <div class="progress mt-2" style="height: 10px;">
+                         <div class="progress-bar bg-success" 
+                              role="progressbar" 
+                              style="width:{{ $percent }}%;"
+                              aria-valuenow="{{ $percent }}" 
+                              aria-valuemin="0" 
+                              aria-valuemax="100">
+                         </div>
+                     </div>
                 </li>
-                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $milestone->tickets()->whereIn('status_id', \App\Models\Status::closedStatusIds())->count() }}</span></li>
+                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $milestone->tickets->whereIn('status_id', \App\Models\Status::closedStatusIds())->count() }}</span></li>
                 <li class="list-group-item">Actual Time: <span class="badge text-bg-info">{{ $milestone->tickets->sum('actual') }} Hrs</span></li>
             </ul>
         </div>

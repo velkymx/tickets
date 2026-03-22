@@ -64,47 +64,47 @@
             {{-- Bootstrap 5 Nav Tabs --}}
             <ul class="nav nav-tabs mb-3" id="ticketTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab" aria-controls="messages" aria-selected="true">
-                        Notes ({{ $ticket->notes()->where('hide', '0')->where('notetype', 'message')->count() }})
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="changelog-tab" data-bs-toggle="tab" data-bs-target="#changelog" type="button" role="tab" aria-controls="changelog" aria-selected="false">
-                        Changelog ({{ $ticket->notes()->where('hide', '0')->where('notetype', 'changelog')->count() }})
-                    </button>
+                     <button class="nav-link active" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab" aria-controls="messages" aria-selected="true">
+                         Notes ({{ $ticket->notes->where('hide', '0')->where('notetype', 'message')->count() }})
+                     </button>
+                 </li>
+                 <li class="nav-item" role="presentation">
+                     <button class="nav-link" id="changelog-tab" data-bs-toggle="tab" data-bs-target="#changelog" type="button" role="tab" aria-controls="changelog" aria-selected="false">
+                         Changelog ({{ $ticket->notes->where('hide', '0')->where('notetype', 'changelog')->count() }})
+                     </button>
                 </li>
             </ul>
             
             <div class="tab-content" id="ticketTabsContent">
                 
-                {{-- Messages Tab Panel --}}
-                <div class="tab-pane fade show active" id="messages" role="tabpanel" aria-labelledby="messages-tab">
-                    @php
-                        $messageNotes = $ticket->notes()->where('hide','0')->where('notetype','message')->get();
-                    @endphp
-                    @if ($messageNotes->isEmpty())
-                        <div class="card card-body text-muted">No Notes Found</div>
-                    @else
-                        @foreach ($messageNotes as $note)
-                            {{-- Replaced panel panel-default with card mb-3 --}}
-                            <div class="card mb-3" id="note_{{ $note->id }}">
-                                <div class="card-header bg-body-secondary">
-                                    <strong><a href="/users/{{ $note->user->id }}">{{ $note->user->name }}</a></strong> | posted {{ date('M jS, Y g:ia', strtotime($note->created_at)) }}
-                                    <button onclick="hideNote('{{ $note->id }}');" class="btn btn-outline-danger btn-sm float-end">Remove</button>
-                                </div>
-                                <div class="card-body">
-                                    {!! clean($note->body) !!}
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
+                 {{-- Messages Tab Panel --}}
+                 <div class="tab-pane fade show active" id="messages" role="tabpanel" aria-labelledby="messages-tab">
+                     @php
+                         $messageNotes = $ticket->notes->where('hide','0')->where('notetype','message');
+                     @endphp
+                     @if ($messageNotes->isEmpty())
+                         <div class="card card-body text-muted">No Notes Found</div>
+                     @else
+                         @foreach ($messageNotes as $note)
+                             {{-- Replaced panel panel-default with card mb-3 --}}
+                             <div class="card mb-3" id="note_{{ $note->id }}">
+                                 <div class="card-header bg-body-secondary">
+                                     <strong><a href="/users/{{ $note->user->id }}">{{ $note->user->name }}</a></strong> | posted {{ date('M jS, Y g:ia', strtotime($note->created_at)) }}
+                                     <button onclick="hideNote('{{ $note->id }}');" class="btn btn-outline-danger btn-sm float-end">Remove</button>
+                                 </div>
+                                 <div class="card-body">
+                                     {!! clean($note->body) !!}
+                                 </div>
+                             </div>
+                         @endforeach
+                     @endif
+                 </div>
 
-                {{-- Changelog Tab Panel --}}
-                <div class="tab-pane fade" id="changelog" role="tabpanel" aria-labelledby="changelog-tab">
-                    @php
-                        $changelogNotes = $ticket->notes()->where('hide','0')->where('notetype','changelog')->get();
-                    @endphp
+                 {{-- Changelog Tab Panel --}}
+                 <div class="tab-pane fade" id="changelog" role="tabpanel" aria-labelledby="changelog-tab">
+                     @php
+                         $changelogNotes = $ticket->notes->where('hide','0')->where('notetype','changelog');
+                     @endphp
                     @if ($changelogNotes->isEmpty())
                         <div class="card card-body text-muted">No Changelog Entries Found</div>
                     @else
@@ -264,9 +264,9 @@
                     <li class="list-group-item">
                         Time Estimate: <span class="badge text-bg-primary">{{ $ticket->estimate }} Hrs</span>
                     </li>
-                    <li class="list-group-item">
-                        Time Actual: <span class="badge text-bg-info">{{ $ticket->notes()->where('hide', 0)->sum('hours') }} Hrs</span>
-                    </li>
+                     <li class="list-group-item">
+                         Time Actual: <span class="badge text-bg-info">{{ $ticket->notes->where('hide', 0)->sum('hours') }} Hrs</span>
+                     </li>
                 </ul>
             </div>
 

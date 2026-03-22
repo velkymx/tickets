@@ -70,8 +70,9 @@
                         <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
                     @endif
                     <td>
-                        @if ($tick->notes()->where('hide', '0')->count() > 0)
-                            <span class="badge text-bg-info">{{ $tick->notes()->where('hide', '0')->count() }}</span>
+                        @php $noteCount = $tick->notes->where('hide', '0')->count(); @endphp
+                        @if ($noteCount > 0)
+                            <span class="badge text-bg-info">{{ $noteCount }}</span>
                         @endif
                     </td>
                     @if($showCreated)

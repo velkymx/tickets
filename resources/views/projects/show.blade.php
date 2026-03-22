@@ -41,7 +41,7 @@
         <div class="col">
             <div class="card text-center border h-100">
                 <div class="card-body py-2">
-                    <h2 class="card-title mb-0">{{ $project->tickets()->where('status_id',$code->id)->count() }}</h2>
+                    <h2 class="card-title mb-0">{{ $project->tickets->where('status_id',$code->id)->count() }}</h2>
                     <small class="text-muted">{{ $code->name }}</small>
                 </div>
             </div>
