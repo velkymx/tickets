@@ -53,11 +53,11 @@
                     <li class="nav-item"><a class="nav-link" href="/ticket/create">New Ticket</a></li>
                     <li class="nav-item"><a class="nav-link" href="/tickets/import">Import</a></li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle d-inline-flex align-items-center gap-2" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="{{ $unreadNotificationCount > 0 ? 'fas fa-bell' : 'far fa-bell' }}" aria-hidden="true"></i>
                             <span class="visually-hidden">Notifications</span>
                             @if ($unreadNotificationCount > 0)
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <span class="badge rounded-pill bg-danger notification-count-inline">
                                     {{ $unreadNotificationCount }}
                                 </span>
                             @endif

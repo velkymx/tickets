@@ -147,6 +147,8 @@ class ActivityControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('id="notificationsDropdown"', false);
         $response->assertSee('fas fa-bell', false);
+        $response->assertSee('notification-count-inline', false);
+        $response->assertDontSee('translate-middle badge', false);
         $response->assertSee('6 unread');
         $response->assertSee('View all');
         $response->assertSee('/activity', false);
