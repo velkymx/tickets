@@ -120,21 +120,20 @@ class TicketController extends Controller
     {
         $user = $request->attributes->get('api_user');
 
-        $ticket = Ticket::with(['status', 'type', 'importance', 'milestone', 'project', 'assignee', 'notes' => function ($q) {
-            $q->where('hide', 0)->with('user');
-        }])
+        $ticket = Ticket::with([
+            'status', 'type', 'importance', 'milestone', 'project', 'assignee',
+            'notes' => function ($q) {
+                $q->where('hide', 0)
+                    ->whereNull('parent_id')
+                    ->orderBy('created_at', 'asc')
+                    ->with(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+            },
+        ])
             ->where('user_id2', $user->id)
             ->findOrFail($id);
 
-        $notes = $ticket->notes->map(function ($note) {
-            return [
-                'id' => $note->id,
-                'user' => $note->user->name ?? null,
-                'body' => $note->body,
-                'hours' => $note->hours,
-                'created_at' => $note->created_at->toDateTimeString(),
-            ];
-        });
+        $apiUserId = $user->id;
+        $notes = $ticket->notes->map(fn ($note) => $this->formatNote($note, $apiUserId));
 
         return response()->json(['data' => [
             'id' => $ticket->id,
@@ -153,6 +152,49 @@ class TicketController extends Controller
             'created_at' => $ticket->created_at->toDateString(),
             'notes' => $notes,
         ]]);
+    }
+
+    protected function formatNote($note, int $apiUserId): array
+    {
+        $reactions = $note->reactions->groupBy('emoji')->map(fn ($group) => [
+            'count' => $group->count(),
+            'reacted' => $group->contains('user_id', $apiUserId),
+        ])->toArray();
+
+        return [
+            'id' => $note->id,
+            'user' => $note->user ? ['id' => $note->user->id, 'name' => $note->user->name] : null,
+            'body' => $note->body,
+            'body_markdown' => $note->body_markdown,
+            'notetype' => $note->notetype ?? 'message',
+            'hours' => $note->hours,
+            'pinned' => (bool) $note->pinned,
+            'edited_at' => $note->edited_at?->toDateTimeString(),
+            'resolved' => (bool) $note->resolved,
+            'resolved_by' => $note->resolved_by,
+            'resolution_message' => $note->resolution_message,
+            'parent_id' => $note->parent_id,
+            'supersedes_id' => $note->supersedes_id,
+            'created_at' => $note->created_at->toDateTimeString(),
+            'reactions' => $reactions,
+            'replies' => $note->replies->map(fn ($reply) => [
+                'id' => $reply->id,
+                'user' => $reply->user ? ['id' => $reply->user->id, 'name' => $reply->user->name] : null,
+                'body' => $reply->body,
+                'created_at' => $reply->created_at->toDateTimeString(),
+            ])->values()->toArray(),
+            'attachments' => $note->attachments->map(fn ($a) => [
+                'id' => $a->id,
+                'filename' => $a->filename,
+                'url' => $a->url,
+                'mime_type' => $a->mime_type,
+                'is_image' => $a->is_image,
+            ])->values()->toArray(),
+            'mentions' => $note->mentions->map(fn ($m) => [
+                'id' => $m->id,
+                'user' => $m->user ? ['id' => $m->user->id, 'name' => $m->user->name] : null,
+            ])->values()->toArray(),
+        ];
     }
 
     public function note(Request $request, $id)

@@ -3,8 +3,11 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Importance;
+use App\Models\Mention;
 use App\Models\Milestone;
 use App\Models\Note;
+use App\Models\NoteAttachment;
+use App\Models\NoteReaction;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
@@ -404,6 +407,121 @@ class TicketControllerTest extends TestCase
             'body' => 'Test note',
             'hours' => 2,
         ]);
+    }
+
+    #[Test]
+    public function show_returns_enriched_note_shape(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $otherUser = User::factory()->create(['name' => 'Sarah']);
+
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $otherUser->id,
+            'body' => 'We decided to use Redis',
+            'body_markdown' => '<p>We decided to use Redis</p>',
+            'notetype' => 'decision',
+            'pinned' => true,
+            'hours' => 2.5,
+        ]);
+
+        // Add a reaction
+        NoteReaction::create(['note_id' => $note->id, 'user_id' => $this->user->id, 'emoji' => 'thumbsup']);
+
+        // Add a reply
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'parent_id' => $note->id,
+            'body' => 'Agreed',
+        ]);
+
+        // Add an attachment
+        NoteAttachment::create([
+            'note_id' => $note->id,
+            'user_id' => $otherUser->id,
+            'ticket_id' => $ticket->id,
+            'filename' => 'screenshot.png',
+            'path' => 'attachments/1/screenshot.png',
+            'mime_type' => 'image/png',
+            'size' => 1024,
+        ]);
+
+        // Add a mention
+        Mention::create(['note_id' => $note->id, 'user_id' => $this->user->id]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $notes = $response->json('data.notes');
+        $this->assertCount(1, $notes, 'Should only return top-level notes');
+
+        $firstNote = $notes[0];
+        $this->assertEquals($note->id, $firstNote['id']);
+        $this->assertEquals('Sarah', $firstNote['user']['name']);
+        $this->assertEquals($otherUser->id, $firstNote['user']['id']);
+        $this->assertEquals('We decided to use Redis', $firstNote['body']);
+        $this->assertEquals('<p>We decided to use Redis</p>', $firstNote['body_markdown']);
+        $this->assertEquals('decision', $firstNote['notetype']);
+        $this->assertTrue($firstNote['pinned']);
+        $this->assertEquals(2.5, $firstNote['hours']);
+        $this->assertNull($firstNote['parent_id']);
+        $this->assertFalse($firstNote['resolved']);
+
+        // Reactions grouped
+        $this->assertArrayHasKey('thumbsup', $firstNote['reactions']);
+        $this->assertEquals(1, $firstNote['reactions']['thumbsup']['count']);
+        $this->assertTrue($firstNote['reactions']['thumbsup']['reacted']);
+
+        // Replies nested
+        $this->assertCount(1, $firstNote['replies']);
+        $this->assertEquals('Agreed', $firstNote['replies'][0]['body']);
+
+        // Attachments
+        $this->assertCount(1, $firstNote['attachments']);
+        $this->assertEquals('screenshot.png', $firstNote['attachments'][0]['filename']);
+        $this->assertTrue($firstNote['attachments'][0]['is_image']);
+
+        // Mentions
+        $this->assertCount(1, $firstNote['mentions']);
+        $this->assertEquals($this->user->id, $firstNote['mentions'][0]['user']['id']);
+    }
+
+    #[Test]
+    public function show_orders_notes_ascending_and_filters_top_level(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        $note1 = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'First',
+            'created_at' => now()->subHour(),
+        ]);
+
+        $note2 = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Second',
+            'created_at' => now(),
+        ]);
+
+        // Reply should NOT appear as top-level
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Reply',
+            'parent_id' => $note1->id,
+        ]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $notes = $response->json('data.notes');
+        $this->assertCount(2, $notes);
+        $this->assertEquals('First', $notes[0]['body']);
+        $this->assertEquals('Second', $notes[1]['body']);
     }
 
     #[Test]
