@@ -1323,6 +1323,27 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function estimate_caps_at_max_fibonacci_when_average_exceeds(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        // Two users estimate 21 each, then user1 changes to 21
+        // Average = (21+21)/2 = 21, should stay at 21 (not drop to 0)
+        TicketEstimate::create(['ticket_id' => $ticket->id, 'user_id' => $user1->id, 'storypoints' => 13]);
+        TicketEstimate::create(['ticket_id' => $ticket->id, 'user_id' => $user2->id, 'storypoints' => 21]);
+
+        // Now user1 votes 21. New avg = (21+21)/2 = 21
+        $this->actingAs($user1)->post("/tickets/estimate/{$ticket->id}", [
+            'storypoints' => 21,
+        ]);
+
+        $ticket->refresh();
+        $this->assertEquals(21, $ticket->storypoints);
+    }
+
+    #[Test]
     public function fetch_returns_tickets_within_date_range(): void
     {
         $user = User::factory()->create();

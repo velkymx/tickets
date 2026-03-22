@@ -431,7 +431,7 @@ class TicketsController extends Controller
 
         $avg = $total / $getAvg->count();
 
-        $sp = $fibs[0];
+        $sp = end($fibs);
         foreach ($fibs as $fib) {
             if ($avg <= $fib) {
                 $sp = $fib;
