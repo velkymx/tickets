@@ -26,14 +26,14 @@
             </div>
             <div class="col-md-4 text-md-end">
                 <p>
-                    <strong>Start:</strong> {{ $milestone->start_at ? date('M j, Y', strtotime($milestone->start_at)) : 'N/A' }}<br>
-                    <strong>Due:</strong> {{ $milestone->due_at ? date('M j, Y', strtotime($milestone->due_at)) : 'N/A' }}<br>
-                    @if($milestone->end_at && $milestone->end_at != '0000-00-00')
-                        <strong>Released:</strong> {{ date('M j, Y', strtotime($milestone->end_at)) }}<br>
+                    <strong>Start:</strong> {{ $milestone->start_at ? $milestone->start_at->format('M j, Y') : 'N/A' }}<br>
+                    <strong>Due:</strong> {{ $milestone->due_at ? $milestone->due_at->format('M j, Y') : 'N/A' }}<br>
+                    @if($milestone->end_at)
+                        <strong>Released:</strong> {{ $milestone->end_at->format('M j, Y') }}<br>
                     @endif
                     <strong>Duration:</strong> {{ $duration > 0 ? $duration . ' days' : 'N/A' }}
                 </p>
-                @if($milestone->end_at && $milestone->end_at != '0000-00-00')
+                @if($milestone->end_at)
                     <span class="badge text-bg-success">Released</span>
                 @else
                     <span class="badge text-bg-warning">In Progress</span>

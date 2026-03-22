@@ -26,7 +26,7 @@ Edit Release
             <div class="mb-3">
                 <label for="completed_at" class="form-label">Release Date</label>
                 <input type="date" name="completed_at" id="completed_at" 
-                       value="{{ old('completed_at', ($release->completed_at && $release->completed_at != '0000-00-00 00:00:00') ? date('Y-m-d', strtotime($release->completed_at)) : '') }}" 
+                       value="{{ old('completed_at', $release->completed_at?->format('Y-m-d') ?? '') }}" 
                        class="form-control">
             </div>
         </div>    

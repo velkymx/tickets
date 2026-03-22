@@ -8,10 +8,10 @@
     <h1 class="mb-3">{{ $milestone->name }}</h1>
 
     {{-- Milestone Status Info --}}
-    @if ($milestone->end_at && $milestone->end_at != '0000-00-00 00:00:00')
+    @if ($milestone->end_at)
         <p class="text-success">
-            Started on {{ date('F jS, Y', strtotime($milestone->start_at)) }}, 
-            Released {{ date('F jS, Y', strtotime($milestone->end_at)) }}
+            Started on {{ $milestone->start_at->format('F jS, Y') }}, 
+            Released {{ $milestone->end_at->format('F jS, Y') }}
         </p>
     @else
         <p class="text-secondary">

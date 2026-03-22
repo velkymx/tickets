@@ -2,35 +2,16 @@
 @section('title', $milestone->name . ' Milestone')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ $milestone->name }} Milestone</h1>
-    {{-- Replaced pull-right with d-flex utilities and btn-group --}}
-    <div class="btn-group" role="group" aria-label="Milestone Actions">
-        @auth
-            @php
-                $isWatching = $milestone->watchers->contains('user_id', auth()->id());
-            @endphp
-            <form action="/milestone/watch/{{ $milestone->id }}" method="POST" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-sm {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
-                    {{ $isWatching ? 'Unwatch' : 'Watch' }}
-                </button>
-            </form>
-        @endauth
-        <a href="/milestone/report/{{ $milestone->id }}" class="btn btn-sm btn-info">Report</a>
-        <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-sm btn-primary">Edit Milestone</a>
-        <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a>
-    </div>
-</div>
+<h1 class="mb-3">{{ $milestone->name }} Milestone</h1>
 
 {{-- Status Info --}}
-@if ($milestone->end_at && $milestone->end_at != '0000-00-00 00:00:00')
+@if ($milestone->end_at)
 <p class="text-success">
-    Started on {{ date('F jS, Y', strtotime($milestone->start_at)) }}, Released {{ date('F jS, Y', strtotime($milestone->end_at)) }}
+    Started on {{ $milestone->start_at->format('F jS, Y') }}, Released {{ $milestone->end_at->format('F jS, Y') }}
 </p>
 @else
 <p class="text-secondary">
-    Unreleased Version - Started on {{ date('F jS, Y', strtotime($milestone->start_at)) }}
+    Unreleased Version - Started on {{ $milestone->start_at->format('F jS, Y') }}
 </p>
 @endif
 <hr class="mb-4">
@@ -225,6 +206,39 @@
     
     {{-- Right Column: Summary Sidebar (3 columns) --}}
     <div class="col-lg-3">
+
+        {{-- Action Buttons --}}
+        <div class="row g-2 mb-4 text-center">
+            <div class="col-6">
+                <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-secondary w-100">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="/milestone/report/{{ $milestone->id }}" class="btn btn-info w-100">
+                    <i class="fas fa-chart-line"></i> Report
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-secondary w-100">
+                    <i class="fas fa-print"></i> Print
+                </a>
+            </div>
+            <div class="col-6">
+                @auth
+                    @php
+                        $isWatching = $milestone->watchers->contains('user_id', auth()->id());
+                    @endphp
+                    <form action="/milestone/watch/{{ $milestone->id }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn w-100 {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
+                            {{ $isWatching ? 'Unwatch' : 'Watch' }}
+                        </button>
+                    </form>
+                @endauth
+            </div>
+        </div>
+
         {{-- Replaced list-group structure with B5 cards for better grouping --}}
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-body-secondary">

@@ -40,14 +40,14 @@
                             </span>
                         </td>
                         
-                        @if ($milestone->start_at && $milestone->start_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->start_at)) }}</td>
+                        @if ($milestone->start_at)
+                            <td>{{ $milestone->start_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
 
-                        @if ($milestone->due_at && $milestone->due_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->due_at)) }}</td>
+                        @if ($milestone->due_at)
+                            <td>{{ $milestone->due_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
@@ -81,20 +81,20 @@
                             </span>
                         </td>
 
-                        @if ($milestone->start_at && $milestone->start_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->start_at)) }}</td>
+                        @if ($milestone->start_at)
+                            <td>{{ $milestone->start_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
 
-                        @if ($milestone->due_at && $milestone->due_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->due_at)) }}</td>
+                        @if ($milestone->due_at)
+                            <td>{{ $milestone->due_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
 
-                        @if ($milestone->end_at && $milestone->end_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->end_at)) }}</td>
+                        @if ($milestone->end_at)
+                            <td>{{ $milestone->end_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
