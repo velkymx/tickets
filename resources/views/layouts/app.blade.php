@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="{{ auth()->check() && auth()->user()->theme === 'darkly' ? 'dark' : 'light' }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if(auth()->check() && auth()->user()->theme !== 'auto') data-bs-theme="{{ auth()->user()->theme === 'darkly' ? 'dark' : 'light' }}" @endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

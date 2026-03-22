@@ -19,7 +19,7 @@ class UpdateUserRequest extends FormRequest
             'phone' => 'nullable|string|max:50',
             'title' => 'nullable|string|max:255',
             'timezone' => 'nullable|string|timezone|max:100',
-            'theme' => 'nullable|string|in:simplex,darkly',
+            'theme' => 'nullable|string|in:auto,simplex,darkly',
             'bio' => 'nullable|string|max:2000',
             'avatar' => 'nullable|image|max:2048',
         ];

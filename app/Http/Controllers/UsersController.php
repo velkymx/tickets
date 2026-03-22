@@ -52,6 +52,7 @@ class UsersController extends Controller
         $timezones = $this->get_timezones();
 
         $themes = [
+            'auto' => 'Automatic (OS Preference)',
             'simplex' => 'Default (Light)',
             'darkly' => 'Darkly (Dark)',
         ];
