@@ -7,7 +7,7 @@
     <h1 class="mb-4">Ticket Board</h1>
 
     {{-- Alert Container for AJAX updates (Vanilla JS will target this) --}}
-    <div id="update-alert" class="alert alert-success alert-dismissible fade" role="alert" style="display:none;">
+    <div id="update-alert" class="alert alert-success alert-dismissible fade d-none" role="alert">
         <span id="update-message"></span>
         <button type="button" class="btn-close" aria-label="Close" id="close-alert-btn"></button>
     </div>
@@ -85,15 +85,13 @@
                     .then(data => {
                         // Display success message from the API call
                         alertMessage.textContent = `Ticket ${ticketId} updated. ${data}`;
-                        alertDiv.classList.remove('fade');
+                        alertDiv.classList.remove('d-none', 'fade');
                         alertDiv.classList.add('show');
-                        alertDiv.style.display = 'block';
                     })
                     .catch(error => {
                         alertMessage.textContent = `Error updating ticket ${ticketId}. See console for details.`;
-                        alertDiv.classList.remove('alert-success');
+                        alertDiv.classList.remove('alert-success', 'd-none');
                         alertDiv.classList.add('alert-danger', 'show');
-                        alertDiv.style.display = 'block';
                         console.error('API Update Error:', error);
                     });
             }
@@ -155,7 +153,7 @@
             closeAlertBtn.addEventListener('click', function() {
                 alertDiv.classList.remove('show');
                 setTimeout(() => {
-                    alertDiv.style.display = 'none';
+                    alertDiv.classList.add('d-none');
                 }, 150);
             });
             
