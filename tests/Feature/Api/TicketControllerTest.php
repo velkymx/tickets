@@ -889,6 +889,27 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function pulse_endpoint_returns_cached_data(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Use Redis',
+            'notetype' => 'decision',
+        ]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}/pulse", $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertArrayHasKey('execution_state', $response->json('data'));
+        $this->assertArrayHasKey('is_blocked', $response->json('data'));
+        $this->assertArrayHasKey('latest_decision', $response->json('data'));
+        $this->assertArrayHasKey('last_activity_at', $response->json('data'));
+    }
+
+    #[Test]
     public function edit_enforces_author_only(): void
     {
         $otherUser = User::factory()->create();

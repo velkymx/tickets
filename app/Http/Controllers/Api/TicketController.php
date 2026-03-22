@@ -317,6 +317,16 @@ class TicketController extends Controller
         return response()->json($response);
     }
 
+    public function pulse(Request $request, $id)
+    {
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+
+        $pulse = app(TicketPulseService::class)->getPulse($ticket)->toArray();
+
+        return response()->json(['data' => $pulse]);
+    }
+
     public function resolveNote(Request $request, $id, $noteId)
     {
         $request->validate([

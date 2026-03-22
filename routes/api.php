@@ -14,4 +14,5 @@ Route::prefix('v1')->middleware(['api.token', 'throttle:api'])->group(function (
     Route::post('/tickets/{id}/notes/{noteId}/reply', [TicketController::class, 'reply'])->name('api.v1.tickets.notes.reply');
     Route::put('/tickets/{id}/notes/{noteId}', [TicketController::class, 'editNote'])->name('api.v1.tickets.notes.edit');
     Route::post('/tickets/{id}/notes/{noteId}/resolve', [TicketController::class, 'resolveNote'])->name('api.v1.tickets.notes.resolve');
+    Route::get('/tickets/{id}/pulse', [TicketController::class, 'pulse'])->name('api.v1.tickets.pulse');
 });
