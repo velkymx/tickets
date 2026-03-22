@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMilestoneRequest extends FormRequest
@@ -31,7 +32,7 @@ class StoreMilestoneRequest extends FormRequest
 
         foreach (['start_at', 'due_at', 'end_at'] as $date) {
             if (isset($validated[$date]) && $validated[$date] !== '') {
-                $validated[$date] = date('Y-m-d', strtotime($validated[$date]));
+                $validated[$date] = Carbon::parse($validated[$date])->format('Y-m-d');
             } else {
                 $validated[$date] = null;
             }

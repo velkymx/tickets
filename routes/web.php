@@ -97,7 +97,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/batch', [TicketsController::class, 'batch'])->name('tickets.batch');
     Route::post('/tickets/import', [ImportController::class, 'create'])->name('tickets.storeimport');
     Route::put('/tickets/update/{id}', [TicketsController::class, 'update'])->name('tickets.update');
-    Route::post('/tickets/upload', [TicketsController::class, 'upload'])->name('tickets.upload');
+    Route::post('/tickets/upload', [TicketsController::class, 'upload'])->name('tickets.upload')->middleware('throttle:uploads');
 
     // Milestone
     Route::post('/milestone/store/{id}', [MilestoneController::class, 'store'])->name('milestone.store');

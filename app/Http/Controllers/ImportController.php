@@ -23,18 +23,37 @@ class ImportController extends Controller
             'csv' => 'required|file|mimes:csv,txt|max:10240',
         ]);
 
+        $csv = $request->file('csv');
+        $maxRows = 1000;
+
+        try {
+            $handle = fopen($csv->path(), 'r');
+            $rowCount = 0;
+            while (($row = fgetcsv($handle)) !== false) {
+                $rowCount++;
+                if ($rowCount > $maxRows) {
+                    fclose($handle);
+                    throw new Exception("CSV file exceeds maximum of $maxRows rows.");
+                }
+            }
+            fclose($handle);
+
+            $content = file_get_contents($csv->path());
+            if (strlen($content) !== strlen(utf8_encode($content)) && ! mb_check_encoding($content, 'UTF-8')) {
+                throw new Exception('CSV file must be UTF-8 encoded.');
+            }
+        } catch (Exception $e) {
+            return redirect('/tickets/import')->withErrors([$e->getMessage()])->withInput();
+        }
+
         try {
             (new Importer)->call(
                 (int) $request->milestone_id,
-                $request->csv->path(),
+                $csv->path(),
                 (bool) $request->hasHeader,
             );
         } catch (Exception $e) {
-            $errors = [
-                $e->getMessage(),
-            ];
-
-            return redirect('/tickets/import')->withErrors($errors)->withInput();
+            return redirect('/tickets/import')->withErrors([$e->getMessage()])->withInput();
         }
 
         return redirect('/milestone/show/'.$request->milestone_id)

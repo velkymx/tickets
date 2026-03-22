@@ -14,8 +14,10 @@ use App\Models\TicketEstimate;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Services\TicketService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
@@ -213,11 +215,11 @@ class TicketsController extends Controller
         $lookups = $this->ticketService->getLookups();
 
         if (! empty($ticket->closed_at)) {
-            $ticket->closed_at = date('m/d/Y', strtotime($ticket->closed_at));
+            $ticket->closed_at = Carbon::parse($ticket->closed_at)->format('m/d/Y');
         }
 
         if (! empty($ticket->due_at)) {
-            $ticket->due_at = date('m/d/Y', strtotime($ticket->due_at));
+            $ticket->due_at = Carbon::parse($ticket->due_at)->format('m/d/Y');
         }
 
         return view('tickets.clone', compact('ticket', 'lookups'));
@@ -232,11 +234,11 @@ class TicketsController extends Controller
         $lookups = $this->ticketService->getLookups();
 
         if (! empty($ticket->closed_at)) {
-            $ticket->closed_at = date('m/d/Y', strtotime($ticket->closed_at));
+            $ticket->closed_at = Carbon::parse($ticket->closed_at)->format('m/d/Y');
         }
 
         if (! empty($ticket->due_at)) {
-            $ticket->due_at = date('m/d/Y', strtotime($ticket->due_at));
+            $ticket->due_at = Carbon::parse($ticket->due_at)->format('m/d/Y');
         }
 
         return view('tickets.edit', compact('ticket', 'lookups'));
@@ -251,13 +253,13 @@ class TicketsController extends Controller
         $data = $request->validated();
 
         if (! empty($data['due_at'])) {
-            $data['due_at'] = date('Y-m-d', strtotime($data['due_at']));
+            $data['due_at'] = Carbon::parse($data['due_at'])->format('Y-m-d');
         } else {
             $data['due_at'] = null;
         }
 
         if (! empty($data['closed_at'])) {
-            $data['closed_at'] = date('Y-m-d H:i:s', strtotime($data['closed_at']));
+            $data['closed_at'] = Carbon::parse($data['closed_at'])->format('Y-m-d H:i:s');
         } else {
             $data['closed_at'] = null;
         }
@@ -279,7 +281,7 @@ class TicketsController extends Controller
         $data['user_id2'] = Auth::id();
 
         if (! empty($data['due_at'])) {
-            $data['due_at'] = date('Y-m-d', strtotime($data['due_at']));
+            $data['due_at'] = Carbon::parse($data['due_at'])->format('Y-m-d');
         }
 
         $insert = Ticket::create($data);
@@ -287,13 +289,8 @@ class TicketsController extends Controller
         return redirect('tickets/'.$insert->id)->with('status', 'Task was created successfully!');
     }
 
-    public function upload(Request $request)
+    public function upload(UploadTicketRequest $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:jpg,jpeg,png,gif|max:5120',
-            'folder' => 'required|string|max:50',
-        ]);
-
         $file = $request->file('file');
         $folder = preg_replace('/[^a-zA-Z0-9_-]/', '', $request->input('folder'));
 
@@ -324,28 +321,30 @@ class TicketsController extends Controller
 
         $i = 0;
 
-        foreach ($ticketIds as $ticketId) {
-            if (! $tickets->has($ticketId)) {
-                continue;
+        DB::transaction(function () use ($ticketIds, $tickets, $updateFields, $validated, &$i) {
+            foreach ($ticketIds as $ticketId) {
+                if (! $tickets->has($ticketId)) {
+                    continue;
+                }
+
+                $ticket = $tickets->get($ticketId);
+
+                Gate::authorize('update', $ticket);
+
+                if (! empty($validated['release_id']) && $validated['release_id'] > 0) {
+                    ReleaseTicket::firstOrCreate([
+                        'release_id' => $validated['release_id'],
+                        'ticket_id' => $ticketId,
+                    ]);
+                }
+
+                if (! empty($updateFields)) {
+                    $ticket->update($updateFields);
+                }
+
+                $i++;
             }
-
-            $ticket = $tickets->get($ticketId);
-
-            Gate::authorize('update', $ticket);
-
-            if (! empty($validated['release_id']) && $validated['release_id'] > 0) {
-                ReleaseTicket::firstOrCreate([
-                    'release_id' => $validated['release_id'],
-                    'ticket_id' => $ticketId,
-                ]);
-            }
-
-            if (! empty($updateFields)) {
-                $ticket->update($updateFields);
-            }
-
-            $i++;
-        }
+        });
 
         return redirect('tickets')->with('info_message', $i.' ticket(s) updated');
     }
@@ -363,13 +362,13 @@ class TicketsController extends Controller
 
     public function api(Request $request, $id)
     {
-        $request->validate([
-            'status' => 'required|integer|exists:statuses,id',
-        ]);
-
         $ticket = Ticket::findOrFail($id);
 
         $this->authorize('update', $ticket);
+
+        $request->validate([
+            'status' => 'required|integer|exists:statuses,id',
+        ]);
 
         if ($request['status'] != $ticket->status_id) {
             $ticket->update(['status_id' => $request['status']]);
@@ -382,8 +381,9 @@ class TicketsController extends Controller
         return response()->json(['error' => 'Status unchanged'], 400);
     }
 
-    public function note(Request $request)
+    public function note(NoteTicketRequest $request)
     {
+        $validated = $request->validated();
 
         if ($request->has('status_id') && $request->has('ticket_id')) {
 
@@ -407,7 +407,7 @@ class TicketsController extends Controller
 
             $change_list = $this->ticketService->changes($old, $ticket->toArray());
 
-            $this->ticketService->notate($ticket->id, $request->body ?? '', $change_list, $request->hours ?? 0);
+            $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
 
             $ticket->unsetRelation('notes');
             $ticket->loadSum('notes', 'hours');

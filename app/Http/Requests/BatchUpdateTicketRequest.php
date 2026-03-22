@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Ticket;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class BatchUpdateTicketRequest extends FormRequest
 {
@@ -24,6 +26,19 @@ class BatchUpdateTicketRequest extends FormRequest
             'user_id2' => 'nullable|integer|exists:users,id',
             'release_id' => 'nullable|integer|exists:releases,id',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $ticketKeys = array_keys($this->input('tickets', []));
+            $existingTickets = Ticket::whereIn('id', $ticketKeys)->pluck('id')->toArray();
+            $missingTickets = array_diff($ticketKeys, array_map('strval', $existingTickets));
+
+            if (! empty($missingTickets)) {
+                $validator->errors()->add('tickets', 'Tickets '.implode(', ', $missingTickets).' do not exist.');
+            }
+        });
     }
 
     public function messages(): array

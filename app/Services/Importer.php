@@ -47,24 +47,32 @@ class Importer
         }
     }
 
-    private function importRow(array $row): void
+    private function importRow(array $row, int $rowIndex): void
     {
+        if (empty(trim($row[1] ?? ''))) {
+            throw new Exception("Row $rowIndex: Subject (column 2) is required.");
+        }
+
         $ticket = new Ticket;
         $ticket->milestone_id = $this->milestone->id;
-        $ticket->type_id = $this->relation(Type::class, $row[0]);
-        $ticket->subject = $row[1];
-        $ticket->description = $row[2];
-        $ticket->importance_id = $this->relation(Importance::class, $row[3]);
-        $ticket->status_id = $this->relation(Status::class, $row[4]);
-        $ticket->project_id = $this->relation(Project::class, $row[5]);
-        $ticket->user_id2 = $this->relation(User::class, $row[6]);
+        $ticket->type_id = $this->relation(Type::class, $row[0] ?? '', $rowIndex, 1);
+        $ticket->subject = trim($row[1]);
+        $ticket->description = $row[2] ?? '';
+        $ticket->importance_id = $this->relation(Importance::class, $row[3] ?? '', $rowIndex, 4);
+        $ticket->status_id = $this->relation(Status::class, $row[4] ?? '', $rowIndex, 5);
+        $ticket->project_id = $this->relation(Project::class, $row[5] ?? '', $rowIndex, 6);
+        $ticket->user_id2 = $this->relation(User::class, $row[6] ?? '', $rowIndex, 7);
         $ticket->user_id = Auth::id();
 
         $ticket->saveOrFail();
     }
 
-    private function relation(string $class, string $value): ?int
+    private function relation(string $class, string $value, int $rowIndex, int $columnNumber): ?int
     {
+        if (empty(trim($value))) {
+            throw new Exception("Row $rowIndex: Column ".($columnNumber + 1).' ('.class_basename($class).') is required.');
+        }
+
         $key = $class.'|'.$value;
         if (isset($this->models[$key])) {
             return $this->models[$key]->id;
@@ -73,7 +81,7 @@ class Importer
         $model = $class::where('name', $value)->first();
 
         if (! $model) {
-            throw new Exception(class_basename($class)." $value does not exist.");
+            throw new Exception("Row $rowIndex: ".class_basename($class)." '$value' does not exist.");
         }
 
         $this->models[$key] = $model;

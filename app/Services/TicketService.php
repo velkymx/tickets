@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -67,16 +68,16 @@ class TicketService
             }
         }
 
-        $oldDueAt = $old['due_at'] ? strtotime($old['due_at']) : null;
-        $newDueAt = array_key_exists('due_at', $new) && $new['due_at'] ? strtotime($new['due_at']) : null;
+        $oldDueAt = $old['due_at'] ? Carbon::parse($old['due_at'])->timestamp : null;
+        $newDueAt = array_key_exists('due_at', $new) && $new['due_at'] ? Carbon::parse($new['due_at'])->timestamp : null;
         if ($oldDueAt !== $newDueAt && ($oldDueAt !== null || $newDueAt !== null)) {
-            $change_list[] = 'Due date changed to '.($new['due_at'] ? date('M jS, Y', strtotime($new['due_at'])) : 'N/A');
+            $change_list[] = 'Due date changed to '.($new['due_at'] ? Carbon::parse($new['due_at'])->format('M jS, Y') : 'N/A');
         }
 
-        $oldClosedAt = $old['closed_at'] ? strtotime($old['closed_at']) : null;
-        $newClosedAt = array_key_exists('closed_at', $new) && $new['closed_at'] ? strtotime($new['closed_at']) : null;
+        $oldClosedAt = $old['closed_at'] ? Carbon::parse($old['closed_at'])->timestamp : null;
+        $newClosedAt = array_key_exists('closed_at', $new) && $new['closed_at'] ? Carbon::parse($new['closed_at'])->timestamp : null;
         if ($oldClosedAt !== $newClosedAt && ($oldClosedAt !== null || $newClosedAt !== null)) {
-            $change_list[] = 'Ticket closed on '.($new['closed_at'] ? date('M jS, Y', strtotime($new['closed_at'])) : 'N/A');
+            $change_list[] = 'Ticket closed on '.($new['closed_at'] ? Carbon::parse($new['closed_at'])->format('M jS, Y') : 'N/A');
         }
 
         return $change_list;

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class UsersController extends Controller
@@ -60,26 +59,18 @@ class UsersController extends Controller
 
     }
 
-    public function update(Request $request)
+    public function update(UpdateUserRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,'.Auth::id(),
-            'phone' => 'nullable|string|max:50',
-            'timezone' => 'nullable|string|max:100',
-            'theme' => 'nullable|string|max:255',
-            'title' => 'nullable|string|max:255',
-            'bio' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $user = User::findOrFail(Auth::id());
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->phone = $request->phone;
-        $user->timezone = $request->timezone;
-        $user->theme = $request->theme;
-        $user->title = $request->title;
-        $user->bio = $request->bio;
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->phone = $validated['phone'] ?? null;
+        $user->timezone = $validated['timezone'] ?? null;
+        $user->theme = $validated['theme'] ?? null;
+        $user->title = $validated['title'] ?? null;
+        $user->bio = $validated['bio'] ?? null;
 
         $user->save();
 

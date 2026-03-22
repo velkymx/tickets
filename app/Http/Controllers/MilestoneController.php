@@ -9,7 +9,6 @@ use App\Models\Status;
 use App\Models\Type;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -108,17 +107,9 @@ class MilestoneController extends Controller
         return view('milestone.create', compact('users'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateMilestoneRequest $request, $id)
     {
-        $validatedData = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'scrummaster_user_id' => ['nullable', 'integer'],
-            'owner_user_id' => ['nullable', 'integer'],
-            'start_at' => ['nullable', 'date'],
-            'due_at' => ['nullable', 'date', 'after_or_equal:start_at'],
-            'end_at' => ['nullable', 'date', 'after_or_equal:start_at', 'after_or_equal:due_at'],
-        ]);
+        $validatedData = $request->validated();
 
         $milestone = Milestone::findOrFail($id);
 

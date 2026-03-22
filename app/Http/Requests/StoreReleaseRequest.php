@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreReleaseRequest extends FormRequest
@@ -26,13 +27,13 @@ class StoreReleaseRequest extends FormRequest
         $validated = parent::validated($key, $default);
 
         if (! empty($validated['started_at'])) {
-            $validated['started_at'] = date('Y-m-d', strtotime($validated['started_at']));
+            $validated['started_at'] = Carbon::parse($validated['started_at'])->format('Y-m-d');
         } else {
             $validated['started_at'] = null;
         }
 
         if (! empty($validated['completed_at'])) {
-            $validated['completed_at'] = date('Y-m-d', strtotime($validated['completed_at']));
+            $validated['completed_at'] = Carbon::parse($validated['completed_at'])->format('Y-m-d');
         } else {
             $validated['completed_at'] = null;
         }

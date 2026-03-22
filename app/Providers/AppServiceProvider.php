@@ -38,5 +38,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', function ($request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        RateLimiter::for('uploads', function ($request) {
+            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }
