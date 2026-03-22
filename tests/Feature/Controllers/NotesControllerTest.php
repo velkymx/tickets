@@ -181,6 +181,88 @@ class NotesControllerTest extends TestCase
         $this->assertStringContainsString('@sarah', $note->fresh()->body);
     }
 
+    // --- Reply Tests ---
+
+    #[Test]
+    public function it_requires_authentication_to_reply(): void
+    {
+        $response = $this->postJson('/notes/reply', [
+            'ticket_id' => 1,
+            'parent_id' => 1,
+            'body' => 'test reply',
+        ]);
+
+        $response->assertStatus(401);
+    }
+
+    #[Test]
+    public function it_creates_a_reply_to_a_top_level_note(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body' => 'This is a reply',
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonPath('note.body', fn ($body) => str_contains($body, 'This is a reply'));
+        $this->assertDatabaseHas('notes', [
+            'parent_id' => $parent->id,
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_rejects_reply_to_a_reply(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $parent = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+        $reply = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => $parent->id,
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $reply->id,
+            'body' => 'Nested reply attempt',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['parent_id']);
+    }
+
+    #[Test]
+    public function it_rejects_reply_when_parent_belongs_to_different_ticket(): void
+    {
+        $user = User::factory()->create();
+        $ticket1 = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $ticket2 = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $parent = Note::factory()->create(['ticket_id' => $ticket1->id, 'user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->postJson('/notes/reply', [
+            'ticket_id' => $ticket2->id,
+            'parent_id' => $parent->id,
+            'body' => 'Cross-ticket reply',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['parent_id']);
+    }
+
+    // --- Reaction Tests ---
+
     #[Test]
     public function it_requires_authentication_to_toggle_a_reaction(): void
     {

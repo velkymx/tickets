@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Note;
 use App\Models\NoteReaction;
+use App\Services\MarkdownService;
+use App\Services\MentionService;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -75,6 +78,44 @@ class NotesController extends Controller
         $note->save();
 
         return redirect('tickets/'.$note->ticket_id);
+    }
+
+    public function reply(Request $request, MarkdownService $markdown, MentionService $mentions)
+    {
+        $validated = $request->validate([
+            'ticket_id' => 'required|exists:tickets,id',
+            'parent_id' => 'required|exists:notes,id',
+            'body' => 'required|string|min:1',
+        ]);
+
+        $parent = Note::findOrFail($validated['parent_id']);
+
+        if ((int) $parent->ticket_id !== (int) $validated['ticket_id']) {
+            return response()->json(['errors' => ['parent_id' => ['Parent note does not belong to this ticket.']]], 422);
+        }
+
+        if ($parent->parent_id !== null) {
+            return response()->json(['errors' => ['parent_id' => ['Cannot reply to a reply. Only top-level notes accept replies.']]], 422);
+        }
+
+        $html = $markdown->parse($validated['body']);
+
+        $note = Note::create([
+            'ticket_id' => $validated['ticket_id'],
+            'parent_id' => $parent->id,
+            'user_id' => Auth::id(),
+            'body' => $html,
+            'body_markdown' => $validated['body'],
+            'notetype' => 'message',
+            'hours' => 0,
+            'hide' => false,
+        ]);
+
+        $mentions->createMentions($note, $mentions->parseMentions($validated['body']));
+
+        $note->load('user');
+
+        return response()->json(['note' => $note], 201);
     }
 
     public function toggleReaction($id)
