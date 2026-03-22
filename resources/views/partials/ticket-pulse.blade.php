@@ -7,123 +7,92 @@
         aria-expanded="false"
         aria-controls="ticket-pulse-panel"
     >
-        <span class="fw-semibold">Pulse Summary</span>
-        <span class="badge text-bg-dark" x-text="pulse.status"></span>
+        <span class="fw-semibold">Ticket Pulse</span>
+        <span class="badge text-bg-dark" x-text="pulse.execution_state"></span>
     </button>
 </div>
 
 <aside
     id="ticket-pulse-panel"
-    class="collapse d-lg-block card shadow-sm border-0 mb-4 ticket-pulse-panel"
+    class="collapse d-lg-block card shadow-sm mb-4"
     style="position: sticky; top: 1rem;"
 >
-    <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
-            <div>
-                <div class="text-uppercase text-muted small fw-semibold">Ticket Pulse</div>
-                <div
-                    class="fs-4 fw-bold"
-                    :class="{
-                        'text-danger fw-bold': pulse.execution_state === 'BLOCKED',
-                        'text-success': pulse.execution_state === 'ON TRACK',
-                        'text-warning': pulse.execution_state === 'AT RISK',
-                        'text-muted': pulse.execution_state === 'IDLE'
-                    }"
-                    x-text="pulse.execution_state"
-                ></div>
-            </div>
-
-            <div class="d-flex align-items-center">
-                <template x-for="viewer in pulse.viewers ?? []" :key="viewer.user_id">
-                    <img
-                        :src="viewer.avatar_url"
-                        :title="viewer.name"
-                        class="rounded-circle border border-white ms-n2"
-                        style="width: 28px; height: 28px; object-fit: cover;"
-                        alt="Viewer"
-                    >
-                </template>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <div class="text-uppercase text-muted small fw-semibold mb-1">Status</div>
-            <div class="d-flex align-items-center gap-2">
-                <span
-                    class="fw-semibold"
-                    :class="pulse.status === 'BLOCKED' ? 'text-danger fw-bold' : ''"
-                    x-text="pulse.status"
-                ></span>
-                <template x-if="pulse.status === 'BLOCKED'">
-                    <span class="text-muted">(blocked)</span>
-                </template>
-            </div>
-        </div>
+    <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center">
+        Ticket Pulse
+        <span
+            class="badge"
+            :class="{
+                'text-bg-danger': pulse.execution_state === 'BLOCKED',
+                'text-bg-success': pulse.execution_state === 'ON TRACK',
+                'text-bg-warning': pulse.execution_state === 'AT RISK',
+                'text-bg-secondary': pulse.execution_state === 'IDLE'
+            }"
+            x-text="pulse.execution_state"
+        ></span>
+    </div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+            <strong>Status:</strong>
+            <span
+                :class="pulse.status === 'BLOCKED' ? 'text-danger fw-bold' : ''"
+                x-text="pulse.status"
+            ></span>
+        </li>
 
         <template x-if="pulse.latest_blocker">
-            <div class="mb-3">
-                <div class="text-uppercase text-muted small fw-semibold mb-1">Reason</div>
-                <div class="d-flex justify-content-between gap-2 align-items-start">
-                    <div>
-                        <div class="text-danger fw-semibold" x-text="pulse.latest_blocker.body"></div>
-                        <div class="small text-muted">
-                            <span x-text="pulse.latest_blocker.author"></span>
-                        </div>
-                    </div>
+            <li class="list-group-item">
+                <strong>Blocker:</strong>
+                <span class="text-danger" x-text="pulse.latest_blocker.body"></span>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <span class="small text-muted" x-text="pulse.latest_blocker.author"></span>
                     <button type="button" class="btn btn-outline-danger btn-sm">Resolve</button>
                 </div>
-            </div>
+            </li>
         </template>
 
-        <div class="mb-3">
-            <div class="text-uppercase text-muted small fw-semibold mb-1">Owner</div>
-            <div
+        <li class="list-group-item">
+            <strong>Owner:</strong>
+            <span
                 :class="{
                     'text-primary fw-bold': pulse.owner_label === 'You own this',
                     'text-warning fw-bold': pulse.owner_label === 'Unassigned'
                 }"
                 x-text="pulse.owner_label"
-            ></div>
-        </div>
+            ></span>
+        </li>
 
-        <div class="mb-3">
-            <div class="text-uppercase text-muted small fw-semibold mb-1">Next Action</div>
-            <div x-text="pulse.next_action.body"></div>
+        <li class="list-group-item">
+            <strong>Next Action:</strong>
+            <span x-text="pulse.next_action.body"></span>
             <template x-if="pulse.next_action.assignee">
-                <div class="small text-muted" x-text="pulse.next_action.assignee"></div>
+                <span class="small text-muted ms-1" x-text="pulse.next_action.assignee"></span>
             </template>
-        </div>
+        </li>
 
-        <div class="mb-3 p-3 rounded bg-success-subtle">
-            <div class="text-uppercase text-muted small fw-semibold mb-1">Latest Decision</div>
+        <li class="list-group-item">
+            <strong>Latest Decision:</strong>
             <template x-if="pulse.latest_decision">
-                <div>
-                    <div class="fw-semibold" x-text="pulse.latest_decision.body"></div>
-                    <div class="small text-muted">
-                        <span x-text="pulse.latest_decision.author"></span>
-                    </div>
+                <span>
+                    <span x-text="pulse.latest_decision.body"></span>
+                    <span class="small text-muted ms-1" x-text="pulse.latest_decision.author"></span>
                     <template x-if="pulse.latest_decision.supersedes">
                         <div class="small text-muted">
                             Supersedes: <span x-text="pulse.latest_decision.supersedes"></span>
                         </div>
                     </template>
-                    <div class="mt-2 d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm">View</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm">Update</button>
-                    </div>
-                </div>
+                </span>
             </template>
             <template x-if="!pulse.latest_decision">
-                <div class="text-muted fst-italic">No decision recorded</div>
+                <span class="text-muted fst-italic">No decision recorded</span>
             </template>
-        </div>
+        </li>
 
-        <div class="mb-3">
-            <div class="text-uppercase text-muted small fw-semibold mb-2">Open Threads</div>
+        <li class="list-group-item">
+            <strong>Open Threads:</strong>
             <template x-if="pulse.open_threads.length">
-                <div class="d-flex flex-column gap-2">
+                <div class="mt-1 d-flex flex-column gap-1">
                     <template x-for="thread in pulse.open_threads" :key="thread.id">
-                        <div class="d-flex justify-content-between align-items-center gap-2">
+                        <div class="d-flex justify-content-between align-items-center">
                             <a
                                 class="text-decoration-none"
                                 :href="`#note_${thread.id}`"
@@ -135,21 +104,38 @@
                 </div>
             </template>
             <template x-if="!pulse.open_threads.length">
-                <div class="text-muted fst-italic">No open threads</div>
+                <span class="text-muted fst-italic">None</span>
             </template>
-        </div>
+        </li>
 
-        <div class="pt-3 border-top">
-            <div class="text-uppercase text-muted small fw-semibold mb-1">Last Update</div>
+        <li class="list-group-item">
+            <strong>Last Update:</strong>
             <template x-if="pulse.staleness_message">
-                <div class="text-warning">
+                <span class="text-warning">
                     <i class="fas fa-clock me-1" aria-hidden="true"></i>
                     <span x-text="pulse.staleness_message"></span>
-                </div>
+                </span>
             </template>
             <template x-if="!pulse.staleness_message">
-                <div class="text-muted" x-text="pulse.last_activity_at ? new Date(pulse.last_activity_at).toLocaleString() : 'No activity yet'"></div>
+                <span class="text-muted" x-text="pulse.last_activity_at ? new Date(pulse.last_activity_at).toLocaleString() : 'No activity yet'"></span>
             </template>
-        </div>
-    </div>
+        </li>
+
+        <template x-if="(pulse.viewers ?? []).length">
+            <li class="list-group-item">
+                <strong>Viewers:</strong>
+                <span class="d-inline-flex align-items-center ms-1">
+                    <template x-for="viewer in pulse.viewers" :key="viewer.user_id">
+                        <img
+                            :src="viewer.avatar_url"
+                            :title="viewer.name"
+                            class="rounded-circle border border-white ms-n1"
+                            style="width: 24px; height: 24px; object-fit: cover;"
+                            alt="Viewer"
+                        >
+                    </template>
+                </span>
+            </li>
+        </template>
+    </ul>
 </aside>

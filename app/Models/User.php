@@ -53,7 +53,7 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->admin;
+        return (bool) $this->admin;
     }
 
     public function tickets(): HasMany
