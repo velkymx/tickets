@@ -31,7 +31,7 @@
                         {{ $project->tickets()->whereIn('status_id',['1','2','3','6'])->count() }}
                     </span>
                     /
-                    <span class="badge text-bg-light border ms-2 text-dark">
+                    <span class="badge text-bg-light border ms-2">
                         {{ $project->tickets()->count() }}
                     </span>
                 </td>

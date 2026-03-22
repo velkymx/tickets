@@ -19,7 +19,7 @@
 </div>
 
 
-<h2 class="text-center mb-5 fw-bold text-dark">Powerful Features, Built for Speed</h2>
+<h2 class="text-center mb-5 fw-bold">Powerful Features, Built for Speed</h2>
 
 <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
     <div class="col">
