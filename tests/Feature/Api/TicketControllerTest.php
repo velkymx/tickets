@@ -1013,4 +1013,89 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    #[Test]
+    public function note_with_action_and_mention_creates_action(): void
+    {
+        $assignee = User::factory()->create(['name' => 'Sarah']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/action @Sarah verify fix on staging',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals('action', $response->json('note.notetype'));
+
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+    }
+
+    #[Test]
+    public function note_with_status_while_blocked_returns_422(): void
+    {
+        $status = Status::factory()->create(['name' => 'Testing']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        // Create active blocker
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/status testing',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('blocker', strtolower($response->json('message')));
+    }
+
+    #[Test]
+    public function backward_compatibility_existing_consumers_get_expected_fields(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Test note',
+        ]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+
+        // Existing fields still present
+        $this->assertArrayHasKey('id', $data);
+        $this->assertArrayHasKey('subject', $data);
+        $this->assertArrayHasKey('description', $data);
+        $this->assertArrayHasKey('status', $data);
+        $this->assertArrayHasKey('type', $data);
+        $this->assertArrayHasKey('importance', $data);
+        $this->assertArrayHasKey('milestone', $data);
+        $this->assertArrayHasKey('project', $data);
+        $this->assertArrayHasKey('assignee', $data);
+        $this->assertArrayHasKey('notes', $data);
+
+        // New additive fields
+        $this->assertArrayHasKey('pulse', $data);
+
+        // Notes still have body and created_at
+        $note = $data['notes'][0];
+        $this->assertArrayHasKey('body', $note);
+        $this->assertArrayHasKey('created_at', $note);
+        $this->assertArrayHasKey('notetype', $note);
+        $this->assertArrayHasKey('reactions', $note);
+    }
 }
