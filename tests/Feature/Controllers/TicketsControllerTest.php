@@ -939,6 +939,47 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_comment_card_has_edit_button_for_own_non_decision_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'My editable note',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('data-action="edit"', false);
+    }
+
+    #[Test]
+    public function show_comment_card_hides_edit_for_decision_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'decision',
+            'body' => 'Immutable decision',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $content = $response->getContent();
+        // Find the note card for this decision and verify no edit action
+        $response->assertStatus(200);
+        // Decision notes should show "Update Decision" not "Edit"
+        $response->assertDontSee('data-action="edit"', false);
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
