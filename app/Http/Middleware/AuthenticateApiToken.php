@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticateApiToken
@@ -29,6 +30,7 @@ class AuthenticateApiToken
         }
 
         $request->attributes->set('api_user', $user);
+        Auth::setUser($user);
 
         return $next($request);
     }
