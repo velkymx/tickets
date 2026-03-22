@@ -15,7 +15,7 @@ class BatchUpdateTicketRequest extends FormRequest
     {
         return [
             'tickets' => 'required|array|min:1',
-            'tickets.*' => 'required|integer|exists:tickets,id',
+            'tickets.*' => 'required|in:on,1,true',
             'type_id' => 'nullable|integer|exists:types,id',
             'status_id' => 'nullable|integer|exists:statuses,id',
             'importance_id' => 'nullable|integer|exists:importances,id',

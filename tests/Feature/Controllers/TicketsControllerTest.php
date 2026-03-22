@@ -861,8 +861,8 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post('/tickets/batch', [
             'tickets' => [
-                $ticket1->id => 1,
-                $ticket2->id => 1,
+                $ticket1->id => 'on',
+                $ticket2->id => 'on',
             ],
             'status_id' => $newStatus->id,
         ]);
