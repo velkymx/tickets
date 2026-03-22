@@ -13,8 +13,29 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'timezone', 'theme', 'title', 'bio',
+        'name', 'email', 'password', 'avatar', 'phone', 'timezone', 'theme', 'title', 'bio',
     ];
+
+    public function avatarUrl(int $size = 46): string
+    {
+        if ($this->avatar) {
+            return \Illuminate\Support\Facades\Storage::url($this->avatar);
+        }
+
+        $hash = md5(strtolower(trim($this->email)));
+
+        return "https://www.gravatar.com/avatar/{$hash}?s={$size}&d=mp";
+    }
+
+    public function mentions(): HasMany
+    {
+        return $this->hasMany(Mention::class);
+    }
+
+    public function reactions(): HasMany
+    {
+        return $this->hasMany(NoteReaction::class);
+    }
 
     protected $hidden = [
         'password', 'remember_token', 'api_token',
