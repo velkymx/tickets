@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
     // Base/Index Route
     Route::get('/tickets', [TicketsController::class, 'index'])->name('tickets.list');
     Route::get('/tickets/fetch', [TicketsController::class, 'fetch'])->name('tickets.fetch');
+    Route::get('/tickets/board', [TicketsController::class, 'board'])->name('tickets.board');
 
     // Dynamic Show Route (Must be last under the /tickets prefix)
     Route::get('/tickets/{id}', [TicketsController::class, 'show'])->name('tickets.show');
