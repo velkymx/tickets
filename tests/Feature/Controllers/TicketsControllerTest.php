@@ -1122,7 +1122,8 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post('/notes', []);
 
-        $response->assertRedirect('/tickets');
+        $response->assertRedirect('/');
+        $response->assertSessionHasErrors(['ticket_id']);
     }
 
     #[Test]
@@ -1135,7 +1136,7 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
             'status_id' => $newStatus->id,
-            'body' => 'Test note',
+            'note' => 'Test note',
         ]);
 
         $ticket->refresh();
@@ -1152,7 +1153,7 @@ class TicketsControllerTest extends TestCase
         $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
             'status_id' => $closedStatus->id,
-            'body' => 'Closing ticket',
+            'note' => 'Closing ticket',
         ]);
 
         $ticket->refresh();
@@ -1174,7 +1175,7 @@ class TicketsControllerTest extends TestCase
         $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
             'status_id' => $openStatus->id,
-            'body' => 'Reopening ticket',
+            'note' => 'Reopening ticket',
         ]);
 
         $ticket->refresh();
@@ -1190,15 +1191,18 @@ class TicketsControllerTest extends TestCase
         $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
             'status_id' => $ticket->status_id,
-            'body' => 'This is a test note',
+            'note' => 'This is a test note',
         ]);
 
-        $this->assertDatabaseHas('notes', [
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'body' => 'This is a test note',
-            'notetype' => 'message',
-        ]);
+        $note = Note::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('user_id', $user->id)
+            ->where('notetype', 'message')
+            ->first();
+
+        $this->assertNotNull($note);
+        $this->assertSame('This is a test note', $note->body_markdown);
+        $this->assertStringContainsString('<p>This is a test note</p>', $note->body);
     }
 
     #[Test]
@@ -1211,7 +1215,7 @@ class TicketsControllerTest extends TestCase
         $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
             'status_id' => $newStatus->id,
-            'body' => 'Status changed',
+            'note' => 'Status changed',
         ]);
 
         $this->assertDatabaseHas('notes', [
@@ -1234,7 +1238,7 @@ class TicketsControllerTest extends TestCase
         $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
             'status_id' => $ticket->status_id,
-            'body' => 'Adding hours',
+            'note' => 'Adding hours',
             'hours' => 3,
         ]);
 
@@ -1251,7 +1255,7 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->post('/notes', [
             'ticket_id' => $ticket->id,
             'status_id' => $ticket->status_id,
-            'body' => 'Test note',
+            'note' => 'Test note',
         ]);
 
         $response->assertRedirect("/tickets/{$ticket->id}");

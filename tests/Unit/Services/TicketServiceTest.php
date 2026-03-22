@@ -12,10 +12,12 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use App\Notifications\WatcherNotification;
 use App\Services\TicketService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -243,12 +245,11 @@ class TicketServiceTest extends TestCase
         Auth::login($user);
         $this->service->notate($ticket->id, 'Test message', []);
 
-        $this->assertDatabaseHas('notes', [
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'body' => 'Test message',
-            'notetype' => 'message',
-        ]);
+        $note = Note::query()->where('ticket_id', $ticket->id)->where('notetype', 'message')->first();
+
+        $this->assertNotNull($note);
+        $this->assertSame('Test message', $note->body_markdown);
+        $this->assertStringContainsString('<p>Test message</p>', $note->body);
     }
 
     #[Test]
@@ -278,7 +279,7 @@ class TicketServiceTest extends TestCase
 
         $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->first();
         $this->assertStringNotContainsString('<script>', $note->body);
-        $this->assertStringContainsString('&lt;script&gt;', $note->body);
+        $this->assertStringContainsString('&lt;script>', $note->body);
     }
 
     #[Test]
@@ -316,6 +317,73 @@ class TicketServiceTest extends TestCase
         $this->service->notate($ticket->id, '', [], 0);
 
         $this->assertEquals(0, Note::where('ticket_id', $ticket->id)->count());
+    }
+
+    #[Test]
+    public function it_runs_slash_commands_before_creating_the_note(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        Auth::login($user);
+        $this->service->notate($ticket->id, '/decision Use Redis-backed advisory locks for write serialization.', []);
+
+        $note = Note::query()->where('ticket_id', $ticket->id)->first();
+
+        $this->assertNotNull($note);
+        $this->assertSame('decision', $note->notetype);
+        $this->assertSame('Use Redis-backed advisory locks for write serialization.', $note->body_markdown);
+        $this->assertStringContainsString('Use Redis-backed advisory locks for write serialization.', $note->body);
+    }
+
+    #[Test]
+    public function it_creates_mentions_from_the_note_markdown(): void
+    {
+        $author = User::factory()->create();
+        $mentioned = User::factory()->create(['name' => 'alex']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+        ]);
+
+        Auth::login($author);
+        $this->service->notate($ticket->id, 'Please pair with @alex on the rollout.', []);
+
+        $note = Note::query()->where('ticket_id', $ticket->id)->where('notetype', 'message')->first();
+
+        $this->assertNotNull($note);
+        $this->assertDatabaseHas('mentions', [
+            'note_id' => $note->id,
+            'user_id' => $mentioned->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_notifies_watchers_when_note_activity_is_created(): void
+    {
+        Notification::fake();
+
+        $author = User::factory()->create();
+        $watcher = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+            'subject' => 'Ticket With Watcher',
+        ]);
+
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $watcher->id,
+        ]);
+
+        Auth::login($author);
+        $this->service->notate($ticket->id, 'Watcher should hear about this update.', []);
+
+        Notification::assertSentTo($watcher, WatcherNotification::class);
+        Notification::assertNotSentTo($author, WatcherNotification::class);
     }
 
     #[Test]
