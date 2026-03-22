@@ -21,12 +21,12 @@
             {{-- Column Container (Replaced <table>/<td> and old panel styling) --}}
             <div class="me-4 flex-shrink-0" style="width: 280px;">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-light">
+                    <div class="card-header bg-body-secondary">
                         <h5 class="mb-0">{{ $status_name }}</h5>
                     </div>
                     
                     {{-- The List Container for SortableJS (must use a unique ID) --}}
-                    <div class="card-body p-2 bg-light-subtle">
+                    <div class="card-body p-2 bg-body-tertiary">
                         <ol class="list-group list-group-flush ticket-column" data-status-id="{{ $status_id }}" id="status-{{ $status_id }}">
                             
                             {{-- Iterate over tickets belonging to this status --}}

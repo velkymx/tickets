@@ -31,7 +31,7 @@
 <div class="row row-cols-2 row-cols-md-4 row-cols-lg-auto g-3 mb-5">
     {{-- Total Tickets Badge (first column) --}}
     <div class="col">
-        <div class="card text-center bg-light border shadow-sm h-100">
+        <div class="card text-center bg-body-secondary border shadow-sm h-100">
             <div class="card-body py-2">
                 <h2 class="card-title mb-0">{{ $project->tickets->count() }}</h2>
                 <small class="text-muted">Total Tickets</small>

@@ -102,7 +102,7 @@
                         @foreach ($messageNotes as $note)
                             {{-- Replaced panel panel-default with card mb-3 --}}
                             <div class="card mb-3" id="note_{{ $note->id }}">
-                                <div class="card-header bg-light">
+                                <div class="card-header bg-body-secondary">
                                     <strong><a href="/users/{{ $note->user->id }}">{{ $note->user->name }}</a></strong> | posted {{ date('M jS, Y g:ia', strtotime($note->created_at)) }}
                                     <button onclick="hideNote('{{ $note->id }}');" class="btn btn-outline-danger btn-sm float-end">Remove</button>
                                 </div>
@@ -124,7 +124,7 @@
                     @else
                         @foreach ($changelogNotes as $change)
                             <div class="card mb-3" id="note_{{ $change->id }}">
-                                <div class="card-header bg-light">
+                                <div class="card-header bg-body-secondary">
                                     <strong><a href="/users/{{ $change->user->id }}">{{ $change->user->name }}</a></strong> changed ticket {{ date('M jS, Y g:ia', strtotime($change->created_at)) }}
                                     <button onclick="hideNote('{{ $change->id }}');" class="btn btn-outline-danger btn-sm float-end">Remove</button>
                                 </div>

@@ -227,7 +227,7 @@
     <div class="col-lg-3">
         {{-- Replaced list-group structure with B5 cards for better grouping --}}
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
+            <div class="card-header bg-body-secondary">
                 Team Roles
             </div>
             <ul class="list-group list-group-flush">
@@ -241,7 +241,7 @@
         </div>
 
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
+            <div class="card-header bg-body-secondary">
                 Team Members
             </div>
             <ul class="list-group list-group-flush">
@@ -260,7 +260,7 @@
         </div>
         
         <div class="card shadow-sm">
-            <div class="card-header bg-light">
+            <div class="card-header bg-body-secondary">
                 Sprint Summary
             </div>
             <ul class="list-group list-group-flush">
