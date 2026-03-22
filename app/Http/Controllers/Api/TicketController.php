@@ -317,6 +317,51 @@ class TicketController extends Controller
         return response()->json($response);
     }
 
+    public function editNote(Request $request, $id, $noteId)
+    {
+        $request->validate([
+            'body' => 'required|string|max:65535',
+        ]);
+
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
+
+        // Author-only
+        if ((int) $note->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'Forbidden: only the author can edit this note'], 403);
+        }
+
+        // Decision immutability
+        if ($note->notetype === 'decision') {
+            return response()->json([
+                'message' => 'Decisions cannot be edited. Create a new decision that supersedes the original.',
+            ], 422);
+        }
+
+        $markdownService = app(MarkdownService::class);
+        $mentionService = app(MentionService::class);
+
+        $note->update([
+            'body' => $request->body,
+            'body_markdown' => $markdownService->parse($request->body),
+            'edited_at' => now(),
+        ]);
+
+        // Re-parse mentions
+        $note->mentions()->delete();
+        $mentionUsernames = $mentionService->parseMentions($request->body);
+        $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
+        $mentionService->createMentions($note, $mentionUserIds);
+
+        $note->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+
+        return response()->json([
+            'message' => 'Note updated successfully',
+            'note' => $this->formatNote($note, $user->id),
+        ]);
+    }
+
     public function reply(Request $request, $id, $noteId)
     {
         $request->validate([

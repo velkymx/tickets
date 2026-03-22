@@ -786,6 +786,68 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function edit_updates_note_and_sets_edited_at(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Original text',
+            'notetype' => 'message',
+        ]);
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}", [
+            'body' => 'Updated text',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals('Updated text', $response->json('note.body'));
+        $this->assertNotNull($response->json('note.edited_at'));
+        $this->assertNotNull($response->json('note.body_markdown'));
+
+        $note->refresh();
+        $this->assertEquals('Updated text', $note->body);
+        $this->assertNotNull($note->edited_at);
+    }
+
+    #[Test]
+    public function edit_blocks_decision_editing(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'We decided X',
+            'notetype' => 'decision',
+        ]);
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}", [
+            'body' => 'Changed decision',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('decision', strtolower($response->json('message')));
+    }
+
+    #[Test]
+    public function edit_enforces_author_only(): void
+    {
+        $otherUser = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $otherUser->id,
+            'body' => 'Not my note',
+        ]);
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}", [
+            'body' => 'Trying to edit',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(403);
+    }
+
+    #[Test]
     public function react_validates_emoji(): void
     {
         $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
