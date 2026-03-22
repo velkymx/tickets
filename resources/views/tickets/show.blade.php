@@ -468,6 +468,54 @@
         entries[currentCommentIndex].classList.add('ring');
         setTimeout(() => entries[currentCommentIndex].classList.remove('ring'), 1000);
     }
+
+    document.addEventListener('submit', function(e) {
+        const form = e.target.closest('.reaction-toggle-form');
+        if (!form) {
+            return;
+        }
+
+        e.preventDefault();
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: new FormData(form),
+        })
+            .then(async response => {
+                if (!response.ok) {
+                    throw new Error('Failed to toggle reaction');
+                }
+
+                return response.json();
+            })
+            .then(data => {
+                const currentBar = form.closest('.reaction-bar');
+
+                if (currentBar && data.html) {
+                    currentBar.outerHTML = data.html;
+                }
+            })
+            .catch(error => {
+                console.error('Error toggling reaction:', error);
+            })
+            .finally(() => {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+            });
+    });
 </script>
 <script>
     // --- Markdown Composer: Cmd+Enter to submit ---

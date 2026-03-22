@@ -554,6 +554,8 @@ class NotesControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonPath('reactions.thumbsup.count', 2);
         $response->assertJsonPath('reactions.thumbsup.reacted', true);
+        $response->assertJsonPath('note_id', $note->id);
+        $response->assertJsonPath('html', fn (string $html) => str_contains($html, 'reaction-toggle-form') && str_contains($html, '👍 2'));
         $this->assertDatabaseHas('note_reactions', [
             'note_id' => $note->id,
             'user_id' => $user->id,
@@ -587,6 +589,28 @@ class NotesControllerTest extends TestCase
             'note_id' => $note->id,
             'user_id' => $user->id,
             'emoji' => 'eyes',
+        ]);
+    }
+
+    #[Test]
+    public function it_redirects_back_to_the_ticket_when_reacting_without_json(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}#note_{$note->id}");
+        $this->assertDatabaseHas('note_reactions', [
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+            'emoji' => 'thumbsup',
         ]);
     }
 

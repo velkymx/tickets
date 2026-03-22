@@ -252,8 +252,14 @@ class NotesController extends Controller
 
         $note->load('reactions');
 
-        return response()->json([
-            'reactions' => $note->groupedReactions(),
-        ]);
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json([
+                'note_id' => $note->id,
+                'reactions' => $note->groupedReactions(),
+                'html' => view('partials.reaction-bar', ['note' => $note])->render(),
+            ]);
+        }
+
+        return redirect("/tickets/{$note->ticket_id}#note_{$note->id}");
     }
 }
