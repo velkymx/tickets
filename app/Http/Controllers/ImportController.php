@@ -6,7 +6,6 @@ use App\Models\Milestone;
 use App\Services\Importer;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ImportController extends Controller
 {
@@ -24,7 +23,6 @@ class ImportController extends Controller
             'csv' => 'required|file|mimes:csv,txt|max:10240',
         ]);
 
-        DB::beginTransaction();
         try {
             (new Importer)->call(
                 (int) $request->milestone_id,
@@ -32,14 +30,12 @@ class ImportController extends Controller
                 (bool) $request->hasHeader,
             );
         } catch (Exception $e) {
-            DB::rollBack();
             $errors = [
                 $e->getMessage(),
             ];
 
             return redirect('/tickets/import')->withErrors($errors)->withInput();
         }
-        DB::commit();
 
         return redirect('/milestone/show/'.$request->milestone_id)
             ->with('info_message', 'Tickets Successfully Imported');
