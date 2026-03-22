@@ -1171,6 +1171,7 @@ class TicketsControllerTest extends TestCase
         ]);
 
         $response->assertStatus(302);
+        $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('tickets', [
             'subject' => 'New Test Ticket',

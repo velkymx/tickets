@@ -307,7 +307,7 @@ class TicketsController extends Controller
             $data['due_at'] = Carbon::parse($data['due_at'])->format('Y-m-d');
         }
 
-        $insert = Ticket::create($data);
+        $insert = new Ticket($data);
         $insert->user_id = Auth::id();
         $insert->user_id2 = Auth::id();
         $insert->save();
