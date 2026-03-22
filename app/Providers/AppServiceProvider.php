@@ -3,9 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Milestone;
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\Release;
 use App\Models\Ticket;
+use App\Observers\NoteObserver;
+use App\Observers\TicketObserver;
 use App\Policies\MilestonePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ReleasePolicy;
@@ -30,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Note::observe(NoteObserver::class);
+        Ticket::observe(TicketObserver::class);
+
         Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(Milestone::class, MilestonePolicy::class);
         Gate::policy(Release::class, ReleasePolicy::class);

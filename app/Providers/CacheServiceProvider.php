@@ -4,14 +4,11 @@ namespace App\Providers;
 
 use App\Models\Importance;
 use App\Models\Milestone;
-use App\Models\Note;
 use App\Models\Project;
 use App\Models\Release;
 use App\Models\Status;
-use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
-use App\Services\TicketPulseService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,7 +28,6 @@ class CacheServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->clearLookupCache();
-        $this->registerTicketPulseInvalidation();
     }
 
     /**
@@ -98,24 +94,5 @@ class CacheServiceProvider extends ServiceProvider
         Milestone::deleted(function () {
             Cache::forget('ticket_lookups');
         });
-    }
-
-    protected function registerTicketPulseInvalidation(): void
-    {
-        $invalidateTicket = function (Ticket $ticket): void {
-            app(TicketPulseService::class)->invalidatePulse($ticket->id);
-        };
-
-        Ticket::created($invalidateTicket);
-        Ticket::updated($invalidateTicket);
-        Ticket::deleted($invalidateTicket);
-
-        $invalidateNote = function (Note $note): void {
-            app(TicketPulseService::class)->invalidatePulse($note->ticket_id);
-        };
-
-        Note::created($invalidateNote);
-        Note::updated($invalidateNote);
-        Note::deleted($invalidateNote);
     }
 }
