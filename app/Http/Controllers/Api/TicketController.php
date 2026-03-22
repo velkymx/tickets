@@ -54,8 +54,11 @@ class TicketController extends Controller
 
         $tickets = $query->orderBy('created_at', 'DESC')->paginate($perPage);
 
-        $data = $tickets->map(function ($ticket) {
-            return [
+        $includePulse = $request->get('include') === 'pulse';
+        $pulseService = $includePulse ? app(TicketPulseService::class) : null;
+
+        $data = $tickets->map(function ($ticket) use ($includePulse, $pulseService) {
+            $item = [
                 'id' => $ticket->id,
                 'subject' => $ticket->subject,
                 'estimate' => $ticket->estimate,
@@ -66,6 +69,19 @@ class TicketController extends Controller
                 'created_at' => $ticket->created_at->toDateString(),
                 'link' => "/api/v1/tickets/{$ticket->id}",
             ];
+
+            if ($includePulse) {
+                $pulse = $pulseService->getPulse($ticket);
+                $item['pulse_summary'] = [
+                    'execution_state' => $pulse->execution_state,
+                    'is_blocked' => $pulse->is_blocked,
+                    'has_open_actions' => ! empty($pulse->next_action['id']),
+                    'has_decisions' => $pulse->latest_decision !== null,
+                    'unresolved_thread_count' => count($pulse->open_threads),
+                ];
+            }
+
+            return $item;
         });
 
         return response()->json([

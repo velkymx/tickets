@@ -889,6 +889,43 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_includes_pulse_summary_when_requested(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'body' => 'Blocked by vendor',
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = $this->getJson('/api/v1/tickets?include=pulse', $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertNotEmpty($data);
+        $this->assertArrayHasKey('pulse_summary', $data[0]);
+        $this->assertArrayHasKey('execution_state', $data[0]['pulse_summary']);
+        $this->assertArrayHasKey('is_blocked', $data[0]['pulse_summary']);
+        $this->assertTrue($data[0]['pulse_summary']['is_blocked']);
+    }
+
+    #[Test]
+    public function index_excludes_pulse_summary_by_default(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        $response = $this->getJson('/api/v1/tickets', $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertNotEmpty($data);
+        $this->assertArrayNotHasKey('pulse_summary', $data[0]);
+    }
+
+    #[Test]
     public function pulse_endpoint_returns_cached_data(): void
     {
         $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
