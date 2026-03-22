@@ -29,3 +29,18 @@ body {
 #note-editor-container.editor-sm {
     height: 200px;
 }
+
+/* Kanban board columns */
+.kanban-column {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+}
+
+@media (max-width: 576px) {
+    .kanban-column {
+        width: 260px;
+        min-width: 260px;
+        max-width: 260px;
+    }
+}

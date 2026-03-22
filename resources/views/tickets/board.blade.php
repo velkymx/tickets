@@ -19,7 +19,7 @@
         @foreach ($lookups['statuses'] as $status_id => $status_name)
             
             {{-- Column Container (Replaced <table>/<td> and old panel styling) --}}
-            <div class="me-4 flex-shrink-0" style="width: 280px;">
+            <div class="me-4 flex-shrink-0 kanban-column">
                 <div class="card shadow-sm h-100">
                     <div class="card-header bg-body-secondary">
                         <h5 class="mb-0">{{ $status_name }}</h5>
