@@ -10,6 +10,7 @@ use App\Services\SlashCommandService;
 use App\Services\TicketPulseService;
 use App\Models\Milestone;
 use App\Models\Note;
+use App\Models\NoteReaction;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
@@ -314,6 +315,43 @@ class TicketController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    public function react(Request $request, $id, $noteId)
+    {
+        $request->validate([
+            'emoji' => 'required|string|in:'.implode(',', NoteReaction::ALLOWED_EMOJIS),
+        ]);
+
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
+
+        $existing = NoteReaction::where('note_id', $note->id)
+            ->where('user_id', $user->id)
+            ->where('emoji', $request->emoji)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+        } else {
+            NoteReaction::create([
+                'note_id' => $note->id,
+                'user_id' => $user->id,
+                'emoji' => $request->emoji,
+            ]);
+        }
+
+        $reactions = NoteReaction::where('note_id', $note->id)
+            ->get()
+            ->groupBy('emoji')
+            ->map(fn ($group) => [
+                'count' => $group->count(),
+                'reacted' => $group->contains('user_id', $user->id),
+            ])
+            ->toArray();
+
+        return response()->json(['reactions' => $reactions]);
     }
 
     protected function extractMentionsFromText(string $text): array

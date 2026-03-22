@@ -713,6 +713,49 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function react_toggles_reaction_and_returns_grouped_counts(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        // Add reaction
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals(1, $response->json('reactions.thumbsup.count'));
+        $this->assertTrue($response->json('reactions.thumbsup.reacted'));
+
+        // Toggle off
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertArrayNotHasKey('thumbsup', $response->json('reactions'));
+    }
+
+    #[Test]
+    public function react_validates_emoji(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/react", [
+            'emoji' => 'invalid_emoji',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
+    }
+
+    #[Test]
     public function note_with_action_without_mention_returns_422(): void
     {
         $ticket = Ticket::factory()->create([
