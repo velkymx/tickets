@@ -14,7 +14,11 @@
     {{-- Milestone Name Field --}}
     <div class="mb-3">
         <label for="name" class="form-label">Milestone Name</label>
-        <input type="text" name="name" id="name" value="{{ old('name', $milestone->name) }}" class="form-control" required>
+        <input type="text" name="name" id="name" value="{{ old('name', $milestone->name) }}" 
+               class="form-control @error('name') is-invalid @enderror" required>
+        @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Milestone Description Field (Quill.js Target) --}}
@@ -26,38 +30,52 @@
         </div>
         {{-- Hidden input to hold the HTML content submitted by Quill. ID: 'description-input' --}}
         <input type="hidden" name="description" id="description-input" value="{{ old('description', $milestone->description) }}">
+        @error('description')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Active Status Field --}}
     <div class="mb-3">
         <label for="active" class="form-label">Active</label>
-        <select name="active" id="active" class="form-select" required>
+        <select name="active" id="active" class="form-select @error('active') is-invalid @enderror" required>
             <option value="0" @if (old('active', $milestone->active) == '0') selected @endif>Inactive</option>
             <option value="1" @if (old('active', $milestone->active) == '1') selected @endif>Active</option>
         </select>
+        @error('active')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
             <div class="row g-3 mb-4">
             {{-- Product Owner --}}
             <div class="col-md-6">
                 <label for="owner_user_id" class="form-label">Product Owner</label>
-                <select name="owner_user_id" id="owner_user_id" class="form-select" required>
+                <select name="owner_user_id" id="owner_user_id" 
+                        class="form-select @error('owner_user_id') is-invalid @enderror" required>
                     <option value="" disabled @selected(!old('owner_user_id'))>Select Owner</option>
                     @foreach ($users as $id => $name)
                         <option value="{{ $id }}" @selected(old('owner_user_id', $milestone->owner_user_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('owner_user_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             
             {{-- Scrum Master / Sprint Manager --}}
             <div class="col-md-6">
                 <label for="scrummaster_user_id" class="form-label">Scrum Master / Sprint Manager</label>
-                <select name="scrummaster_user_id" id="scrummaster_user_id" class="form-select" required>
+                <select name="scrummaster_user_id" id="scrummaster_user_id" 
+                        class="form-select @error('scrummaster_user_id') is-invalid @enderror" required>
                     <option value="" disabled @selected(!old('scrummaster_user_id'))>Select Scrum Master</option>
                     @foreach ($users as $id => $name)
                         <option value="{{ $id }}" @selected(old('scrummaster_user_id', $milestone->scrummaster_user_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('scrummaster_user_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div>
 

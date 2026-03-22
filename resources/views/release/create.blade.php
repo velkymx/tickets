@@ -10,19 +10,33 @@ Create Release
 
     <div class="mb-3">
         <label for="title" class="form-label">Release Title</label>
-        <input type="text" name="title" id="title" value="{{ old('title') }}" class="form-control" required>
+        <input type="text" name="title" id="title" value="{{ old('title') }}" 
+               class="form-control @error('title') is-invalid @enderror" required>
+        @error('title')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
     <div class="row">
         <div class="col-md-6">
             <div class="mb-3">
                 <label for="started_at" class="form-label">Start Date</label>
-                <input type="date" name="started_at" id="started_at" value="{{ old('started_at', date('Y-m-d')) }}" class="form-control" required>
+                <input type="date" name="started_at" id="started_at" 
+                       value="{{ old('started_at', now()->format('Y-m-d')) }}" 
+                       class="form-control @error('started_at') is-invalid @enderror" required>
+                @error('started_at')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div>
         <div class="col-md-6">
             <div class="mb-3">
                 <label for="completed_at" class="form-label">Release Date</label>
-                <input type="date" name="completed_at" id="completed_at" value="{{ old('completed_at') }}" class="form-control">
+                <input type="date" name="completed_at" id="completed_at" 
+                       value="{{ old('completed_at') }}" 
+                       class="form-control @error('completed_at') is-invalid @enderror">
+                @error('completed_at')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div>    
     </div>
@@ -31,6 +45,9 @@ Create Release
         <div id="editor-container">
         </div>
         <input type="hidden" name="body" id="description-input" value="{{ old('body') }}">
+        @error('body')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
     </div>
 
 <div class="alert alert-info"><i class="fas fa-info-circle"></i> Add tickets to your release from the All Tickets tab using the bulk update feature.</div>

@@ -14,7 +14,11 @@
     <div class="mb-3">
         <label for="name" class="form-label">Project Name</label>
         {{-- Replaced Form::text with standard input --}}
-        <input type="text" name="name" id="name" value="{{ old('name', $project->name) }}" class="form-control" required>
+        <input type="text" name="name" id="name" value="{{ old('name', $project->name) }}" 
+               class="form-control @error('name') is-invalid @enderror" required>
+        @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Project Description Field (Quill.js Target) --}}
@@ -26,16 +30,22 @@
         </div>
         {{-- Hidden input to hold the HTML content submitted by Quill --}}
         <input type="hidden" name="description" id="description-input" value="{{ old('description', $project->description) }}">
+        @error('description')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Active Status Field --}}
     <div class="mb-3">
         <label for="active" class="form-label">Active</label>
         {{-- Replaced Form::select with standard select --}}
-        <select name="active" id="active" class="form-select" required>
+        <select name="active" id="active" class="form-select @error('active') is-invalid @enderror" required>
             <option value="0" @if (old('active', $project->active) == '0') selected @endif>Inactive</option>
             <option value="1" @if (old('active', $project->active) == '1') selected @endif>Active</option>
         </select>
+        @error('active')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Submit Button --}}

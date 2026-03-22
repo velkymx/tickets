@@ -14,7 +14,11 @@
     <div class="mb-3">
         <label for="name" class="form-label">Project Name</label>
         {{-- Replaced Form::text with standard input. 'null' is replaced by old('name') --}}
-        <input type="text" name="name" id="name" value="{{ old('name') }}" class="form-control" required>
+        <input type="text" name="name" id="name" value="{{ old('name') }}" 
+               class="form-control @error('name') is-invalid @enderror" required>
+        @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Project Description Field (Quill.js Target) --}}
@@ -26,6 +30,9 @@
         </div>
         {{-- Hidden input to hold the HTML content submitted by Quill. ID: 'description-input' --}}
         <input type="hidden" name="description" id="description-input" value="{{ old('description') }}">
+        @error('description')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Submit Button --}}

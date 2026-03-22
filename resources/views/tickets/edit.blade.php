@@ -14,9 +14,13 @@
 
         {{-- Subject Field (Replaces Form::text) --}}
         <div class="mb-3">
-            <label for="subject" class="form-label visually-hidden">Ticket Subject</label>
-            <input type="text" name="subject" id="subject" class="form-control" 
+            <label for="subject" class="form-label">Ticket Subject</label>
+            <input type="text" name="subject" id="subject" 
+                   class="form-control @error('subject') is-invalid @enderror" 
                    placeholder="Ticket Subject" value="{{ old('subject', $ticket->subject) }}" required>
+            @error('subject')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         {{-- Ticket Details (Quill.js Integration) --}}
@@ -30,6 +34,9 @@
             {{-- Quill Editor Container. Initial content is loaded by the JS from the hidden input. --}}
             <div id="editor-container" class="editor-xl">
             </div>
+            @error('description')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
         </div>
 
         {{-- Use a Bootstrap 5 grid for cleaner layout --}}
@@ -38,61 +45,79 @@
             {{-- Ticket Type (Replaces Form::select) --}}
             <div class="col-md-6 col-lg-4">
                 <label for="type_id" class="form-label">Ticket Type</label>
-                <select name="type_id" id="type_id" class="form-select" required>
+                <select name="type_id" id="type_id" class="form-select @error('type_id') is-invalid @enderror" required>
                     @foreach ($lookups['types'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('type_id', $ticket->type_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('type_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Ticket Importance (Replaces Form::select) --}}
             <div class="col-md-6 col-lg-4">
                 <label for="importance_id" class="form-label">Ticket Importance</label>
-                <select name="importance_id" id="importance_id" class="form-select" required>
+                <select name="importance_id" id="importance_id" class="form-select @error('importance_id') is-invalid @enderror" required>
                     @foreach ($lookups['importances'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('importance_id', $ticket->importance_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('importance_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Ticket Milestone (Replaces Form::select) --}}
             <div class="col-md-6 col-lg-4">
                 <label for="milestone_id" class="form-label">Ticket Milestone</label>
-                <select name="milestone_id" id="milestone_id" class="form-select" required>
+                <select name="milestone_id" id="milestone_id" class="form-select @error('milestone_id') is-invalid @enderror" required>
                     @foreach ($lookups['milestones'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('milestone_id', $ticket->milestone_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('milestone_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Ticket Status (Replaces Form::select) --}}
             <div class="col-md-6 col-lg-4">
                 <label for="status_id" class="form-label">Ticket Status</label>
-                <select name="status_id" id="status_id" class="form-select" required>
+                <select name="status_id" id="status_id" class="form-select @error('status_id') is-invalid @enderror" required>
                     @foreach ($lookups['statuses'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('status_id', $ticket->status_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('status_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Ticket Project (Replaces Form::select) --}}
             <div class="col-md-6 col-lg-4">
                 <label for="project_id" class="form-label">Ticket Project</label>
-                <select name="project_id" id="project_id" class="form-select" required>
+                <select name="project_id" id="project_id" class="form-select @error('project_id') is-invalid @enderror" required>
                     @foreach ($lookups['projects'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('project_id', $ticket->project_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('project_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Assign To (Replaces Form::select) --}}
             <div class="col-md-6 col-lg-4">
                 <label for="user_id2" class="form-label">Assign To</label>
-                <select name="user_id2" id="user_id2" class="form-select" required>
+                <select name="user_id2" id="user_id2" class="form-select @error('user_id2') is-invalid @enderror" required>
                     @foreach ($lookups['users'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('user_id2', $ticket->user_id2) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('user_id2')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             
         </div> {{-- End row g-3 --}}
@@ -102,29 +127,45 @@
             {{-- Due Date --}}
             <div class="col-md-6">
                 <label for="due_at" class="form-label">Due Date</label>
-                <input type="date" name="due_at" id="due_at" class="form-control" 
+                <input type="date" name="due_at" id="due_at" 
+                       class="form-control @error('due_at') is-invalid @enderror" 
                        value="{{ old('due_at', $ticket->due_at) }}">
+                @error('due_at')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             
             {{-- Completed Date --}}
             <div class="col-md-6">
                 <label for="closed_at" class="form-label">Completed Date</label>
-                <input type="date" name="closed_at" id="closed_at" class="form-control" 
+                <input type="date" name="closed_at" id="closed_at" 
+                       class="form-control @error('closed_at') is-invalid @enderror" 
                        value="{{ old('closed_at', $ticket->closed_at) }}">
+                @error('closed_at')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Time Estimate (Replaces Form::text) --}}
             <div class="col-md-6">
                 <label for="estimate" class="form-label">Time Estimate (hours)</label>
-                <input type="text" name="estimate" id="estimate" class="form-control" 
+                <input type="text" name="estimate" id="estimate" 
+                       class="form-control @error('estimate') is-invalid @enderror" 
                        value="{{ old('estimate', $ticket->estimate) }}">
+                @error('estimate')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             
             {{-- Story Points (Replaces Form::text) --}}
             <div class="col-md-6">
                 <label for="storypoints" class="form-label">Story Points</label>
-                <input type="text" name="storypoints" id="storypoints" class="form-control" 
+                <input type="text" name="storypoints" id="storypoints" 
+                       class="form-control @error('storypoints') is-invalid @enderror" 
                        value="{{ old('storypoints', $ticket->storypoints) }}">
+                @error('storypoints')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div>
 
