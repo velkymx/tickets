@@ -36,4 +36,24 @@ class NoteTest extends TestCase
         $this->assertEquals($parent->id, $reply->parent_id);
         $this->assertTrue($reply->parent->is($parent));
     }
+
+    /** @test */
+    public function it_can_have_new_notetype_values()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $types = ['decision', 'blocker', 'update', 'action'];
+
+        foreach ($types as $type) {
+            $note = Note::create([
+                'body' => "Test $type",
+                'user_id' => $user->id,
+                'ticket_id' => $ticket->id,
+                'notetype' => $type,
+            ]);
+
+            $this->assertEquals($type, $note->notetype);
+        }
+    }
 }
