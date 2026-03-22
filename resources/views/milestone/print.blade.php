@@ -25,7 +25,7 @@
     @foreach($projects as $project_id => $project_name)
         
         <h2 class="h3 mb-3">
-            <i class="fas fa-folder me-2"></i> {{ $project_name }}
+            <i class="fas fa-folder me-2" aria-hidden="true"></i> {{ $project_name }}
         </h2>
         <hr class="mt-0 mb-4">
 

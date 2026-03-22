@@ -56,7 +56,7 @@
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-8">
             <h2 class="mb-3">
-                <i class="{{ $ticket->type->icon }}" title="{{ $ticket->type->name }}"></i> 
+                <i class="{{ $ticket->type->icon }}" title="{{ $ticket->type->name }}" aria-hidden="true"></i> 
                 {{ $ticket->subject }}
             </h2>
 
