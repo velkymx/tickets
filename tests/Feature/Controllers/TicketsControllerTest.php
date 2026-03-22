@@ -1356,7 +1356,7 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function update_denies_unrelated_user(): void
+    public function update_allows_any_authenticated_user(): void
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
@@ -1375,7 +1375,7 @@ class TicketsControllerTest extends TestCase
             'project_id' => $ticket->project_id,
         ]);
 
-        $response->assertStatus(403);
+        $response->assertRedirect("/tickets/{$ticket->id}");
     }
 
     #[Test]

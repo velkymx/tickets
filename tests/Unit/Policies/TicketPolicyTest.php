@@ -50,14 +50,14 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_denies_unrelated_user_from_viewing(): void
+    public function it_allows_any_authenticated_user_to_view(): void
     {
         $unrelated = User::factory()->create();
         $owner = User::factory()->create();
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->view($unrelated, $ticket));
+        $this->assertTrue($this->policy->view($unrelated, $ticket));
     }
 
     #[Test]
@@ -88,14 +88,14 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_denies_unrelated_user_from_updating(): void
+    public function it_allows_any_authenticated_user_to_update(): void
     {
         $unrelated = User::factory()->create();
         $owner = User::factory()->create();
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->update($unrelated, $ticket));
+        $this->assertTrue($this->policy->update($unrelated, $ticket));
     }
 
     #[Test]
@@ -165,13 +165,13 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_denies_unrelated_user_from_adding_note(): void
+    public function it_allows_any_authenticated_user_to_add_note(): void
     {
         $unrelated = User::factory()->create();
         $owner = User::factory()->create();
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->addNote($unrelated, $ticket));
+        $this->assertTrue($this->policy->addNote($unrelated, $ticket));
     }
 }
