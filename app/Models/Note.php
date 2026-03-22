@@ -50,4 +50,9 @@ class Note extends Model
     {
         return $this->hasMany(NoteReaction::class);
     }
+
+    public function attachments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(NoteAttachment::class);
+    }
 }

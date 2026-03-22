@@ -150,4 +150,31 @@ class NoteTest extends TestCase
         $this->assertCount(1, $note->reactions);
         $this->assertTrue($note->reactions->first()->is($reaction));
     }
+
+    /** @test */
+    public function it_can_have_attachments()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $note = Note::create([
+            'body' => 'Test note',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+        ]);
+
+        $attachment = \App\Models\NoteAttachment::create([
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'filename' => 'test.jpg',
+            'path' => 'attachments/1/test.jpg',
+            'mime_type' => 'image/jpeg',
+            'size' => 1024,
+        ]);
+
+        $this->assertCount(1, $note->attachments);
+        $this->assertTrue($note->attachments->first()->is($attachment));
+    }
 }
