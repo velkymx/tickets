@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="{{ auth()->check() && auth()->user()->theme === 'darkly' ? 'dark' : 'light' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,19 +13,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    @auth
-        @if (Auth::user()->theme === 'darkly')
-            @vite(['resources/css/theme-darkly.css'])
-        @else
-            @vite(['resources/css/theme.css'])
-        @endif
-    @else
-        @vite(['resources/css/theme.css'])
-    @endauth
 </head>
 <body id="app-layout">
-<nav class="navbar navbar-expand-lg {{ Auth::check() && Auth::user()->theme === 'darkly' ? 'navbar-dark bg-dark' : 'navbar-light bg-light' }} shadow-sm">
+<nav class="navbar navbar-expand-lg shadow-sm">
     <div class="container">
         <a class="navbar-brand" href="{{ url('/') }}">
             <span class="text-primary">Tickets</span>
