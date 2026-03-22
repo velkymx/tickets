@@ -106,6 +106,5 @@
 </div>
 
 {{-- Pagination Links --}}
-{{-- NOTE: This Laravel pagination output will likely require custom styling to fully match Bootstrap 5.3 standards --}}
-{!! $tickets->appends($queryfilter)->render() !!}
+{!! $tickets->appends($queryfilter)->links('pagination::bootstrap-5') !!}
 @endsection
