@@ -55,8 +55,10 @@ class ActivityControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/activity?filter=mentions');
 
         $response->assertOk();
-        $response->assertSee('Mention body');
-        $response->assertDontSee('Reply body');
+        $response->assertViewHas('notifications', function ($notifications) {
+            return $notifications->count() === 1
+                && ($notifications->first()->data['excerpt'] ?? null) === 'Mention body';
+        });
     }
 
     #[Test]
@@ -107,5 +109,34 @@ class ActivityControllerTest extends TestCase
 
         $response->assertRedirect('/activity');
         $this->assertEquals(0, $user->unreadNotifications()->count());
+    }
+
+    #[Test]
+    public function authenticated_layout_renders_notification_bell_dropdown(): void
+    {
+        $user = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Sarah']);
+
+        foreach (range(1, 6) as $index) {
+            $user->notifyNow(new MentionNotification(
+                $actor,
+                140 + $index,
+                50 + $index,
+                "Mention {$index}",
+                "http://example.com/tickets/".(140 + $index)
+            ));
+        }
+
+        $response = $this->actingAs($user)->get('/activity');
+
+        $response->assertOk();
+        $response->assertSee('Notifications');
+        $response->assertSee('View all');
+        $response->assertSee('/activity', false);
+        $response->assertSee('Mention 6');
+        $response->assertSee('Mention 2');
+        $response->assertViewHas('notifications', function ($notifications) {
+            return $notifications->count() === 6;
+        });
     }
 }

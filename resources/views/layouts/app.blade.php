@@ -18,7 +18,7 @@
 <nav class="navbar navbar-expand-lg shadow-sm">
     <div class="container">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <span class="text-primary">Tickets</span>
+            <img src="/tickets.png" class="img-fluid" style="max-height: 32px;"> <span class="fw-bold">Tickets</span>
         </a>
 
         <button class="navbar-toggler" type="button" 
@@ -27,7 +27,7 @@
                 aria-controls="navbarSupportedContent" 
                 aria-expanded="false" 
                 aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+            <span class="navbar-toggler-icon"><img src="/images/tickets.png"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -45,8 +45,52 @@
                     <li class="nav-item"><a class="nav-link" href="{{ url('/login') }}">Login</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url('/register') }}">Register</a></li>
                 @else
+                    @php
+                        $latestNotifications = Auth::user()->notifications()->latest()->limit(5)->get();
+                        $unreadNotificationCount = Auth::user()->unreadNotifications()->count();
+                    @endphp
+
                     <li class="nav-item"><a class="nav-link" href="/ticket/create">New Ticket</a></li>
                     <li class="nav-item"><a class="nav-link" href="/tickets/import">Import</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Notifications
+                            @if ($unreadNotificationCount > 0)
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {{ $unreadNotificationCount }}
+                                </span>
+                            @endif
+                        </a>
+
+                        <div class="dropdown-menu dropdown-menu-end p-0 overflow-hidden" aria-labelledby="notificationsDropdown" style="min-width: 22rem;">
+                            <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                <strong>Notifications</strong>
+                                @if ($unreadNotificationCount > 0)
+                                    <span class="badge bg-danger-subtle text-danger">{{ $unreadNotificationCount }} unread</span>
+                                @endif
+                            </div>
+
+                            @forelse ($latestNotifications as $notification)
+                                <a class="dropdown-item py-3 border-bottom" href="{{ $notification->data['url'] ?? '/activity' }}">
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <div class="small">
+                                            <div class="fw-semibold">{{ $notification->data['excerpt'] ?? $notification->data['message'] ?? 'Activity update' }}</div>
+                                            <div class="text-muted">{{ $notification->created_at->diffForHumans() }}</div>
+                                        </div>
+                                        @if (! $notification->read_at)
+                                            <span class="text-danger">●</span>
+                                        @endif
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="px-3 py-4 text-muted small">No recent notifications.</div>
+                            @endforelse
+
+                            <div class="px-3 py-2 bg-body-tertiary">
+                                <a class="small fw-semibold text-decoration-none" href="/activity">View all</a>
+                            </div>
+                        </div>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             {{ Auth::user()->name }}
