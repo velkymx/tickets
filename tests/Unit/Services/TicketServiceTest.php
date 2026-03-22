@@ -113,6 +113,20 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_detects_null_to_value_transition(): void
+    {
+        Cache::flush();
+        $project = Project::factory()->create(['name' => 'Assigned Project', 'active' => true]);
+
+        $old = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => null, 'estimate' => 0, 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $new = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => $project->id, 'estimate' => 0, 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+
+        $changes = $this->service->changes($old, $new);
+
+        $this->assertContains('Project changed to Assigned Project', $changes);
+    }
+
+    #[Test]
     public function it_detects_estimate_change(): void
     {
         $old = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => '5', 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
