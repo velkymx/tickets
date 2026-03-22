@@ -3,12 +3,9 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Releases</h1>
-    <div>
-        <a href="/releases/create" class="btn btn-sm btn-primary">Create Release</a>
-    </div>
+    <h1 class="mb-0">Releases</h1>
+    <a href="/releases/create" class="btn btn-sm btn-primary">Create Release</a>
 </div>
-<hr class="mb-4">
 
 @if(count($releases) == 0)
     <div class="card shadow-sm">

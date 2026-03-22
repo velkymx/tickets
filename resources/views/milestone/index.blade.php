@@ -5,12 +5,10 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Milestones</h1>
-        {{-- Replaced pull-right with d-flex utilities --}}
         <a href="/milestone/create" class="btn btn-sm btn-primary">Create Milestone</a>
     </div>
-    <hr>
 
-    {{-- Replaced table-striped with B5 table classes --}}
+    <div class="table-responsive">
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle">
             <thead class="table-light">

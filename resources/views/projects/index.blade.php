@@ -2,16 +2,12 @@
 @section('title', 'Ticket List')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Projects</h1>
-    {{-- Replaced pull-right with d-flex utilities --}}
-    <div>
-        <a href="/projects/create" class="btn btn-sm btn-primary">Create Project</a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Projects</h1>
+    <a href="/projects/create" class="btn btn-sm btn-primary">Create Project</a>
 </div>
-<hr class="mb-4">
 
-{{-- Replaced table-striped with B5 table classes and table-responsive for mobile view --}}
+<div class="table-responsive">
 <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">
         <thead class="table-light">
