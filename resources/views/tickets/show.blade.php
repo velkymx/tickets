@@ -213,19 +213,14 @@
                     Ticket Details
                 </div>
                 <ul class="list-group list-group-flush">
-                    @if ($ticket->due_at)
-                        <li class="list-group-item">
-                            <strong>Due:</strong> {{ date('M jS, Y', strtotime($ticket->due_at)) }}
-                        </li>
-                    @endif
+                    <li class="list-group-item">
+                        <strong>Status:</strong> <span class="badge text-bg-secondary">{{ $ticket->status->name }}</span>
+                    </li>
                     <li class="list-group-item">
                         <strong>Importance:</strong>
                         <span class="text-{{ $ticket->importance->class }}">
                             <i class="{{ $ticket->importance->icon }}"></i> {{ $ticket->importance->name }}
                         </span>
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Status:</strong> <span class="badge text-bg-secondary">{{ $ticket->status->name }}</span>
                     </li>
                     <li class="list-group-item">
                         <strong>Type:</strong> <i class="{{ $ticket->type->icon }}"></i> {{ $ticket->type->name }}
@@ -238,15 +233,6 @@
                         <strong>Owner:</strong>
                         <a href="/users/{{ $ticket->user->id }}" class="text-decoration-none">{{ $ticket->user->name }}</a>
                     </li>
-                </ul>
-            </div>
-
-            {{-- Project & Milestone Card --}}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-body-secondary">
-                    Project & Milestone
-                </div>
-                <ul class="list-group list-group-flush">
                     <li class="list-group-item">
                         <strong>Project:</strong>
                         <a href="/projects/show/{{ $ticket->project->id }}" class="text-decoration-none">{{ $ticket->project->name }}</a>
@@ -254,6 +240,18 @@
                     <li class="list-group-item">
                         <strong>Milestone:</strong>
                         <a href="/milestone/show/{{ $ticket->milestone->id }}" class="text-decoration-none">{{ $ticket->milestone->name }}</a>
+                    </li>
+                    @if ($ticket->due_at)
+                        <li class="list-group-item">
+                            <strong>Due:</strong> {{ date('M jS, Y', strtotime($ticket->due_at)) }}
+                        </li>
+                    @endif
+                    <li class="list-group-item text-muted small">
+                        Created {{ date('M jS, Y g:ia', strtotime($ticket->created_at)) }}
+                        &middot; Updated {{ date('M jS, Y g:ia', strtotime($ticket->updated_at)) }}
+                        @if($ticket->closed_at)
+                            &middot; Closed {{ date('M jS, Y g:ia', strtotime($ticket->closed_at)) }}
+                        @endif
                     </li>
                 </ul>
             </div>
@@ -284,26 +282,6 @@
                      <li class="list-group-item">
                          Time Actual: <span class="badge text-bg-info">{{ $ticket->notes->where('hide', 0)->sum('hours') }} Hrs</span>
                      </li>
-                </ul>
-            </div>
-
-            {{-- Timeline Card --}}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-body-secondary">
-                    Timeline
-                </div>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        <strong>Created:</strong> {{ date('M jS, Y g:ia', strtotime($ticket->created_at)) }}
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Updated:</strong> {{ date('M jS, Y g:ia', strtotime($ticket->updated_at)) }}
-                    </li>
-                    @if($ticket->closed_at)
-                        <li class="list-group-item">
-                            <strong>Closed:</strong> {{ date('M jS, Y g:ia', strtotime($ticket->closed_at)) }}
-                        </li>
-                    @endif
                 </ul>
             </div>
 

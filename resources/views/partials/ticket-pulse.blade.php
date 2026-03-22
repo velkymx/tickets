@@ -31,14 +31,6 @@
         ></span>
     </div>
     <ul class="list-group list-group-flush">
-        <li class="list-group-item">
-            <strong>Status:</strong>
-            <span
-                :class="pulse.status === 'BLOCKED' ? 'text-danger fw-bold' : ''"
-                x-text="pulse.status"
-            ></span>
-        </li>
-
         <template x-if="pulse.latest_blocker">
             <li class="list-group-item">
                 <strong>Blocker:</strong>
@@ -49,17 +41,6 @@
                 </div>
             </li>
         </template>
-
-        <li class="list-group-item">
-            <strong>Owner:</strong>
-            <span
-                :class="{
-                    'text-primary fw-bold': pulse.owner_label === 'You own this',
-                    'text-warning fw-bold': pulse.owner_label === 'Unassigned'
-                }"
-                x-text="pulse.owner_label"
-            ></span>
-        </li>
 
         <li class="list-group-item">
             <strong>Next Action:</strong>
@@ -107,35 +88,5 @@
                 <span class="text-muted fst-italic">None</span>
             </template>
         </li>
-
-        <li class="list-group-item">
-            <strong>Last Update:</strong>
-            <template x-if="pulse.staleness_message">
-                <span class="text-warning">
-                    <i class="fas fa-clock me-1" aria-hidden="true"></i>
-                    <span x-text="pulse.staleness_message"></span>
-                </span>
-            </template>
-            <template x-if="!pulse.staleness_message">
-                <span class="text-muted" x-text="pulse.last_activity_at ? new Date(pulse.last_activity_at).toLocaleString() : 'No activity yet'"></span>
-            </template>
-        </li>
-
-        <template x-if="(pulse.viewers ?? []).length">
-            <li class="list-group-item">
-                <strong>Viewers:</strong>
-                <span class="d-inline-flex align-items-center ms-1">
-                    <template x-for="viewer in pulse.viewers" :key="viewer.user_id">
-                        <img
-                            :src="viewer.avatar_url"
-                            :title="viewer.name"
-                            class="rounded-circle border border-white ms-n1"
-                            style="width: 24px; height: 24px; object-fit: cover;"
-                            alt="Viewer"
-                        >
-                    </template>
-                </span>
-            </li>
-        </template>
     </ul>
 </aside>

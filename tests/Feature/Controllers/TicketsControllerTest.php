@@ -457,7 +457,6 @@ class TicketsControllerTest extends TestCase
         $response->assertSee('Next Action');
         $response->assertSee('Latest Decision');
         $response->assertSee('Open Threads');
-        $response->assertSee('Last Update');
     }
 
     #[Test]
