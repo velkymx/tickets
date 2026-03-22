@@ -148,6 +148,18 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_view_includes_the_required_hidden_id_field(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/projects/create');
+
+        $response->assertStatus(200);
+        $response->assertSee('name="id"', false);
+        $response->assertSee('value="new"', false);
+    }
+
+    #[Test]
     public function edit_requires_authentication(): void
     {
         $project = Project::factory()->create();

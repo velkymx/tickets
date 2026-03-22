@@ -9,6 +9,7 @@
 <form method="POST" action="/projects/store/{{ $project->id }}" class="form-horizontal" id="project_edit_form">
     @csrf 
     {{-- Assuming CSRF is handled by Laravel's @csrf directive --}}
+    <input type="hidden" name="id" value="{{ $project->id }}">
 
     {{-- Project Name Field --}}
     <div class="mb-3">

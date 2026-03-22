@@ -9,6 +9,7 @@
 <form method="POST" action="/projects/store/new" class="form-horizontal" id="project_create_form">
     @csrf 
     {{-- Ensures CSRF protection for the POST request --}}
+    <input type="hidden" name="id" value="new">
 
     {{-- Project Name Field --}}
     <div class="mb-3">
