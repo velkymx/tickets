@@ -79,6 +79,15 @@ class TicketController extends Controller
 
         $request->validate([
             'subject' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'type_id' => 'nullable|integer|exists:types,id',
+            'importance_id' => 'nullable|integer|exists:importances,id',
+            'project_id' => 'nullable|integer|exists:projects,id',
+            'milestone_id' => 'nullable|integer|exists:milestones,id',
+            'status_id' => 'nullable|integer|exists:statuses,id',
+            'due_at' => 'nullable|date',
+            'estimate' => 'nullable|numeric|min:0',
+            'storypoints' => 'nullable|integer|min:0',
         ]);
 
         $ticket = Ticket::create([

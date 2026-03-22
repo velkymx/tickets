@@ -192,6 +192,21 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function store_validates_foreign_key_ids(): void
+    {
+        $response = $this->postJson('/api/v1/tickets', [
+            'subject' => 'Test',
+            'type_id' => 99999,
+            'importance_id' => 99999,
+            'project_id' => 99999,
+            'milestone_id' => 99999,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['type_id', 'importance_id', 'project_id', 'milestone_id']);
+    }
+
+    #[Test]
     public function store_creates_ticket(): void
     {
         $response = $this->postJson('/api/v1/tickets', [
