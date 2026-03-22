@@ -14,6 +14,7 @@ use App\Models\Ticket;
 use App\Models\TicketEstimate;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
+use App\Models\User;
 use App\Services\TicketPulseService;
 use App\Services\TicketService;
 use Carbon\Carbon;
@@ -160,13 +161,16 @@ class TicketsController extends Controller
 
         $this->authorize('claim', $ticket);
 
-        $request = $ticket->toArray();
+        $oldUser = $ticket->user_id2;
 
-        $request['user_id2'] = Auth::id();
+        $ticket->user_id2 = Auth::id();
+        $ticket->save();
 
-        $change_list = $this->ticketService->changes($ticket->toArray(), $request);
+        $change_list = [];
 
-        $ticket->update($request);
+        if ($oldUser != Auth::id()) {
+            $change_list[] = 'Assigned user changed';
+        }
 
         $this->ticketService->notate($ticket->id, '', $change_list);
 
@@ -180,19 +184,27 @@ class TicketsController extends Controller
             'watchers.user',
             'estimates.user',
             'notes' => function ($q) {
-                $q->where('hide', 0)->orderBy('created_at', 'desc');
+                $q->where('hide', 0)->orderBy('created_at', 'asc');
             },
             'notes.user',
+            'notes.replies.user',
+            'notes.reactions',
+            'notes.attachments',
+            'notes.mentions',
         ])->findOrFail($id);
 
         $this->authorize('view', $ticket);
 
         $lookups = $this->ticketService->getLookups();
 
-        TicketView::firstOrCreate([
+        $ticketView = TicketView::firstOrCreate([
             'user_id' => Auth::id(),
             'ticket_id' => $ticket->id,
         ]);
+
+        $lastViewedAt = $ticketView->updated_at;
+
+        $ticketView->touch();
 
         $ticketViews = TicketView::select('user_id', \DB::raw('max(created_at) as viewed_at'))
             ->where('ticket_id', $ticket->id)
@@ -202,7 +214,10 @@ class TicketsController extends Controller
 
         $pulse = app(TicketPulseService::class)->getPulse($ticket);
 
-        return view('tickets.show', compact('ticket', 'lookups', 'ticketViews', 'pulse'));
+        $allUsers = User::orderBy('name')->pluck('name', 'id');
+        $pinnedNotes = $ticket->notes->where('pinned', true);
+
+        return view('tickets.show', compact('ticket', 'lookups', 'ticketViews', 'pulse', 'allUsers', 'pinnedNotes', 'lastViewedAt'));
     }
 
     public function create($value = '')
@@ -274,6 +289,11 @@ class TicketsController extends Controller
 
         $ticket->update($data);
 
+        if (array_key_exists('closed_at', $data)) {
+            $ticket->closed_at = $data['closed_at'];
+            $ticket->save();
+        }
+
         $this->ticketService->notate($ticket->id, '', $change_list);
 
         return redirect('tickets/'.$id)->with('info_message', 'Ticket #'.$id.' updated');
@@ -283,14 +303,14 @@ class TicketsController extends Controller
     {
         $data = $request->validated();
 
-        $data['user_id'] = Auth::id();
-        $data['user_id2'] = Auth::id();
-
         if (! empty($data['due_at'])) {
             $data['due_at'] = Carbon::parse($data['due_at'])->format('Y-m-d');
         }
 
         $insert = Ticket::create($data);
+        $insert->user_id = Auth::id();
+        $insert->user_id2 = Auth::id();
+        $insert->save();
 
         return redirect('tickets/'.$insert->id)->with('status', 'Task was created successfully!');
     }

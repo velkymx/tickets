@@ -453,6 +453,31 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_eager_loads_unified_timeline_data(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'pinned' => true,
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => $parent->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('allUsers');
+        $response->assertViewHas('pinnedNotes');
+        $response->assertViewHas('lastViewedAt');
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
