@@ -27,10 +27,13 @@ class TicketsController extends Controller
 
     public function home()
     {
-        $statusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
+        $user = Auth::user();
 
-        $tickets = Ticket::where('user_id2', Auth::id())
-            ->whereIn('status_id', $statusIds)
+        $openStatusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
+        $closedStatusIds = Status::closedStatusIds();
+
+        $tickets = Ticket::where('user_id2', $user->id)
+            ->whereIn('status_id', $openStatusIds)
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
@@ -45,7 +48,29 @@ class TicketsController extends Controller
             }
         }
 
-        return View('home', compact('alltickets'));
+        $stats = [
+            'assigned' => Ticket::where('user_id2', $user->id)->count(),
+            'open' => Ticket::where('user_id2', $user->id)->whereIn('status_id', $openStatusIds)->count(),
+            'closed' => Ticket::where('user_id2', $user->id)->whereIn('status_id', $closedStatusIds)->count(),
+            'watching' => Ticket::whereHas('watchers', fn ($q) => $q->where('user_id', $user->id))->count(),
+        ];
+
+        $recentTickets = Ticket::where('user_id2', $user->id)
+            ->orWhere('user_id', $user->id)
+            ->with(['status', 'type', 'importance', 'project', 'assignee'])
+            ->orderBy('updated_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $recentNotes = $user->notes()
+            ->with(['ticket.status', 'ticket.type', 'ticket.importance'])
+            ->whereHas('ticket')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->filter(fn ($note) => $note->ticket !== null);
+
+        return View('home', compact('alltickets', 'stats', 'recentTickets', 'recentNotes'));
     }
 
     public function index(Request $request)

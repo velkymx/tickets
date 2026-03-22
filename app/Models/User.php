@@ -38,6 +38,11 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class, 'user_id');
     }
 
+    public function notes(): HasMany
+    {
+        return $this->hasMany(Note::class, 'user_id');
+    }
+
     public function generateApiToken(): string
     {
         $plain = Str::random(60);
