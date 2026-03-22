@@ -107,4 +107,24 @@ class NoteTest extends TestCase
         $this->assertEquals($originalNote->id, $note->supersedes_id);
         $this->assertEquals('Thread resolved here.', $note->resolution_message);
     }
+
+    /** @test */
+    public function it_can_store_markdown_body()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $markdown = "## Title\n* list item";
+
+        $note = Note::create([
+            'body' => '<h2>Title</h2><ul><li>list item</li></ul>',
+            'body_markdown' => $markdown,
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+        ]);
+
+        $this->assertEquals($markdown, $note->body_markdown);
+        $this->assertEquals('<h2>Title</h2><ul><li>list item</li></ul>', $note->body);
+    }
 }

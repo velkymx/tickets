@@ -11,7 +11,7 @@ class Note extends Model
     use HasFactory;
 
     protected $fillable = [
-        'body', 'user_id', 'ticket_id', 'parent_id', 'hours', 'notetype', 'hide', 'edited_at',
+        'body', 'body_markdown', 'user_id', 'ticket_id', 'parent_id', 'hours', 'notetype', 'hide', 'edited_at',
         'pinned', 'resolved', 'resolved_by', 'supersedes_id', 'resolution_message',
     ];
 
