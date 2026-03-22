@@ -587,4 +587,25 @@ class TicketServiceTest extends TestCase
         $this->assertTrue($lookups['statuses']->contains($open->name));
         $this->assertTrue($lookups['statuses']->contains($closed->name));
     }
+
+    #[Test]
+    public function it_returns_statuses_in_database_status_code_order(): void
+    {
+        Cache::flush();
+
+        Status::factory()->create(['id' => 1, 'name' => 'new']);
+        Status::factory()->create(['id' => 2, 'name' => 'active']);
+        Status::factory()->create(['id' => 3, 'name' => 'testing']);
+
+        $lookups = $this->service->getLookups();
+
+        $this->assertSame(
+            [1, 2, 3],
+            $lookups['statuses']->keys()->values()->all()
+        );
+        $this->assertSame(
+            ['new', 'active', 'testing'],
+            $lookups['statuses']->values()->all()
+        );
+    }
 }

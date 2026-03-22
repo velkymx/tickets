@@ -24,7 +24,7 @@ class TicketController extends Controller
     {
         return response()->json([
             'data' => [
-                'statuses' => Status::orderBy('name')->get(['id', 'name']),
+                'statuses' => Status::orderBy('id')->get(['id', 'name']),
                 'types' => Type::orderBy('name')->get(['id', 'name']),
                 'importance' => Importance::orderBy('name')->get(['id', 'name']),
                 'projects' => Project::where('active', 1)->orderBy('name')->get(['id', 'name']),
