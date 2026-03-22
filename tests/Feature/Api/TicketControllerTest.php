@@ -624,4 +624,106 @@ class TicketControllerTest extends TestCase
                 ],
             ]);
     }
+
+    #[Test]
+    public function note_creates_decision_via_slash_command(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/decision We will use Redis for caching',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals('decision', $response->json('note.notetype'));
+        $this->assertStringContainsString('Redis', $response->json('note.body'));
+        $this->assertNotNull($response->json('note.body_markdown'));
+        $this->assertNotNull($response->json('note.id'));
+
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'decision',
+        ]);
+    }
+
+    #[Test]
+    public function note_creates_blocker_via_slash_command(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/blocker Waiting on API key from vendor',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals('blocker', $response->json('note.notetype'));
+
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'blocker',
+        ]);
+    }
+
+    #[Test]
+    public function note_returns_warnings_for_unknown_commands(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/statsu testing',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $warnings = $response->json('warnings');
+        $this->assertNotEmpty($warnings);
+        $this->assertStringContainsString('statsu', $warnings[0]);
+    }
+
+    #[Test]
+    public function note_returns_expanded_note_format(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => 'A regular message',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'message',
+                'warnings',
+                'ticket' => ['id', 'status', 'assignee'],
+                'note' => [
+                    'id', 'notetype', 'body', 'body_markdown',
+                    'pinned', 'reactions', 'replies', 'attachments', 'mentions',
+                ],
+            ]);
+    }
+
+    #[Test]
+    public function note_with_action_without_mention_returns_422(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/action Do this task',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
+    }
 }

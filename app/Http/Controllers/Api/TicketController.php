@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Importance;
+use App\Services\MarkdownService;
+use App\Services\MentionService;
+use App\Services\SlashCommandService;
 use App\Services\TicketPulseService;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -11,6 +14,7 @@ use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class TicketController extends Controller
@@ -234,25 +238,88 @@ class TicketController extends Controller
             $ticket->save();
         }
 
+        $createdNote = null;
+        $warnings = [];
+
         if ($request->has('body') || $request->has('hours')) {
-            Note::create([
+            $slashService = app(SlashCommandService::class);
+            $markdownService = app(MarkdownService::class);
+            $mentionService = app(MentionService::class);
+
+            // Check for action constraint violations before running commands
+            $bodyText = $request->body ?? '';
+            if (preg_match('/^\/action\b/m', $bodyText)) {
+                $mentions = $this->extractMentionsFromText($bodyText);
+                if (count($mentions) !== 1) {
+                    return response()->json([
+                        'message' => 'Actions require exactly one @assignee',
+                    ], 422);
+                }
+            }
+
+            $commandResult = $slashService->handle($ticket, $bodyText);
+            $warnings = $commandResult['warnings'] ?? [];
+
+            // Check for blocker constraint from slash service
+            $noteType = $commandResult['note_type'] ?? 'message';
+            $changes = $commandResult['changes'] ?? [];
+            foreach ($changes as $change) {
+                if (str_contains($change, 'Resolve blocker before')) {
+                    return response()->json([
+                        'message' => $change,
+                    ], 422);
+                }
+                if (str_contains($change, 'Too many open actions')) {
+                    return response()->json([
+                        'message' => $change,
+                    ], 422);
+                }
+            }
+
+            $bodyText = $commandResult['body'] ?? '';
+            $bodyMarkdown = $markdownService->parse($bodyText);
+
+            $createdNote = Note::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'body' => $request->body ?? '',
-                'hours' => $request->hours ?? 0,
-                'notetype' => 'message',
+                'body' => $bodyText,
+                'body_markdown' => $bodyMarkdown,
+                'hours' => ($request->hours ?? 0) + ($commandResult['hours'] ?? 0),
+                'notetype' => $noteType,
+                'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
             ]);
+
+            // Create mention records
+            $mentionUsernames = $mentionService->parseMentions($bodyText);
+            $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
+            $mentionService->createMentions($createdNote, $mentionUserIds);
+
+            $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
         }
 
         $ticket->load(['status', 'assignee']);
 
-        return response()->json([
+        $response = [
             'message' => 'Note added successfully',
+            'warnings' => $warnings,
             'ticket' => [
                 'id' => $ticket->id,
                 'status' => $ticket->status->name ?? null,
                 'assignee' => $ticket->assignee->name ?? null,
             ],
-        ]);
+        ];
+
+        if ($createdNote) {
+            $response['note'] = $this->formatNote($createdNote, $user->id);
+        }
+
+        return response()->json($response);
+    }
+
+    protected function extractMentionsFromText(string $text): array
+    {
+        preg_match_all('/@([\w.\-]+)/', $text, $matches);
+
+        return array_values(array_unique($matches[1] ?? []));
     }
 }
