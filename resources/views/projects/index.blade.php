@@ -31,11 +31,11 @@
                 <td>
                     {{-- Status counts shown using B5 badge classes --}}
                     <span class="badge text-bg-secondary me-2">
-                        {{ $project->tickets()->whereIn('status_id', \App\Models\Status::activeStatusIds())->count() }}
+                        {{ $project->active_tickets_count }}
                     </span>
                     /
                     <span class="badge text-bg-secondary ms-2">
-                        {{ $project->tickets()->count() }}
+                        {{ $project->total_tickets_count }}
                     </span>
                 </td>
                 {{-- Button Group for actions --}}

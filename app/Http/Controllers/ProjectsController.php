@@ -12,7 +12,12 @@ class ProjectsController extends Controller
 {
     public function index()
     {
-        $projects = Project::orderBy('name')->get();
+        $projects = Project::withCount([
+            'tickets as active_tickets_count' => function ($q) {
+                $q->whereIn('status_id', Status::activeStatusIds());
+            },
+            'tickets as total_tickets_count',
+        ])->orderBy('name')->get();
 
         return view('projects.index', compact('projects'));
     }
