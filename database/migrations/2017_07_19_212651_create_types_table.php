@@ -25,6 +25,6 @@ class CreateTypesTable extends Migration
       */
      public function down()
      {
-         Schema::drop('types');
+         Schema::dropIfExists('types');
      }
 }

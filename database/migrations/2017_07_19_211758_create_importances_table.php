@@ -25,6 +25,6 @@ class CreateImportancesTable extends Migration
      */
     public function down()
     {
-        Schema::drop('importances');
+        Schema::dropIfExists('importances');
     }
 }

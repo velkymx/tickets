@@ -26,10 +26,12 @@ class Status extends Model
 
     public static function closedStatusIds(): array
     {
-        return self::query()
-            ->whereIn(\DB::raw('LOWER(name)'), self::CLOSED_STATUS_NAMES)
-            ->pluck('id')
-            ->toArray();
+        return cache()->rememberForever('closed_status_ids', function () {
+            return self::query()
+                ->whereIn(\DB::raw('LOWER(name)'), self::CLOSED_STATUS_NAMES)
+                ->pluck('id')
+                ->toArray();
+        });
     }
 
     public static function activeStatusIds(): array

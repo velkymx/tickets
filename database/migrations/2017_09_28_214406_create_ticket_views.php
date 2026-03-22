@@ -31,6 +31,6 @@ class CreateTicketViews extends Migration
      */
     public function down()
     {
-        Schema::drop('ticket_views');
+        Schema::dropIfExists('ticket_views');
     }
 }

@@ -42,7 +42,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Project::class, ProjectPolicy::class);
 
         RateLimiter::for('api', function ($request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            $userId = $request->user()?->id ?? $request->attributes->get('api_user')?->id;
+
+            return Limit::perMinute(60)->by($userId ?: $request->ip());
         });
 
         RateLimiter::for('uploads', function ($request) {

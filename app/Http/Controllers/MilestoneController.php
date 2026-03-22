@@ -18,7 +18,7 @@ class MilestoneController extends Controller
     public function index()
     {
 
-        $milestones = Milestone::orderBy('name')->get();
+        $milestones = Milestone::orderBy('name')->paginate(20);
 
         return view('milestone.index', compact('milestones'));
 

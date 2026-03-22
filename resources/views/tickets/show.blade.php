@@ -793,7 +793,7 @@
         }
 
         sendHeartbeat();
-        setInterval(sendHeartbeat, 15000);
+        const heartbeatInterval = setInterval(sendHeartbeat, 15000);
     })();
 
     // --- New activity polling (30s interval) ---
@@ -802,7 +802,7 @@
         if (!ticketId) return;
         let lastChecked = new Date().toISOString();
 
-        setInterval(() => {
+        const activityInterval = setInterval(() => {
             fetch(`/tickets/${ticketId}/presence`, {
                 headers: { 'Accept': 'application/json' }
             })
@@ -812,6 +812,14 @@
             })
             .catch(() => {});
         }, 30000);
+
+        window.addEventListener('beforeunload', () => {
+            clearInterval(activityInterval);
+        });
     })();
+
+    window.addEventListener('beforeunload', () => {
+        if (typeof heartbeatInterval !== 'undefined') clearInterval(heartbeatInterval);
+    });
 </script>
 @endsection

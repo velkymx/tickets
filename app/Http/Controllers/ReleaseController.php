@@ -13,7 +13,7 @@ class ReleaseController extends Controller
     public function index()
     {
 
-        $releases = Release::all();
+        $releases = Release::orderBy('started_at', 'desc')->paginate(20);
 
         return view('release/index', compact('releases'));
 
@@ -76,12 +76,16 @@ class ReleaseController extends Controller
 
         foreach ($release_tickets as $ticket) {
 
-            if (! array_key_exists($ticket->ticket->project_id, $projects)) {
-
-                $projects[$ticket->ticket->project_id]['project'] = $ticket->ticket->project->name;
+            if (! $ticket->ticket) {
+                continue;
             }
 
-            $projects[$ticket->ticket->project_id]['tickets'][$ticket->ticket->type->name][] = $ticket->ticket;
+            if (! array_key_exists($ticket->ticket->project_id, $projects)) {
+
+                $projects[$ticket->ticket->project_id]['project'] = $ticket->ticket->project?->name ?? 'No Project';
+            }
+
+            $projects[$ticket->ticket->project_id]['tickets'][$ticket->ticket->type?->name ?? 'No Type'][] = $ticket->ticket;
 
         }
 

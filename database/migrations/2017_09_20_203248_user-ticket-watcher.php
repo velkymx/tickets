@@ -31,6 +31,6 @@ class UserTicketWatcher extends Migration
      */
     public function down()
     {
-        Schema::drop('ticket_user_watchers');
+        Schema::dropIfExists('ticket_user_watchers');
     }
 }

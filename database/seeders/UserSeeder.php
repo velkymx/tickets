@@ -30,7 +30,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'administrator',
                 'email' => 'support@ajbapps.com',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make(env('ADMIN_PASSWORD', str()->random(40))),
                 'active' => 1,
                 'admin' => 1,
                 'title' => 'Administrator User',
