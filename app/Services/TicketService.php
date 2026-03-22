@@ -116,7 +116,7 @@ class TicketService
             $change_list = '';
 
             foreach ($changes as $change) {
-                $change_list .= '<li>'.$change.'</li>';
+                $change_list .= '<li>'.e($change).'</li>';
             }
 
             $insert['body'] = '<ul>'.$change_list.'</ul>';

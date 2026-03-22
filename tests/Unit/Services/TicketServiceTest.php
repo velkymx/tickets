@@ -254,6 +254,20 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_escapes_html_in_changelog_changes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Auth::login($user);
+        $this->service->notate($ticket->id, '', ['Project changed to <script>alert(1)</script>']);
+
+        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->first();
+        $this->assertStringNotContainsString('<script>', $note->body);
+        $this->assertStringContainsString('&lt;script&gt;', $note->body);
+    }
+
+    #[Test]
     public function it_creates_both_notes_when_message_and_changes_provided(): void
     {
         $user = User::factory()->create();
