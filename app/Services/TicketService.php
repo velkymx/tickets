@@ -281,7 +281,7 @@ class TicketService
             'types' => Type::orderBy('id')->pluck('name', 'id'),
             'milestones' => Milestone::orderBy('id')->where('end_at', null)->pluck('name', 'id'),
             'importances' => Importance::orderBy('id')->pluck('name', 'id'),
-            'projects' => Project::orderBy('id')->where('active', 1)->pluck('name', 'id'),
+            'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
             'statuses' => Status::orderBy('id')->pluck('name', 'id'),
             'releases' => Release::orderBy('id')->pluck('title', 'id'),
             'users' => User::orderBy('id')->pluck('name', 'id'),
