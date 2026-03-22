@@ -4,10 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Importance;
-use App\Services\MarkdownService;
-use App\Services\MentionService;
-use App\Services\SlashCommandService;
-use App\Services\TicketPulseService;
 use App\Models\Milestone;
 use App\Models\Note;
 use App\Models\NoteReaction;
@@ -16,6 +12,10 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\MarkdownService;
+use App\Services\MentionService;
+use App\Services\SlashCommandService;
+use App\Services\TicketPulseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -129,7 +129,7 @@ class TicketController extends Controller
             'storypoints' => $request->storypoints ?? 0,
             'user_id' => $user->id,
             'user_id2' => $user->id,
-            'status_id' => $request->status_id ?? 1,
+            'status_id' => $request->status_id ?? Status::orderBy('id')->first()?->id ?? 1,
         ]);
 
         return response()->json([
