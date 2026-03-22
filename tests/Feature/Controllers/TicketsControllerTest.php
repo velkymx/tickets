@@ -708,6 +708,59 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_changelog_entry_renders_compact_format(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'changelog',
+            'body' => '<ul><li>Status: Open → Closed</li></ul>',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('changelog-entry', false);
+        $response->assertSee('fa-history', false);
+        $response->assertSee('changed ticket');
+    }
+
+    #[Test]
+    public function show_changelog_entry_has_no_kebab_menu(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'changelog',
+            'body' => '<ul><li>Assignee changed</li></ul>',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $content = $response->getContent();
+        // Find the changelog entry section and verify no kebab menu within it
+        $response->assertStatus(200);
+        $response->assertSee('changelog-entry', false);
+        // Changelog entries should NOT have reaction forms or reply sections
+        $this->assertStringNotContainsString('replies-section', $this->extractChangelogSection($content));
+    }
+
+    private function extractChangelogSection(string $html): string
+    {
+        // Extract content between changelog-entry markers
+        if (preg_match('/class="[^"]*changelog-entry[^"]*"[^>]*>(.*?)<\/div>\s*<\/div>/s', $html, $matches)) {
+            return $matches[1];
+        }
+        return '';
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
