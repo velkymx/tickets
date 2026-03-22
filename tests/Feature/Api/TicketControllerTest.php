@@ -740,6 +740,52 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function reply_creates_threaded_reply(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/reply", [
+            'body' => 'Agreed, good call',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals($note->id, $response->json('note.parent_id'));
+        $this->assertStringContainsString('good call', $response->json('note.body'));
+        $this->assertNotNull($response->json('note.body_markdown'));
+
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $note->id,
+            'user_id' => $this->user->id,
+        ]);
+    }
+
+    #[Test]
+    public function reply_rejects_nested_reply(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
+        $reply = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+            'parent_id' => $parent->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$reply->id}/reply", [
+            'body' => 'Nested reply attempt',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
+    }
+
+    #[Test]
     public function react_validates_emoji(): void
     {
         $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);

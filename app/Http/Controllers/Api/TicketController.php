@@ -317,6 +317,49 @@ class TicketController extends Controller
         return response()->json($response);
     }
 
+    public function reply(Request $request, $id, $noteId)
+    {
+        $request->validate([
+            'body' => 'required|string|max:65535',
+        ]);
+
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $parent = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
+
+        // Reject nested replies
+        if ($parent->parent_id !== null) {
+            return response()->json([
+                'message' => 'Cannot reply to a reply. Replies must be on top-level notes.',
+            ], 422);
+        }
+
+        $markdownService = app(MarkdownService::class);
+        $mentionService = app(MentionService::class);
+
+        $bodyMarkdown = $markdownService->parse($request->body);
+
+        $reply = Note::create([
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body' => $request->body,
+            'body_markdown' => $bodyMarkdown,
+            'notetype' => 'message',
+        ]);
+
+        $mentionUsernames = $mentionService->parseMentions($request->body);
+        $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
+        $mentionService->createMentions($reply, $mentionUserIds);
+
+        $reply->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+
+        return response()->json([
+            'message' => 'Reply added successfully',
+            'note' => $this->formatNote($reply, $user->id),
+        ]);
+    }
+
     public function react(Request $request, $id, $noteId)
     {
         $request->validate([
