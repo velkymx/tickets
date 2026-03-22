@@ -33,10 +33,14 @@ class MilestoneController extends Controller
             },
         ])->findOrFail($id);
 
+        $this->authorize('view', $milestone);
+
         $projects = [];
 
         foreach ($milestone->tickets as $tic) {
-            $projects[$tic->project->id] = $tic->project->name;
+            if ($tic->project) {
+                $projects[$tic->project->id] = $tic->project->name;
+            }
         }
 
         $types = Type::all();
@@ -56,6 +60,8 @@ class MilestoneController extends Controller
                 }]);
             },
         ])->findOrFail($id);
+
+        $this->authorize('view', $milestone);
 
         $tmpcodes = Status::get();
 
@@ -116,6 +122,8 @@ class MilestoneController extends Controller
 
         $milestone = Milestone::findOrFail($id);
 
+        $this->authorize('update', $milestone);
+
         $milestone->fill($validatedData);
 
         $milestone->save();
@@ -127,6 +135,8 @@ class MilestoneController extends Controller
     public function edit($id)
     {
         $milestone = Milestone::findOrFail($id);
+
+        $this->authorize('update', $milestone);
 
         $users = User::pluck('name', 'id');
 
@@ -145,6 +155,8 @@ class MilestoneController extends Controller
         } else {
             $milestone = Milestone::findOrFail($request->id);
 
+            $this->authorize('update', $milestone);
+
             $milestone->update($validated);
         }
 
@@ -154,6 +166,9 @@ class MilestoneController extends Controller
     public function toggleWatcher($id)
     {
         $milestone = Milestone::findOrFail($id);
+
+        $this->authorize('watch', $milestone);
+
         $watcher = MilestoneWatcher::where('milestone_id', $id)->where('user_id', Auth::id())->first();
 
         if ($watcher) {
@@ -172,6 +187,9 @@ class MilestoneController extends Controller
     {
         // Any authenticated user can view milestone reports
         $milestone = Milestone::with(['owner', 'scrummaster'])->findOrFail($id);
+
+        $this->authorize('viewReport', $milestone);
+
         $tickets = $milestone->tickets()
             ->with([
                 'status', 'type', 'importance', 'project', 'assignee',
