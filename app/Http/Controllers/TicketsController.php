@@ -163,7 +163,13 @@ class TicketsController extends Controller
             'ticket_id' => $ticket->id,
         ]);
 
-        return view('tickets.show', compact('ticket', 'lookups'));
+        $ticketViews = TicketView::select('user_id', \DB::raw('max(created_at) as viewed_at'))
+            ->where('ticket_id', $ticket->id)
+            ->groupBy('user_id')
+            ->with('user')
+            ->get();
+
+        return view('tickets.show', compact('ticket', 'lookups', 'ticketViews'));
     }
 
     public function create($value = '')

@@ -182,7 +182,7 @@
                         @endphp
                         <form action="/tickets/watch/{{ $ticket->id }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn btn-sm w-100 {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
+                            <button type="submit" class="btn w-100 {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
                                 {{ $isWatching ? 'Unwatch' : 'Watch' }}
                             </button>
                         </form>
@@ -279,7 +279,7 @@
                         </tr>
                         @endforeach
                         {{-- Laravel/DB query logic retained, assuming DB/Carbon are available --}}
-                        @foreach ($ticket->views()->select([\DB::raw('DISTINCT user_id'), \DB::raw('max(created_at) as viewed_at')])->groupBy('user_id')->get() as $view)
+                        @foreach ($ticketViews as $view)
                         <tr>
                             <td>User View</td>
                             <td>{{ $view->user->name }} - {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}</td>
