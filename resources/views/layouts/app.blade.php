@@ -12,7 +12,17 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
-    @vite(['resources/css/app.css', 'resources/css/theme.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    @auth
+        @if (Auth::user()->theme === 'darkly')
+            @vite(['resources/css/theme-darkly.css'])
+        @else
+            @vite(['resources/css/theme.css'])
+        @endif
+    @else
+        @vite(['resources/css/theme.css'])
+    @endauth
 </head>
 <body id="app-layout">
 <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">

@@ -153,7 +153,7 @@ class UsersControllerTest extends TestCase
     {
         $user = User::factory()->create([
             'timezone' => 'UTC',
-            'theme' => '/css/bootstrap.min.css',
+            'theme' => 'simplex',
         ]);
 
         $response = $this->actingAs($user)->post('/user/update', [
@@ -161,7 +161,7 @@ class UsersControllerTest extends TestCase
             'email' => 'updated@example.com',
             'phone' => '1234567890',
             'timezone' => 'America/New_York',
-            'theme' => '/css/bootstrap.min.css',
+            'theme' => 'simplex',
             'title' => 'Developer',
             'bio' => 'Test bio',
         ]);
@@ -178,14 +178,14 @@ class UsersControllerTest extends TestCase
     {
         $user = User::factory()->create([
             'timezone' => 'UTC',
-            'theme' => '/css/bootstrap.min.css',
+            'theme' => 'simplex',
         ]);
 
         $response = $this->actingAs($user)->post('/user/update', [
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
             'timezone' => 'America/New_York',
-            'theme' => '/css/bootstrap.min.css',
+            'theme' => 'simplex',
         ]);
 
         $response->assertRedirect("/users/{$user->id}");

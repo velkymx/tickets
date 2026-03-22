@@ -154,6 +154,8 @@ class TicketsController extends Controller
             'notes.user',
         ])->findOrFail($id);
 
+        $this->authorize('view', $ticket);
+
         $lookups = $this->ticketService->getLookups();
 
         TicketView::firstOrCreate([
@@ -175,6 +177,8 @@ class TicketsController extends Controller
     {
         $ticket = Ticket::findOrFail($id);
 
+        $this->authorize('update', $ticket);
+
         $lookups = $this->ticketService->getLookups();
 
         if (! empty($ticket->closed_at)) {
@@ -191,6 +195,8 @@ class TicketsController extends Controller
     public function edit($id)
     {
         $ticket = Ticket::findOrFail($id);
+
+        $this->authorize('update', $ticket);
 
         $lookups = $this->ticketService->getLookups();
 
@@ -332,6 +338,8 @@ class TicketsController extends Controller
 
         $ticket = Ticket::findOrFail($id);
 
+        $this->authorize('update', $ticket);
+
         if ($request['status'] != $ticket->status_id) {
             $ticket->update(['status_id' => $request['status']]);
 
@@ -349,6 +357,8 @@ class TicketsController extends Controller
         if ($request->has('status_id') && $request->has('ticket_id')) {
 
             $ticket = Ticket::withSum('notes', 'hours')->findOrFail($request->ticket_id);
+
+            $this->authorize('update', $ticket);
 
             $old = $ticket->toArray();
 
@@ -380,6 +390,9 @@ class TicketsController extends Controller
     public function estimate(EstimateTicketRequest $request, $ticket_id)
     {
         $validated = $request->validated();
+
+        $ticket = Ticket::findOrFail($ticket_id);
+        $this->authorize('estimate', $ticket);
 
         $check = TicketEstimate::where('ticket_id', $ticket_id)->where('user_id', Auth::id())->first();
 

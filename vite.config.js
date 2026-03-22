@@ -7,6 +7,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/css/theme.css',
+                'resources/css/theme-darkly.css',
                 'resources/js/app.js',
             ],
             refresh: true,

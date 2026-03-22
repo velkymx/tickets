@@ -48,8 +48,8 @@ class UsersController extends Controller
         $timezones = $this->get_timezones();
 
         $themes = [
-            '/css/bootstrap.min.css' => 'Default',
-            '/css/bootstrap.darkly.min.css' => 'Darkly',
+            'simplex' => 'Default (Light)',
+            'darkly' => 'Darkly (Dark)',
         ];
 
         return View('users.edit', compact('user', 'timezones', 'themes'));
