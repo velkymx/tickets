@@ -121,7 +121,7 @@
                                           <span class="badge text-bg-info">{{ $tick->notes->where('hide', '0')->where('notetype', 'message')->count() }}</span>
                                       @endif
                                   </td>
-                                     <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($ticket->updated_at)) }}</td>
+                                     <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>

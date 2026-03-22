@@ -167,6 +167,24 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function get_show_renders_ticket_updated_timestamps(): void
+    {
+        $user = User::factory()->create();
+        $status = Status::factory()->create(['name' => 'Open']);
+        $milestone = Milestone::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'status_id' => $status->id,
+            'updated_at' => now()->setDate(2026, 3, 22)->setTime(9, 15, 0),
+        ]);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee(date('M jS, Y g:ia', strtotime($ticket->updated_at)));
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/milestone/create');
