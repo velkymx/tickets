@@ -38,42 +38,7 @@
 @foreach ($alltickets as $label => $tickets)
     @if ($tickets->isNotEmpty())
         <h3 class="mb-3 mt-4">{{ ucwords($label) }}</h3>
-        <div class="table-responsive">
-            <table class="table table-striped table-hover align-middle table-sm">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>T</th>
-                        <th>P</th>
-                        <th>Status</th>
-                        <th>Project</th>
-                        <th>Assignee</th>
-                        <th class="col-1">Notes</th>
-                        <th class="col-2">Created</th>
-                        <th class="col-2">Updated</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($tickets as $tick)
-                    <tr>
-                        <td><a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-body">#{{ $tick->id }} {{ $tick->subject }}</a></td>
-                        <td><span class="badge text-bg-secondary">{{ $tick->type->name }}</span></td>
-                        <td><span class="badge text-bg-secondary">{{ $tick->importance->name }}</span></td>
-                        <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
-                        <td>{{ $tick->project->name }}</td>
-                        <td>{{ $tick->assignee->name }}</td>
-                        <td>
-                            @if ($tick->notes()->where('hide','0')->count() > 0)
-                                <span class="badge text-bg-info">{{ $tick->notes()->where('hide','0')->count() }}</span>
-                            @endif
-                        </td>
-                        <td class="small text-muted">{{ date('M jS, Y g:ia',strtotime($tick->created_at)) }}</td>
-                        <td class="small text-muted">{{ date('M jS, Y g:ia',strtotime($tick->updated_at)) }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+        <x-ticket-table :tickets="$tickets" :show-checkbox="false" :show-type="true" :show-estimate="false" :show-created="true" :show-updated="true" :small="true" />
     @endif
 @endforeach
 

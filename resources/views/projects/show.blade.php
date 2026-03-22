@@ -52,58 +52,7 @@
 <hr class="mb-4">
 
 {{-- Ticket Table --}}
-<div class="table-responsive">
-    {{-- Replaced table-striped with B5 table-hover --}}
-    <table class="table table-striped table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>P</th>
-                <th>Status</th>
-                <th>Project</th>
-                <th>Assignee</th>
-                <th>Notes</th>
-                <th>Created</th>
-                <th>Updated</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($tickets->sortByDesc('importance_id') as $tick)
-            <tr>
-                {{-- Ticket Title and Type --}}
-                <td class="text-{{ $tick->importance->class }}">
-                    <i class="{{ $tick->type->icon }} me-1" title="{{ $tick->type->name }}"></i> 
-                    <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-{{ $tick->importance->class }}">
-                        #{{ $tick->id }} {{ $tick->subject }}
-                    </a>
-                </td>        
-                {{-- Priority (P) Icon --}}
-                <td>
-                    <span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}">
-                        <i class="{{ $tick->importance->icon }}"></i>
-                    </span>
-                </td>
-                {{-- Status Label --}}
-                <td class="text-center">
-                    {{-- Replaced old label class with B5 badge --}}
-                    <span class="badge text-bg-secondary">{{ $tick->status->name }}</span>
-                </td>
-                <td>{{ $tick->project->name }}</td>
-                <td>{{ $tick->assignee->name }}</td>
-                {{-- Notes Badge --}}
-                <td>
-                    @if ($tick->notes()->where('hide','0')->where('notetype','message')->count() > 0)
-                        <span class="badge text-bg-info">{{ $tick->notes()->where('hide','0')->where('notetype','message')->count() }}</span>
-                    @endif
-                </td>
-                {{-- Dates --}}
-                <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->created_at)) }}</td>
-                <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
+<x-ticket-table :tickets="$tickets->sortByDesc('importance_id')" :show-checkbox="false" :show-type="false" :show-estimate="false" :show-created="true" :show-updated="true" />
 
 {{-- Pagination Links --}}
 {!! $tickets->appends($queryfilter)->links('pagination::bootstrap-5') !!}
