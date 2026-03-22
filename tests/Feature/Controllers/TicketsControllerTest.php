@@ -920,6 +920,25 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_inline_reply_form_on_comment_cards(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'A comment to reply to',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('reply-composer', false);
+        $response->assertSee('Reply', false);
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');

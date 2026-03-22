@@ -136,4 +136,15 @@
             @endforeach
         </div>
     @endif
+
+    {{-- Inline Reply Composer --}}
+    <div class="reply-composer border-top px-3 py-2">
+        <form method="POST" action="/notes/reply" class="d-flex gap-2 align-items-start">
+            @csrf
+            <input type="hidden" name="ticket_id" value="{{ $note->ticket_id }}">
+            <input type="hidden" name="parent_id" value="{{ $note->id }}">
+            <textarea name="body" class="form-control form-control-sm" rows="1" placeholder="Reply..." style="resize: none;"></textarea>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Reply</button>
+        </form>
+    </div>
 </div>
