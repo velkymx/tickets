@@ -1046,6 +1046,26 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_mobile_responsive_classes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        // Reply form should have mobile-friendly submit
+        $response->assertSee('reply-composer', false);
+        // Consecutive changelog collapse attribute
+        $response->assertSee('data-entry-type', false);
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
