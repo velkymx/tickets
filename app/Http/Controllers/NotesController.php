@@ -153,6 +153,36 @@ class NotesController extends Controller
         ]);
     }
 
+    public function attach($id, Request $request)
+    {
+        $note = Note::findOrFail($id);
+
+        $validated = $request->validate([
+            'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,zip,txt,log,csv,md',
+        ]);
+
+        $file = $validated['file'];
+        $path = $file->store("attachments/{$note->ticket_id}", 'public');
+
+        $attachment = \App\Models\NoteAttachment::create([
+            'note_id' => $note->id,
+            'user_id' => Auth::id(),
+            'ticket_id' => $note->ticket_id,
+            'filename' => $file->getClientOriginalName(),
+            'path' => $path,
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+        ]);
+
+        return response()->json([
+            'id' => $attachment->id,
+            'filename' => $attachment->filename,
+            'url' => $attachment->url,
+            'mime_type' => $attachment->mime_type,
+            'isImage' => $attachment->isImage,
+        ], 201);
+    }
+
     public function togglePin($id)
     {
         $note = Note::findOrFail($id);

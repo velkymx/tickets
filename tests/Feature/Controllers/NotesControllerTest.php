@@ -405,6 +405,68 @@ class NotesControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    // --- Attachment Tests ---
+
+    #[Test]
+    public function it_uploads_an_attachment_to_an_existing_note(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('screenshot.png', 200, 200);
+
+        $response = $this->actingAs($user)->postJson("/notes/{$note->id}/attachments", [
+            'file' => $file,
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonPath('filename', 'screenshot.png');
+        $response->assertJsonPath('isImage', true);
+        $this->assertDatabaseHas('note_attachments', [
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+        ]);
+    }
+
+    #[Test]
+    public function it_rejects_oversized_attachments(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->create('huge.pdf', 11000); // 11MB
+
+        $response = $this->actingAs($user)->postJson("/notes/{$note->id}/attachments", [
+            'file' => $file,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['file']);
+    }
+
+    #[Test]
+    public function it_rejects_disallowed_file_types(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->create('malware.exe', 100);
+
+        $response = $this->actingAs($user)->postJson("/notes/{$note->id}/attachments", [
+            'file' => $file,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['file']);
+    }
+
     // --- Reaction Tests ---
 
     #[Test]

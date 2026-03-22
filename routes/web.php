@@ -84,6 +84,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/notes/{id}', [NotesController::class, 'update'])->name('notes.update');
     Route::post('/notes/{id}/pin', [NotesController::class, 'togglePin'])->name('notes.pin');
     Route::post('/notes/{id}/resolve', [NotesController::class, 'resolve'])->name('notes.resolve');
+    Route::post('/notes/{id}/attachments', [NotesController::class, 'attach'])->name('notes.attach');
 
     // --- Projects Routes ---
     Route::get('/projects', [ProjectsController::class, 'index'])->name('projects.list');
