@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class User extends Authenticatable
@@ -13,13 +14,13 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'avatar', 'phone', 'timezone', 'theme', 'title', 'bio',
+        'name', 'email', 'password', 'avatar', 'phone', 'timezone', 'theme', 'title', 'bio', 'admin',
     ];
 
     public function avatarUrl(int $size = 46): string
     {
         if ($this->avatar) {
-            return \Illuminate\Support\Facades\Storage::url($this->avatar);
+            return Storage::url($this->avatar);
         }
 
         $hash = md5(strtolower(trim($this->email)));
@@ -46,7 +47,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'admin' => 'boolean',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->admin;
     }
 
     public function tickets(): HasMany
