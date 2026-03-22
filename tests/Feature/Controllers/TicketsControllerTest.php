@@ -2123,6 +2123,37 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function fetch_returns_enhanced_ticket_resource(): void
+    {
+        $user = User::factory()->create(['name' => 'TestUser']);
+        $status = Status::factory()->create(['name' => 'In Progress']);
+        $assignee = User::factory()->create(['name' => 'AssignedUser']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $assignee->id,
+            'user_id' => $user->id,
+            'status_id' => $status->id,
+            'closed_at' => '2024-06-15 00:00:00',
+        ]);
+
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'message']);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'decision']);
+
+        $response = $this->actingAs($assignee)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
+
+        $response->assertStatus(200);
+        $data = $response->json('data.0');
+        $this->assertArrayHasKey('status_name', $data);
+        $this->assertArrayHasKey('assignee_name', $data);
+        $this->assertArrayHasKey('note_count', $data);
+        $this->assertArrayHasKey('notetype_summary', $data);
+        $this->assertEquals('In Progress', $data['status_name']);
+        $this->assertEquals('AssignedUser', $data['assignee_name']);
+        $this->assertEquals(2, $data['note_count']);
+        $this->assertEquals(1, $data['notetype_summary']['message']);
+        $this->assertEquals(1, $data['notetype_summary']['decision']);
+    }
+
+    #[Test]
     public function toggle_watcher_requires_authentication(): void
     {
         $ticket = Ticket::factory()->create();
