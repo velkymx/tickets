@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class ImportController extends Controller
 {
-
     public function index(Request $request)
     {
         $milestones = Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id');
@@ -20,6 +19,11 @@ class ImportController extends Controller
 
     public function create(Request $request)
     {
+        $request->validate([
+            'milestone_id' => 'required|integer|exists:milestones,id',
+            'csv' => 'required|file|mimes:csv,txt|max:10240',
+        ]);
+
         DB::beginTransaction();
         try {
             (new Importer)->call(

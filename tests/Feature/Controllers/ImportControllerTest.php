@@ -129,4 +129,27 @@ class ImportControllerTest extends TestCase
         $response->assertRedirect('/tickets/import');
         $response->assertSessionHasErrors();
     }
+
+    #[Test]
+    public function create_requires_csv_file(): void
+    {
+        $response = $this->actingAs($this->user)->post('/tickets/import', [
+            'milestone_id' => $this->milestone->id,
+        ]);
+
+        $response->assertSessionHasErrors('csv');
+    }
+
+    #[Test]
+    public function create_rejects_invalid_milestone(): void
+    {
+        $file = UploadedFile::fake()->createWithContent('import.csv', 'data');
+
+        $response = $this->actingAs($this->user)->post('/tickets/import', [
+            'milestone_id' => 99999,
+            'csv' => $file,
+        ]);
+
+        $response->assertSessionHasErrors('milestone_id');
+    }
 }
