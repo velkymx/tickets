@@ -894,6 +894,32 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_slash_command_autocomplete_container(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('slash-autocomplete', false);
+        $response->assertSee('data-commands', false);
+    }
+
+    #[Test]
+    public function show_renders_mention_autocomplete_container(): void
+    {
+        $user = User::factory()->create(['name' => 'TestUser']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('mention-autocomplete', false);
+        $response->assertSee('TestUser');
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');

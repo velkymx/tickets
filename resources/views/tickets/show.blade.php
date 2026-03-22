@@ -85,7 +85,41 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-md="list" title="List"><i class="fas fa-list"></i></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-action="attach" title="Attach"><i class="fas fa-paperclip"></i></button>
                         </div>
-                        <textarea name="note" id="note-textarea" class="form-control" rows="5" placeholder="Add a note or status update... (Markdown supported, / for commands, @ for mentions)">{{ old('note') }}</textarea>
+                        <div class="position-relative">
+                            <textarea name="note" id="note-textarea" class="form-control" rows="5" placeholder="Add a note or status update... (Markdown supported, / for commands, @ for mentions)">{{ old('note') }}</textarea>
+
+                            {{-- Slash Command Autocomplete --}}
+                            @php
+                                $slashCommands = [
+                                    ['cmd' => '/assign', 'desc' => 'Assign ticket to user'],
+                                    ['cmd' => '/status', 'desc' => 'Change ticket status'],
+                                    ['cmd' => '/decision', 'desc' => 'Record a decision (immutable)'],
+                                    ['cmd' => '/blocker', 'desc' => 'Flag a blocker'],
+                                    ['cmd' => '/action', 'desc' => 'Create an action item'],
+                                    ['cmd' => '/hours', 'desc' => 'Log time'],
+                                    ['cmd' => '/estimate', 'desc' => 'Set story points'],
+                                    ['cmd' => '/close', 'desc' => 'Close the ticket'],
+                                    ['cmd' => '/reopen', 'desc' => 'Reopen the ticket'],
+                                    ['cmd' => '/pin', 'desc' => 'Pin this note'],
+                                ];
+                            @endphp
+                            <div class="slash-autocomplete dropdown-menu position-absolute d-none" data-commands="{{ json_encode($slashCommands) }}">
+                                @foreach($slashCommands as $cmd)
+                                    <button type="button" class="dropdown-item" data-command="{{ $cmd['cmd'] }}">
+                                        <code>{{ $cmd['cmd'] }}</code> <span class="text-muted small">{{ $cmd['desc'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            {{-- @Mention Autocomplete --}}
+                            <div class="mention-autocomplete dropdown-menu position-absolute d-none">
+                                @foreach($allUsers as $userId => $userName)
+                                    <button type="button" class="dropdown-item" data-user-id="{{ $userId }}" data-user-name="{{ $userName }}">
+                                        {{ $userName }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Action Preview Bar --}}
