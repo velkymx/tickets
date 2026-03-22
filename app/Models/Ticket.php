@@ -26,6 +26,8 @@ class Ticket extends Model
         $url = url("/tickets/{$this->id}");
         $message = "The {$type} '{$this->subject}' has been updated.";
 
+        $this->load('watchers.user');
+
         $this->watchers->each(function ($watcher) use ($type, $message, $url, $exceptUserId) {
             if ($watcher->user_id !== $exceptUserId && $watcher->user?->email) {
                 $watcher->user->notify(new WatcherNotification($type, $message, $url));
