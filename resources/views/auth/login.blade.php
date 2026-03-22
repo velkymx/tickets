@@ -6,7 +6,7 @@
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             <div class="card shadow-lg border-0 rounded-3">
-                <div class="card-header bg-primary text-white text-center rounded-top-3">
+                <div class="card-header text-bg-primary text-center rounded-top-3">
                     <h2 class="h4 mb-0">Log In</h2>
                 </div>
                 <div class="card-body p-4">
