@@ -18,6 +18,15 @@ class Milestone extends Model
         'name', 'description', 'scrummaster_user_id', 'owner_user_id', 'start_at', 'due_at', 'end_at',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'start_at' => 'datetime',
+            'due_at' => 'datetime',
+            'end_at' => 'datetime',
+        ];
+    }
+
     protected static function boot()
     {
         parent::boot();

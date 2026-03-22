@@ -66,7 +66,7 @@ class ProjectsController extends Controller
 
         $total = $project->tickets->count();
 
-        if ($total !== 0 && $completed !== 0) {
+        if ($total !== 0) {
             $percent = round($completed / $total, 2) * 100;
         }
 

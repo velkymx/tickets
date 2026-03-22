@@ -40,7 +40,7 @@ class UsersController extends Controller
         // Add sample time for current timezone
         $currenttime = $time->format('H:i').$ampm;
 
-        return View('users.show', compact('user', 'alltickets', 'currenttime'));
+        return view('users.show', compact('user', 'alltickets', 'currenttime'));
 
     }
 
@@ -57,7 +57,7 @@ class UsersController extends Controller
             'darkly' => 'Darkly (Dark)',
         ];
 
-        return View('users.edit', compact('user', 'timezones', 'themes'));
+        return view('users.edit', compact('user', 'timezones', 'themes'));
 
     }
 

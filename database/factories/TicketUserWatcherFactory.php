@@ -16,6 +16,7 @@ class TicketUserWatcherFactory extends Factory
         return [
             'user_id' => User::factory(),
             'ticket_id' => Ticket::factory(),
+            'muted' => false,
         ];
     }
 }

@@ -11,6 +11,10 @@ class Status extends Model
 
     public $timestamps = false;
 
+    protected $fillable = [
+        'name',
+    ];
+
     protected const CLOSED_STATUS_NAMES = [
         'completed',
         'duplicate',

@@ -76,7 +76,7 @@ class TicketService
 
                     }
 
-                    $change_list[] = ucwords($label).' changed to '.$lookups[$lookup][$new[$change]];
+                    $change_list[] = ucwords($label).' changed to '.($lookups[$lookup][$new[$change]] ?? 'Unknown');
                 } else {
                     $change_list[] = ucwords($change).' changed to '.$new[$change];
                 }
@@ -98,7 +98,7 @@ class TicketService
         return $change_list;
     }
 
-    public function notate(int $ticketId, string $message, array $changes, int $addHours = 0, ?int $parentId = null): void
+    public function notate(int $ticketId, string $message, array $changes, float $addHours = 0, ?int $parentId = null): void
     {
         $ticket = Ticket::findOrFail($ticketId);
         $commandResults = $this->slashCommandService->handle($ticket, $message);

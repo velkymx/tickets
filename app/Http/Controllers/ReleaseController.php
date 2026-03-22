@@ -15,13 +15,13 @@ class ReleaseController extends Controller
 
         $releases = Release::all();
 
-        return View('release/index', compact('releases'));
+        return view('release/index', compact('releases'));
 
     }
 
     public function create()
     {
-        return View('release/create');
+        return view('release/create');
     }
 
     public function edit($id)
@@ -29,7 +29,7 @@ class ReleaseController extends Controller
         $release = Release::findOrFail($id);
         $this->authorize('update', $release);
 
-        return View('release/edit', compact('release'));
+        return view('release/edit', compact('release'));
     }
 
     public function put(StoreReleaseRequest $request, $id)
@@ -87,7 +87,7 @@ class ReleaseController extends Controller
 
         $types = Type::pluck('icon', 'name');
 
-        return View('release/show', compact('release', 'projects', 'types', 'release_tickets'));
+        return view('release/show', compact('release', 'projects', 'types', 'release_tickets'));
     }
 
     public function store(StoreReleaseRequest $request)

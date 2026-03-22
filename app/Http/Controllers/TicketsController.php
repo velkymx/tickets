@@ -84,7 +84,7 @@ class TicketsController extends Controller
         $perpage = 10;
 
         if ($request->has('perpage')) {
-            $perpage = (int) $request->perpage;
+            $perpage = min(max((int) $request->perpage, 1), 100);
         }
 
         $filters = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q'];
@@ -181,7 +181,7 @@ class TicketsController extends Controller
     public function show($id)
     {
         $ticket = Ticket::with([
-            'status', 'type', 'importance', 'project', 'assignee', 'user',
+            'status', 'type', 'importance', 'project', 'assignee', 'user', 'milestone',
             'watchers.user',
             'estimates.user',
             'notes' => function ($q) {
@@ -401,7 +401,7 @@ class TicketsController extends Controller
             'status' => 'required|integer|exists:statuses,id',
         ]);
 
-        if ($request['status'] != $ticket->status_id) {
+        if ((int) $request['status'] !== (int) $ticket->status_id) {
             $ticket->update(['status_id' => $request['status']]);
 
             $this->ticketService->notate($ticket->id, '', ['Status Changed to '.$ticket->status->name]);

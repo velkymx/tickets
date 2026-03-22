@@ -12,23 +12,23 @@ class default_lookup_values extends Seeder
     public function run()
     {
 
-      $data = [
-        'importances' => [
+        $data = [
+            'importances' => [
                 '1' => 'trivial',
                 '2' => 'minor',
                 '3' => 'major',
                 '4' => 'critical',
-                '5' => 'blocker'
-                ],
+                '5' => 'blocker',
+            ],
 
-        'milestones' => [
+            'milestones' => [
                 '1' => 'Unreviewed',
                 '2' => 'Future Backlog',
                 '3' => 'Backlog',
                 '4' => 'Scheduled',
-                ],
+            ],
 
-        'statuses' => [
+            'statuses' => [
                 '1' => 'new',
                 '2' => 'active',
                 '3' => 'testing',
@@ -36,37 +36,37 @@ class default_lookup_values extends Seeder
                 '5' => 'completed',
                 '6' => 'waiting',
                 '7' => 'reopened',
-                '8' => 'duplicte',
-                '9' => 'declined'
-                ],
+                '8' => 'duplicate',
+                '9' => 'declined',
+            ],
 
-        'types' => [
+            'types' => [
                 '1' => 'bug',
                 '2' => 'enhancement',
                 '3' => 'task',
-                '4' => 'proposal'
-        ]
-];
+                '4' => 'proposal',
+            ],
+        ];
 
-    foreach($data as $table => $values){
+        foreach ($data as $table => $values) {
 
-      foreach($values as $key => $val){
+            foreach ($values as $key => $val) {
 
-      DB::table($table)->insert([
-          'id' => $key,
-          'name' => $val
-      ]);
+                DB::table($table)->insert([
+                    'id' => $key,
+                    'name' => $val,
+                ]);
 
-      }
+            }
 
-      }
+        }
 
-      DB::table('projects')->insert([
-          'id' => 1,
-          'name' => 'Unassigned',
-          'description' => NULL,
-          'active' => 1
-      ]);
+        DB::table('projects')->insert([
+            'id' => 1,
+            'name' => 'Unassigned',
+            'description' => null,
+            'active' => 1,
+        ]);
 
     }
 }
