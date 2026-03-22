@@ -4,12 +4,9 @@
 @section('content')
 
 {{-- Header and Edit Button --}}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ $project->name }} Ticket List</h1>
-    {{-- Replaced pull-right with d-flex utilities --}}
-    <div>
-       <a href="/projects/edit/{{ $project->id }}" class="btn btn-sm btn-primary">Edit Project</a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">{{ $project->name }} Ticket List</h1>
+    <a href="/projects/edit/{{ $project->id }}" class="btn btn-sm btn-primary">Edit Project</a>
 </div>
 
 {{-- Progress Bar --}}
