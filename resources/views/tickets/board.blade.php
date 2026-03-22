@@ -31,7 +31,7 @@
                             
                             {{-- Iterate over tickets belonging to this status --}}
                             @foreach ($tickets->where('status_id', $status_id) as $ticket)
-                                <li class="list-group-item list-group-item-action p-2 mb-2 rounded shadow-sm bg-white" data-ticket-id="{{ $ticket->id }}">
+                                <li class="list-group-item list-group-item-action p-2 mb-2 rounded shadow-sm" data-ticket-id="{{ $ticket->id }}">
                                     <a href="/tickets/{{ $ticket->id }}" class="text-decoration-none text-body">
                                         #{{ $ticket->id }} {{ $ticket->subject }}
                                     </a>
