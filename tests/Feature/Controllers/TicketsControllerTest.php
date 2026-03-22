@@ -1326,9 +1326,9 @@ class TicketsControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        Ticket::factory()->create(['closed_at' => '2024-06-10 00:00:00']);
-        Ticket::factory()->create(['closed_at' => '2024-06-20 00:00:00']);
-        Ticket::factory()->create(['closed_at' => '2024-07-01 00:00:00']);
+        Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-06-10 00:00:00']);
+        Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-06-20 00:00:00']);
+        Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-07-01 00:00:00']);
 
         $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
 
@@ -1338,10 +1338,36 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function fetch_excludes_other_users_tickets(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+
+        Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-06-10 00:00:00']);
+        Ticket::factory()->create(['user_id2' => $otherUser->id, 'closed_at' => '2024-06-15 00:00:00']);
+
+        $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
+
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json('data'));
+    }
+
+    #[Test]
+    public function fetch_requires_started_at_and_completed_at(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->getJson('/tickets/fetch');
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['started_at', 'completed_at']);
+    }
+
+    #[Test]
     public function fetch_returns_ticket_resource_collection(): void
     {
         $user = User::factory()->create();
-        Ticket::factory()->create(['closed_at' => '2024-06-15 00:00:00']);
+        Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-06-15 00:00:00']);
 
         $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
 
@@ -1363,7 +1389,7 @@ class TicketsControllerTest extends TestCase
     public function fetch_returns_empty_when_no_tickets_in_range(): void
     {
         $user = User::factory()->create();
-        Ticket::factory()->create(['closed_at' => '2024-07-01 00:00:00']);
+        Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-07-01 00:00:00']);
 
         $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
 

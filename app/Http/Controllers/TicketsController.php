@@ -436,8 +436,16 @@ class TicketsController extends Controller
 
     public function fetch(Request $request)
     {
+        $request->validate([
+            'started_at' => 'required|date',
+            'completed_at' => 'required|date|after_or_equal:started_at',
+        ]);
 
-        return TicketResource::collection(Ticket::whereBetween('closed_at', [$request->started_at, $request->completed_at])->get());
+        return TicketResource::collection(
+            Ticket::where('user_id2', Auth::id())
+                ->whereBetween('closed_at', [$request->started_at, $request->completed_at])
+                ->get()
+        );
     }
 
     public function toggleWatcher($id)
