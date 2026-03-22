@@ -389,6 +389,31 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_skips_muted_watchers_when_note_activity_is_created(): void
+    {
+        Notification::fake();
+
+        $author = User::factory()->create();
+        $watcher = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+            'subject' => 'Muted Watcher Ticket',
+        ]);
+
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $watcher->id,
+            'muted' => true,
+        ]);
+
+        Auth::login($author);
+        $this->service->notate($ticket->id, 'Muted watcher should not be notified.', []);
+
+        Notification::assertNotSentTo($watcher, WatcherNotification::class);
+    }
+
+    #[Test]
     public function it_notifies_mentioned_users_with_a_mention_notification(): void
     {
         Notification::fake();

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\WatcherNotification;
+use App\Services\NotificationBatchService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,8 +30,12 @@ class Ticket extends Model
         $this->load('watchers.user');
 
         $this->watchers->each(function ($watcher) use ($type, $message, $url, $exceptUserId) {
-            if ($watcher->user_id !== $exceptUserId && $watcher->user?->email) {
-                $watcher->user->notify(new WatcherNotification($type, $message, $url));
+            if ($watcher->user_id !== $exceptUserId && ! $watcher->muted && $watcher->user?->email) {
+                app(NotificationBatchService::class)->dispatch(
+                    $watcher->user,
+                    new WatcherNotification($type, $message, $url),
+                    $this->id
+                );
             }
         });
     }

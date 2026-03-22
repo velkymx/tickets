@@ -13,8 +13,15 @@ class TicketUserWatcher extends Model
     protected $table = 'ticket_user_watchers';
 
     protected $fillable = [
-        'user_id', 'ticket_id',
+        'user_id', 'ticket_id', 'muted',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'muted' => 'boolean',
+        ];
+    }
 
     public function user(): BelongsTo
     {

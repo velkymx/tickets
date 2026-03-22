@@ -25,10 +25,12 @@ class TicketService
         private ?SlashCommandService $slashCommandService = null,
         private ?MarkdownService $markdownService = null,
         private ?MentionService $mentionService = null,
+        private ?NotificationBatchService $notificationBatchService = null,
     ) {
         $this->slashCommandService ??= app(SlashCommandService::class);
         $this->markdownService ??= app(MarkdownService::class);
         $this->mentionService ??= app(MentionService::class);
+        $this->notificationBatchService ??= app(NotificationBatchService::class);
     }
 
     public function changes(array $old, array $new): array
@@ -184,8 +186,12 @@ class TicketService
         $ticket->load('watchers.user');
 
         $ticket->watchers->each(function ($watcher) use ($message, $url, $exceptUserId) {
-            if ($watcher->user_id !== $exceptUserId && $watcher->user?->email) {
-                $watcher->user->notify(new WatcherNotification('Ticket', $message, $url));
+            if ($watcher->user_id !== $exceptUserId && ! $watcher->muted && $watcher->user?->email) {
+                $this->notificationBatchService->dispatch(
+                    $watcher->user,
+                    new WatcherNotification('Ticket', $message, $url),
+                    $watcher->ticket_id
+                );
             }
         });
     }
@@ -199,13 +205,17 @@ class TicketService
 
         $note->mentions->each(function ($mention) use ($note, $url, $excerpt) {
             if ($mention->user_id !== $note->user_id && $mention->user) {
-                $mention->user->notify(new MentionNotification(
-                    $note->user,
-                    $note->ticket_id,
-                    $note->id,
-                    $excerpt,
-                    $url
-                ));
+                $this->notificationBatchService->dispatch(
+                    $mention->user,
+                    new MentionNotification(
+                        $note->user,
+                        $note->ticket_id,
+                        $note->id,
+                        $excerpt,
+                        $url
+                    ),
+                    $note->ticket_id
+                );
             }
         });
     }
@@ -237,13 +247,17 @@ class TicketService
             return;
         }
 
-        $recipient->notify(new ReplyNotification(
-            $note->user,
-            $note->ticket_id,
-            $note->id,
-            trim(strip_tags($note->body_markdown ?: $note->body)),
-            url("/tickets/{$note->ticket_id}#note_{$note->id}")
-        ));
+        $this->notificationBatchService->dispatch(
+            $recipient,
+            new ReplyNotification(
+                $note->user,
+                $note->ticket_id,
+                $note->id,
+                trim(strip_tags($note->body_markdown ?: $note->body)),
+                url("/tickets/{$note->ticket_id}#note_{$note->id}")
+            ),
+            $note->ticket_id
+        );
     }
 
     public function getLookups(): array
