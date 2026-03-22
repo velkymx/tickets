@@ -478,6 +478,107 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_unified_timeline_with_all_note_types(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'A regular comment',
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'changelog',
+            'body' => 'Status changed',
+        ]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'decision',
+            'body' => 'We decided to use Redis',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('activity-timeline');
+        $response->assertSee('A regular comment');
+        $response->assertSee('Status changed');
+        $response->assertSee('We decided to use Redis');
+        $response->assertSee('data-entry-type="message"', false);
+        $response->assertSee('data-entry-type="changelog"', false);
+        $response->assertSee('data-entry-type="decision"', false);
+    }
+
+    #[Test]
+    public function show_renders_pinned_notes_at_top_of_timeline(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'pinned' => true,
+            'body' => 'This is pinned',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('pinned-notes-section');
+        $response->assertSee('This is pinned');
+    }
+
+    #[Test]
+    public function show_renders_unread_divider_for_new_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        // Create a view record in the past
+        $ticketView = TicketView::create([
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+        ]);
+        TicketView::where('id', $ticketView->id)->update(['updated_at' => now()->subHour()]);
+
+        // Create a note after the last view
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'New note after view',
+            'created_at' => now()->subMinutes(5),
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('unread-divider');
+    }
+
+    #[Test]
+    public function show_renders_filter_buttons_for_timeline(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('timeline-filter');
+        $response->assertSee('All');
+        $response->assertSee('Comments');
+        $response->assertSee('Decisions');
+        $response->assertSee('Blockers');
+        $response->assertSee('Activity');
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');
