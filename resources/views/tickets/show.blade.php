@@ -38,7 +38,22 @@
         </div>
     @endif
 
-        <div class="row">
+    {{-- Ticket Pulse (Real-Time Decision Log) --}}
+    @php
+        // We need to inject the initial pulse state. 
+        // In a real refactor, this would be passed from the controller.
+        // For now, we instantiate the service directly in the view or rely on an async fetch.
+        // To avoid N+1 or logic in view, let's fetch it via AJAX immediately, 
+        // OR ideally, update TicketsController::show to pass it.
+        // But since I can't easily change the controller without seeing it,
+        // I'll initialize with a skeleton or fetch it.
+        // Actually, the component handles the fetch if pulse is just the ID.
+        // Let's pass the ID and let Alpine fetch it immediately.
+        $initialPulse = ['id' => $ticket->id, 'status' => $ticket->status->name, 'owner_label' => 'Loading...', 'viewers' => []];
+    @endphp
+    <x-ticket-pulse :ticket="$ticket" :pulse="$initialPulse" />
+
+    <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-8">
             <h2 class="mb-3">
