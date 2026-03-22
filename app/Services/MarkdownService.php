@@ -13,8 +13,8 @@ class MarkdownService
             return '';
         }
 
-        // 1. Convert slash commands to code blocks before Markdown parsing
-        // This prevents them from being messed up by Markdown, and adds styling
+        $text = $this->wrapStackTrace($text);
+
         $lines = explode("\n", $text);
         foreach ($lines as &$line) {
             if (str_starts_with(trim($line), '/')) {
@@ -23,22 +23,41 @@ class MarkdownService
         }
         $text = implode("\n", $lines);
 
-        // 2. Parse standard Markdown
         $html = Str::markdown($text);
 
-        // 3. Parse @mentions
-        // Regex looks for @username, where username matches User::name rules (assuming alphanumeric + spaces/dots)
-        // Adjust regex based on username validation rules
         $html = preg_replace_callback('/@([\w\.]+)/', function ($matches) {
             $username = $matches[1];
             $user = User::where('name', $username)->first();
             
             if ($user) {
-                return '<a href="/users/' . $user->id . '">@' . $username . '</a>';
+                return '<a class="mention" href="/users/' . $user->id . '">@' . $username . '</a>';
             }
             
             return $matches[0];
         }, $html);
+
+        return $this->decorateChecklistItems($html);
+    }
+
+    private function wrapStackTrace(string $text): string
+    {
+        $lines = preg_split("/\r\n|\n|\r/", $text) ?: [];
+
+        $looksLikeTrace = count($lines) > 1
+            && preg_match('/(?:Exception|Error|Stack trace)/', $lines[0]) === 1
+            && collect($lines)->slice(1)->contains(fn (string $line) => preg_match('/^#\d+\s/', $line) === 1);
+
+        if (! $looksLikeTrace) {
+            return $text;
+        }
+
+        return "```\n{$text}\n```";
+    }
+
+    private function decorateChecklistItems(string $html): string
+    {
+        $html = str_replace('<li><input disabled="" type="checkbox">', '<li class="checklist-item"><input disabled type="checkbox">', $html);
+        $html = str_replace('<li><input checked="" disabled="" type="checkbox">', '<li class="checklist-item"><input checked disabled type="checkbox">', $html);
 
         return $html;
     }

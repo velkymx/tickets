@@ -39,7 +39,7 @@ class MarkdownServiceTest extends TestCase
         $output = $this->service->parse($input);
 
         $this->assertStringContainsString(
-            '<a href="/users/' . $user->id . '">@JohnDoe</a>', 
+            '<a class="mention" href="/users/' . $user->id . '">@JohnDoe</a>',
             $output
         );
     }
@@ -51,5 +51,41 @@ class MarkdownServiceTest extends TestCase
         $output = $this->service->parse($input);
 
         $this->assertStringContainsString('<code class="slash-command">/status Testing</code>', $output);
+    }
+
+    #[Test]
+    public function it_renders_fenced_code_blocks(): void
+    {
+        $input = "```php\nthrow new RuntimeException('boom');\n```";
+
+        $output = $this->service->parse($input);
+
+        $this->assertStringContainsString('<pre><code class="language-php">', $output);
+        $this->assertStringContainsString('throw new RuntimeException', $output);
+    }
+
+    #[Test]
+    public function it_renders_interactive_checklists(): void
+    {
+        $input = "- [ ] First task\n- [x] Done task";
+
+        $output = $this->service->parse($input);
+
+        $this->assertStringContainsString('class="checklist-item"', $output);
+        $this->assertStringContainsString('type="checkbox"', $output);
+        $this->assertStringContainsString('First task', $output);
+        $this->assertStringContainsString('checked disabled', $output);
+    }
+
+    #[Test]
+    public function it_auto_wraps_stack_traces_in_code_fences(): void
+    {
+        $input = "RuntimeException: Boom\n#0 /app/Service.php(10): App\\\\Service->handle()\n#1 {main}";
+
+        $output = $this->service->parse($input);
+
+        $this->assertStringContainsString('<pre><code>', $output);
+        $this->assertStringContainsString('RuntimeException: Boom', $output);
+        $this->assertStringContainsString('#0 /app/Service.php(10)', $output);
     }
 }
