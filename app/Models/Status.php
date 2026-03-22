@@ -13,7 +13,7 @@ class Status extends Model
 
     public static function closedStatusIds(): array
     {
-        return [5, 8, 9];
+        return self::whereIn('name', ['Closed', 'Resolved', 'Done'])->pluck('id')->toArray();
     }
 
     public static function activeStatusIds(): array
