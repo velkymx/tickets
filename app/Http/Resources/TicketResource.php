@@ -29,12 +29,16 @@ class TicketResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'note_count' => $this->notes_count ?? $this->notes()->count(),
-            'notetype_summary' => $this->notes()
-                ->select('notetype')
-                ->selectRaw('count(*) as count')
-                ->groupBy('notetype')
-                ->pluck('count', 'notetype')
-                ->toArray(),
+            'notetype_summary' => $this->whenLoaded('notes', function () {
+                return $this->notes->groupBy('notetype')->map(fn ($notes) => $notes->count())->toArray();
+            }, function () {
+                return $this->notes()
+                    ->select('notetype')
+                    ->selectRaw('count(*) as count')
+                    ->groupBy('notetype')
+                    ->pluck('count', 'notetype')
+                    ->toArray();
+            }),
         ];
     }
 }

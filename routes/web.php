@@ -4,13 +4,13 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\NotesController;
+use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ReleaseController;
+use App\Http\Controllers\TicketPulseController;
 use App\Http\Controllers\TicketsController;
 use App\Http\Controllers\UsersController;
-use App\Http\Controllers\TicketPulseController;
-use App\Http\Controllers\PresenceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -112,8 +112,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/claim/{id}', [TicketsController::class, 'claim'])->name('tickets.claim');
     Route::post('/tickets/watch/{id}', [TicketsController::class, 'toggleWatcher'])->name('tickets.watch');
     Route::post('/tickets/estimate/{ticket_id}', [TicketsController::class, 'estimate'])->name('tickets.estimate');
-    Route::post('/tickets/batch', [TicketsController::class, 'batch'])->name('tickets.batch');
-    Route::post('/tickets/import', [ImportController::class, 'create'])->name('tickets.storeimport');
+    Route::post('/tickets/batch', [TicketsController::class, 'batch'])->name('tickets.batch')->middleware('throttle:uploads');
+    Route::post('/tickets/import', [ImportController::class, 'create'])->name('tickets.storeimport')->middleware('throttle:uploads');
     Route::put('/tickets/update/{id}', [TicketsController::class, 'update'])->name('tickets.update');
     Route::post('/tickets/upload', [TicketsController::class, 'upload'])->name('tickets.upload')->middleware('throttle:uploads');
 

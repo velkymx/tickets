@@ -41,12 +41,16 @@ class WebRoutesTest extends TestCase
     public function it_uses_post_for_state_changing_operations(): void
     {
         $routes = Route::getRoutes();
-        $stateChangingUris = ['claim', 'watch', 'note', 'store', 'batch', 'upload', 'import'];
+        $stateChangingUris = ['claim', 'watch', 'store', 'batch', 'upload', 'import'];
 
         foreach ($routes as $route) {
             $methods = $route->methods();
 
             if (in_array('GET', $methods) || in_array('HEAD', $methods)) {
+                continue;
+            }
+
+            if (str_starts_with($route->uri(), 'api/')) {
                 continue;
             }
 

@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 
 class Note extends Model
 {
@@ -41,22 +44,22 @@ class Note extends Model
         return $this->belongsTo(Note::class, 'parent_id');
     }
 
-    public function replies(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function replies(): HasMany
     {
         return $this->hasMany(Note::class, 'parent_id');
     }
 
-    public function reactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reactions(): HasMany
     {
         return $this->hasMany(NoteReaction::class);
     }
 
-    public function attachments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function attachments(): HasMany
     {
         return $this->hasMany(NoteAttachment::class);
     }
 
-    public function mentions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function mentions(): HasMany
     {
         return $this->hasMany(Mention::class);
     }
@@ -71,7 +74,7 @@ class Note extends Model
         return $this->belongsTo(Note::class, 'supersedes_id');
     }
 
-    public function supersededBy(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function supersededBy(): HasOne
     {
         return $this->hasOne(Note::class, 'supersedes_id');
     }
@@ -82,7 +85,7 @@ class Note extends Model
         return $this->edited_at !== null;
     }
 
-    public function groupedReactions(): \Illuminate\Support\Collection
+    public function groupedReactions(): Collection
     {
         return $this->reactions->groupBy('emoji')->map(function ($group) {
             return [
@@ -109,7 +112,11 @@ class Note extends Model
 
     public function isStaleBlocker(): bool
     {
-        return $this->notetype === 'blocker' && ! $this->resolved && $this->created_at->diffInHours() > 48;
+        if ($this->notetype !== 'blocker' || $this->resolved) {
+            return false;
+        }
+
+        return $this->created_at && $this->created_at->diffInHours() > 48;
     }
 
     // Scopes

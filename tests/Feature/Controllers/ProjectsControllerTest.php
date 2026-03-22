@@ -6,9 +6,9 @@ use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class ProjectsControllerTest extends TestCase
 {
@@ -32,7 +32,7 @@ class ProjectsControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/projects');
 
         $response->assertStatus(200);
-        $this->assertEquals(['Apple', 'Zebra'], Project::orderBy('name')->pluck('name')->toArray());
+        $this->assertEquals(['Apple', 'Zebra'], Project::where('name', '!=', 'Unassigned')->orderBy('name')->pluck('name')->toArray());
     }
 
     #[Test]

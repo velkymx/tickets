@@ -34,6 +34,7 @@ class SlashCommandService
 
             if (! str_starts_with($trimmedLine, '/')) {
                 $bodyLines[] = $trimmedLine;
+
                 continue;
             }
 
@@ -68,7 +69,7 @@ class SlashCommandService
         $results['body'] = trim(implode("\n", $bodyLines));
 
         if (count($results['actions']) > 0 || count($results['changes']) > 0) {
-            (new TicketPulseService())->invalidatePulse($ticket->id);
+            (new TicketPulseService)->invalidatePulse($ticket->id);
         }
 
         return $results;
@@ -219,12 +220,17 @@ class SlashCommandService
 
     protected function extractMentions(string $text): array
     {
-        preg_match_all('/@\[([^\]]+)\]/u', $text, $matches);
+        preg_match_all('/@\[([^\]]+)\]/u', $text, $bracketMatches);
+        preg_match_all('/@([\w.\-]+)/u', $text, $bareMatches);
 
-        return array_values(array_unique(array_map(
+        $bracketMentions = array_values(array_unique(array_map(
             fn (string $token) => preg_replace('/\s*\([^)]*\)$/', '', trim($token)),
-            $matches[1] ?? []
+            $bracketMatches[1] ?? []
         )));
+
+        $bareMentions = array_values(array_unique($bareMatches[1] ?? []));
+
+        return array_unique(array_merge($bracketMentions, $bareMentions));
     }
 
     protected function findByName(string $class, string $value): mixed
@@ -235,8 +241,8 @@ class SlashCommandService
             ->where('name', $trimmed)
             ->first()
             ?? $class::query()
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
-            ->first()
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
+                ->first()
             ?? $class::query()
                 ->where('name', 'like', "%{$trimmed}%")
                 ->orderByDesc('id')
@@ -259,10 +265,18 @@ class SlashCommandService
         $lines = explode("\n", $text);
         foreach ($lines as $line) {
             $line = trim($line);
-            if (str_starts_with($line, '/decision')) return 'decision';
-            if (str_starts_with($line, '/blocker')) return 'blocker';
-            if (str_starts_with($line, '/update')) return 'update';
-            if (str_starts_with($line, '/action')) return 'action';
+            if (str_starts_with($line, '/decision')) {
+                return 'decision';
+            }
+            if (str_starts_with($line, '/blocker')) {
+                return 'blocker';
+            }
+            if (str_starts_with($line, '/update')) {
+                return 'update';
+            }
+            if (str_starts_with($line, '/action')) {
+                return 'action';
+            }
         }
 
         return 'message';

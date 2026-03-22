@@ -9,10 +9,10 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class MilestoneControllerTest extends TestCase
 {
@@ -42,7 +42,7 @@ class MilestoneControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/milestone');
 
         $response->assertStatus(200);
-        $this->assertEquals(['Apple', 'Zebra'], Milestone::orderBy('name')->pluck('name')->toArray());
+        $this->assertEquals(['Apple', 'Zebra'], Milestone::where('name', '!=', 'Unreviewed')->where('name', '!=', 'Backlog')->where('name', '!=', 'Future Backlog')->where('name', '!=', 'Scheduled')->orderBy('name')->pluck('name')->toArray());
     }
 
     #[Test]

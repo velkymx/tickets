@@ -45,7 +45,6 @@ class TicketPolicy
 
     public function claim(User $user, Ticket $ticket): bool
     {
-        // Owner can reclaim, assignee can reassign, anyone can claim unassigned tickets
         return $user->id === $ticket->user_id
             || $user->id === $ticket->user_id2
             || empty($ticket->user_id2);

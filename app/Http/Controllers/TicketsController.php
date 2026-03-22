@@ -62,7 +62,9 @@ class TicketsController extends Controller
         ];
 
         $recentTickets = Ticket::where('user_id2', $user->id)
+            ->whereNotIn('status_id', $closedStatusIds)
             ->orWhere('user_id', $user->id)
+            ->whereNotIn('status_id', $closedStatusIds)
             ->with(['status', 'type', 'importance', 'project', 'assignee'])
             ->orderBy('updated_at', 'desc')
             ->limit(5)
