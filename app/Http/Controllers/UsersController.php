@@ -35,7 +35,7 @@ class UsersController extends Controller
         $time = new \DateTime(null, new \DateTimeZone($timezone));
 
         // Add 12-hour format time for display
-        $ampm = $time->format('H') > 12 ? ' ('.$time->format('g:i a').')' : '';
+        $ampm = $time->format('H') >= 12 ? ' ('.$time->format('g:i a').')' : '';
 
         // Add sample time for current timezone
         $currenttime = $time->format('H:i').$ampm;
@@ -100,7 +100,7 @@ class UsersController extends Controller
                 $time = new \DateTime(null, new \DateTimeZone($timezone));
 
                 // Add 12-hour format for display
-                $ampm = $time->format('H') > 12 ? ' ('.$time->format('g:i a').')' : '';
+                $ampm = $time->format('H') >= 12 ? ' ('.$time->format('g:i a').')' : '';
 
                 // Format timezone name with current time
                 $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$time->format('H:i').$ampm;
