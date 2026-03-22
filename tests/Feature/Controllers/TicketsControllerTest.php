@@ -2441,4 +2441,22 @@ class TicketsControllerTest extends TestCase
         $this->assertStringStartsWith('/images/avatars/', $path);
         $this->assertStringEndsWith('.jpg', $path);
     }
+
+    #[Test]
+    public function show_passes_all_users_with_titles(): void
+    {
+        $user = User::factory()->create(['name' => 'Alice', 'title' => 'PM']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $this->actingAs($user);
+
+        $response = $this->get("/tickets/{$ticket->id}");
+
+        $response->assertOk();
+        $response->assertViewHas('allUsers');
+        $allUsers = $response->viewData('allUsers');
+        $found = collect($allUsers)->firstWhere('id', $user->id);
+        $this->assertNotNull($found);
+        $this->assertEquals('Alice', $found['name']);
+        $this->assertEquals('PM', $found['title']);
+    }
 }

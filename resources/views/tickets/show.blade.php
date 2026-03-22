@@ -123,14 +123,8 @@
                                 @endforeach
                             </div>
 
-                            {{-- @Mention Autocomplete --}}
-                            <div class="mention-autocomplete dropdown-menu position-absolute d-none">
-                                @foreach($allUsers as $userId => $userName)
-                                    <button type="button" class="dropdown-item" data-user-id="{{ $userId }}" data-user-name="{{ $userName }}">
-                                        {{ $userName }}
-                                    </button>
-                                @endforeach
-                            </div>
+                            {{-- @Mention Autocomplete (populated by JS from data-users) --}}
+                            <div class="mention-autocomplete dropdown-menu position-absolute d-none"></div>
                         </div>
                     </div>
 

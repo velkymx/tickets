@@ -215,7 +215,11 @@ class TicketsController extends Controller
 
         $pulse = app(TicketPulseService::class)->getPulse($ticket);
 
-        $allUsers = User::orderBy('name')->pluck('name', 'id');
+        $allUsers = User::orderBy('name')->get(['id', 'name', 'title'])->map(fn ($u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'title' => $u->title,
+        ])->values()->toArray();
         $pinnedNotes = $ticket->notes->where('pinned', true);
 
         return view('tickets.show', compact('ticket', 'lookups', 'ticketViews', 'pulse', 'allUsers', 'pinnedNotes', 'lastViewedAt'));
