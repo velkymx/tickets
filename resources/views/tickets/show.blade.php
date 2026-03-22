@@ -655,10 +655,11 @@
             if (!container || !viewers) return;
             const maxShow = 3;
             let html = '<div class="d-flex" style="margin-left: -8px;">';
+            const escape = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             viewers.slice(0, maxShow).forEach((v, i) => {
                 const hash = v.email ? md5(v.email.toLowerCase().trim()) : '';
                 const composingDot = v.composing ? '<span class="position-absolute bottom-0 end-0 badge bg-success rounded-circle" style="width:8px;height:8px;padding:0;">…</span>' : '';
-                html += `<div class="position-relative" style="margin-left:-8px;z-index:${maxShow - i};" title="${v.name}">
+                html += `<div class="position-relative" style="margin-left:-8px;z-index:${maxShow - i};" title="${escape(v.name)}">
                     <img src="https://www.gravatar.com/avatar/${hash}?s=28&d=mp" class="rounded-circle border border-2 border-white" width="28" height="28">
                     ${composingDot}
                 </div>`;
