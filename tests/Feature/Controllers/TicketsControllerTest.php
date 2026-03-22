@@ -877,6 +877,23 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_renders_composer_help_link(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('composer-help', false);
+        $response->assertSee('Help');
+        $response->assertSee('composerHelpModal', false);
+        $response->assertSee('/decision');
+        $response->assertSee('/blocker');
+        $response->assertSee('/assign');
+    }
+
+    #[Test]
     public function create_requires_authentication(): void
     {
         $response = $this->get('/ticket/create');

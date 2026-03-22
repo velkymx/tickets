@@ -118,6 +118,7 @@
                     <input type="hidden" name="ticket_id" value="{{ $ticket->id }}">
 
                     <div class="d-flex justify-content-end gap-2">
+                        <a href="#" class="btn btn-sm btn-outline-secondary composer-help" data-bs-toggle="modal" data-bs-target="#composerHelpModal">? Help</a>
                         <button type="submit" class="btn btn-success">Post Update</button>
                     </div>
                 </form>
@@ -278,6 +279,9 @@
             @endif
         </div>
     </div>
+
+    {{-- Composer Help Modal --}}
+    @include('partials.composer-help')
 
     {{-- Modal for Story Points (Replaced old B3 modal structure) --}}
     <div class="modal fade" id="estimateModal" tabindex="-1" aria-labelledby="estimateModalLabel" aria-hidden="true">
