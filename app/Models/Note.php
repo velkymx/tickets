@@ -60,4 +60,76 @@ class Note extends Model
     {
         return $this->hasMany(Mention::class);
     }
+
+    public function resolvedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    public function supersedes(): BelongsTo
+    {
+        return $this->belongsTo(Note::class, 'supersedes_id');
+    }
+
+    public function supersededBy(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Note::class, 'supersedes_id');
+    }
+
+    // Helpers
+    public function isEdited(): bool
+    {
+        return $this->edited_at !== null;
+    }
+
+    public function groupedReactions(): \Illuminate\Support\Collection
+    {
+        return $this->reactions->groupBy('emoji')->map(function ($group) {
+            return [
+                'count' => $group->count(),
+                'reacted' => $group->contains('user_id', auth()->id()),
+            ];
+        });
+    }
+
+    public function hasReacted(User $user, string $emoji): bool
+    {
+        return $this->reactions()->where('user_id', $user->id)->where('emoji', $emoji)->exists();
+    }
+
+    public function isResolved(): bool
+    {
+        return $this->resolved;
+    }
+
+    public function isSuperseded(): bool
+    {
+        return $this->supersededBy()->exists();
+    }
+
+    public function isStaleBlocker(): bool
+    {
+        return $this->notetype === 'blocker' && ! $this->resolved && $this->created_at->diffInHours() > 48;
+    }
+
+    // Scopes
+    public function scopePinned($query)
+    {
+        return $query->where('pinned', true);
+    }
+
+    public function scopeTopLevel($query)
+    {
+        return $query->whereNull('parent_id');
+    }
+
+    public function scopeActiveActions($query)
+    {
+        return $query->where('notetype', 'action')->where('resolved', false);
+    }
+
+    public function scopeActiveBlockers($query)
+    {
+        return $query->where('notetype', 'blocker')->where('resolved', false);
+    }
 }

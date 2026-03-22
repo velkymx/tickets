@@ -201,4 +201,94 @@ class NoteTest extends TestCase
         $this->assertTrue($note->mentions->first()->is($mention));
         $this->assertTrue($note->mentions->first()->user->is($mentionedUser));
     }
+
+    /** @test */
+    public function it_can_be_resolved()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $note = Note::create([
+            'body' => 'Test note',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+            'resolved' => true,
+            'resolved_by' => $user->id,
+            'resolution_message' => 'Resolved!',
+        ]);
+
+        $this->assertTrue($note->isResolved());
+        $this->assertTrue($note->resolvedByUser->is($user));
+    }
+
+    /** @test */
+    public function it_can_be_superseded()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $original = Note::create([
+            'body' => 'Original',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'decision',
+        ]);
+
+        $supersededBy = Note::create([
+            'body' => 'New',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'decision',
+            'supersedes_id' => $original->id,
+        ]);
+
+        $this->assertTrue($original->isSuperseded());
+        $this->assertTrue($supersededBy->supersedes->is($original));
+    }
+
+    /** @test */
+    public function it_can_be_a_stale_blocker()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $staleNote = Note::create([
+            'body' => 'Stale blocker',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'blocker',
+        ]);
+        $staleNote->created_at = now()->subHours(49);
+        $staleNote->save();
+
+        $freshNote = Note::create([
+            'body' => 'Fresh blocker',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'blocker',
+        ]);
+        $freshNote->created_at = now()->subHours(47);
+        $freshNote->save();
+
+        $this->assertTrue($staleNote->isStaleBlocker());
+        $this->assertFalse($freshNote->isStaleBlocker());
+    }
+
+    /** @test */
+    public function it_has_useful_scopes()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        Note::create(['body' => 'Pinned', 'user_id' => $user->id, 'ticket_id' => $ticket->id, 'pinned' => true]);
+        Note::create(['body' => 'Not pinned', 'user_id' => $user->id, 'ticket_id' => $ticket->id, 'pinned' => false]);
+        
+        $action = Note::create(['body' => 'Active Action', 'user_id' => $user->id, 'ticket_id' => $ticket->id, 'notetype' => 'action', 'resolved' => false]);
+        Note::create(['body' => 'Resolved Action', 'user_id' => $user->id, 'ticket_id' => $ticket->id, 'notetype' => 'action', 'resolved' => true]);
+
+        $this->assertCount(1, Note::pinned()->get());
+        $this->assertCount(1, Note::activeActions()->get());
+        $this->assertTrue(Note::activeActions()->first()->is($action));
+    }
 }
