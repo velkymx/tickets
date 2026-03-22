@@ -8,7 +8,7 @@
                 </div>
                 <div class="small">
                     @if($reply->body_markdown)
-                        {!! $reply->body_markdown !!}
+                        {!! clean($reply->body_markdown) !!}
                     @else
                         {!! clean($reply->body) !!}
                     @endif
