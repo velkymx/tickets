@@ -26,7 +26,7 @@
             <input type="hidden" name="description" id="description_hidden" value="{{ old('description') }}">
             
             {{-- This is the DIV that Quill will target and render the rich text editor into --}}
-            <div id="editor-container" style="height: 300px;">
+            <div id="editor-container" class="editor-lg">
                 {{ old('description') }}
             </div>
         </div>

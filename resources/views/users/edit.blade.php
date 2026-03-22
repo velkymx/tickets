@@ -18,7 +18,7 @@
 
     <div class="mb-3">
         <label for="editor-container" class="form-label">Bio</label>
-        <div id="editor-container" style="height: 250px;">
+        <div id="editor-container">
         </div>
         <input type="hidden" name="bio" id="bio-input" value="{{ $user->bio }}">
     </div>

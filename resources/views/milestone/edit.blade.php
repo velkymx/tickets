@@ -21,7 +21,7 @@
     <div class="mb-3">
         <label for="editor-container" class="form-label">Describe Milestone</label>
         {{-- Quill editor container --}}
-        <div id="editor-container" style="height: 250px;">
+        <div id="editor-container">
             {{-- Initial content will be loaded by Quill.js script below --}}
         </div>
         {{-- Hidden input to hold the HTML content submitted by Quill. ID: 'description-input' --}}

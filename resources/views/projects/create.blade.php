@@ -21,7 +21,7 @@
     <div class="mb-3">
         <label for="editor-container" class="form-label">Describe Project</label>
         {{-- Quill editor container --}}
-        <div id="editor-container" style="height: 250px;">
+        <div id="editor-container">
             {{-- Initial content for a new project is empty, but we can load old input if the form fails validation --}}
         </div>
         {{-- Hidden input to hold the HTML content submitted by Quill. ID: 'description-input' --}}

@@ -28,7 +28,7 @@ Create Release
     </div>
     <div class="mb-3">
         <label for="editor-container" class="form-label">Describe Release</label>
-        <div id="editor-container" style="height: 250px;">
+        <div id="editor-container">
         </div>
         <input type="hidden" name="body" id="description-input" value="{{ old('body') }}">
     </div>

@@ -26,7 +26,7 @@
                    value="{{ old('description', $ticket->description) }}">
             
             {{-- Quill Editor Container. Initial content is loaded by the JS from the hidden input. --}}
-            <div id="editor-container" style="height: 500px;">
+            <div id="editor-container" class="editor-xl">
             </div>
         </div>
 

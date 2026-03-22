@@ -21,7 +21,7 @@
     <div class="mb-3">
         <label for="editor-container" class="form-label">Describe Project</label>
         {{-- Quill editor container --}}
-        <div id="editor-container" style="height: 250px;">
+        <div id="editor-container">
             {!! clean(old('description', $project->description)) !!}
         </div>
         {{-- Hidden input to hold the HTML content submitted by Quill --}}

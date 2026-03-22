@@ -149,7 +149,7 @@
                     {{-- Hidden input for Quill content --}}
                     <input type="hidden" name="body" id="note_body_hidden">
                     {{-- Quill Editor Container --}}
-                    <div id="note-editor-container" style="height: 200px;"></div>
+                    <div id="note-editor-container" class="editor-sm"></div>
                 </div>
 
                 {{-- Change Status (Replaces Form::select) --}}

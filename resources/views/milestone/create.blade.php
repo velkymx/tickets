@@ -44,7 +44,7 @@
                    value="{{ old('description') }}">
             
             {{-- Quill Editor Container --}}
-            <div id="editor-container" style="height: 300px;">
+            <div id="editor-container" class="editor-lg">
                 {{ old('description') }}
             </div>
         </div>

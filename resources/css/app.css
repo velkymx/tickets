@@ -8,3 +8,24 @@
 body {
     font-family: 'Inter', sans-serif;
 }
+
+/* Quill editor height variants */
+#editor-container,
+#note-editor-container {
+    height: 250px;
+}
+
+#editor-container.editor-lg,
+#note-editor-container.editor-lg {
+    height: 300px;
+}
+
+#editor-container.editor-xl,
+#note-editor-container.editor-xl {
+    height: 500px;
+}
+
+#editor-container.editor-sm,
+#note-editor-container.editor-sm {
+    height: 200px;
+}
