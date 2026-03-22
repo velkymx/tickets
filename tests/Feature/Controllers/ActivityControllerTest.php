@@ -60,6 +60,26 @@ class ActivityControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_renders_the_activity_center_layout(): void
+    {
+        $user = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Sarah']);
+
+        $user->notifyNow(new MentionNotification($actor, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+
+        $response = $this->actingAs($user)->get('/activity');
+
+        $response->assertOk();
+        $response->assertSee('Activity Center');
+        $response->assertSee('Mark all');
+        $response->assertSee('All');
+        $response->assertSee('Mentions');
+        $response->assertSee('Watching');
+        $response->assertSee('Replies');
+        $response->assertSee('Unread');
+    }
+
+    #[Test]
     public function read_marks_a_single_notification_as_read(): void
     {
         $user = User::factory()->create();
