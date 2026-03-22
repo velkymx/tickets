@@ -23,7 +23,8 @@ class TicketPolicy
 
     public function view(User $user, Ticket $ticket): bool
     {
-        return true;
+        return $user->id === $ticket->user_id
+            || $user->id === $ticket->user_id2;
     }
 
     public function create(User $user): bool
@@ -44,16 +45,21 @@ class TicketPolicy
 
     public function claim(User $user, Ticket $ticket): bool
     {
-        return true;
+        // Owner can reclaim, assignee can reassign, anyone can claim unassigned tickets
+        return $user->id === $ticket->user_id
+            || $user->id === $ticket->user_id2
+            || empty($ticket->user_id2);
     }
 
     public function estimate(User $user, Ticket $ticket): bool
     {
-        return true;
+        return $user->id === $ticket->user_id
+            || $user->id === $ticket->user_id2;
     }
 
     public function addNote(User $user, Ticket $ticket): bool
     {
-        return true;
+        return $user->id === $ticket->user_id
+            || $user->id === $ticket->user_id2;
     }
 }

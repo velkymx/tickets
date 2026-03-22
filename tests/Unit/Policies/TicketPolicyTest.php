@@ -5,9 +5,9 @@ namespace Tests\Unit\Policies;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Policies\TicketPolicy;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TicketPolicyTest extends TestCase
 {
@@ -50,14 +50,14 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_unrelated_user_to_view(): void
+    public function it_denies_unrelated_user_from_viewing(): void
     {
         $unrelated = User::factory()->create();
         $owner = User::factory()->create();
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertTrue($this->policy->view($unrelated, $ticket));
+        $this->assertFalse($this->policy->view($unrelated, $ticket));
     }
 
     #[Test]
@@ -128,21 +128,62 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_any_user_to_claim(): void
+    public function it_allows_claiming_unassigned_tickets(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => 0]);
 
         $this->assertTrue($this->policy->claim($user, $ticket));
     }
 
     #[Test]
-    public function it_allows_any_user_to_estimate(): void
+    public function it_denies_claiming_already_assigned_tickets(): void
     {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $unrelated = User::factory()->create();
+        $owner = User::factory()->create();
+        $assignee = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertTrue($this->policy->estimate($user, $ticket));
+        $this->assertFalse($this->policy->claim($unrelated, $ticket));
+    }
+
+    #[Test]
+    public function it_allows_owner_to_claim_own_ticket(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
+
+        $this->assertTrue($this->policy->claim($owner, $ticket));
+    }
+
+    #[Test]
+    public function it_allows_owner_to_estimate(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
+
+        $this->assertTrue($this->policy->estimate($owner, $ticket));
+    }
+
+    #[Test]
+    public function it_allows_assignee_to_estimate(): void
+    {
+        $owner = User::factory()->create();
+        $assignee = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
+
+        $this->assertTrue($this->policy->estimate($assignee, $ticket));
+    }
+
+    #[Test]
+    public function it_denies_unrelated_user_from_estimating(): void
+    {
+        $unrelated = User::factory()->create();
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
+
+        $this->assertFalse($this->policy->estimate($unrelated, $ticket));
     }
 
     #[Test]
@@ -165,14 +206,14 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_unrelated_user_to_add_note(): void
+    public function it_denies_unrelated_user_from_adding_note(): void
     {
         $unrelated = User::factory()->create();
         $owner = User::factory()->create();
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertTrue($this->policy->addNote($unrelated, $ticket));
+        $this->assertFalse($this->policy->addNote($unrelated, $ticket));
     }
 
     #[Test]
