@@ -45,7 +45,6 @@ class TicketPolicy
 
     public function addNote(User $user, Ticket $ticket): bool
     {
-        return $user->id === $ticket->user_id
-            || $user->id === $ticket->user_id2;
+        return true;
     }
 }

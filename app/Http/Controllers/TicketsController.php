@@ -415,7 +415,7 @@ class TicketsController extends Controller
 
             $ticket = Ticket::withSum('notes', 'hours')->findOrFail($request->ticket_id);
 
-            $this->authorize('update', $ticket);
+            $this->authorize('addNote', $ticket);
 
             $old = $ticket->toArray();
 

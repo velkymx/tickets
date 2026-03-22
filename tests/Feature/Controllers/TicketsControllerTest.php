@@ -1774,6 +1774,35 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function note_allows_unrelated_authenticated_users_to_change_status(): void
+    {
+        $viewer = User::factory()->create();
+        $owner = User::factory()->create();
+        $assignee = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $owner->id,
+            'user_id2' => $assignee->id,
+        ]);
+        $newStatus = Status::factory()->create();
+
+        $response = $this->actingAs($viewer)->post('/notes', [
+            'ticket_id' => $ticket->id,
+            'status_id' => $newStatus->id,
+            'note' => 'Moving this forward',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $viewer->id,
+            'notetype' => 'message',
+        ]);
+
+        $ticket->refresh();
+        $this->assertEquals($newStatus->id, $ticket->status_id);
+    }
+
+    #[Test]
     public function note_sets_closed_at_when_status_is_closed(): void
     {
         $user = User::factory()->create();
