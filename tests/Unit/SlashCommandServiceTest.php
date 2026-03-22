@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SlashCommandService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SlashCommandServiceTest extends TestCase
@@ -22,7 +23,7 @@ class SlashCommandServiceTest extends TestCase
         $this->service = new SlashCommandService();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_change_status_via_slash_command()
     {
         $ticket = Ticket::factory()->create();
@@ -33,7 +34,7 @@ class SlashCommandServiceTest extends TestCase
         $this->assertEquals($status->id, $ticket->fresh()->status_id);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_assign_user_via_slash_command()
     {
         $ticket = Ticket::factory()->create();
@@ -44,7 +45,7 @@ class SlashCommandServiceTest extends TestCase
         $this->assertEquals($user->id, $ticket->fresh()->user_id2);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_close_ticket_via_slash_command()
     {
         $ticket = Ticket::factory()->create(['closed_at' => null]);
@@ -54,7 +55,7 @@ class SlashCommandServiceTest extends TestCase
         $this->assertNotNull($ticket->fresh()->closed_at);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_log_hours_via_slash_command()
     {
         $ticket = Ticket::factory()->create();
@@ -64,7 +65,7 @@ class SlashCommandServiceTest extends TestCase
         $this->assertEquals(2.5, $results['hours']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_estimate_via_slash_command()
     {
         $ticket = Ticket::factory()->create(['estimate' => 0]);
@@ -74,7 +75,7 @@ class SlashCommandServiceTest extends TestCase
         $this->assertEquals(5, $ticket->fresh()->estimate);
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_signal_type_from_command()
     {
         $ticket = Ticket::factory()->create();

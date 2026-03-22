@@ -4,13 +4,14 @@ namespace Tests\Unit;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class UserTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function it_can_have_an_avatar()
     {
         $user = User::factory()->create([
@@ -20,7 +21,7 @@ class UserTest extends TestCase
         $this->assertEquals('avatars/1.png', $user->avatar);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_gravatar_url_when_no_avatar_is_set()
     {
         $user = User::factory()->create([

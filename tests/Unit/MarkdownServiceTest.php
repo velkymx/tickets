@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Models\User;
 use App\Services\MarkdownService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MarkdownServiceTest extends TestCase
@@ -19,7 +20,7 @@ class MarkdownServiceTest extends TestCase
         $this->service = new MarkdownService();
     }
 
-    /** @test */
+    #[Test]
     public function it_parses_standard_markdown()
     {
         $input = "## Heading\n\n* List item\n* List item 2";
@@ -29,7 +30,7 @@ class MarkdownServiceTest extends TestCase
         $this->assertStringContainsString('<li>List item</li>', $output);
     }
 
-    /** @test */
+    #[Test]
     public function it_converts_mentions_to_links()
     {
         $user = User::factory()->create(['name' => 'JohnDoe']);
@@ -43,7 +44,7 @@ class MarkdownServiceTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_highlights_slash_commands()
     {
         $input = "/status Testing";

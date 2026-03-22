@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\PresenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PresenceServiceTest extends TestCase
@@ -20,7 +21,7 @@ class PresenceServiceTest extends TestCase
         $this->service = new PresenceService();
     }
 
-    /** @test */
+    #[Test]
     public function it_tracks_user_presence()
     {
         $user = User::factory()->create();
@@ -35,7 +36,7 @@ class PresenceServiceTest extends TestCase
         $this->assertEquals($user->name, $viewers[0]['name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_removes_expired_viewers()
     {
         $user = User::factory()->create();

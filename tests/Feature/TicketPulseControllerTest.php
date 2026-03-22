@@ -5,13 +5,14 @@ namespace Tests\Feature;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TicketPulseControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function it_returns_pulse_data()
     {
         $user = User::factory()->create();
@@ -30,7 +31,7 @@ class TicketPulseControllerTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_updates_presence_when_fetching_pulse()
     {
         $user = User::factory()->create();

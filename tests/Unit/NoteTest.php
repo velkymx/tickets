@@ -6,13 +6,14 @@ use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class NoteTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function a_note_can_have_a_parent_note()
     {
         $user = User::factory()->create();
@@ -37,7 +38,7 @@ class NoteTest extends TestCase
         $this->assertTrue($reply->parent->is($parent));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_have_new_notetype_values()
     {
         $user = User::factory()->create();
@@ -57,7 +58,7 @@ class NoteTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_can_have_an_edited_at_timestamp()
     {
         $user = User::factory()->create();
@@ -76,7 +77,7 @@ class NoteTest extends TestCase
         $this->assertEquals($now, $note->edited_at->toDateTimeString());
     }
 
-    /** @test */
+    #[Test]
     public function it_can_have_status_and_decision_fields()
     {
         $user = User::factory()->create();
@@ -108,7 +109,7 @@ class NoteTest extends TestCase
         $this->assertEquals('Thread resolved here.', $note->resolution_message);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_store_markdown_body()
     {
         $user = User::factory()->create();
@@ -128,7 +129,7 @@ class NoteTest extends TestCase
         $this->assertEquals('<h2>Title</h2><ul><li>list item</li></ul>', $note->body);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_have_reactions()
     {
         $user = User::factory()->create();
@@ -151,7 +152,7 @@ class NoteTest extends TestCase
         $this->assertTrue($note->reactions->first()->is($reaction));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_have_attachments()
     {
         $user = User::factory()->create();
@@ -178,7 +179,7 @@ class NoteTest extends TestCase
         $this->assertTrue($note->attachments->first()->is($attachment));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_have_mentions()
     {
         $user = User::factory()->create();
@@ -202,7 +203,7 @@ class NoteTest extends TestCase
         $this->assertTrue($note->mentions->first()->user->is($mentionedUser));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_be_resolved()
     {
         $user = User::factory()->create();
@@ -222,7 +223,7 @@ class NoteTest extends TestCase
         $this->assertTrue($note->resolvedByUser->is($user));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_be_superseded()
     {
         $user = User::factory()->create();
@@ -247,7 +248,7 @@ class NoteTest extends TestCase
         $this->assertTrue($supersededBy->supersedes->is($original));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_be_a_stale_blocker()
     {
         $user = User::factory()->create();
@@ -275,7 +276,7 @@ class NoteTest extends TestCase
         $this->assertFalse($freshNote->isStaleBlocker());
     }
 
-    /** @test */
+    #[Test]
     public function it_has_useful_scopes()
     {
         $user = User::factory()->create();
