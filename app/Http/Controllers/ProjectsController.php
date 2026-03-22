@@ -21,6 +21,8 @@ class ProjectsController extends Controller
     {
         $project = Project::findOrFail($id);
 
+        $this->authorize('view', $project);
+
         $perpage = 10;
 
         $filters = ['milestone_id', 'status_id', 'type_id', 'user_id', 'importance_id'];
@@ -64,6 +66,8 @@ class ProjectsController extends Controller
 
     public function create()
     {
+        $this->authorize('create', Project::class);
+
         return view('projects.create');
     }
 
