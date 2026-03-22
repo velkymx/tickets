@@ -39,7 +39,7 @@
     @if ($tickets->isNotEmpty())
         <h3 class="mb-3 mt-4">{{ ucwords($label) }}</h3>
         <div class="table-responsive">
-            <table class="table table-hover align-middle table-sm">
+            <table class="table table-striped table-hover align-middle table-sm">
                 <thead class="table-light">
                     <tr>
                         <th>Title</th>

@@ -12,7 +12,7 @@
 
     {{-- Replaced table-striped with B5 table classes --}}
     <div class="table-responsive">
-        <table class="table table-hover align-middle">
+        <table class="table table-striped table-hover align-middle">
             <thead class="table-light">
                 <tr>
                     <th>Name</th>
