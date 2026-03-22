@@ -31,7 +31,7 @@
             class="form-control @error('description') is-invalid @enderror mb-3"
         >{{ old('description') }}</textarea>
         {{-- Quill editor container --}}
-        <div id="editor-container">
+        <div id="editor-container" class="d-none">
             {{-- Initial content for a new project is empty, but we can load old input if the form fails validation --}}
         </div>
         @error('description')
@@ -49,7 +49,15 @@
 
 @section('javascript')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
+        if (typeof window.loadQuill !== 'function') {
+            return;
+        }
+
+        const Quill = await window.loadQuill();
+        if (!Quill) {
+            return;
+        }
         
         // --- 1. Quill Initialization ---
         const quillToolbarOptions = [
@@ -71,8 +79,14 @@
         
         // Load old input if available (e.g., if the form failed validation)
         const initialContentInput = document.getElementById('description-input');
+        const editorContainer = document.getElementById('editor-container');
+
+        if (!initialContentInput || !editorContainer) {
+            return;
+        }
 
         initialContentInput.classList.add('d-none');
+        editorContainer.classList.remove('d-none');
         
         if (initialContentInput && initialContentInput.value) {
             quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);

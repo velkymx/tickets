@@ -137,6 +137,17 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_view_uses_the_lazy_quill_loader(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/projects/create');
+
+        $response->assertStatus(200);
+        $response->assertSee('window.loadQuill()', false);
+    }
+
+    #[Test]
     public function edit_requires_authentication(): void
     {
         $project = Project::factory()->create();

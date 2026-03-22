@@ -27,7 +27,7 @@
                 aria-controls="navbarSupportedContent" 
                 aria-expanded="false" 
                 aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"><img src="/images/tickets.png"></span>
+            <span class="navbar-toggler-icon"><img src="/tickets.png" alt="Tickets"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
