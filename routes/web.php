@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\NotesController;
@@ -40,6 +41,9 @@ Route::middleware('auth')->group(function () {
 
     // Home
     Route::get('/home', [TicketsController::class, 'home'])->name('home');
+    Route::get('/activity', [ActivityController::class, 'index'])->name('activity.index');
+    Route::post('/activity/read/{id}', [ActivityController::class, 'read'])->name('activity.read');
+    Route::post('/activity/read-all', [ActivityController::class, 'readAll'])->name('activity.read-all');
 
     // --- Tickets Routes (CRITICAL: Static routes must come before dynamic routes) ---
 
