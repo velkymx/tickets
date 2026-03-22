@@ -7,11 +7,15 @@
 {{-- Status Info --}}
 @if ($milestone->end_at)
 <p class="text-success">
-    Started on {{ $milestone->start_at->format('F jS, Y') }}, Released {{ $milestone->end_at->format('F jS, Y') }}
+    Started on {{ $milestone->start_at?->format('F jS, Y') ?? 'Unknown' }}, Released {{ $milestone->end_at?->format('F jS, Y') }}
 </p>
 @else
 <p class="text-secondary">
+    @if ($milestone->start_at)
     Unreleased Version - Started on {{ $milestone->start_at->format('F jS, Y') }}
+    @else
+    Unreleased Version - No start date set
+    @endif
 </p>
 @endif
 <hr class="mb-4">

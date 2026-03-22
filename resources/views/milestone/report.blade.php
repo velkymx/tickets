@@ -26,10 +26,10 @@
             </div>
             <div class="col-md-4 text-md-end">
                 <p>
-                    <strong>Start:</strong> {{ $milestone->start_at ? $milestone->start_at->format('M j, Y') : 'N/A' }}<br>
-                    <strong>Due:</strong> {{ $milestone->due_at ? $milestone->due_at->format('M j, Y') : 'N/A' }}<br>
+                    <strong>Start:</strong> {{ $milestone->start_at ? \Carbon\Carbon::parse($milestone->start_at)->format('M j, Y') : 'N/A' }}<br>
+                    <strong>Due:</strong> {{ $milestone->due_at ? \Carbon\Carbon::parse($milestone->due_at)->format('M j, Y') : 'N/A' }}<br>
                     @if($milestone->end_at)
-                        <strong>Released:</strong> {{ $milestone->end_at->format('M j, Y') }}<br>
+                        <strong>Released:</strong> {{ \Carbon\Carbon::parse($milestone->end_at)->format('M j, Y') }}<br>
                     @endif
                     <strong>Duration:</strong> {{ $duration > 0 ? $duration . ' days' : 'N/A' }}
                 </p>
