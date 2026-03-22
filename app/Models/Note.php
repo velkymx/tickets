@@ -12,6 +12,7 @@ class Note extends Model
 
     protected $fillable = [
         'body', 'user_id', 'ticket_id', 'parent_id', 'hours', 'notetype', 'hide', 'edited_at',
+        'pinned', 'resolved', 'resolved_by', 'supersedes_id', 'resolution_message',
     ];
 
     protected function casts(): array
@@ -20,6 +21,8 @@ class Note extends Model
             'hours' => 'decimal:2',
             'hide' => 'boolean',
             'edited_at' => 'datetime',
+            'pinned' => 'boolean',
+            'resolved' => 'boolean',
         ];
     }
 

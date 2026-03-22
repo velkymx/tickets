@@ -75,4 +75,36 @@ class NoteTest extends TestCase
 
         $this->assertEquals($now, $note->edited_at->toDateTimeString());
     }
+
+    /** @test */
+    public function it_can_have_status_and_decision_fields()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $originalNote = Note::create([
+            'body' => 'Original decision',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'decision',
+        ]);
+
+        $note = Note::create([
+            'body' => 'Test note',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+            'pinned' => true,
+            'resolved' => true,
+            'resolved_by' => $user->id,
+            'supersedes_id' => $originalNote->id,
+            'resolution_message' => 'Thread resolved here.',
+        ]);
+
+        $this->assertTrue($note->pinned);
+        $this->assertTrue($note->resolved);
+        $this->assertEquals($user->id, $note->resolved_by);
+        $this->assertEquals($originalNote->id, $note->supersedes_id);
+        $this->assertEquals('Thread resolved here.', $note->resolution_message);
+    }
 }
