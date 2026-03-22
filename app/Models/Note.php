@@ -45,4 +45,9 @@ class Note extends Model
     {
         return $this->hasMany(Note::class, 'parent_id');
     }
+
+    public function reactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(NoteReaction::class);
+    }
 }

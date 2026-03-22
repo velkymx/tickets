@@ -127,4 +127,27 @@ class NoteTest extends TestCase
         $this->assertEquals($markdown, $note->body_markdown);
         $this->assertEquals('<h2>Title</h2><ul><li>list item</li></ul>', $note->body);
     }
+
+    /** @test */
+    public function it_can_have_reactions()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        $note = Note::create([
+            'body' => 'Test note',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+        ]);
+
+        $reaction = \App\Models\NoteReaction::create([
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+            'emoji' => 'thumbsup',
+        ]);
+
+        $this->assertCount(1, $note->reactions);
+        $this->assertTrue($note->reactions->first()->is($reaction));
+    }
 }
