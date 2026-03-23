@@ -256,6 +256,10 @@ class SlashCommandService
         return ltrim(trim($args), '@');
     }
 
+    /**
+     * Determine the signal type from text content.
+     * Priority order (highest to lowest): decision > blocker > update > action > message
+     */
     public function getSignalType(string $text): string
     {
         $lines = explode("\n", $text);
