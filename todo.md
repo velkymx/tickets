@@ -64,17 +64,17 @@ NO FALLBACKS
 
 ### H4. `admin` in User Seeder — `env()` Breaks With Config Cache
 
-- [ ] **UserSeeder.php** (Line 33) — `env('ADMIN_PASSWORD')` returns null when config is cached
+- [x] **UserSeeder.php** (Line 33) — `env('ADMIN_PASSWORD')` returns null when config is cached
   - Fix: Use `config('admin.password')` with proper config entry
 
 ### H5. Flare Config Sends Query Bindings Externally
 
-- [ ] **config/flare.php** (Line 53) — `'report_query_bindings' => true` sends sensitive data to external servers
+- [x] **config/flare.php** (Line 53) — `'report_query_bindings' => true` sends sensitive data to external servers
   - Fix: Set to `false` by default
 
 ### H6. Ignition Share Button Enabled by Default
 
-- [ ] **config/ignition.php** (Line 83) — Default `true` allows sharing stack traces publicly
+- [x] **config/ignition.php** (Line 83) — Default `true` allows sharing stack traces publicly
   - Fix: Set default to `false`
 
 ### H7. TicketResource — N+1 Queries on Every Serialization
