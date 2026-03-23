@@ -18,7 +18,7 @@ class NoteTicketRequest extends FormRequest
             'note' => 'nullable|string|max:65535',
             'status_id' => 'nullable|integer|exists:statuses,id',
             'hours' => 'nullable|numeric|min:0|max:999',
-            'notetype' => 'nullable|string|in:message,info,update,query',
+            'notetype' => 'nullable|string|in:message,blocker,decision,action,changelog',
         ];
     }
 }
