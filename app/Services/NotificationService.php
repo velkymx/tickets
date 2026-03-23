@@ -38,6 +38,7 @@ class NotificationService
             // Muted watchers or active viewers get database-only notification
             if ($watcher->muted || $this->isActiveViewer($user->id, $ticket->id)) {
                 $user->notify(new WatcherDatabaseNotification('Ticket', $message, $url));
+
                 continue;
             }
 

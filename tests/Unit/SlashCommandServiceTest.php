@@ -2,16 +2,16 @@
 
 namespace Tests\Unit;
 
-use App\Models\Note;
 use App\Models\Importance;
 use App\Models\Milestone;
+use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SlashCommandService;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class SlashCommandServiceTest extends TestCase
 {
@@ -22,7 +22,7 @@ class SlashCommandServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new SlashCommandService();
+        $this->service = new SlashCommandService;
     }
 
     #[Test]
@@ -111,7 +111,7 @@ class SlashCommandServiceTest extends TestCase
     public function it_can_log_hours_via_slash_command()
     {
         $ticket = Ticket::factory()->create();
-        
+
         $results = $this->service->handle($ticket, '/hours 2.5');
 
         $this->assertEquals(2.5, $results['hours']);
@@ -278,7 +278,7 @@ class SlashCommandServiceTest extends TestCase
     public function it_extracts_signal_type_from_command()
     {
         $ticket = Ticket::factory()->create();
-        
+
         $type = $this->service->getSignalType('/decision We use Redis');
         $this->assertEquals('decision', $type);
 

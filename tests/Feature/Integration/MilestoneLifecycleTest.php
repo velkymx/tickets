@@ -11,9 +11,9 @@ use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
 use Carbon\Carbon;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class MilestoneLifecycleTest extends TestCase
 {

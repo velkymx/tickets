@@ -6,9 +6,9 @@ use App\Models\Ticket;
 use App\Models\TicketView;
 use App\Models\User;
 use Illuminate\Database\QueryException;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TicketViewTest extends TestCase
 {

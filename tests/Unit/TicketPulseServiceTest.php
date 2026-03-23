@@ -5,13 +5,12 @@ namespace Tests\Unit;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Models\Status;
 use App\Services\TicketPulseService;
 use App\ValueObjects\TicketPulse;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TicketPulseServiceTest extends TestCase
 {
@@ -22,7 +21,7 @@ class TicketPulseServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new TicketPulseService();
+        $this->service = new TicketPulseService;
     }
 
     #[Test]
@@ -56,7 +55,7 @@ class TicketPulseServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create();
-        
+
         Note::create([
             'body' => 'Waiting on API',
             'user_id' => $user->id,

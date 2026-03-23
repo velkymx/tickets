@@ -3,11 +3,11 @@
 namespace Tests\Feature\Database;
 
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class UsersAvatarMigrationTest extends TestCase
 {

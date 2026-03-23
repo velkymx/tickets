@@ -3,11 +3,11 @@
 namespace Tests\Feature\Database;
 
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class NotificationsTableTest extends TestCase
 {

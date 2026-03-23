@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class AddUserPermissions extends Migration
 {
@@ -13,15 +13,15 @@ class AddUserPermissions extends Migration
      */
     public function up()
     {
-      Schema::table('users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
 
-          $table->tinyInteger('active')->default(1);
-          $table->tinyInteger('milestone')->default(1);
-          $table->tinyInteger('ticket')->default(1);
-          $table->tinyInteger('project')->default(1);
-          $table->tinyInteger('report')->default(1);
+            $table->tinyInteger('active')->default(1);
+            $table->tinyInteger('milestone')->default(1);
+            $table->tinyInteger('ticket')->default(1);
+            $table->tinyInteger('project')->default(1);
+            $table->tinyInteger('report')->default(1);
 
-      });
+        });
     }
 
     /**

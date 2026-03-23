@@ -4,9 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Ticket;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
+use App\Services\PresenceService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TicketPulseControllerTest extends TestCase
 {
@@ -40,7 +41,7 @@ class TicketPulseControllerTest extends TestCase
         $this->actingAs($user)
             ->getJson("/tickets/{$ticket->id}/pulse");
 
-        $viewers = (new \App\Services\PresenceService())->getViewers($ticket->id);
+        $viewers = (new PresenceService)->getViewers($ticket->id);
         $this->assertCount(1, $viewers);
         $this->assertEquals($user->id, $viewers[0]['user_id']);
     }

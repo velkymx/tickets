@@ -15,7 +15,7 @@ class ModifyMilestoneAssignments extends Migration
     {
         Schema::table('milestones', function (Blueprint $table) {
             $table->integer('owner_user_id')->unsigned()->nullable();
-            $table->integer('scrummaster_user_id')->unsigned()->nullable();            
+            $table->integer('scrummaster_user_id')->unsigned()->nullable();
         });
     }
 

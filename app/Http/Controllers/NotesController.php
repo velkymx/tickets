@@ -5,13 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Note;
 use App\Models\NoteAttachment;
 use App\Models\NoteReaction;
+use App\Models\User;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
 use App\Services\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 
 class NotesController extends Controller

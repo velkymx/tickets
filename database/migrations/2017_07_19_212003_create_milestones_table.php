@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 
 class CreateMilestonesTable extends Migration
 {
@@ -12,11 +12,11 @@ class CreateMilestonesTable extends Migration
      */
     public function up()
     {
-      Schema::create('milestones', function (Blueprint $table) {
-          $table->increments('id');
-          $table->string('name');
-          $table->tinyInteger('active')->default(1);
-      });
+        Schema::create('milestones', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('name');
+            $table->tinyInteger('active')->default(1);
+        });
     }
 
     /**

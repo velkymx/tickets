@@ -2,8 +2,6 @@
 
 namespace Tests\Feature\Feature;
 
-use Tests\Traits\SeedsDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class TicketPulseControllerTest extends TestCase

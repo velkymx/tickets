@@ -8,11 +8,11 @@ use App\Models\Project;
 use App\Models\Status;
 use App\Models\Type;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class ImportLifecycleTest extends TestCase
 {

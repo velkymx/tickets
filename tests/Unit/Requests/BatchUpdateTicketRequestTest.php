@@ -5,10 +5,10 @@ namespace Tests\Unit\Requests;
 use App\Http\Requests\BatchUpdateTicketRequest;
 use App\Models\Ticket;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class BatchUpdateTicketRequestTest extends TestCase
 {

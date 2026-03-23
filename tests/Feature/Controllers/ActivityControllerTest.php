@@ -6,9 +6,9 @@ use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class ActivityControllerTest extends TestCase
 {
@@ -138,7 +138,7 @@ class ActivityControllerTest extends TestCase
                 140 + $index,
                 50 + $index,
                 "Mention {$index}",
-                "http://example.com/tickets/".(140 + $index)
+                'http://example.com/tickets/'.(140 + $index)
             ));
         }
 

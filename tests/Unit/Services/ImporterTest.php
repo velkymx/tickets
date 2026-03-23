@@ -11,10 +11,10 @@ use App\Models\Type;
 use App\Models\User;
 use App\Services\Importer;
 use Exception;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Auth;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class ImporterTest extends TestCase
 {

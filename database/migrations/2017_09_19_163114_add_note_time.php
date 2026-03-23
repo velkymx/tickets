@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class AddNoteTime extends Migration
 {
@@ -13,11 +13,11 @@ class AddNoteTime extends Migration
      */
     public function up()
     {
-      Schema::table('notes', function (Blueprint $table) {
+        Schema::table('notes', function (Blueprint $table) {
 
-          $table->decimal('hours', 10, 2)->default(0);
+            $table->decimal('hours', 10, 2)->default(0);
 
-      });
+        });
     }
 
     /**

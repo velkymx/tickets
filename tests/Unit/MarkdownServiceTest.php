@@ -4,9 +4,9 @@ namespace Tests\Unit;
 
 use App\Models\User;
 use App\Services\MarkdownService;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class MarkdownServiceTest extends TestCase
 {
@@ -17,7 +17,7 @@ class MarkdownServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new MarkdownService();
+        $this->service = new MarkdownService;
     }
 
     #[Test]
@@ -34,12 +34,12 @@ class MarkdownServiceTest extends TestCase
     public function it_converts_mentions_to_links()
     {
         $user = User::factory()->create(['name' => 'JohnDoe']);
-        $input = "Hello @[JohnDoe]!";
+        $input = 'Hello @[JohnDoe]!';
 
         $output = $this->service->parse($input);
 
         $this->assertStringContainsString(
-            '<a class="mention" href="/users/' . $user->id . '">@JohnDoe</a>',
+            '<a class="mention" href="/users/'.$user->id.'">@JohnDoe</a>',
             $output
         );
     }
@@ -53,7 +53,7 @@ class MarkdownServiceTest extends TestCase
         $output = $this->service->parse($input);
 
         $this->assertStringContainsString(
-            '<a class="mention" href="/users/' . $user->id . '">@John Smith</a>',
+            '<a class="mention" href="/users/'.$user->id.'">@John Smith</a>',
             $output
         );
         $this->assertStringNotContainsString('Developer', $output);
@@ -69,7 +69,7 @@ class MarkdownServiceTest extends TestCase
         $output = $this->service->parse($input);
 
         $this->assertStringContainsString(
-            '<a class="mention" href="/users/' . $user->id . '">@Jane Doe</a>',
+            '<a class="mention" href="/users/'.$user->id.'">@Jane Doe</a>',
             $output
         );
     }
@@ -90,13 +90,13 @@ class MarkdownServiceTest extends TestCase
     public function it_does_not_mangle_bracket_mentions_through_markdown_parser(): void
     {
         $user = User::factory()->create(['name' => 'Alice Jones']);
-        $input = "**Bold** and @[Alice Jones (PM)] in same paragraph";
+        $input = '**Bold** and @[Alice Jones (PM)] in same paragraph';
 
         $output = $this->service->parse($input);
 
         $this->assertStringContainsString('<strong>Bold</strong>', $output);
         $this->assertStringContainsString(
-            '<a class="mention" href="/users/' . $user->id . '">@Alice Jones</a>',
+            '<a class="mention" href="/users/'.$user->id.'">@Alice Jones</a>',
             $output
         );
     }
@@ -104,7 +104,7 @@ class MarkdownServiceTest extends TestCase
     #[Test]
     public function it_highlights_slash_commands()
     {
-        $input = "/status Testing";
+        $input = '/status Testing';
         $output = $this->service->parse($input);
 
         $this->assertStringContainsString('<code class="slash-command">/status Testing</code>', $output);

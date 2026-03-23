@@ -7,10 +7,10 @@ use App\Models\MilestoneWatcher;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Notifications\WatcherNotification;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class MilestoneTest extends TestCase
 {

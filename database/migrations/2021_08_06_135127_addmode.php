@@ -16,7 +16,7 @@ class Addmode extends Migration
         Schema::table('users', function (Blueprint $table) {
 
             $table->string('theme')->default('/css/bootstrap.min.css');
-  
+
         });
     }
 

@@ -3,10 +3,10 @@
 namespace Tests\Unit\Requests;
 
 use App\Http\Requests\StoreProjectRequest;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class StoreProjectRequestTest extends TestCase
 {

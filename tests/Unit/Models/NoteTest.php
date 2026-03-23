@@ -9,10 +9,10 @@ use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\User;
 use Carbon\Carbon;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class NoteTest extends TestCase
 {

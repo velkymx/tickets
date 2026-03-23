@@ -5,9 +5,9 @@ namespace Tests\Unit\Policies;
 use App\Models\Release;
 use App\Models\User;
 use App\Policies\ReleasePolicy;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class ReleasePolicyTest extends TestCase
 {

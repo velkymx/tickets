@@ -4,9 +4,9 @@ namespace Tests\Unit\Models;
 
 use App\Models\Project;
 use App\Models\Ticket;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class ProjectTest extends TestCase
 {

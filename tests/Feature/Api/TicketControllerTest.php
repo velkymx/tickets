@@ -13,9 +13,10 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
+use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TicketControllerTest extends TestCase
 {
@@ -891,7 +892,7 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function all_api_routes_are_registered(): void
     {
-        $routes = collect(\Illuminate\Support\Facades\Route::getRoutes()->getRoutes())
+        $routes = collect(Route::getRoutes()->getRoutes())
             ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/'))
             ->map(fn ($route) => $route->methods()[0].' '.$route->uri())
             ->sort()

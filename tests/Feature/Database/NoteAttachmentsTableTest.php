@@ -6,11 +6,11 @@ use App\Models\Note;
 use App\Models\NoteAttachment;
 use App\Models\Ticket;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class NoteAttachmentsTableTest extends TestCase
 {

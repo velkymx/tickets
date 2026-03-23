@@ -2,15 +2,16 @@
 
 namespace Tests\Unit\Services;
 
+use App\Jobs\SendTicketDigestJob;
 use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Services\NotificationBatchService;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class NotificationBatchServiceTest extends TestCase
 {
@@ -48,6 +49,6 @@ class NotificationBatchServiceTest extends TestCase
         $service->dispatch($user, $notification, 142);
         $service->dispatch($user, $notification, 142);
 
-        Bus::assertDispatchedTimes(\App\Jobs\SendTicketDigestJob::class, 1);
+        Bus::assertDispatchedTimes(SendTicketDigestJob::class, 1);
     }
 }

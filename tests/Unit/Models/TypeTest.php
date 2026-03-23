@@ -5,9 +5,9 @@ namespace Tests\Unit\Models;
 use App\Models\Ticket;
 use App\Models\Type;
 use Illuminate\Database\Eloquent\Collection;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TypeTest extends TestCase
 {

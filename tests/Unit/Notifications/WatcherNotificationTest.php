@@ -4,9 +4,9 @@ namespace Tests\Unit\Notifications;
 
 use App\Models\User;
 use App\Notifications\WatcherNotification;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class WatcherNotificationTest extends TestCase
 {

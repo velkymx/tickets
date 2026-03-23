@@ -7,11 +7,11 @@ use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\QueryException;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class NoteReactionsTableTest extends TestCase
 {

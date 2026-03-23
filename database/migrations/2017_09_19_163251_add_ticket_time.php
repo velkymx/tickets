@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class AddTicketTime extends Migration
 {
@@ -13,11 +13,11 @@ class AddTicketTime extends Migration
      */
     public function up()
     {
-      Schema::table('tickets', function (Blueprint $table) {
+        Schema::table('tickets', function (Blueprint $table) {
 
-          $table->decimal('estimate', 10, 2)->default(0);
+            $table->decimal('estimate', 10, 2)->default(0);
 
-      });
+        });
     }
 
     /**

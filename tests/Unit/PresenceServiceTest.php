@@ -4,10 +4,9 @@ namespace Tests\Unit;
 
 use App\Models\User;
 use App\Services\PresenceService;
-use Tests\Traits\SeedsDatabase;
-use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class PresenceServiceTest extends TestCase
 {
@@ -18,7 +17,7 @@ class PresenceServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new PresenceService();
+        $this->service = new PresenceService;
     }
 
     #[Test]

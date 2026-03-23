@@ -16,10 +16,10 @@ use App\Models\User;
 use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TicketTest extends TestCase
 {

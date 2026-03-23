@@ -6,11 +6,11 @@ use App\Jobs\SendTicketDigestJob;
 use App\Models\User;
 use App\Notifications\TicketDigestNotification;
 use App\Services\NotificationBatchService;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class SendTicketDigestJobTest extends TestCase
 {

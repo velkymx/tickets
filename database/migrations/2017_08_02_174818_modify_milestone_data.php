@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 
 class ModifyMilestoneData extends Migration
 {
@@ -13,14 +13,14 @@ class ModifyMilestoneData extends Migration
     public function up()
     {
 
-      Schema::table('milestones', function (Blueprint $table) {
+        Schema::table('milestones', function (Blueprint $table) {
 
-          $table->text('description')->nullable();
-          $table->dateTime('start_at')->nullable();
-          $table->dateTime('due_at')->nullable();
-          $table->dateTime('end_at')->nullable();
+            $table->text('description')->nullable();
+            $table->dateTime('start_at')->nullable();
+            $table->dateTime('due_at')->nullable();
+            $table->dateTime('end_at')->nullable();
 
-      });
+        });
     }
 
     /**

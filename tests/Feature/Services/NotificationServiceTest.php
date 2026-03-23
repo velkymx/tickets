@@ -2,16 +2,19 @@
 
 namespace Tests\Feature\Services;
 
+use App\Models\Mention;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\User;
+use App\Notifications\WatcherDatabaseNotification;
+use App\Notifications\WatcherNotification;
 use App\Services\NotificationService;
-use Tests\Traits\SeedsDatabase;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class NotificationServiceTest extends TestCase
 {
@@ -38,8 +41,8 @@ class NotificationServiceTest extends TestCase
         $service = app(NotificationService::class);
         $service->notifyWatchers($ticket, $note);
 
-        Notification::assertSentTo($watcher, \App\Notifications\WatcherNotification::class);
-        Notification::assertNotSentTo($author, \App\Notifications\WatcherNotification::class);
+        Notification::assertSentTo($watcher, WatcherNotification::class);
+        Notification::assertNotSentTo($author, WatcherNotification::class);
     }
 
     #[Test]
@@ -56,11 +59,11 @@ class NotificationServiceTest extends TestCase
         $note = Note::factory()->create([
             'ticket_id' => $ticket->id,
             'user_id' => $author->id,
-            'body' => '@' . $mentioned->name,
+            'body' => '@'.$mentioned->name,
         ]);
 
         // Create mention record
-        \App\Models\Mention::create([
+        Mention::create([
             'note_id' => $note->id,
             'user_id' => $mentioned->id,
         ]);
@@ -68,7 +71,7 @@ class NotificationServiceTest extends TestCase
         $service = app(NotificationService::class);
         $service->notifyWatchers($ticket, $note);
 
-        Notification::assertSentToTimes($mentioned, \App\Notifications\WatcherNotification::class, 1);
+        Notification::assertSentToTimes($mentioned, WatcherNotification::class, 1);
     }
 
     #[Test]
@@ -98,8 +101,8 @@ class NotificationServiceTest extends TestCase
 
         // Should still get database notification but email suppressed
         // We check that a DatabaseOnly notification was sent instead
-        Notification::assertSentTo($viewer, \App\Notifications\WatcherDatabaseNotification::class);
-        Notification::assertNotSentTo($viewer, \App\Notifications\WatcherNotification::class);
+        Notification::assertSentTo($viewer, WatcherDatabaseNotification::class);
+        Notification::assertNotSentTo($viewer, WatcherNotification::class);
     }
 
     #[Test]
@@ -126,7 +129,7 @@ class NotificationServiceTest extends TestCase
         $service->notifyWatchers($ticket, $note);
 
         // Muted watchers get database only, no email
-        Notification::assertSentTo($muted, \App\Notifications\WatcherDatabaseNotification::class);
-        Notification::assertNotSentTo($muted, \App\Notifications\WatcherNotification::class);
+        Notification::assertSentTo($muted, WatcherDatabaseNotification::class);
+        Notification::assertNotSentTo($muted, WatcherNotification::class);
     }
 }

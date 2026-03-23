@@ -18,8 +18,9 @@ class MarkdownService
         // Extract @[...] mention tokens before Markdown parsing (brackets are link syntax)
         $mentionMap = [];
         $text = preg_replace_callback('/@\[([^\]]+)\]/u', function ($match) use (&$mentionMap) {
-            $placeholder = '%%MENTION_' . count($mentionMap) . '%%';
+            $placeholder = '%%MENTION_'.count($mentionMap).'%%';
             $mentionMap[$placeholder] = $match[1];
+
             return $placeholder;
         }, $text);
 

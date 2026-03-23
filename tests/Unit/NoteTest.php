@@ -2,12 +2,15 @@
 
 namespace Tests\Unit;
 
+use App\Models\Mention;
 use App\Models\Note;
+use App\Models\NoteAttachment;
+use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class NoteTest extends TestCase
 {
@@ -142,7 +145,7 @@ class NoteTest extends TestCase
             'notetype' => 'message',
         ]);
 
-        $reaction = \App\Models\NoteReaction::create([
+        $reaction = NoteReaction::create([
             'note_id' => $note->id,
             'user_id' => $user->id,
             'emoji' => 'thumbsup',
@@ -165,7 +168,7 @@ class NoteTest extends TestCase
             'notetype' => 'message',
         ]);
 
-        $attachment = \App\Models\NoteAttachment::create([
+        $attachment = NoteAttachment::create([
             'note_id' => $note->id,
             'user_id' => $user->id,
             'ticket_id' => $ticket->id,
@@ -193,7 +196,7 @@ class NoteTest extends TestCase
             'notetype' => 'message',
         ]);
 
-        $mention = \App\Models\Mention::create([
+        $mention = Mention::create([
             'note_id' => $note->id,
             'user_id' => $mentionedUser->id,
         ]);
@@ -284,7 +287,7 @@ class NoteTest extends TestCase
 
         Note::create(['body' => 'Pinned', 'user_id' => $user->id, 'ticket_id' => $ticket->id, 'pinned' => true]);
         Note::create(['body' => 'Not pinned', 'user_id' => $user->id, 'ticket_id' => $ticket->id, 'pinned' => false]);
-        
+
         $action = Note::create(['body' => 'Active Action', 'user_id' => $user->id, 'ticket_id' => $ticket->id, 'notetype' => 'action', 'resolved' => false]);
         Note::create(['body' => 'Resolved Action', 'user_id' => $user->id, 'ticket_id' => $ticket->id, 'notetype' => 'action', 'resolved' => true]);
 

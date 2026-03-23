@@ -3,9 +3,9 @@
 namespace Tests\Unit;
 
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class UserTest extends TestCase
 {
@@ -29,7 +29,7 @@ class UserTest extends TestCase
             'avatar' => null,
         ]);
 
-        $expected = 'https://www.gravatar.com/avatar/' . md5(strtolower(trim($user->email))) . '?s=46&d=mp';
+        $expected = 'https://www.gravatar.com/avatar/'.md5(strtolower(trim($user->email))).'?s=46&d=mp';
         $this->assertEquals($expected, $user->avatarUrl(46));
     }
 }
