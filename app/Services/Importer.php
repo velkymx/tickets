@@ -22,7 +22,11 @@ class Importer
     public function call(int $milestoneId, string $filePath, bool $hasHeader): void
     {
         $this->milestone = Milestone::findOrFail($milestoneId);
+
         $file = fopen($filePath, 'r');
+        if ($file === false) {
+            throw new Exception("Unable to open file: {$filePath}");
+        }
 
         try {
             DB::transaction(function () use ($file, $hasHeader) {
