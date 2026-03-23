@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\KbArticle;
 use App\Models\Milestone;
 use App\Models\Note;
 use App\Models\Project;
@@ -9,6 +10,7 @@ use App\Models\Release;
 use App\Models\Ticket;
 use App\Observers\NoteObserver;
 use App\Observers\TicketObserver;
+use App\Policies\KbArticlePolicy;
 use App\Policies\MilestonePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ReleasePolicy;
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Milestone::class, MilestonePolicy::class);
         Gate::policy(Release::class, ReleasePolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
+        Gate::policy(KbArticle::class, KbArticlePolicy::class);
 
         RateLimiter::for('api', function ($request) {
             $userId = $request->user()?->id ?? $request->attributes->get('api_user')?->id;
