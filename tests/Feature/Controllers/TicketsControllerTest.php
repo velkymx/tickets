@@ -2078,10 +2078,10 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function estimate_updates_ticket_storypoints(): void
+    public function estimate_updates_storypoints(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->actingAs($user)->post("/tickets/estimate/{$ticket->id}", [
             'storypoints' => 5,
@@ -2095,7 +2095,7 @@ class TicketsControllerTest extends TestCase
     public function estimate_creates_changelog_note(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->actingAs($user)->post("/tickets/estimate/{$ticket->id}", [
             'storypoints' => 5,
@@ -2111,7 +2111,7 @@ class TicketsControllerTest extends TestCase
     public function estimate_handles_single_voter(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->actingAs($user)->post("/tickets/estimate/{$ticket->id}", [
             'storypoints' => 3,
@@ -2125,7 +2125,7 @@ class TicketsControllerTest extends TestCase
     public function estimate_handles_zero_storypoints(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->actingAs($user)->post("/tickets/estimate/{$ticket->id}", [
             'storypoints' => 0,
@@ -2140,7 +2140,7 @@ class TicketsControllerTest extends TestCase
     {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user1->id]);
 
         // Two users estimate 21 each, then user1 changes to 21
         // Average = (21+21)/2 = 21, should stay at 21 (not drop to 0)
