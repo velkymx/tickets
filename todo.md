@@ -103,7 +103,7 @@ NO FALLBACKS
 
 ### M1. `notate()` Truncates Decimal Hours
 
-- [ ] **TicketService.php** (Line 108) — `(int)` cast loses `0.5` hours from slash commands
+- [x] **TicketService.php** (Line 108) — `(int)` cast loses `0.5` hours from slash commands
   - Fix: Change to `(float)`
 
 ### M2. `toggleReaction` Race Condition

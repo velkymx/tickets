@@ -105,7 +105,7 @@ class TicketService
 
         $message = $commandResults['body'] ?? trim($message);
         $changes = array_merge($changes, $commandResults['changes'] ?? []);
-        $addHours += (int) ($commandResults['hours'] ?? 0);
+        $addHours += (float) ($commandResults['hours'] ?? 0);
         $noteType = $commandResults['note_type'] ?? 'message';
         $noteAttributes = $commandResults['note_attributes'] ?? [];
 
