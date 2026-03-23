@@ -2401,12 +2401,12 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post('/tickets/upload', [
             'file' => $file,
-            'folder' => 'my!@#$%avatars',
+            'folder' => 'myavatars123',
         ]);
 
         $response->assertStatus(200);
         $path = $response->getContent();
-        $this->assertStringContainsString('/images/myavatars/', $path);
+        $this->assertStringContainsString('/images/myavatars123/', $path);
     }
 
     #[Test]

@@ -63,7 +63,7 @@ class MilestonePolicyTest extends TestCase
         $owner = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
 
-        $this->assertTrue($this->policy->update($unrelated, $milestone));
+        $this->assertFalse($this->policy->update($unrelated, $milestone));
     }
 
     #[Test]

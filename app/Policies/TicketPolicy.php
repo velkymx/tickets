@@ -23,7 +23,8 @@ class TicketPolicy
 
     public function view(User $user, Ticket $ticket): bool
     {
-        return true;
+        return $user->id === $ticket->user_id
+            || $user->id === $ticket->user_id2;
     }
 
     public function create(User $user): bool
@@ -33,7 +34,8 @@ class TicketPolicy
 
     public function update(User $user, Ticket $ticket): bool
     {
-        return true;
+        return $user->id === $ticket->user_id
+            || $user->id === $ticket->user_id2;
     }
 
     public function delete(User $user, Ticket $ticket): bool
@@ -50,11 +52,13 @@ class TicketPolicy
 
     public function estimate(User $user, Ticket $ticket): bool
     {
-        return true;
+        return $user->id === $ticket->user_id
+            || $user->id === $ticket->user_id2;
     }
 
     public function addNote(User $user, Ticket $ticket): bool
     {
-        return true;
+        return $user->id === $ticket->user_id
+            || $user->id === $ticket->user_id2;
     }
 }

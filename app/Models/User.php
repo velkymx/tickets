@@ -14,7 +14,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'avatar', 'phone', 'timezone', 'theme', 'title', 'bio', 'admin',
+        'name', 'email', 'password', 'avatar', 'phone', 'timezone', 'theme', 'title', 'bio',
     ];
 
     public function avatarUrl(int $size = 46): string

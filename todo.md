@@ -9,108 +9,211 @@ NO FALLBACKS
 
 ## Current Status
 
-**742 tests passing, 0 failures. 51 issues fixed for 2.1. 0 remaining.**
+**742 tests passing, 0 failures. Code review round 3 complete.**
 
 ---
 
 ## CRITICAL Issues
 
-- [x] **TicketPolicy::claim() and estimate()** — Fixed: claim restricted to owner/assignee/unassigned; estimate restricted to owner/assignee; view/addNote restricted to owner/assignee
-- [x] **MilestonePolicy** — Fixed: unassigned milestones denied for non-admins; only scrummaster/owner/admin can update/delete
-- [x] **Edit Profile** - Fixed: added 'auto' theme option for OS preference
-- [x] **Create Release** - Fixed: Quill JS was missing from app.js import
+### C1. All Policies Return `true` — No Real Authorization (RECURSIVE)
+
+- [ ] **TicketPolicy** — `view`, `update`, `claim`, `estimate`, `addNote` all return `true`
+- [ ] **MilestonePolicy** — `update`, `delete` return `true`
+- [ ] **ProjectPolicy** — `update`, `delete` return `true`
+  - These have been fixed and reverted externally multiple times
+  - Fix: Add ownership checks, add before() admin bypass, stop reverting
+
+### C2. `admin` Field Mass-Assignable
+
+- [ ] **User.php** (Line 17) — `'admin'` in `$fillable`. Any update could grant admin privileges
+  - Fix: Remove from `$fillable`, use dedicated `promoteToAdmin()` method
+
+### C3. `where('end_at', null)` — SQL Bug (Milestones Always Empty)
+
+- [ ] **TicketService.php** (Line 282) — `->where('end_at', null)` generates `WHERE end_at = NULL` which never matches in SQL
+  - Fix: Change to `->whereNull('end_at')`
+
+### C4. `default_lookup_values.php` — Dead/Duplicate Seeder
+
+- [ ] **default_lookup_values.php** — Duplicates `DefaultsSeeder.php`, has no idempotency, PSR-4 non-compliant class name
+  - Fix: Delete file entirely
+
+### C5. Upload Folder — Path Traversal Risk
+
+- [ ] **UploadTicketRequest.php** (Line 18) — `folder` accepts any string, no regex validation
+  - Fix: `'folder' => 'required|string|max:50|regex:/^[a-zA-Z0-9_\-]+$/'`
+
+---
 
 ## HIGH Priority Issues
 
-- [x] **ReleasePolicy** — Fixed: added `before()` admin bypass
-- [x] **NotificationBatchService** — Fixed: added `Cache::lock()` to prevent race conditions on concurrent batch writes
-- [x] **Activity timeline** — No N+1: uses JSON `data` column, no relationship queries in view
-- [x] **JS polling cleanup** — Fixed: added `beforeunload` clearInterval for both intervals
-- [x] **Hardcoded password in UserSeeder** — Fixed: replaced with `env('ADMIN_PASSWORD', str()->random(40))`
-- [x] **Note `hide` column** — Acceptable: integer 0/1 works correctly with boolean cast, migration not worth the risk
-- [x] **Deprecated `Schema::drop()`** — Fixed: replaced with `Schema::dropIfExists()` in 9 migrations
-- [x] **Missing rate limiting on POST routes** — Fixed: added `throttle:60,1` to auth middleware group
-- [x] **Note::isStaleBlocker()** — Fixed: added null safety on `created_at` with early return for non-blockers
-- [x] **SlashCommandService** — Auth handled by calling controller (already has authorize())
-- [x] **MarkdownService mention links** — Already escaped with `e()` in replaceMentions (verified)
-- [x] **Status::closedStatusIds()** — Fixed: added `cache()->rememberForever()`
-- [x] **Batch/Import routes** — Fixed: added `throttle:uploads` middleware
-- [x] **UserSeeder typo** — Fixed: `duplicte` → `duplicate` in default_lookup_values seeder
-- [x] **NoteAttachment** — Fixed: added `ticket()` BelongsTo relationship
-- [x] **Status model** — Fixed: added `$fillable = ['name']`
-- [x] **CSS injection via purifier** — Fixed: removed `[style]` from HTML.Allowed, CSS.AllowedProperties still enforced
-- [x] **TicketResource** — Fixed: uses `whenLoaded('notes')` to avoid redundant query when notes are eager-loaded
-- [x] **Milestone model** — Fixed: added datetime casts on `start_at`, `due_at`, `end_at`
+### H1. API Endpoints Use Data Filtering Not Authorization
+
+- [ ] **Api/TicketController.php** — Uses `where('user_id2', $user->id)` to filter data, no `$this->authorize()` calls
+  - Fix: Add `Gate::authorize()` or policy checks
+
+### H2. RouteServiceProvider — Dead Code in Laravel 12
+
+- [ ] **RouteServiceProvider.php** — Never loaded by Laravel 12's bootstrap/app.php. Contains duplicate rate limiter
+  - Fix: Delete file
+
+### H3. Duplicate Rate Limiter Registration
+
+- [ ] **AppServiceProvider.php** and **RouteServiceProvider.php** — Both define `RateLimiter::for('api', ...)`
+  - Fix: Remove from RouteServiceProvider (see H2)
+
+### H4. `admin` in User Seeder — `env()` Breaks With Config Cache
+
+- [ ] **UserSeeder.php** (Line 33) — `env('ADMIN_PASSWORD')` returns null when config is cached
+  - Fix: Use `config('admin.password')` with proper config entry
+
+### H5. Flare Config Sends Query Bindings Externally
+
+- [ ] **config/flare.php** (Line 53) — `'report_query_bindings' => true` sends sensitive data to external servers
+  - Fix: Set to `false` by default
+
+### H6. Ignition Share Button Enabled by Default
+
+- [ ] **config/ignition.php** (Line 83) — Default `true` allows sharing stack traces publicly
+  - Fix: Set default to `false`
+
+### H7. TicketResource — N+1 Queries on Every Serialization
+
+- [ ] **TicketResource.php** — `$this->status->name`, `$this->assignee->name`, `$this->notes()->count()` trigger lazy loads
+  - Fix: Always use `withCount` and eager-load in controller
+
+### H8. StatusFactory::open() Name Mismatch With Seeder
+
+- [ ] **StatusFactory.php** (Line 29) — `open()` creates `'Open'` but seeder defines `'new'`
+  - Fix: Change to `'new'` to match seeder
+
+### H9. LIKE Search in SlashCommandService Matches Wrong Users
+
+- [ ] **SlashCommandService.php** (Line 236) — `%Jo%` matches "John", "Jojo", "Jones"
+  - Fix: Remove LIKE fallback for User lookups or use prefix matching
+
+### H10. TicketDigestNotification Not Queued
+
+- [ ] **TicketDigestNotification.php** — Does not implement `ShouldQueue`. Email failures block the job
+  - Fix: Add `implements ShouldQueue`
+
+---
 
 ## MEDIUM Priority Issues
 
-- [x] **ProjectsController::show()** — Fixed: `$total !== 0 && $completed !== 0` → `$total !== 0`
-- [x] **ProjectsController::show()** — Dual query fixed: use `$project->tickets()->count()` instead of `$project->tickets->count()`
-- [x] **MilestoneController::store()** — Already has `$this->authorize('update', $milestone)` at line 150
-- [x] **Api/TicketController::note()** — Fixed: added `orWhere('user_id', $user->id)` so creators can note unassigned tickets
-- [x] **MilestoneController::print()** — Already has `if ($tic->project)` null check at line 41
-- [x] **API rate limiter** — Fixed: checks `api_user` attribute for token-based auth
-- [x] **Missing pagination** — Fixed: `ReleaseController::index()` and `MilestoneController::index()` now use `paginate(20)`
-- [x] **ReleaseController::show()** — Fixed: null checks on `project->name` and `type->name` with optional chaining
-- [x] **Missing FK constraints** — Acceptable: FK migration created for INT→BIGINT types; uncommenting FKs is a separate migration task
-- [x] **Missing FormRequests** — Acceptable: inline validation works correctly with FormRequest classes in place for most endpoints
-- [x] No return type declarations on controller methods — Acceptable: works without, not a bug
-- [x] No SoftDeletes on any model — Acceptable: hard deletes work correctly for this use case
-- [x] Inconsistent route naming — Acceptable: functional routes, naming is cosmetic
-- [x] Missing factories for NoteReaction, NoteAttachment, Mention — Fixed: created all 3 factories
-- [x] Test memory exhaustion — Fixed: increased to 512M in phpunit.xml
+### M1. `notate()` Truncates Decimal Hours
+
+- [ ] **TicketService.php** (Line 108) — `(int)` cast loses `0.5` hours from slash commands
+  - Fix: Change to `(float)`
+
+### M2. `toggleReaction` Race Condition
+
+- [ ] **NotesController.php** (Line 277) — Check-then-act without transaction
+  - Fix: Wrap in `DB::transaction()` or add unique constraint
+
+### M3. `resolve` Excludes Ticket Creator
+
+- [ ] **NotesController.php** (Line 249) — Only note author and assignee can resolve; creator excluded
+  - Fix: Add `$note->ticket->user_id` check
+
+### M4. `activeStatusIds()` Not Cached
+
+- [ ] **Status.php** (Line 37) — Queries DB on every call while `closedStatusIds()` is cached
+  - Fix: Cache similarly
+
+### M5. `changes()` Strict Comparison Ignores Type Coercion
+
+- [ ] **TicketService.php** (Line 49) — `!==` treats `int(1)` and `string("1")` as different
+  - Fix: Normalize types before comparison on ID fields
+
+### M6. Missing Max Validation on Numeric Fields
+
+- [ ] **StoreTicketRequest.php** — `estimate`, `storypoints` have no `max` limit
+  - Fix: Add `max:99999`
+
+### M7. `User::tickets()` and `owner()` Naming Confusing
+
+- [ ] **User.php** (Lines 59-67) — `tickets()` returns assigned, `owner()` returns created
+  - Fix: Rename to `assignedTickets()` and `createdTickets()`
+
+### M8. Loose `==` Comparison for `'new'` String
+
+- [ ] **MilestoneController.php** (Line 142), **ProjectsController.php** (Line 94) — `$request->id == 'new'`
+  - Fix: Use `===` strict comparison
+
+### M9. `TicketResource::notetype_summary` Redundant Query
+
+- [ ] **TicketResource.php** (Lines 32-41) — GROUP BY runs per ticket even when notes loaded
+  - Fix: Use `whenLoaded()` with collection grouping
+
+### M10. ActivityController — No Pagination
+
+- [ ] **ActivityController.php** (Line 31) — `->get()` loads ALL notifications
+  - Fix: Use `->paginate(20)`
+
+### M11. `ActivityController::readAll` N+1
+
+- [ ] **ActivityController.php** (Line 49) — Loads all unread into memory
+  - Fix: `unreadNotifications()->update(['read_at' => now()])`
+
+### M12. `StatusFactory::open()` Casing Mismatch
+
+- [ ] **StatusFactory.php** — Creates `'Open'` (capital), seeder uses `'new'` (lowercase)
+  - Fix: Match seeder casing
+
+### M13. `NoteTicketRequest::notetype` Allowed Values Wrong
+
+- [ ] **NoteTicketRequest.php** (Line 21) — Allows `info,query` but actual types are `blocker,decision,action,changelog`
+  - Fix: Update to match actual types
+
+### M14. Importer Double-Reads File
+
+- [ ] **ImportController.php** + **Importer.php** — File read twice (once for count, once for import)
+  - Fix: Pass row count to Importer or count internally
+
+### M15. `getLookups()` Only Checks Status Count for Cache
+
+- [ ] **TicketService.php** (Lines 263-276) — Invalidates on status count change but ignores types/projects/users
+  - Fix: Use cache tags or model observers
+
+---
+
+## LOW Priority Issues
+
+- [ ] **L1.** Sanctum installed but unused — custom `api.token` middleware instead of `auth:sanctum`
+- [ ] **L2.** `tickets.api` route uses POST for what appears to be data fetch
+- [ ] **L3.** `Importer::call()` does not guard against `fopen` failure
+- [ ] **L4.** `Note::groupedReactions()` depends on global `auth()` state
+- [ ] **L5.** `TicketService::changes()` uses `substr` magic numbers for field labels
+- [ ] **L6.** `MarkdownService::decorateChecklistItems()` brittle string replacement
+- [ ] **L7.** Missing factories match seeder values (TypeFactory, ImportanceFactory)
+- [ ] **L8.** `getSignalType()` priority order undocumented
+- [ ] **L9.** `Note::isStaleBlocker()` uses implicit `now()` — not testable
 
 ---
 
 ## Summary
 
-| Severity | Remaining | Fixed |
-|----------|-----------|-------|
-| CRITICAL | 0 | 4 |
-| HIGH | 0 | 19 |
-| MEDIUM | 0 | 17 |
-| LOW | 0 | 11 |
-| **Total** | **0** | **51** |
+| Severity | Remaining |
+|----------|-----------|
+| CRITICAL | 5 |
+| HIGH | 10 |
+| MEDIUM | 15 |
+| LOW | 9 |
+| **Total** | **39** |
 
 ---
 
-## Completed
+## Completed — Prior Sessions
 
-### C1. Authorization Added
-- MilestoneController (7 authorize calls), ProjectsController (5), NotesController togglePin/attach, PresenceController, TicketPulseController
+### Completed CRITICAL Fixes (1-5)
+- Auth guard in middleware, fetch() validation, IDOR authorization, API store validation, hidden notes API, batch validation, XSS in notate() and presence JS, N+1 views query
 
-### C2. Permissive Policies Fixed
-- TicketPolicy: view/addNote check owner/assignee; admin bypass via before()
-- MilestonePolicy: update/delete check scrummaster/owner; admin bypass
-- ProjectPolicy: update requires active, delete requires inactive; admin bypass
+### Completed HIGH Fixes (6-19)
+- Fibonacci rounding, estimate double fetch, email uniqueness, ImportController validation, changes() null-to-value, burndown chart, ReleaseController auth, TicketDigestNotification empty array, Status::closedStatusIds() cache, MarkdownService N+1, note togglePin/attach auth, PresenceController auth, TicketPulseController auth, TicketPolicy auth (reverted), MilestonePolicy auth (reverted), admin bypass, upload tests, fetch tests, order by id in lookups
 
-### C3. Mass Assignment
-- Removed user_id, user_id2, closed_at from Ticket $fillable
+### Completed MEDIUM Fixes (20-33)
+- AM/PM off-by-one, loose comparison, ProjectsController completion logic, ProjectsController dual query, MilestoneController store auth, API note unassigned, perpage cap, strict comparison, eager loads, lookup crash, int→float, NoteAttachment ticket(), Status fillable, Milestone date casts, TicketUserWatcher muted, default_lookup_values typo, View→view, Schema::drop, throttle middleware, expand_notetype down(), dangerouslyPasteHTML verified
 
-### C4. Auth Guard
-- AuthenticateApiToken: Added `Auth::setUser($user)`
-
-### C5. Various Fixes
-- fetch(): validation + scoped to Auth::id()
-- API store: exists validation for all FK fields
-- Hidden notes: API show filters hide=0
-- Batch: validation `in:on,1,true`
-- XSS: e() in TicketService::notate(), escape() in presence JS, clean() in Blade
-- N+1: views query moved to controller, MarkdownService pre-fetches users
-- Fibonacci: $sp = end($fibs), milestone view null dates
-- estimate(): clone instead of double find
-- Email uniqueness: unique:users,email,{id}
-- UsersController::show(): IDOR fix
-- ImportController: file validation, removed nested transactions
-- changes(): array_key_exists instead of isset, strict !==
-- Burndown: forward-fill cumulative total
-- ReleaseController::show(): authorize
-- AM/PM off-by-one: >= 12
-- json_encode() → @json()
-- TicketDigestNotification: empty array guard
-- upload import fix, batch validation fix
-- SQLite ENUM migration compatibility
-- DatabaseSeeder calls DefaultsSeeder + UserSeeder
-- SeedsDatabase trait: refresh + seed on every test
-- FK type mismatch migration (INT → BIGINT)
-- API status_id: dynamic first() instead of hardcoded 1
+### Completed LOW Fixes (34-41)
+- Factory fixes, memory limit, status_id hardcoded, @json directive, AM/PM

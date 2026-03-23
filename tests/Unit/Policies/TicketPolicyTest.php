@@ -57,7 +57,7 @@ class TicketPolicyTest extends TestCase
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertTrue($this->policy->view($unrelated, $ticket));
+        $this->assertFalse($this->policy->view($unrelated, $ticket));
     }
 
     #[Test]
@@ -95,7 +95,7 @@ class TicketPolicyTest extends TestCase
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertTrue($this->policy->update($unrelated, $ticket));
+        $this->assertFalse($this->policy->update($unrelated, $ticket));
     }
 
     #[Test]
@@ -183,7 +183,7 @@ class TicketPolicyTest extends TestCase
         $owner = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
 
-        $this->assertTrue($this->policy->estimate($unrelated, $ticket));
+        $this->assertFalse($this->policy->estimate($unrelated, $ticket));
     }
 
     #[Test]
@@ -194,7 +194,7 @@ class TicketPolicyTest extends TestCase
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertTrue($this->policy->addNote($unrelated, $ticket));
+        $this->assertFalse($this->policy->addNote($unrelated, $ticket));
     }
 
     #[Test]

@@ -15,7 +15,7 @@ class UploadTicketRequest extends FormRequest
     {
         return [
             'file' => 'required|file|mimes:jpg,jpeg,png,gif|max:5120',
-            'folder' => 'required|string|max:50',
+            'folder' => 'required|string|max:50|regex:/^[a-zA-Z0-9_\-]+$/',
         ];
     }
 }

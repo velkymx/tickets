@@ -11,7 +11,7 @@ class ImportController extends Controller
 {
     public function index(Request $request)
     {
-        $milestones = Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id');
+        $milestones = Milestone::orderBy('name')->whereNull('end_at')->pluck('name', 'id');
 
         return view('import.index', compact('milestones'));
     }
