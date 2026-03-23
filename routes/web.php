@@ -29,7 +29,7 @@ Route::get('/', function () {
 });
 
 // --- Authenticated Routes Group ---
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
     // Dashboard & Profile
     Route::get('/dashboard', function () {
