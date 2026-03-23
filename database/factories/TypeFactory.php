@@ -11,11 +11,9 @@ class TypeFactory extends Factory
 
     public function definition(): array
     {
-        $icons = ['fas fa-bug', 'fas fa-star', 'fas fa-check', 'fas fa-arrow-up', 'fas fa-book'];
-
         return [
-            'name' => $this->faker->randomElement(['Bug', 'Feature', 'Task', 'Improvement', 'Story']),
-            'icon' => $this->faker->randomElement($icons),
+            'name' => $this->faker->randomElement(['bug', 'enhancement', 'task', 'proposal']),
+            'icon' => null,
         ];
     }
 }

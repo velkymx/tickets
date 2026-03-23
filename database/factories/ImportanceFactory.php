@@ -12,14 +12,9 @@ class ImportanceFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->randomElement(['Critical', 'High', 'Medium', 'Low']),
-            'icon' => $this->faker->randomElement([
-                'fas fa-fire text-danger',
-                'fas fa-exclamation text-warning',
-                'fas fa-minus text-info',
-                'fas fa-arrow-down text-secondary',
-            ]),
-            'class' => $this->faker->randomElement(['danger', 'warning', 'info', 'secondary']),
+            'name' => $this->faker->randomElement(['trivial', 'minor', 'major', 'critical', 'blocker']),
+            'icon' => null,
+            'class' => null,
         ];
     }
 }
