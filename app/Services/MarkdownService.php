@@ -84,8 +84,23 @@ class MarkdownService
 
     private function decorateChecklistItems(string $html): string
     {
-        $html = str_replace('<li><input disabled="" type="checkbox">', '<li class="checklist-item"><input disabled type="checkbox">', $html);
-        $html = str_replace('<li><input checked="" disabled="" type="checkbox">', '<li class="checklist-item"><input checked disabled type="checkbox">', $html);
+        // Handle checked checkboxes first (order matters)
+        $html = preg_replace(
+            '/<li>\s*<input[^>]*checked[^>]*type="checkbox"[^>]*>\s*/',
+            '<li class="checklist-item"><input checked disabled type="checkbox">',
+            $html
+        );
+        $html = preg_replace(
+            '/<li>\s*<input[^>]*type="checkbox"[^>]*checked[^>]*>\s*/',
+            '<li class="checklist-item"><input checked disabled type="checkbox">',
+            $html
+        );
+        // Handle unchecked checkboxes
+        $html = preg_replace(
+            '/<li>\s*<input[^>]*type="checkbox"[^>]*>\s*/',
+            '<li class="checklist-item"><input disabled type="checkbox">',
+            $html
+        );
 
         return $html;
     }
