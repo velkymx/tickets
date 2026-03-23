@@ -57,13 +57,7 @@
                         </div>
 
                         {{-- Actions --}}
-                        <div class="d-flex justify-content-between align-items-center">
-                            @if (Route::has('password.request'))
-                                <a class="text-sm text-decoration-none text-muted" href="{{ route('password.request') }}">
-                                    {{ __('Forgot your password?') }}
-                                </a>
-                            @endif
-
+                        <div class="d-flex justify-content-end align-items-center">
                             <button type="submit" class="btn btn-primary">
                                 {{ __('Log in') }}
                             </button>

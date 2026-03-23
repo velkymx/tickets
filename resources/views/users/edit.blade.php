@@ -78,6 +78,38 @@
         <button type="submit" class="btn btn-success">Save Profile</button>
     </div>
 </form>
+
+<h3 class="mt-5 mb-3">API Token</h3>
+<p class="text-muted">Generate a bearer token to authenticate API requests.</p>
+
+@if (session('api_token_plain'))
+    <div class="alert alert-warning">
+        <strong>Copy your token now.</strong> It will not be shown again.
+        <div class="mt-2">
+            <code class="user-select-all">{{ session('api_token_plain') }}</code>
+        </div>
+    </div>
+@endif
+
+@if ($user->api_token)
+    <div class="alert alert-success">
+        <i class="fas fa-key me-1"></i> You have an active API token.
+    </div>
+    <form method="POST" action="{{ route('user.api-token.revoke') }}" class="d-inline">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-outline-danger">Revoke Token</button>
+    </form>
+    <form method="POST" action="{{ route('user.api-token') }}" class="d-inline ms-2">
+        @csrf
+        <button type="submit" class="btn btn-outline-secondary" onclick="return confirm('This will replace your existing token. Continue?')">Regenerate Token</button>
+    </form>
+@else
+    <form method="POST" action="{{ route('user.api-token') }}">
+        @csrf
+        <button type="submit" class="btn btn-primary">Generate API Token</button>
+    </form>
+@endif
 @endsection
 
 @section('javascript')

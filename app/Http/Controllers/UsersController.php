@@ -80,6 +80,23 @@ class UsersController extends Controller
 
     }
 
+    public function generateApiToken()
+    {
+        $user = User::findOrFail(Auth::id());
+        $token = $user->generateApiToken();
+
+        return back()->with('api_token_plain', $token);
+    }
+
+    public function revokeApiToken()
+    {
+        $user = User::findOrFail(Auth::id());
+        $user->api_token = null;
+        $user->save();
+
+        return back()->with('info_message', 'API token revoked.');
+    }
+
     private function get_timezones()
     {
         $regions = [

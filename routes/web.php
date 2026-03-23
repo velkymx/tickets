@@ -5,7 +5,6 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\NotesController;
 use App\Http\Controllers\PresenceController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ReleaseController;
 use App\Http\Controllers\TicketPulseController;
@@ -30,15 +29,6 @@ Route::get('/', function () {
 
 // --- Authenticated Routes Group ---
 Route::middleware(['auth', 'throttle:60,1'])->group(function () {
-
-    // Dashboard & Profile
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->middleware('verified')->name('dashboard');
-
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Home
     Route::get('/home', [TicketsController::class, 'home'])->name('home');
@@ -133,7 +123,9 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
     // User
     Route::post('/user/update', [UsersController::class, 'update'])->name('user.update');
+    Route::post('/user/api-token', [UsersController::class, 'generateApiToken'])->name('user.api-token');
+    Route::delete('/user/api-token', [UsersController::class, 'revokeApiToken'])->name('user.api-token.revoke');
 });
 
-// Authentication routes defined by Laravel Breeze/Jetstream
+// Authentication routes
 require __DIR__.'/auth.php';
