@@ -217,7 +217,9 @@ class MilestoneControllerTest extends TestCase
     public function edit_returns_edit_view_with_milestone_and_users(): void
     {
         $user = User::factory()->create();
-        $milestone = Milestone::factory()->create();
+        $milestone = Milestone::factory()->create([
+            'owner_user_id' => $user->id,
+        ]);
 
         $response = $this->actingAs($user)->get("/milestone/edit/{$milestone->id}");
 
@@ -237,7 +239,7 @@ class MilestoneControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/milestone/edit/{$milestone->id}");
 
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     #[Test]
@@ -269,7 +271,7 @@ class MilestoneControllerTest extends TestCase
     public function update_updates_milestone(): void
     {
         $user = User::factory()->create();
-        $milestone = Milestone::factory()->create(['name' => 'Old Name']);
+        $milestone = Milestone::factory()->create(['name' => 'Old Name', 'owner_user_id' => $user->id]);
 
         $response = $this->actingAs($user)->put("/milestone/update/{$milestone->id}", [
             'name' => 'Updated Name',
@@ -283,7 +285,7 @@ class MilestoneControllerTest extends TestCase
     public function update_redirects_to_milestone_show(): void
     {
         $user = User::factory()->create();
-        $milestone = Milestone::factory()->create();
+        $milestone = Milestone::factory()->create(['owner_user_id' => $user->id]);
 
         $response = $this->actingAs($user)->put("/milestone/update/{$milestone->id}", [
             'name' => 'Updated Name',
@@ -334,7 +336,7 @@ class MilestoneControllerTest extends TestCase
     public function store_updates_existing_milestone_when_id_is_numeric(): void
     {
         $user = User::factory()->create();
-        $milestone = Milestone::factory()->create(['name' => 'Old Name']);
+        $milestone = Milestone::factory()->create(['name' => 'Old Name', 'owner_user_id' => $user->id]);
 
         $response = $this->actingAs($user)->post("/milestone/store/{$milestone->id}", [
             'id' => (string) $milestone->id,

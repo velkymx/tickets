@@ -63,7 +63,7 @@ class MilestonePolicyTest extends TestCase
         $owner = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
 
-        $this->assertTrue($this->policy->update($unrelated, $milestone));
+        $this->assertFalse($this->policy->update($unrelated, $milestone));
     }
 
     #[Test]
@@ -74,7 +74,7 @@ class MilestonePolicyTest extends TestCase
         $owner = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
 
-        $this->assertTrue($this->policy->delete($unrelated, $milestone));
+        $this->assertFalse($this->policy->delete($unrelated, $milestone));
     }
 
     #[Test]
@@ -84,7 +84,7 @@ class MilestonePolicyTest extends TestCase
         $owner = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
 
-        $this->assertTrue($this->policy->delete($scrummaster, $milestone));
+        $this->assertFalse($this->policy->delete($scrummaster, $milestone));
     }
 
     #[Test]
@@ -93,7 +93,7 @@ class MilestonePolicyTest extends TestCase
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => null, 'owner_user_id' => null]);
 
-        $this->assertTrue($this->policy->update($user, $milestone));
+        $this->assertFalse($this->policy->update($user, $milestone));
     }
 
     #[Test]
@@ -102,7 +102,7 @@ class MilestonePolicyTest extends TestCase
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => null, 'owner_user_id' => null]);
 
-        $this->assertTrue($this->policy->delete($user, $milestone));
+        $this->assertFalse($this->policy->delete($user, $milestone));
     }
 
     #[Test]

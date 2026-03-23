@@ -42,7 +42,7 @@ class ProjectPolicyTest extends TestCase
     public function it_allows_any_user_to_update(): void
     {
         $user = User::factory()->create();
-        $project = Project::factory()->create();
+        $project = Project::factory()->create(['active' => true]);
 
         $this->assertTrue($this->policy->update($user, $project));
     }
