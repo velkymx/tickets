@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class Note extends Model
@@ -112,13 +113,15 @@ class Note extends Model
         return $this->supersededBy()->exists();
     }
 
-    public function isStaleBlocker(): bool
+    public function isStaleBlocker(?Carbon $referenceTime = null): bool
     {
         if ($this->notetype !== 'blocker' || $this->resolved) {
             return false;
         }
 
-        return $this->created_at && $this->created_at->diffInHours() > 48;
+        $referenceTime = $referenceTime ?? now();
+
+        return $this->created_at && $this->created_at->diffInHours($referenceTime) > 48;
     }
 
     // Scopes
