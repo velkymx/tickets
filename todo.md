@@ -110,6 +110,7 @@ NO FALLBACKS
 
 - [ ] **NotesController.php** (Line 277) — Check-then-act without transaction
   - Fix: Wrap in `DB::transaction()` or add unique constraint
+  - Note: Transaction attempt caused test failures, reverting
 
 ### M3. `resolve` Excludes Ticket Creator
 
