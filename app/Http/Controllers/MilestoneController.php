@@ -139,7 +139,7 @@ class MilestoneController extends Controller
     {
         $validated = $request->validated();
 
-        if ($request->id == 'new') {
+        if ($request->id === 'new') {
             $validated['active'] = 1;
 
             Milestone::create($validated);

@@ -91,7 +91,7 @@ class ProjectsController extends Controller
     {
         $validated = $request->validated();
 
-        if ($request->id == 'new') {
+        if ($request->id === 'new') {
             $this->authorize('create', Project::class);
 
             $validated['active'] = 1;
