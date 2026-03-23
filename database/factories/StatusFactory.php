@@ -26,7 +26,7 @@ class StatusFactory extends Factory
     public function open(): static
     {
         return $this->state(fn (array $attributes) => [
-            'name' => 'Open',
+            'name' => 'new',
         ]);
     }
 }

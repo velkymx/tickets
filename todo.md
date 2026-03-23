@@ -84,7 +84,7 @@ NO FALLBACKS
 
 ### H8. StatusFactory::open() Name Mismatch With Seeder
 
-- [ ] **StatusFactory.php** (Line 29) — `open()` creates `'Open'` but seeder defines `'new'`
+- [x] **StatusFactory.php** (Line 29) — `open()` creates `'Open'` but seeder defines `'new'`
   - Fix: Change to `'new'` to match seeder
 
 ### H9. LIKE Search in SlashCommandService Matches Wrong Users
