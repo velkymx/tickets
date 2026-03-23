@@ -46,39 +46,46 @@ class TicketService
                 continue;
             }
 
-            if (array_key_exists($change, $old) && $old[$change] !== $new[$change]) {
+            if (array_key_exists($change, $old)) {
+                $oldValue = $old[$change];
+                $newValue = $new[$change];
 
-                $label = $change;
+                if (substr($change, -3, 3) === '_id' || substr($change, -3, 3) === 'id2') {
+                    $oldValue = (int) $oldValue;
+                    $newValue = (int) $newValue;
+                }
 
-                if (substr($change, -3, 3) == '_id' || substr($change, -3, 3) == 'id2') {
+                if ($oldValue !== $newValue) {
+                    $label = $change;
 
-                    $label = substr($change, 0, strlen($change) - 3);
+                    if (substr($change, -3, 3) === '_id' || substr($change, -3, 3) === 'id2') {
+                        $label = substr($change, 0, strlen($change) - 3);
 
-                    $lookup = $label.'s';
+                        $lookup = $label.'s';
 
-                    if ($change == 'status_id') {
-                        $lookup = 'statuses';
-                    }
-
-                    if ($change == 'storypoints') {
-                        $label = 'Story points';
-                    }
-
-                    if ($change == 'user_id2') {
-                        $lookup = 'users';
-                        $label = 'Assigned user';
-
-                        $watch = TicketUserWatcher::where('ticket_id', $old['id'])->where('user_id', $new[$change])->first();
-
-                        if (! $watch) {
-                            TicketUserWatcher::create(['user_id' => $new[$change], 'ticket_id' => $old['id']]);
+                        if ($change === 'status_id') {
+                            $lookup = 'statuses';
                         }
 
-                    }
+                        if ($change === 'storypoints') {
+                            $label = 'Story points';
+                        }
 
-                    $change_list[] = ucwords($label).' changed to '.($lookups[$lookup][$new[$change]] ?? 'Unknown');
-                } else {
-                    $change_list[] = ucwords($change).' changed to '.$new[$change];
+                        if ($change === 'user_id2') {
+                            $lookup = 'users';
+                            $label = 'Assigned user';
+
+                            $watch = TicketUserWatcher::where('ticket_id', $old['id'])->where('user_id', $newValue)->first();
+
+                            if (! $watch) {
+                                TicketUserWatcher::create(['user_id' => $newValue, 'ticket_id' => $old['id']]);
+                            }
+                        }
+
+                        $change_list[] = ucwords($label).' changed to '.($lookups[$lookup][$newValue] ?? 'Unknown');
+                    } else {
+                        $change_list[] = ucwords($change).' changed to '.$newValue;
+                    }
                 }
             }
         }

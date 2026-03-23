@@ -22,8 +22,8 @@ class StoreTicketRequest extends FormRequest
             'milestone_id' => 'nullable|integer|exists:milestones,id',
             'project_id' => 'nullable|integer|exists:projects,id',
             'due_at' => 'nullable|date',
-            'estimate' => 'nullable|numeric|min:0',
-            'storypoints' => 'nullable|integer|min:0',
+            'estimate' => 'nullable|numeric|min:0|max:99999',
+            'storypoints' => 'nullable|integer|min:0|max:99999',
         ];
     }
 }

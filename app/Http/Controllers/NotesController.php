@@ -247,10 +247,11 @@ class NotesController extends Controller
         $note = Note::with('ticket')->findOrFail($id);
 
         $canResolve = (int) $note->user_id === (int) Auth::id()
-            || (int) $note->ticket->user_id2 === (int) Auth::id();
+            || (int) $note->ticket->user_id2 === (int) Auth::id()
+            || (int) $note->ticket->user_id === (int) Auth::id();
 
         if (! $canResolve) {
-            abort(Response::HTTP_FORBIDDEN, 'Only the thread author or ticket assignee can resolve.');
+            abort(Response::HTTP_FORBIDDEN, 'Only the thread author, ticket creator, or assignee can resolve.');
         }
 
         $validated = $request->validate([
