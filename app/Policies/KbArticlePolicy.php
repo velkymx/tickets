@@ -9,7 +9,7 @@ class KbArticlePolicy
 {
     public function before(?User $user, string $ability): ?bool
     {
-        if ($user && ($user->isAdmin() || $user->kb_role === 'admin')) {
+        if ($user && $user->isKbAdmin()) {
             return true;
         }
 
@@ -44,7 +44,7 @@ class KbArticlePolicy
 
     public function create(?User $user): bool
     {
-        return $user && ($user->kb_role === 'author' || $user->kb_role === 'admin');
+        return $user !== null && $user->isKbAuthor();
     }
 
     public function update(?User $user, KbArticle $article): bool

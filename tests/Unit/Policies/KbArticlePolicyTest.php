@@ -26,7 +26,6 @@ class KbArticlePolicyTest extends TestCase
     public function admin_can_do_everything(): void
     {
         $admin = User::factory()->create(['admin' => true]);
-        $article = KbArticle::factory()->restricted()->create();
 
         $this->assertTrue($this->policy->before($admin, 'view'));
     }
@@ -35,7 +34,6 @@ class KbArticlePolicyTest extends TestCase
     public function kb_admin_can_do_everything(): void
     {
         $kbAdmin = User::factory()->create(['kb_role' => 'admin']);
-        $article = KbArticle::factory()->restricted()->create();
 
         $this->assertTrue($this->policy->before($kbAdmin, 'view'));
     }
@@ -85,7 +83,7 @@ class KbArticlePolicyTest extends TestCase
     {
         $author = User::factory()->create(['kb_role' => 'author']);
         $other = User::factory()->create(['kb_role' => 'author']);
-        $article = KbArticle::factory()->create(['user_id' => $author->id, 'owner_id' => $author->id]);
+        $article = KbArticle::factory()->create(['user_id' => $author->id, 'owner_id' => $author->id, 'status' => 'draft']);
 
         $this->assertTrue($this->policy->view($author, $article));
         $this->assertFalse($this->policy->view($other, $article));
