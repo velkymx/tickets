@@ -24,22 +24,10 @@ class ImportController extends Controller
         ]);
 
         $csv = $request->file('csv');
-        $maxRows = 1000;
 
         try {
-            $handle = fopen($csv->path(), 'r');
-            $rowCount = 0;
-            while (($row = fgetcsv($handle)) !== false) {
-                $rowCount++;
-                if ($rowCount > $maxRows) {
-                    fclose($handle);
-                    throw new Exception("CSV file exceeds maximum of $maxRows rows.");
-                }
-            }
-            fclose($handle);
-
             $content = file_get_contents($csv->path());
-            if (strlen($content) !== strlen(utf8_encode($content)) && ! mb_check_encoding($content, 'UTF-8')) {
+            if (! mb_check_encoding($content, 'UTF-8')) {
                 throw new Exception('CSV file must be UTF-8 encoded.');
             }
         } catch (Exception $e) {
