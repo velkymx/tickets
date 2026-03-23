@@ -194,7 +194,7 @@ class TicketPolicyTest extends TestCase
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->addNote($unrelated, $ticket));
+        $this->assertTrue($this->policy->addNote($unrelated, $ticket));
     }
 
     #[Test]

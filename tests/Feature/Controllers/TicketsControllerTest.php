@@ -2017,7 +2017,7 @@ class TicketsControllerTest extends TestCase
     public function estimate_updates_existing_estimate(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         TicketEstimate::factory()->create([
             'ticket_id' => $ticket->id,
@@ -2059,15 +2059,14 @@ class TicketsControllerTest extends TestCase
     public function estimate_calculates_fibonacci_rounded_average(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $user2 = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user2->id]);
 
         TicketEstimate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'storypoints' => 1,
         ]);
-
-        $user2 = User::factory()->create();
 
         $this->actingAs($user2)->post("/tickets/estimate/{$ticket->id}", [
             'storypoints' => 5,
