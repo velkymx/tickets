@@ -505,7 +505,8 @@ class TicketsController extends Controller
         ]);
 
         return TicketResource::collection(
-            Ticket::where('user_id2', Auth::id())
+            Ticket::with(['status', 'assignee', 'notes'])
+                ->where('user_id2', Auth::id())
                 ->whereBetween('closed_at', [$request->started_at, $request->completed_at])
                 ->get()
         );

@@ -31,13 +31,6 @@ class TicketResource extends JsonResource
             'note_count' => $this->whenCounted('notes', $this->notes_count, fn () => $this->notes()->count()),
             'notetype_summary' => $this->whenLoaded('notes', function () {
                 return $this->notes->groupBy('notetype')->map(fn ($notes) => $notes->count())->toArray();
-            }, function () {
-                return $this->notes()
-                    ->select('notetype')
-                    ->selectRaw('count(*) as count')
-                    ->groupBy('notetype')
-                    ->pluck('count', 'notetype')
-                    ->toArray();
             }),
         ];
     }
