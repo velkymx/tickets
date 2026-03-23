@@ -89,8 +89,8 @@ NO FALLBACKS
 
 ### H9. LIKE Search in SlashCommandService Matches Wrong Users
 
-- [ ] **SlashCommandService.php** (Line 236) — `%Jo%` matches "John", "Jojo", "Jones"
-  - Fix: Remove LIKE fallback for User lookups or use prefix matching
+- [x] **SlashCommandService.php** (Line 236) — `%Jo%` matches "John", "Jojo", "Jones"
+  - Fix: Remove LIKE fallback for User lookups
 
 ### H10. TicketDigestNotification Not Queued
 

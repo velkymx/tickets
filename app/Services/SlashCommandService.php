@@ -242,10 +242,6 @@ class SlashCommandService
             ->first()
             ?? $class::query()
                 ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
-                ->first()
-            ?? $class::query()
-                ->where('name', 'like', "%{$trimmed}%")
-                ->orderByDesc('id')
                 ->first();
     }
 
