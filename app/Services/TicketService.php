@@ -49,8 +49,9 @@ class TicketService
             if (array_key_exists($change, $old)) {
                 $oldValue = $old[$change];
                 $newValue = $new[$change];
+                $isIdField = str_ends_with($change, '_id') || str_ends_with($change, 'id2');
 
-                if (substr($change, -3, 3) === '_id' || substr($change, -3, 3) === 'id2') {
+                if ($isIdField) {
                     $oldValue = (int) $oldValue;
                     $newValue = (int) $newValue;
                 }
@@ -58,8 +59,9 @@ class TicketService
                 if ($oldValue !== $newValue) {
                     $label = $change;
 
-                    if (substr($change, -3, 3) === '_id' || substr($change, -3, 3) === 'id2') {
-                        $label = substr($change, 0, strlen($change) - 3);
+                    if ($isIdField) {
+                        $label = rtrim($change, 'id');
+                        $label = rtrim($label, '_');
 
                         $lookup = $label.'s';
 
