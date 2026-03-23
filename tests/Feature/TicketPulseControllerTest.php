@@ -17,7 +17,7 @@ class TicketPulseControllerTest extends TestCase
     public function it_returns_pulse_data()
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
 
         $response = $this->actingAs($user)
             ->getJson("/tickets/{$ticket->id}/pulse");
@@ -36,7 +36,7 @@ class TicketPulseControllerTest extends TestCase
     public function it_updates_presence_when_fetching_pulse()
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
 
         $this->actingAs($user)
             ->getJson("/tickets/{$ticket->id}/pulse");

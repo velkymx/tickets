@@ -490,7 +490,7 @@ class NotesControllerTest extends TestCase
     {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user1->id, 'user_id2' => $user1->id]);
+        $ticket = Ticket::factory()->create(['user_id' => $user1->id, 'user_id2' => $user2->id]);
 
         // Both users send heartbeat
         $this->actingAs($user1)->postJson("/tickets/{$ticket->id}/presence");

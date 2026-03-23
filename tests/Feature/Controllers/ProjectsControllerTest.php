@@ -81,6 +81,8 @@ class ProjectsControllerTest extends TestCase
         $closedStatus = Status::factory()->closed()->create();
         $openStatus = Status::factory()->create();
 
+        cache()->forget('closed_status_ids');
+
         Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $closedStatus->id]);
         Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $openStatus->id]);
 
