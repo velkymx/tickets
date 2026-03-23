@@ -17,7 +17,7 @@ NO FALLBACKS
 
 ### C1. All Policies Return `true` — No Real Authorization (RECURSIVE)
 
-- [ ] **TicketPolicy** — `view`, `update`, `claim`, `estimate`, `addNote` all return `true`
+- [x] **TicketPolicy** — `view`, `update`, `claim`, `estimate`, `addNote` all return `true`
 - [ ] **MilestonePolicy** — `update`, `delete` return `true`
 - [ ] **ProjectPolicy** — `update`, `delete` return `true`
   - These have been fixed and reverted externally multiple times
@@ -25,22 +25,22 @@ NO FALLBACKS
 
 ### C2. `admin` Field Mass-Assignable
 
-- [ ] **User.php** (Line 17) — `'admin'` in `$fillable`. Any update could grant admin privileges
+- [x] **User.php** (Line 17) — `'admin'` in `$fillable`. Any update could grant admin privileges
   - Fix: Remove from `$fillable`, use dedicated `promoteToAdmin()` method
 
 ### C3. `where('end_at', null)` — SQL Bug (Milestones Always Empty)
 
-- [ ] **TicketService.php** (Line 282) — `->where('end_at', null)` generates `WHERE end_at = NULL` which never matches in SQL
+- [x] **TicketService.php** (Line 282) — `->where('end_at', null)` generates `WHERE end_at = NULL` which never matches in SQL
   - Fix: Change to `->whereNull('end_at')`
 
 ### C4. `default_lookup_values.php` — Dead/Duplicate Seeder
 
-- [ ] **default_lookup_values.php** — Duplicates `DefaultsSeeder.php`, has no idempotency, PSR-4 non-compliant class name
+- [x] **default_lookup_values.php** — Duplicates `DefaultsSeeder.php`, has no idempotency, PSR-4 non-compliant class name
   - Fix: Delete file entirely
 
 ### C5. Upload Folder — Path Traversal Risk
 
-- [ ] **UploadTicketRequest.php** (Line 18) — `folder` accepts any string, no regex validation
+- [x] **UploadTicketRequest.php** (Line 18) — `folder` accepts any string, no regex validation
   - Fix: `'folder' => 'required|string|max:50|regex:/^[a-zA-Z0-9_\-]+$/'`
 
 ---
@@ -79,7 +79,7 @@ NO FALLBACKS
 
 ### H7. TicketResource — N+1 Queries on Every Serialization
 
-- [ ] **TicketResource.php** — `$this->status->name`, `$this->assignee->name`, `$this->notes()->count()` trigger lazy loads
+- [x] **TicketResource.php** — `$this->status->name`, `$this->assignee->name`, `$this->notes()->count()` trigger lazy loads
   - Fix: Always use `withCount` and eager-load in controller
 
 ### H8. StatusFactory::open() Name Mismatch With Seeder
