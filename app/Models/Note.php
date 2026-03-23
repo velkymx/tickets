@@ -85,12 +85,14 @@ class Note extends Model
         return $this->edited_at !== null;
     }
 
-    public function groupedReactions(): Collection
+    public function groupedReactions(?int $userId = null): Collection
     {
-        return $this->reactions->groupBy('emoji')->map(function ($group) {
+        $userId = $userId ?? auth()->id();
+
+        return $this->reactions->groupBy('emoji')->map(function ($group) use ($userId) {
             return [
                 'count' => $group->count(),
-                'reacted' => $group->contains('user_id', auth()->id()),
+                'reacted' => $group->contains('user_id', $userId),
             ];
         });
     }
