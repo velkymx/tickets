@@ -10,16 +10,17 @@ class MentionService
 {
     public function parseMentions(string $markdown): array
     {
-        preg_match_all('/@\[([^\]]+)\]/u', $markdown, $matches);
+        preg_match_all('/@\[([^\]]+)\]/u', $markdown, $bracketMatches);
+        preg_match_all('/@([\w.\-]+)/u', $markdown, $bareMatches);
 
-        if (empty($matches[1])) {
-            return [];
-        }
-
-        return array_values(array_unique(array_map(
+        $bracketMentions = array_values(array_unique(array_map(
             fn (string $token) => preg_replace('/\s*\([^)]*\)$/', '', trim($token)),
-            $matches[1]
+            $bracketMatches[1] ?? []
         )));
+
+        $bareMentions = array_values(array_unique($bareMatches[1] ?? []));
+
+        return array_unique(array_merge($bracketMentions, $bareMentions));
     }
 
     public function createMentions(Note $note, array $userIds): void

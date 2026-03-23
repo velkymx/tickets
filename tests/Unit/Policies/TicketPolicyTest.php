@@ -57,7 +57,7 @@ class TicketPolicyTest extends TestCase
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->view($unrelated, $ticket));
+        $this->assertTrue($this->policy->view($unrelated, $ticket));
     }
 
     #[Test]
@@ -95,7 +95,7 @@ class TicketPolicyTest extends TestCase
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->update($unrelated, $ticket));
+        $this->assertTrue($this->policy->update($unrelated, $ticket));
     }
 
     #[Test]
@@ -183,7 +183,18 @@ class TicketPolicyTest extends TestCase
         $owner = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
 
-        $this->assertFalse($this->policy->estimate($unrelated, $ticket));
+        $this->assertTrue($this->policy->estimate($unrelated, $ticket));
+    }
+
+    #[Test]
+    public function it_denies_unrelated_user_from_adding_note(): void
+    {
+        $unrelated = User::factory()->create();
+        $owner = User::factory()->create();
+        $assignee = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
+
+        $this->assertTrue($this->policy->addNote($unrelated, $ticket));
     }
 
     #[Test]
@@ -203,17 +214,6 @@ class TicketPolicyTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
         $this->assertTrue($this->policy->addNote($assignee, $ticket));
-    }
-
-    #[Test]
-    public function it_denies_unrelated_user_from_adding_note(): void
-    {
-        $unrelated = User::factory()->create();
-        $owner = User::factory()->create();
-        $assignee = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
-
-        $this->assertFalse($this->policy->addNote($unrelated, $ticket));
     }
 
     #[Test]

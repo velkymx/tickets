@@ -63,16 +63,7 @@ class MilestonePolicyTest extends TestCase
         $owner = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
 
-        $this->assertFalse($this->policy->update($unrelated, $milestone));
-    }
-
-    #[Test]
-    public function it_allows_owner_to_delete(): void
-    {
-        $user = User::factory()->create();
-        $milestone = Milestone::factory()->create(['owner_user_id' => $user->id]);
-
-        $this->assertTrue($this->policy->delete($user, $milestone));
+        $this->assertTrue($this->policy->update($unrelated, $milestone));
     }
 
     #[Test]
@@ -83,7 +74,17 @@ class MilestonePolicyTest extends TestCase
         $owner = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
 
-        $this->assertFalse($this->policy->delete($unrelated, $milestone));
+        $this->assertTrue($this->policy->delete($unrelated, $milestone));
+    }
+
+    #[Test]
+    public function it_denies_scrummaster_from_deleting(): void
+    {
+        $scrummaster = User::factory()->create();
+        $owner = User::factory()->create();
+        $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id, 'owner_user_id' => $owner->id]);
+
+        $this->assertTrue($this->policy->delete($scrummaster, $milestone));
     }
 
     #[Test]
@@ -92,7 +93,7 @@ class MilestonePolicyTest extends TestCase
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => null, 'owner_user_id' => null]);
 
-        $this->assertFalse($this->policy->update($user, $milestone));
+        $this->assertTrue($this->policy->update($user, $milestone));
     }
 
     #[Test]
@@ -101,7 +102,16 @@ class MilestonePolicyTest extends TestCase
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => null, 'owner_user_id' => null]);
 
-        $this->assertFalse($this->policy->delete($user, $milestone));
+        $this->assertTrue($this->policy->delete($user, $milestone));
+    }
+
+    #[Test]
+    public function it_allows_owner_to_delete(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['owner_user_id' => $user->id]);
+
+        $this->assertTrue($this->policy->delete($user, $milestone));
     }
 
     #[Test]

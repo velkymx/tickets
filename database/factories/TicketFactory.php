@@ -35,6 +35,13 @@ class TicketFactory extends Factory
         ];
     }
 
+    public function unassigned(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_id2' => null,
+        ]);
+    }
+
     public function closed(): static
     {
         return $this->state(fn (array $attributes) => [

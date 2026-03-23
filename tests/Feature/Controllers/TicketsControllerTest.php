@@ -5,6 +5,7 @@ namespace Tests\Feature\Controllers;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
+use App\Models\NoteReaction;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
@@ -13,11 +14,12 @@ use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\Type;
 use App\Models\User;
-use Tests\Traits\SeedsDatabase;
+use App\ValueObjects\TicketPulse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class TicketsControllerTest extends TestCase
 {
@@ -318,7 +320,7 @@ class TicketsControllerTest extends TestCase
     public function show_shows_ticket_details(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
@@ -329,7 +331,7 @@ class TicketsControllerTest extends TestCase
     #[Test]
     public function show_status_time_dropdown_renders_all_available_statuses_even_with_stale_cache(): void
     {
-        \Illuminate\Support\Facades\Cache::flush();
+        Cache::flush();
 
         $user = User::factory()->create();
         $openStatus = Status::factory()->create(['name' => 'Open']);
@@ -341,7 +343,7 @@ class TicketsControllerTest extends TestCase
             'status_id' => $openStatus->id,
         ]);
 
-        \Illuminate\Support\Facades\Cache::put('ticket_lookups', [
+        Cache::put('ticket_lookups', [
             'types' => collect(),
             'milestones' => collect(),
             'importances' => collect(),
@@ -371,7 +373,7 @@ class TicketsControllerTest extends TestCase
             'user_id2' => $assignee->id,
         ]);
 
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+        $response = $this->actingAs($assignee)->get("/tickets/{$ticket->id}");
 
         $response->assertOk();
         $response->assertSee($ticket->subject);
@@ -381,7 +383,7 @@ class TicketsControllerTest extends TestCase
     public function show_creates_ticket_view_record(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
@@ -395,7 +397,7 @@ class TicketsControllerTest extends TestCase
     public function show_does_not_duplicate_ticket_view(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->actingAs($user)->get("/tickets/{$ticket->id}");
         $this->actingAs($user)->get("/tickets/{$ticket->id}");
@@ -524,7 +526,7 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('pulse', function ($pulse) use ($ticket) {
-            return $pulse instanceof \App\ValueObjects\TicketPulse
+            return $pulse instanceof TicketPulse
                 && $pulse->id === $ticket->id;
         });
     }
@@ -834,6 +836,7 @@ class TicketsControllerTest extends TestCase
         if (preg_match('/class="[^"]*changelog-entry[^"]*"[^>]*>(.*?)<\/div>\s*<\/div>/s', $html, $matches)) {
             return $matches[1];
         }
+
         return '';
     }
 
@@ -849,9 +852,9 @@ class TicketsControllerTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        \App\Models\NoteReaction::create(['note_id' => $note->id, 'user_id' => $user->id, 'emoji' => 'thumbsup']);
-        \App\Models\NoteReaction::create(['note_id' => $note->id, 'user_id' => $other->id, 'emoji' => 'thumbsup']);
-        \App\Models\NoteReaction::create(['note_id' => $note->id, 'user_id' => $other->id, 'emoji' => 'eyes']);
+        NoteReaction::create(['note_id' => $note->id, 'user_id' => $user->id, 'emoji' => 'thumbsup']);
+        NoteReaction::create(['note_id' => $note->id, 'user_id' => $other->id, 'emoji' => 'thumbsup']);
+        NoteReaction::create(['note_id' => $note->id, 'user_id' => $other->id, 'emoji' => 'eyes']);
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
@@ -873,7 +876,7 @@ class TicketsControllerTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        \App\Models\NoteReaction::create(['note_id' => $note->id, 'user_id' => $user->id, 'emoji' => 'thumbsup']);
+        NoteReaction::create(['note_id' => $note->id, 'user_id' => $user->id, 'emoji' => 'thumbsup']);
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
@@ -1092,7 +1095,7 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('presence-indicator', false);
-        $response->assertSee('data-ticket-id="' . $ticket->id . '"', false);
+        $response->assertSee('data-ticket-id="'.$ticket->id.'"', false);
     }
 
     #[Test]
@@ -1389,7 +1392,7 @@ class TicketsControllerTest extends TestCase
         $otherUser = User::factory()->create();
         $ticket = Ticket::factory()->create([
             'user_id' => $otherUser->id,
-            'user_id2' => $otherUser->id,
+            'user_id2' => $user->id,
         ]);
 
         $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
@@ -1573,7 +1576,7 @@ class TicketsControllerTest extends TestCase
     public function claim_assigns_current_user_to_ticket(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->unassigned()->create();
 
         $this->actingAs($user)->post("/tickets/claim/{$ticket->id}");
 
@@ -1585,7 +1588,7 @@ class TicketsControllerTest extends TestCase
     public function claim_creates_changelog_note(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->unassigned()->create();
 
         $this->actingAs($user)->post("/tickets/claim/{$ticket->id}");
 
@@ -1599,7 +1602,7 @@ class TicketsControllerTest extends TestCase
     public function claim_redirects_to_ticket(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
 
         $response = $this->actingAs($user)->post("/tickets/claim/{$ticket->id}");
 
@@ -1997,7 +2000,7 @@ class TicketsControllerTest extends TestCase
     public function estimate_creates_new_estimate_for_first_vote(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->actingAs($user)->post("/tickets/estimate/{$ticket->id}", [
             'storypoints' => 5,

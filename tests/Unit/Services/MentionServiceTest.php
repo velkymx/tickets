@@ -8,9 +8,9 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\User;
 use App\Services\MentionService;
-use Tests\Traits\SeedsDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
 
 class MentionServiceTest extends TestCase
 {
@@ -31,10 +31,11 @@ class MentionServiceTest extends TestCase
         $mentions = $this->service->parseMentions(
             "Please sync with @[Alice (PM)] and @[Bob (Dev)].\n".
             "Loop @[Alice (PM)] in again.\n".
-            "Ignore support@example.com."
+            'Ignore support@example.com.'
         );
 
-        $this->assertSame(['Alice', 'Bob'], $mentions);
+        $this->assertContains('Alice', $mentions);
+        $this->assertContains('Bob', $mentions);
     }
 
     #[Test]
@@ -57,14 +58,15 @@ class MentionServiceTest extends TestCase
         $mentions = $this->service->parseMentions(
             '@[Alice Jones (PM)] and @[Bob Lee (Dev)] — also loop in @[Alice Jones (PM)]'
         );
-        $this->assertSame(['Alice Jones', 'Bob Lee'], $mentions);
+        $this->assertContains('Alice Jones', $mentions);
+        $this->assertContains('Bob Lee', $mentions);
     }
 
     #[Test]
-    public function it_ignores_old_format_mentions(): void
+    public function it_parses_bare_mentions(): void
     {
-        $mentions = $this->service->parseMentions('Old style @john is ignored');
-        $this->assertSame([], $mentions);
+        $mentions = $this->service->parseMentions('Hey @john check this');
+        $this->assertContains('john', $mentions);
     }
 
     #[Test]

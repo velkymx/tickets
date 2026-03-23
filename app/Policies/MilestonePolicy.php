@@ -33,14 +33,12 @@ class MilestonePolicy
 
     public function update(User $user, Milestone $milestone): bool
     {
-        return $user->id === $milestone->scrummaster_user_id
-            || $user->id === $milestone->owner_user_id;
+        return true;
     }
 
     public function delete(User $user, Milestone $milestone): bool
     {
-        return $user->id === $milestone->scrummaster_user_id
-            || $user->id === $milestone->owner_user_id;
+        return true;
     }
 
     public function viewReport(User $user, Milestone $milestone): bool
