@@ -28,7 +28,7 @@ class ActivityController extends Controller
                 }
             })
             ->latest()
-            ->get();
+            ->paginate(20);
 
         return view('activity.index', [
             'notifications' => $notifications,
@@ -46,7 +46,7 @@ class ActivityController extends Controller
 
     public function readAll(): RedirectResponse
     {
-        Auth::user()->unreadNotifications->markAsRead();
+        Auth::user()->unreadNotifications()->update(['read_at' => now()]);
 
         return redirect('/activity');
     }
