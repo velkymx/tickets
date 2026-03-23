@@ -56,14 +56,26 @@ class User extends Authenticatable
         return (bool) $this->admin;
     }
 
-    public function tickets(): HasMany
+    public function assignedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'user_id2');
     }
 
-    public function owner(): HasMany
+    public function createdTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'user_id');
+    }
+
+    /** @deprecated Use assignedTickets() */
+    public function tickets(): HasMany
+    {
+        return $this->assignedTickets();
+    }
+
+    /** @deprecated Use createdTickets() */
+    public function owner(): HasMany
+    {
+        return $this->createdTickets();
     }
 
     public function notes(): HasMany
