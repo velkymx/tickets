@@ -73,11 +73,30 @@ Start the development server:
 php artisan serve
 ```
 
-### Default Users
+From the command line run the migrations.
 
-| Email | Password |
-|-------|----------|
-| admin@example.com | password123 |
+
+```
+php artisan migrate
+```
+
+
+Seed the database
+
+
+```
+php artisan db:seed --class=DefaultsSeeder
+```
+
+
+Add default Users: 
+* unassigned:nopassword
+* admininistrator:password123
+
+```
+php artisan db:seed --class=UserSeeder
+```
+
 
 ## API
 
