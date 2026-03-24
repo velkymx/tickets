@@ -27,7 +27,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            \App\Contracts\SearchableRepository::class,
+            \App\Services\KbSearchService::class
+        );
     }
 
     /**

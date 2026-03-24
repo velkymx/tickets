@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
 use App\Services\TicketService;
+use App\Services\AttachmentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -187,7 +188,7 @@ class NotesController extends Controller
         ]);
     }
 
-    public function attach($id, Request $request)
+    public function attach($id, Request $request, AttachmentService $attachmentService)
     {
         $note = Note::with('ticket')->findOrFail($id);
 
@@ -203,17 +204,13 @@ class NotesController extends Controller
             'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,zip,txt,log,csv,md',
         ]);
 
-        $file = $validated['file'];
-        $path = $file->store("attachments/{$note->ticket_id}", 'public');
+        $data = $attachmentService->store($validated['file'], "attachments/{$note->ticket_id}");
 
         $attachment = NoteAttachment::create([
             'note_id' => $note->id,
             'user_id' => Auth::id(),
             'ticket_id' => $note->ticket_id,
-            'filename' => $file->getClientOriginalName(),
-            'path' => $path,
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
+            ...$data,
         ]);
 
         return response()->json([

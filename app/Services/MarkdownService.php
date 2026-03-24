@@ -36,7 +36,9 @@ class MarkdownService
 
         $html = $this->replaceMentions($html, $mentionMap);
 
-        return $this->decorateChecklistItems($html);
+        $html = $this->decorateChecklistItems($html);
+
+        return app(CrossReferenceService::class)->resolve($html);
     }
 
     private function replaceMentions(string $html, array $mentionMap): string
