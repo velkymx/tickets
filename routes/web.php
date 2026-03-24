@@ -140,6 +140,20 @@ Route::prefix('kb')->group(function () {
     Route::get('/tag/{slug}', [KbController::class, 'tag'])->name('kb.tag');
 });
 
+// KB Admin routes (must be before wildcard {slug} routes)
+Route::middleware(['auth'])->prefix('kb/admin')->group(function () {
+    Route::get('/categories', [KbAdminController::class, 'categories'])->name('kb.admin.categories');
+    Route::post('/categories', [KbAdminController::class, 'storeCategory'])->name('kb.admin.categories.store');
+    Route::put('/categories/{id}', [KbAdminController::class, 'updateCategory'])->name('kb.admin.categories.update');
+    Route::delete('/categories/{id}', [KbAdminController::class, 'destroyCategory'])->name('kb.admin.categories.destroy');
+    Route::get('/tags', [KbAdminController::class, 'tags'])->name('kb.admin.tags');
+    Route::post('/tags', [KbAdminController::class, 'storeTag'])->name('kb.admin.tags.store');
+    Route::put('/tags/{id}', [KbAdminController::class, 'updateTag'])->name('kb.admin.tags.update');
+    Route::delete('/tags/{id}', [KbAdminController::class, 'destroyTag'])->name('kb.admin.tags.destroy');
+    Route::get('/trashed', [KbAdminController::class, 'trashed'])->name('kb.admin.trashed');
+    Route::post('/trashed/{id}/restore', [KbAdminController::class, 'restoreArticle'])->name('kb.admin.trashed.restore');
+});
+
 // Authenticated KB routes
 Route::middleware(['auth'])->prefix('kb')->group(function () {
     Route::get('/create', [KbController::class, 'create'])->name('kb.create');
@@ -159,20 +173,6 @@ Route::middleware(['auth'])->prefix('kb')->group(function () {
 
     Route::post('/{slug}/attachments', [KbController::class, 'uploadAttachment'])->name('kb.attach')->middleware('throttle:uploads');
     Route::delete('/{slug}/attachments/{id}', [KbController::class, 'deleteAttachment'])->name('kb.detach');
-});
-
-// KB Admin routes
-Route::middleware(['auth'])->prefix('kb/admin')->group(function () {
-    Route::get('/categories', [KbAdminController::class, 'categories'])->name('kb.admin.categories');
-    Route::post('/categories', [KbAdminController::class, 'storeCategory'])->name('kb.admin.categories.store');
-    Route::put('/categories/{id}', [KbAdminController::class, 'updateCategory'])->name('kb.admin.categories.update');
-    Route::delete('/categories/{id}', [KbAdminController::class, 'destroyCategory'])->name('kb.admin.categories.destroy');
-    Route::get('/tags', [KbAdminController::class, 'tags'])->name('kb.admin.tags');
-    Route::post('/tags', [KbAdminController::class, 'storeTag'])->name('kb.admin.tags.store');
-    Route::put('/tags/{id}', [KbAdminController::class, 'updateTag'])->name('kb.admin.tags.update');
-    Route::delete('/tags/{id}', [KbAdminController::class, 'destroyTag'])->name('kb.admin.tags.destroy');
-    Route::get('/trashed', [KbAdminController::class, 'trashed'])->name('kb.admin.trashed');
-    Route::post('/trashed/{id}/restore', [KbAdminController::class, 'restoreArticle'])->name('kb.admin.trashed.restore');
 });
 
 // Public KB show route (MUST be last — wildcard)

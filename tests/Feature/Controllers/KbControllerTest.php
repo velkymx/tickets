@@ -6,6 +6,8 @@ use App\Models\KbArticle;
 use App\Models\KbCategory;
 use App\Models\KbTag;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -129,5 +131,59 @@ class KbControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('Laravel Guide');
         $response->assertDontSee('React Guide');
+    }
+
+    #[Test]
+    public function author_can_upload_attachment(): void
+    {
+        Storage::fake('public');
+
+        $author = User::factory()->create(['kb_role' => 'author']);
+        $article = KbArticle::factory()->create(['owner_id' => $author->id, 'user_id' => $author->id]);
+
+        $response = $this->actingAs($author)->post("/kb/{$article->slug}/attachments", [
+            'file' => UploadedFile::fake()->image('diagram.png'),
+        ]);
+
+        $response->assertStatus(201);
+        $response->assertJsonStructure(['id', 'filename', 'url', 'mime_type', 'isImage']);
+        $this->assertDatabaseHas('kb_article_attachments', ['article_id' => $article->id, 'filename' => 'diagram.png']);
+    }
+
+    #[Test]
+    public function non_owner_cannot_upload_attachment(): void
+    {
+        $stranger = User::factory()->create(['kb_role' => 'author']);
+        $article = KbArticle::factory()->create();
+
+        $this->actingAs($stranger)->post("/kb/{$article->slug}/attachments", [
+            'file' => UploadedFile::fake()->image('hack.png'),
+        ])->assertForbidden();
+    }
+
+    #[Test]
+    public function max_20_attachments_enforced(): void
+    {
+        Storage::fake('public');
+
+        $author = User::factory()->create(['kb_role' => 'author']);
+        $article = KbArticle::factory()->create(['owner_id' => $author->id, 'user_id' => $author->id]);
+
+        // Create 20 existing attachments
+        for ($i = 0; $i < 20; $i++) {
+            $article->attachments()->create([
+                'user_id' => $author->id,
+                'filename' => "file{$i}.png",
+                'path' => "kb-attachments/{$article->id}/file{$i}.png",
+                'mime_type' => 'image/png',
+                'size' => 1024,
+            ]);
+        }
+
+        $response = $this->actingAs($author)->post("/kb/{$article->slug}/attachments", [
+            'file' => UploadedFile::fake()->image('one-too-many.png'),
+        ]);
+
+        $response->assertStatus(422);
     }
 }
