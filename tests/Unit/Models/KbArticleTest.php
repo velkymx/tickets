@@ -3,12 +3,12 @@
 namespace Tests\Unit\Models;
 
 use App\Models\KbArticle;
-use App\Models\KbArticleAttachment;
 use App\Models\KbArticlePermission;
 use App\Models\KbArticleVersion;
 use App\Models\KbCategory;
 use App\Models\KbTag;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -99,7 +99,7 @@ class KbArticleTest extends TestCase
     {
         $article = KbArticle::factory()->verified()->create();
 
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $article->reviewed_at);
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $article->published_at);
+        $this->assertInstanceOf(Carbon::class, $article->reviewed_at);
+        $this->assertInstanceOf(Carbon::class, $article->published_at);
     }
 }

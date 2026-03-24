@@ -60,22 +60,22 @@ class KbSearchService implements SearchableRepository
                 $draft->where('status', 'draft')->where('user_id', $user->id);
             })
             // Public verified
-            ->orWhere(function ($pub) {
-                $pub->where('visibility', 'public')->where('status', '!=', 'draft');
-            })
+                ->orWhere(function ($pub) {
+                    $pub->where('visibility', 'public')->where('status', '!=', 'draft');
+                })
             // Internal non-draft
-            ->orWhere(function ($internal) {
-                $internal->where('visibility', 'internal')->where('status', '!=', 'draft');
-            })
+                ->orWhere(function ($internal) {
+                    $internal->where('visibility', 'internal')->where('status', '!=', 'draft');
+                })
             // Restricted where user is owner or permitted
-            ->orWhere(function ($restricted) use ($user) {
-                $restricted->where('visibility', 'restricted')
-                    ->where('status', '!=', 'draft')
-                    ->where(function ($access) use ($user) {
-                        $access->where('owner_id', $user->id)
-                            ->orWhereHas('permissions', fn ($p) => $p->where('user_id', $user->id));
-                    });
-            });
+                ->orWhere(function ($restricted) use ($user) {
+                    $restricted->where('visibility', 'restricted')
+                        ->where('status', '!=', 'draft')
+                        ->where(function ($access) use ($user) {
+                            $access->where('owner_id', $user->id)
+                                ->orWhereHas('permissions', fn ($p) => $p->where('user_id', $user->id));
+                        });
+                });
         });
     }
 }

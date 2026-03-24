@@ -64,8 +64,8 @@ class KbArticleService
     {
         return DB::transaction(function () use ($article, $editor, $commitMessage) {
             $nextVersion = KbArticleVersion::where('article_id', $article->id)
-                    ->lockForUpdate()
-                    ->max('version_number') + 1;
+                ->lockForUpdate()
+                ->max('version_number') + 1;
 
             return KbArticleVersion::create([
                 'article_id' => $article->id,

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\SearchableRepository;
 use App\Models\KbArticle;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -15,6 +16,7 @@ use App\Policies\MilestonePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ReleasePolicy;
 use App\Policies\TicketPolicy;
+use App\Services\KbSearchService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -28,8 +30,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(
-            \App\Contracts\SearchableRepository::class,
-            \App\Services\KbSearchService::class
+            SearchableRepository::class,
+            KbSearchService::class
         );
     }
 
