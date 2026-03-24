@@ -2,31 +2,47 @@
 
 > Open-source agile ticket tracker built with Laravel. Includes a Kanban board, knowledge base, real-time collaboration, and a REST API.
 
-Tickets is a full-featured project management tool. AI agents can interact with it entirely through its REST API using Bearer token authentication.
+AI agents can interact with Tickets entirely through its REST API using Bearer token authentication.
 
-## API Reference
+## Base URL
 
-- [Authentication](README.md#authentication): Generate a token from the user profile page (`/user/api-token`). All requests require `Authorization: Bearer YOUR_TOKEN`.
-- [Health Check](README.md#health-check): `GET /api/v1/health` — returns `{"status": "ok"}`.
-- [Lookups](README.md#get-lookups): `GET /api/v1/lookups` — returns statuses, types, importance levels, projects, milestones, releases, and users with their IDs.
-- [List Tickets](README.md#list-tickets): `GET /api/v1/tickets` — filter by `status`, `unassigned`, or `pulse`.
-- [Create Ticket](README.md#create-ticket): `POST /api/v1/tickets` — requires `subject`; optional `description`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`.
-- [Add Note](README.md#add-note--update-ticket): `POST /api/v1/tickets/{id}/note` — supports `body`, `status_id`, `hours`, `claim`. The body supports slash commands: `/decision`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen`.
-- [Resolve Thread](README.md#resolve-thread): `POST /api/v1/tickets/{id}/notes/{noteId}/resolve` — requires `resolution_message`.
-- [Pulse](README.md#get-ticket-pulse): `GET /api/v1/tickets/{id}/pulse` — returns execution state (ON TRACK, AT RISK, BLOCKED, IDLE), latest blocker, next action, latest decision, open threads.
+`/api/v1` — All endpoints require `Authorization: Bearer YOUR_TOKEN`
+
+## Authentication
+
+Generate a token from the user profile page (`/user/api-token`). All API requests require the Bearer token in the Authorization header.
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check — returns `{"status": "ok"}` |
+| GET | `/lookups` | Returns statuses, types, importance levels, projects, milestones, releases, and users with IDs |
+| GET | `/tickets` | List tickets — supports `status`, `unassigned`, `pulse` query params |
+| POST | `/tickets` | Create ticket — requires `subject`; optional `description`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints` |
+| GET | `/tickets/{id}` | Get ticket detail with notes, reactions, replies, attachments |
+| POST | `/tickets/{id}/note` | Add note — supports `body`, `status_id`, `hours`, `claim`. Body supports slash commands: `/decision`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen` |
+| POST | `/tickets/{id}/notes/{noteId}/reply` | Reply to a note |
+| PUT | `/tickets/{id}/notes/{noteId}` | Edit a note |
+| POST | `/tickets/{id}/notes/{noteId}/react` | Toggle emoji reaction on a note — pass `emoji` param |
+| POST | `/tickets/{id}/notes/{noteId}/resolve` | Resolve a thread — requires `resolution_message` |
+| GET | `/tickets/{id}/pulse` | Returns execution state (ON TRACK, AT RISK, BLOCKED, IDLE), latest blocker, next action, latest decision, open threads |
 
 ## Key Concepts
 
-- **Ticket Pulse**: Real-time execution state. Check pulse before acting — a BLOCKED ticket needs unblocking, not more status updates.
-- **Slash commands**: Add structured signals to notes. Use `/blocker` for blockers, `/decision` for decisions, `/action` for action items. These are parsed and surfaced in the pulse.
-- **Lookups first**: Always call `/api/v1/lookups` to get valid IDs for types, statuses, importance levels, and projects before creating or updating tickets.
+- **Lookups first**: Always call `/lookups` to get valid IDs before creating/updating tickets
+- **Ticket Pulse**: Real-time execution state. Check pulse before acting — a BLOCKED ticket needs unblocking, not more status updates
+- **Slash commands**: Use `/blocker`, `/decision`, `/action` in note body to add structured signals that surface in pulse data
 
-## CSV Import
+## Web Features (Non-API)
 
-- [CSV Import](README.md#csv-import): Bulk-create tickets via `/tickets/import`. Columns: Type Name, Subject, Details, Importance Name, Status Name, Project Name, Assigned To User Name. Projects must exist before importing.
+- CSV import: Navigate to `/tickets/import` in the UI — requires existing projects
+- Kanban board: `/tickets/board`
+- Knowledge base: `/kb`
 
-## Source & Community
+## Links
 
+- [Full API Docs](README.md#api)
 - [Repository](https://github.com/velkymx/tickets)
 - [Contributing Guide](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)

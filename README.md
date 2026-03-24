@@ -1,8 +1,22 @@
 # Tickets!
 
-Tickets is an open-source agile ticket tracker built with Laravel. It includes a Kanban board, knowledge base, real-time collaboration tools, and a REST API.
+A self-hosted, open-source agile ticket tracker for small teams who want Kanban boards, a knowledge base, real-time collaboration, and a REST API — without the overhead of Jira or the cost of Linear.
 
 > **Built with [Laravel](https://laravel.com).** Tickets is proudly powered by the Laravel framework — its expressive syntax, robust ecosystem, and first-class tooling make it the backbone of this application.
+
+![Ticket detail view](screenshots/ticket.png)
+
+## Quick Start
+
+The fastest way to get running is Docker:
+
+```bash
+git clone https://github.com/velkymx/tickets.git
+cd tickets
+docker compose up -d --build
+```
+
+Open [http://localhost](http://localhost) and log in with the default administrator account. See [Installation](#installation) for manual setup or [Hosting](#hosting) for production deployment.
 
 ## Features
 
@@ -44,13 +58,28 @@ Tickets is an open-source agile ticket tracker built with Laravel. It includes a
 - Theme support: Light (Simplex), Dark (Darkly), or Auto (OS preference)
 - User profiles with Gravatar avatars
 - REST API with token authentication
+- AI agent integration via the API — see [docs/crewai.md](docs/crewai.md) for an example using CrewAI
+
+## Screenshots
+
+| List View | Kanban Board |
+|-----------|-------------|
+| ![List view](screenshots/listview.png) | ![Kanban board](screenshots/status.png) |
+
+| Ticket Detail | Milestone Report |
+|---------------|-----------------|
+| ![Ticket detail](screenshots/ticket.png) | ![Milestone](screenshots/milestone.png) |
 
 ## Requirements
+
+For manual installation you need:
 
 - PHP 8.2+
 - Composer
 - MariaDB 11.8+ (or MySQL 8.0+, PostgreSQL 12+, SQLite 3.35+)
 - Node.js 24+ (for building frontend assets)
+
+Using Docker? Everything is included — skip to [Hosting](#hosting).
 
 ## Installation
 
@@ -114,6 +143,8 @@ Default users created by the seeder:
 | unassigned | *(no password)* |
 | administrator | password123 |
 
+> **Change the administrator password immediately after first login.** The default password is public knowledge. Navigate to your profile and update it before exposing the application to any network.
+
 ### 6. Build assets and start the dev server
 
 ```bash
@@ -123,11 +154,17 @@ php artisan serve
 
 Open [http://localhost:8000](http://localhost:8000) in your browser and log in with the administrator account.
 
+### 7. Run tests
+
+```bash
+php artisan test
+```
+
 ## Hosting
 
 ### Docker Compose
 
-The included `docker-compose.yml` provides a full production-ready stack: PHP-FPM 8.5, Nginx, MariaDB 11.8, and Redis. A queue worker runs as a separate container.
+The included `docker-compose.yml` provides a full production-ready stack: PHP-FPM 8.5, Nginx, MariaDB 11.8, and Redis. A queue worker runs as a separate container. No additional software is required on the host — just Docker.
 
 ```bash
 docker compose up -d --build
@@ -145,6 +182,8 @@ Open [http://localhost](http://localhost) and log in with the administrator acco
 | User | Password |
 |------|----------|
 | administrator | password123 |
+
+> **Change the administrator password immediately after first login.** The default password is public knowledge. Navigate to your profile and update it before exposing the application to any network.
 
 To customize, create a `.env` file before starting. The docker-compose file overrides `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, `REDIS_HOST`, `QUEUE_CONNECTION`, `SESSION_DRIVER`, and `CACHE_STORE` automatically for the containers, so you only need to set values that differ from the defaults.
 
@@ -207,6 +246,8 @@ php artisan event:cache
 php artisan db:seed --class=DefaultsSeeder
 php artisan db:seed --class=UserSeeder
 ```
+
+> **Change the administrator password immediately after seeding.** Do not leave the default password active on a production system.
 
 **5. Run a queue worker**
 
@@ -367,73 +408,6 @@ bug,"Fix profile picture upload","The image is getting stretched on upload.",maj
 task,"Update API docs","Document the new /pulse endpoint.",minor,active,"Backend API","Jane Doe"
 enhancement,"Dark mode toggle","Add a switch in settings to toggle dark mode.",trivial,new,"Frontend App","unassigned"
 ```
-
-## AI Agents with CrewAI
-
-Tickets exposes everything through its REST API, which makes it a natural fit for [CrewAI](https://crewai.com) — a Python framework for orchestrating role-based AI agents that collaborate as a crew. Each agent has a defined role, goal, and set of tools. Point them at the Tickets API and they can read, triage, act on, and report on your tickets autonomously.
-
-### Why it matters
-
-- **Quality** — Agents catch what humans miss. A triage agent can enforce consistent labeling, flag missing descriptions, and reject tickets that don't meet your standards before they hit the backlog.
-- **Visibility** — Agents leave notes, slash commands, and pulse updates in the ticket itself. Every action is auditable inside Tickets, not buried in a Slack thread or spreadsheet.
-- **Throughput** — Routine work (stale ticket follow-ups, status summaries, duplicate detection) runs continuously without waiting for a human to remember.
-- **Human-in-the-loop** — Agents and developers work in the same place. The agent flags a blocker, the developer resolves it and marks the thread — all inside Tickets. You're not handing work off to a black box; you're working alongside it.
-
-### Example crew
-
-```python
-from crewai import Agent, Task, Crew
-from crewai_tools import tool
-
-BASE_URL = "https://your-domain.com/api/v1"
-TOKEN = "your_api_token"
-
-@tool("tickets_api")
-def tickets_api(method: str, path: str, body: str = "") -> str:
-    """Call the Tickets REST API. Pass method (GET/POST/PUT), path (e.g. /tickets), and optional JSON body."""
-    import requests
-    url = f"{BASE_URL}{path}"
-    headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
-    resp = requests.request(method, url, headers=headers, data=body or None)
-    return resp.text
-
-triage_agent = Agent(
-    role="Ticket Triage Specialist",
-    goal="Classify and assign incoming tickets with accurate type, importance, and owner",
-    backstory="You review every new ticket, ensure it has a clear subject and description, "
-              "and assign the correct type and importance level based on the details provided.",
-    tools=[tickets_api],
-)
-
-pulse_agent = Agent(
-    role="Execution Monitor",
-    goal="Detect blocked and at-risk tickets early and escalate them",
-    backstory="You poll the pulse endpoint for all active tickets. When you find BLOCKED or "
-              "AT RISK states, you add a note calling attention to the issue and tag the assignee.",
-    tools=[tickets_api],
-)
-
-triage_task = Task(
-    description="Fetch all tickets with status 'new'. For each ticket, check that the subject "
-                "and description are complete, then POST a note confirming the classification "
-                "or requesting missing details.",
-    agent=triage_agent,
-    expected_output="Summary of tickets reviewed, classified, or flagged.",
-)
-
-pulse_task = Task(
-    description="Fetch the pulse for all active tickets. For any ticket with state BLOCKED or "
-                "AT RISK, POST a note with the pulse details so the team sees it in the feed.",
-    agent=pulse_agent,
-    expected_output="Summary of tickets escalated.",
-)
-
-crew = Crew(agents=[triage_agent, pulse_agent], tasks=[triage_task, pulse_task])
-result = crew.kickoff()
-print(result)
-```
-
-This is a starting point. The API gives agents access to the full lifecycle — create tickets, add notes with slash commands (`/blocker`, `/decision`, `/action`), claim tickets, log hours, resolve threads, and read pulse data. Build agents that match your workflow.
 
 ## Contributing
 
