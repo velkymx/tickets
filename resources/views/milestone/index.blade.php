@@ -23,9 +23,8 @@
             <tbody>
                 @if($milestones->isEmpty())
                     <tr>
-                        <td colspan="6" class="text-center p-4">
-                            <p class="text-muted mb-2">No milestones found.</p>
-                            <a href="/milestone/create" class="btn btn-sm btn-primary">Create Milestone</a>
+                        <td colspan="6" class="text-center py-5">
+                            <p class="text-muted mb-0">No milestones found.</p>
                         </td>
                     </tr>
                 @endif

@@ -3,7 +3,10 @@
 @section('title', 'Ticket List')
 
 @section('content')
-    <h1 class="mb-4">Tickets</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Tickets</h1>
+        <a href="/ticket/create" class="btn btn-sm btn-primary">Create Ticket</a>
+    </div>
 
     {{-- Filter Form (Replaces Form::open) --}}
     <form method="GET" action="{{ url('tickets') }}" class="mb-4">
@@ -89,7 +92,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($tickets->sortByDesc('importance_id') as $tick)
+                    @forelse ($tickets->sortByDesc('importance_id') as $tick)
                         <tr>
                             {{-- Checkbox and Title --}}
                             <td class="text-{{$tick->importance->class}}">
@@ -134,7 +137,13 @@
                             {{-- Updated --}}
                             <td>{{date('M jS, Y g:ia',strtotime($tick->updated_at))}}</td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <p class="text-muted mb-0">No tickets found.</p>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

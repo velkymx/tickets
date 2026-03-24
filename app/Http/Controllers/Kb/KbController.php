@@ -14,6 +14,7 @@ use App\Services\AttachmentService;
 use App\Services\KbArticleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class KbController extends Controller
 {
@@ -182,5 +183,40 @@ class KbController extends Controller
         $attachment->delete();
 
         return response()->json(['message' => 'Attachment deleted.']);
+    }
+
+    public function storeCategory(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:kb_categories,name',
+        ]);
+
+        $category = KbCategory::create([
+            'name' => $validated['name'],
+            'slug' => Str::slug($validated['name']),
+            'sort_order' => 0,
+        ]);
+
+        return response()->json([
+            'id' => $category->id,
+            'name' => $category->name,
+        ]);
+    }
+
+    public function storeTag(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:kb_tags,name',
+        ]);
+
+        $tag = KbTag::create([
+            'name' => $validated['name'],
+            'slug' => Str::slug($validated['name']),
+        ]);
+
+        return response()->json([
+            'id' => $tag->id,
+            'name' => $tag->name,
+        ]);
     }
 }

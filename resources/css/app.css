@@ -4,6 +4,9 @@
 /* Quill rich text editor (lazy loaded in JS) */
 @import 'quill/dist/quill.snow.css';
 
+/* EasyMDE markdown editor */
+@import 'easymde/dist/easymde.min.css';
+
 /* Custom styles */
 body {
     font-family: 'Inter', sans-serif;

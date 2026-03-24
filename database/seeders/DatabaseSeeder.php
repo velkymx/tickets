@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             DefaultsSeeder::class,
             UserSeeder::class,
             KbCategorySeeder::class,
+            KbTagSeeder::class,
         ]);
     }
 }

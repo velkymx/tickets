@@ -21,8 +21,8 @@
 <hr class="mb-4">
 
 <div class="row">
-    {{-- Left Column: Tabs (9 columns) --}}
-    <div class="col-lg-9">
+    {{-- Left Column: Tabs --}}
+    <div class="col-lg-8">
  
         {{-- Bootstrap 5 Tab Navigation --}}
         {{-- NOTE: Tabs require the full Bootstrap JS bundle (or at least the 'tab' component JS) 
@@ -210,8 +210,8 @@
         </div>
     </div>
     
-    {{-- Right Column: Summary Sidebar (3 columns) --}}
-    <div class="col-lg-3">
+    {{-- Right Column: Summary Sidebar --}}
+    <div class="col-lg-4 mt-4 mt-lg-0">
 
         {{-- Action Buttons --}}
         <div class="row g-2 mb-4 text-center">

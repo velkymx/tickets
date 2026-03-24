@@ -203,7 +203,7 @@
 
             {{-- Ticket Details Card --}}
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-body-secondary">
+                <div class="card-header bg-body-secondary fw-bold">
                     Ticket Details
                 </div>
                 <ul class="list-group list-group-flush">
@@ -252,7 +252,7 @@
 
             {{-- Effort & Estimates Card --}}
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center">
+                <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center fw-bold">
                     Effort & Estimates
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#estimateModal">
                         Estimate
@@ -282,7 +282,7 @@
             {{-- Watchers & Activity Card --}}
             @if($ticket->watchers->isNotEmpty() || count($ticketViews) > 0)
             <div class="card shadow-sm">
-                <div class="card-header bg-body-secondary">
+                <div class="card-header bg-body-secondary fw-bold">
                     Watchers & Activity
                 </div>
                 <ul class="list-group list-group-flush">
@@ -633,7 +633,7 @@
         if (!textarea || !composer) return;
 
         const dropdown = composer.querySelector('.mention-autocomplete');
-        const users = JSON.parse(composer.dataset.users || '[]');
+        const users = JSON.parse(document.getElementById('all-users-json')?.textContent || '[]');
         let mentionStart = -1;
         let activeIndex = -1;
 

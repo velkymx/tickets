@@ -158,6 +158,8 @@ Route::middleware(['auth'])->prefix('kb/admin')->group(function () {
 Route::middleware(['auth'])->prefix('kb')->group(function () {
     Route::get('/create', [KbController::class, 'create'])->name('kb.create');
     Route::post('/', [KbController::class, 'store'])->name('kb.store');
+    Route::post('/categories/quick', [KbController::class, 'storeCategory'])->name('kb.categories.quick-store');
+    Route::post('/tags/quick', [KbController::class, 'storeTag'])->name('kb.tags.quick-store');
 
     Route::get('/{slug}/edit', [KbController::class, 'edit'])->name('kb.edit')
         ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');

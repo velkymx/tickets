@@ -7,7 +7,7 @@
         aria-expanded="false"
         aria-controls="ticket-pulse-panel"
     >
-        <span class="fw-semibold">Ticket Pulse</span>
+        <span class="fw-bold">Ticket Pulse</span>
         <span class="badge text-bg-dark" x-text="pulse.execution_state"></span>
     </button>
 </div>
@@ -17,7 +17,7 @@
     class="collapse d-lg-block card shadow-sm mb-4"
     style="position: sticky; top: 1rem;"
 >
-    <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center">
+    <div class="card-header fw-bold bg-body-secondary d-flex justify-content-between align-items-center">
         Ticket Pulse
         <span
             class="badge"
@@ -34,17 +34,17 @@
         <template x-if="pulse.latest_blocker">
             <li class="list-group-item">
                 <strong>Blocker:</strong>
-                <span class="text-danger" x-text="pulse.latest_blocker.body"></span>
+                <span class="text-danger" x-html="pulse.latest_blocker.body"></span>
                 <div class="d-flex justify-content-between align-items-center mt-1">
                     <span class="small text-muted" x-text="pulse.latest_blocker.author"></span>
-                    <button type="button" class="btn btn-outline-danger btn-sm">Resolve</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" @click="resolve(pulse.latest_blocker.id)">Resolve</button>
                 </div>
             </li>
         </template>
 
         <li class="list-group-item">
             <strong>Next Action:</strong>
-            <span x-text="pulse.next_action.body"></span>
+            <span x-html="pulse.next_action.body"></span>
             <template x-if="pulse.next_action.assignee">
                 <span class="small text-muted ms-1" x-text="pulse.next_action.assignee"></span>
             </template>
@@ -54,7 +54,7 @@
             <strong>Latest Decision:</strong>
             <template x-if="pulse.latest_decision">
                 <span>
-                    <span x-text="pulse.latest_decision.body"></span>
+                    <span x-html="pulse.latest_decision.body"></span>
                     <span class="small text-muted ms-1" x-text="pulse.latest_decision.author"></span>
                     <template x-if="pulse.latest_decision.supersedes">
                         <div class="small text-muted">
@@ -79,7 +79,7 @@
                                 :href="`#note_${thread.id}`"
                                 x-text="`${thread.subject} (${thread.reply_count})`"
                             ></a>
-                            <button type="button" class="btn btn-outline-secondary btn-sm">Resolve</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" @click="resolve(thread.id)">Resolve</button>
                         </div>
                     </template>
                 </div>

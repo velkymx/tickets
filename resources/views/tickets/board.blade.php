@@ -81,10 +81,9 @@
                     },
                     body: `status=${newStatusId}`,
                 })
-                    .then(response => response.text())
+                    .then(response => response.json())
                     .then(data => {
-                        // Display success message from the API call
-                        alertMessage.textContent = `Ticket ${ticketId} updated. ${data}`;
+                        alertMessage.textContent = `Ticket #${ticketId} updated.`;
                         alertDiv.classList.remove('d-none', 'fade');
                         alertDiv.classList.add('show');
                     })

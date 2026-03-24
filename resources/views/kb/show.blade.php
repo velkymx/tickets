@@ -19,18 +19,6 @@
     <div class="col-lg-8">
         <div class="d-flex justify-content-between align-items-start mb-3">
             <h1 class="mb-0">{{ $article->title }}</h1>
-            <div class="d-flex gap-2">
-                @can('update', $article)
-                    <a href="{{ route('kb.edit', $article->slug) }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-edit"></i> Edit
-                    </a>
-                @endcan
-                @auth
-                    <a href="{{ route('kb.history', $article->slug) }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-history"></i> History
-                    </a>
-                @endauth
-            </div>
         </div>
 
         {{-- Status & Visibility Badges --}}
