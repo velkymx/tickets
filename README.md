@@ -47,7 +47,7 @@ Tickets is an open-source agile ticket tracker built with Laravel. It includes a
 
 ## Requirements
 
-- PHP 8.5+
+- PHP 8.2+
 - Composer
 - MariaDB 11.8+ (or MySQL 8.0+, PostgreSQL 12+, SQLite 3.35+)
 - Node.js 24+ (for building frontend assets)
