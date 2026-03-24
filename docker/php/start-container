@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -e
+
+ROLE="${CONTAINER_ROLE:-app}"
+
+# First boot: create .env and generate key if missing
+if [ ! -f .env ]; then
+    cp .env.example .env
+fi
+
+if ! grep -q "^APP_KEY=base64:" .env; then
+    php artisan key:generate --force
+fi
+
+if [ "$ROLE" = "app" ]; then
+    php artisan storage:link 2>/dev/null || true
+    php artisan migrate --force
+
+    # Seed on first boot only
+    if [ ! -f storage/framework/.seeded ]; then
+        php artisan db:seed --class=DefaultsSeeder --force
+        php artisan db:seed --class=UserSeeder --force
+        touch storage/framework/.seeded
+    fi
+
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+    php artisan event:cache
+
+    exec php-fpm
+elif [ "$ROLE" = "queue" ]; then
+    exec php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+fi
