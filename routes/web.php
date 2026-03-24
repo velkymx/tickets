@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\Kb\KbAdminController;
+use App\Http\Controllers\Kb\KbController;
+use App\Http\Controllers\Kb\KbVersionController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\NotesController;
 use App\Http\Controllers\PresenceController;
@@ -126,6 +129,55 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::post('/user/api-token', [UsersController::class, 'generateApiToken'])->name('user.api-token');
     Route::delete('/user/api-token', [UsersController::class, 'revokeApiToken'])->name('user.api-token.revoke');
 });
+
+// --- Knowledge Base Routes ---
+
+// Public KB routes (auth optional)
+Route::prefix('kb')->group(function () {
+    Route::get('/', [KbController::class, 'index'])->name('kb.index');
+    Route::get('/search', [KbController::class, 'search'])->name('kb.search');
+    Route::get('/category/{slug}', [KbController::class, 'category'])->name('kb.category');
+    Route::get('/tag/{slug}', [KbController::class, 'tag'])->name('kb.tag');
+});
+
+// Authenticated KB routes
+Route::middleware(['auth'])->prefix('kb')->group(function () {
+    Route::get('/create', [KbController::class, 'create'])->name('kb.create');
+    Route::post('/', [KbController::class, 'store'])->name('kb.store');
+
+    Route::get('/{slug}/edit', [KbController::class, 'edit'])->name('kb.edit')
+        ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');
+    Route::put('/{slug}', [KbController::class, 'update'])->name('kb.update')
+        ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');
+    Route::delete('/{slug}', [KbController::class, 'destroy'])->name('kb.destroy')
+        ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');
+
+    Route::get('/{slug}/history', [KbVersionController::class, 'index'])->name('kb.history');
+    Route::get('/{slug}/history/{version}', [KbVersionController::class, 'show'])->name('kb.history.show');
+    Route::get('/{slug}/diff/{from}/{to}', [KbVersionController::class, 'diff'])->name('kb.diff');
+    Route::post('/{slug}/restore/{version}', [KbVersionController::class, 'restore'])->name('kb.restore');
+
+    Route::post('/{slug}/attachments', [KbController::class, 'uploadAttachment'])->name('kb.attach')->middleware('throttle:uploads');
+    Route::delete('/{slug}/attachments/{id}', [KbController::class, 'deleteAttachment'])->name('kb.detach');
+});
+
+// KB Admin routes
+Route::middleware(['auth'])->prefix('kb/admin')->group(function () {
+    Route::get('/categories', [KbAdminController::class, 'categories'])->name('kb.admin.categories');
+    Route::post('/categories', [KbAdminController::class, 'storeCategory'])->name('kb.admin.categories.store');
+    Route::put('/categories/{id}', [KbAdminController::class, 'updateCategory'])->name('kb.admin.categories.update');
+    Route::delete('/categories/{id}', [KbAdminController::class, 'destroyCategory'])->name('kb.admin.categories.destroy');
+    Route::get('/tags', [KbAdminController::class, 'tags'])->name('kb.admin.tags');
+    Route::post('/tags', [KbAdminController::class, 'storeTag'])->name('kb.admin.tags.store');
+    Route::put('/tags/{id}', [KbAdminController::class, 'updateTag'])->name('kb.admin.tags.update');
+    Route::delete('/tags/{id}', [KbAdminController::class, 'destroyTag'])->name('kb.admin.tags.destroy');
+    Route::get('/trashed', [KbAdminController::class, 'trashed'])->name('kb.admin.trashed');
+    Route::post('/trashed/{id}/restore', [KbAdminController::class, 'restoreArticle'])->name('kb.admin.trashed.restore');
+});
+
+// Public KB show route (MUST be last — wildcard)
+Route::get('/kb/{slug}', [KbController::class, 'show'])->name('kb.show')
+    ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');
 
 // Authentication routes
 require __DIR__.'/auth.php';
