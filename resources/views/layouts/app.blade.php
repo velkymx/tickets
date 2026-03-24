@@ -38,6 +38,7 @@
                 <li class="nav-item"><a class="nav-link" href="{{ url('/milestone') }}">Milestones</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/releases') }}">Releases</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/projects') }}">Projects</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('kb.index') }}">Knowledge Base</a></li>
             </ul>
 
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
