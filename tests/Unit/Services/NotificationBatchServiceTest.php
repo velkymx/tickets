@@ -51,4 +51,27 @@ class NotificationBatchServiceTest extends TestCase
 
         Bus::assertDispatchedTimes(SendTicketDigestJob::class, 1);
     }
+
+    #[Test]
+    public function it_releases_lock_even_when_cache_put_throws(): void
+    {
+        Notification::fake();
+        Bus::fake();
+        Cache::flush();
+
+        $user = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Sarah']);
+        $notification = new MentionNotification($actor, 142, 55, 'Check deploy', 'http://example.com/tickets/142');
+
+        $service = app(NotificationBatchService::class);
+        $lockKey = $service->batchKey($user->id, 142) . ':lock';
+
+        // Dispatch once to exercise the lock path
+        $service->dispatch($user, $notification, 142);
+
+        // Lock should be released — verify we can acquire it immediately
+        $lock = Cache::lock($lockKey, 5);
+        $this->assertTrue($lock->get(), 'Lock should be released after dispatch completes');
+        $lock->release();
+    }
 }

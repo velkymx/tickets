@@ -19,21 +19,15 @@ class NotificationBatchService
         $lock = Cache::lock("{$batchKey}:lock", 5);
 
         try {
-            if ($lock->block(2)) {
-                $entries = Cache::get($batchKey, []);
-                $entries[] = $this->normalize($user, $notification);
-                Cache::put($batchKey, $entries, now()->addMinutes(10));
-                $lock->release();
-            }
-        } catch (\Exception $e) {
-            // Fallback: append without lock (rare, loses one entry at worst)
+            $lock->block(2);
             $entries = Cache::get($batchKey, []);
             $entries[] = $this->normalize($user, $notification);
             Cache::put($batchKey, $entries, now()->addMinutes(10));
+        } finally {
+            $lock->release();
         }
 
-        if (! Cache::has($scheduleKey)) {
-            Cache::put($scheduleKey, true, now()->addMinutes(10));
+        if (Cache::add($scheduleKey, true, now()->addMinutes(10))) {
             SendTicketDigestJob::dispatch($user->id, $ticketId)->delay(now()->addMinutes(5));
         }
     }
