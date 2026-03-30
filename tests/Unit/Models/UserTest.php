@@ -25,7 +25,7 @@ class UserTest extends TestCase
 
         $this->assertContains('name', $fillable);
         $this->assertContains('email', $fillable);
-        $this->assertContains('password', $fillable);
+        $this->assertNotContains('password', $fillable);
         $this->assertContains('avatar', $fillable);
         $this->assertContains('phone', $fillable);
         $this->assertContains('timezone', $fillable);
