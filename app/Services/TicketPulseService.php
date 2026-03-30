@@ -75,7 +75,7 @@ class TicketPulseService
             id: $ticket->id,
             status: $status,
             is_blocked: $activeBlocker !== null,
-            blocker_reason: $activeBlocker?->body,
+            blocker_reason: $activeBlocker ? strip_tags($activeBlocker->body) : null,
             owner_id: $ticket->user_id2,
             owner_label: $this->deriveOwnerLabel($ticket, $activeBlocker),
             next_action: $this->buildNextAction($latestAction),

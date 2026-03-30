@@ -72,6 +72,27 @@ class TicketPulseServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_strips_html_from_blocker_reason(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        Note::create([
+            'body' => '<p>Waiting on <strong>API</strong> <script>alert("xss")</script></p>',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $pulse = $this->service->getPulse($ticket);
+
+        $this->assertTrue($pulse->is_blocked);
+        $this->assertEquals('Waiting on API alert("xss")', $pulse->blocker_reason);
+        $this->assertStringNotContainsString('<script>', $pulse->blocker_reason);
+    }
+
+    #[Test]
     public function it_shows_correct_ownership_labels()
     {
         $user = User::factory()->create(['name' => 'Sarah']);
