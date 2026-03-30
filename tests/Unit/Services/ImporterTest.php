@@ -254,7 +254,29 @@ class ImporterTest extends TestCase
     }
 
     #[Test]
-    public function it_sets_authenticated_user_as_creator(): void
+    public function it_sets_creator_from_user_id_parameter(): void
+    {
+        $creator = User::factory()->create();
+        $assignee = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        $type = Type::factory()->create(['name' => 'Bug']);
+        $importance = Importance::factory()->create(['name' => 'High']);
+        $status = Status::factory()->create(['name' => 'Open']);
+        $project = Project::factory()->create(['name' => 'Test Project', 'active' => true]);
+
+        $this->writeCsv([
+            ['Bug', 'Test', 'Desc', 'High', 'Open', 'Test Project', 'Assignee'],
+        ]);
+
+        // No Auth::login() — simulates CLI/queue context
+        $this->importer->call($milestone->id, $this->tempFile, false, $creator->id);
+
+        $ticket = Ticket::first();
+        $this->assertEquals($creator->id, $ticket->user_id);
+    }
+
+    #[Test]
+    public function it_falls_back_to_auth_user_when_no_user_id_given(): void
     {
         $creator = User::factory()->create();
         $assignee = User::factory()->create(['name' => 'Assignee']);

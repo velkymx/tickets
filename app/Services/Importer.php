@@ -19,8 +19,11 @@ class Importer
 
     private ?Milestone $milestone = null;
 
-    public function call(int $milestoneId, string $filePath, bool $hasHeader): void
+    private ?int $userId = null;
+
+    public function call(int $milestoneId, string $filePath, bool $hasHeader, ?int $userId = null): void
     {
+        $this->userId = $userId;
         $this->milestone = Milestone::findOrFail($milestoneId);
 
         $file = fopen($filePath, 'r');
@@ -66,7 +69,7 @@ class Importer
         $ticket->status_id = $this->relation(Status::class, $row[4] ?? '', $rowIndex, 5);
         $ticket->project_id = $this->relation(Project::class, $row[5] ?? '', $rowIndex, 6);
         $ticket->user_id2 = $this->relation(User::class, $row[6] ?? '', $rowIndex, 7);
-        $ticket->user_id = Auth::id();
+        $ticket->user_id = $this->userId ?? Auth::id();
 
         $ticket->saveOrFail();
     }

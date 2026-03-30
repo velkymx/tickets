@@ -6,6 +6,7 @@ use App\Models\Milestone;
 use App\Services\Importer;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ImportController extends Controller
 {
@@ -39,6 +40,7 @@ class ImportController extends Controller
                 (int) $request->milestone_id,
                 $csv->path(),
                 (bool) $request->hasHeader,
+                Auth::id(),
             );
         } catch (Exception $e) {
             return redirect('/tickets/import')->withErrors([$e->getMessage()])->withInput();
