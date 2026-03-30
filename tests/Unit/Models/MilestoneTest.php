@@ -114,7 +114,7 @@ class MilestoneTest extends TestCase
     }
 
     #[Test]
-    public function it_notifies_only_loaded_watchers(): void
+    public function it_always_notifies_watchers_even_without_eager_loading(): void
     {
         Notification::fake();
 
@@ -132,7 +132,7 @@ class MilestoneTest extends TestCase
         $milestone->name = 'Updated Without Loading Watchers';
         $milestone->save();
 
-        Notification::assertNotSentTo($watcher, WatcherNotification::class);
+        Notification::assertSentTo($watcher, WatcherNotification::class);
         Notification::assertSentTo($owner, WatcherNotification::class);
     }
 }

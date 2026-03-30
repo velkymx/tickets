@@ -104,7 +104,7 @@ class TicketLifecycleTest extends TestCase
     {
         $ticket = Ticket::factory()->create([
             'user_id' => $this->user->id,
-            'user_id2' => $this->user->id,
+            'user_id2' => $this->user2->id,
         ]);
 
         $this->actingAs($this->user2)->post("/tickets/watch/{$ticket->id}");
