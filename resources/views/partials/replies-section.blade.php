@@ -7,11 +7,7 @@
                     <span class="text-muted small">{{ $reply->created_at->diffForHumans() }}</span>
                 </div>
                 <div class="small">
-                    @if($reply->body_markdown)
-                        {!! clean($reply->body_markdown) !!}
-                    @else
-                        {!! clean($reply->body) !!}
-                    @endif
+                    {!! clean($reply->body) !!}
                 </div>
             </div>
         </div>

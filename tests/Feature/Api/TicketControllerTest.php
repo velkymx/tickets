@@ -402,12 +402,28 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(200);
 
-        $this->assertDatabaseHas('notes', [
-            'ticket_id' => $ticket->id,
+        $note = Note::where('ticket_id', $ticket->id)->where('user_id', $this->user->id)->latest('id')->first();
+        $this->assertNotNull($note);
+        $this->assertStringContainsString('<p>Test note</p>', $note->body);
+        $this->assertEquals('Test note', $note->body_markdown);
+        $this->assertEquals(2, (int) $note->hours);
+    }
+
+    #[Test]
+    public function note_stores_body_as_html_and_body_markdown_as_raw(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
             'user_id' => $this->user->id,
-            'body' => 'Test note',
-            'hours' => 2,
         ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '**bold** text',
+        ], $this->apiHeaders());
+
+        $note = Note::where('ticket_id', $ticket->id)->latest('id')->first();
+        $this->assertStringContainsString('<strong>bold</strong>', $note->body);
+        $this->assertEquals('**bold** text', $note->body_markdown);
     }
 
     #[Test]
@@ -802,12 +818,12 @@ class TicketControllerTest extends TestCase
         ], $this->apiHeaders());
 
         $response->assertStatus(200);
-        $this->assertEquals('Updated text', $response->json('note.body'));
         $this->assertNotNull($response->json('note.edited_at'));
         $this->assertNotNull($response->json('note.body_markdown'));
 
         $note->refresh();
-        $this->assertEquals('Updated text', $note->body);
+        $this->assertStringContainsString('<p>Updated text</p>', $note->body);
+        $this->assertEquals('Updated text', $note->body_markdown);
         $this->assertNotNull($note->edited_at);
     }
 
@@ -852,6 +868,12 @@ class TicketControllerTest extends TestCase
         $this->assertTrue($note->resolved);
         $this->assertEquals($this->user->id, $note->resolved_by);
         $this->assertEquals('Fixed in commit abc123', $note->resolution_message);
+
+        // Verify resolution reply stores body=HTML, body_markdown=raw
+        $reply = Note::where('parent_id', $note->id)->first();
+        $this->assertNotNull($reply);
+        $this->assertStringContainsString('<p>Fixed in commit abc123</p>', $reply->body);
+        $this->assertEquals('Fixed in commit abc123', $reply->body_markdown);
     }
 
     #[Test]

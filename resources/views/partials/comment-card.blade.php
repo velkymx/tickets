@@ -80,11 +80,7 @@
 
     {{-- Body --}}
     <div class="card-body py-2">
-        @if($note->body_markdown)
-            {!! clean($note->body_markdown) !!}
-        @else
-            {!! clean($note->body) !!}
-        @endif
+        {!! clean($note->body) !!}
 
         {{-- Attachments --}}
         @if($note->attachments && $note->attachments->isNotEmpty())

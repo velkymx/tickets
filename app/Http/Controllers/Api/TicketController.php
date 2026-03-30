@@ -299,13 +299,13 @@ class TicketController extends Controller
             }
 
             $bodyText = $commandResult['body'] ?? '';
-            $bodyMarkdown = $markdownService->parse($bodyText);
+            $bodyHtml = $markdownService->parse($bodyText);
 
             $createdNote = Note::create([
                 'user_id' => $user->id,
                 'ticket_id' => $ticket->id,
-                'body' => $bodyText,
-                'body_markdown' => $bodyMarkdown,
+                'body' => $bodyHtml,
+                'body_markdown' => $bodyText,
                 'hours' => ($request->hours ?? 0) + ($commandResult['hours'] ?? 0),
                 'notetype' => $noteType,
                 'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
@@ -378,8 +378,8 @@ class TicketController extends Controller
             'user_id' => $user->id,
             'ticket_id' => $ticket->id,
             'parent_id' => $note->id,
-            'body' => $request->resolution_message,
-            'body_markdown' => $markdownService->parse($request->resolution_message),
+            'body' => $markdownService->parse($request->resolution_message),
+            'body_markdown' => $request->resolution_message,
             'notetype' => 'message',
         ]);
 
@@ -419,8 +419,8 @@ class TicketController extends Controller
         $mentionService = app(MentionService::class);
 
         $note->update([
-            'body' => $request->body,
-            'body_markdown' => $markdownService->parse($request->body),
+            'body' => $markdownService->parse($request->body),
+            'body_markdown' => $request->body,
             'edited_at' => now(),
         ]);
 
