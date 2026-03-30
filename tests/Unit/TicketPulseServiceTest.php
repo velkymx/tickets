@@ -122,6 +122,24 @@ class TicketPulseServiceTest extends TestCase
     }
 
     #[Test]
+    public function cached_pulse_does_not_leak_you_own_this_to_other_users(): void
+    {
+        $owner = User::factory()->create(['name' => 'Sarah']);
+        $viewer = User::factory()->create(['name' => 'Bob']);
+        $ticket = Ticket::factory()->create(['user_id2' => $owner->id]);
+
+        // Owner requests first — "You own this" should be cached
+        $this->actingAs($owner);
+        $pulse1 = $this->service->getPulse($ticket);
+        $this->assertEquals('You own this', $pulse1->owner_label);
+
+        // Different user requests — should see "Owner: Sarah", not cached "You own this"
+        $this->actingAs($viewer);
+        $pulse2 = $this->service->getPulse($ticket);
+        $this->assertEquals('Owner: Sarah', $pulse2->owner_label);
+    }
+
+    #[Test]
     public function it_extracts_waiting_on_from_the_latest_blocker_mention()
     {
         $owner = User::factory()->create(['name' => 'Owner']);

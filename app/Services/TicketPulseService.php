@@ -15,9 +15,16 @@ class TicketPulseService
 {
     public function getPulse(Ticket $ticket): TicketPulse
     {
-        return Cache::remember("ticket_pulse:{$ticket->id}", now()->addHours(24), function () use ($ticket) {
+        $pulse = Cache::remember("ticket_pulse:{$ticket->id}", now()->addHours(24), function () use ($ticket) {
             return $this->computePulse($ticket);
         });
+
+        // Apply Auth-dependent personalization outside cache
+        if (Auth::id() !== null && (int) Auth::id() === (int) $ticket->user_id2) {
+            $pulse = $pulse->withOwnerLabel('You own this');
+        }
+
+        return $pulse;
     }
 
     public function invalidatePulse(int $ticketId): void
@@ -117,10 +124,6 @@ class TicketPulseService
             if ($mention) {
                 return "Waiting on: {$mention}";
             }
-        }
-
-        if (Auth::id() !== null && (int) Auth::id() === (int) $ticket->user_id2) {
-            return 'You own this';
         }
 
         $assigneeName = $ticket->assignee->name ?? 'Unassigned';
