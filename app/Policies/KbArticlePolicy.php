@@ -18,28 +18,7 @@ class KbArticlePolicy
 
     public function view(?User $user, KbArticle $article): bool
     {
-        if ($article->visibility === 'public' && $article->status !== 'draft') {
-            return true;
-        }
-
-        if (! $user) {
-            return false;
-        }
-
-        if ($article->status === 'draft') {
-            return $article->user_id === $user->id;
-        }
-
-        if ($article->visibility === 'internal') {
-            return true;
-        }
-
-        if ($article->visibility === 'restricted') {
-            return $article->owner_id === $user->id
-                || $article->permissions()->where('user_id', $user->id)->exists();
-        }
-
-        return false;
+        return $article->isVisibleTo($user);
     }
 
     public function create(?User $user): bool

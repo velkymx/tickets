@@ -57,6 +57,15 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_returns_403_for_deprecated_public_article(): void
+    {
+        $article = KbArticle::factory()->public()->create(['status' => 'deprecated']);
+
+        $response = $this->get("/kb/{$article->slug}");
+        $response->assertForbidden();
+    }
+
+    #[Test]
     public function show_sanitizes_html_in_article_body(): void
     {
         $article = KbArticle::factory()->verified()->public()->create([
