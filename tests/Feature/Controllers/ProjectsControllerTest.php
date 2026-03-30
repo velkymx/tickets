@@ -36,6 +36,20 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_paginates_projects(): void
+    {
+        $user = User::factory()->create();
+        Project::factory()->count(30)->create();
+
+        $response = $this->actingAs($user)->get('/projects');
+
+        $response->assertStatus(200);
+        $projects = $response->viewData('projects');
+        $this->assertLessThanOrEqual(25, $projects->count());
+        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $projects);
+    }
+
+    #[Test]
     public function show_requires_authentication(): void
     {
         $project = Project::factory()->create();

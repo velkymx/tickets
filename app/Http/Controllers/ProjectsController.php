@@ -17,7 +17,7 @@ class ProjectsController extends Controller
                 $q->whereIn('status_id', Status::activeStatusIds());
             },
             'tickets as total_tickets_count',
-        ])->orderBy('name')->get();
+        ])->orderBy('name')->paginate(25);
 
         return view('projects.index', compact('projects'));
     }
