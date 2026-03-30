@@ -43,7 +43,8 @@ class Milestone extends Model
 
         $notifyUsers = collect([$this->owner, $this->scrummaster])->filter();
 
-        if ($this->relationLoaded('watchers') && $this->watchers->isNotEmpty()) {
+        $this->load('watchers.user');
+        if ($this->watchers->isNotEmpty()) {
             $notifyUsers = $notifyUsers->merge($this->watchers->pluck('user'))->filter();
         }
 
