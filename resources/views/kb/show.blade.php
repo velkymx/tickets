@@ -46,7 +46,7 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <div class="article-content">
-                    {!! $article->body_html !!}
+                    {!! clean($article->body_html) !!}
                 </div>
             </div>
         </div>

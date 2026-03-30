@@ -57,6 +57,19 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_sanitizes_html_in_article_body(): void
+    {
+        $article = KbArticle::factory()->verified()->public()->create([
+            'body_html' => '<p>Safe content</p><script>alert("xss")</script>',
+        ]);
+
+        $response = $this->get("/kb/{$article->slug}");
+        $response->assertOk();
+        $response->assertSee('Safe content');
+        $response->assertDontSee('<script>', false);
+    }
+
+    #[Test]
     public function create_requires_auth_and_author_role(): void
     {
         $this->get('/kb/create')->assertRedirect('/login');
