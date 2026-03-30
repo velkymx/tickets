@@ -515,6 +515,7 @@ class TicketsController extends Controller
     public function toggleWatcher($id)
     {
         $ticket = Ticket::findOrFail($id);
+        $this->authorize('view', $ticket);
         $watcher = TicketUserWatcher::where('ticket_id', $id)->where('user_id', Auth::id())->first();
 
         if ($watcher) {

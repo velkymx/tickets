@@ -2273,10 +2273,25 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function toggle_watcher_requires_view_authorization(): void
+    {
+        $owner = User::factory()->create();
+        $stranger = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $owner->id,
+            'user_id2' => $owner->id,
+        ]);
+
+        $response = $this->actingAs($stranger)->post("/tickets/watch/{$ticket->id}");
+
+        $response->assertForbidden();
+    }
+
+    #[Test]
     public function toggle_watcher_creates_watcher_when_not_watching(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->post("/tickets/watch/{$ticket->id}");
 
@@ -2290,7 +2305,7 @@ class TicketsControllerTest extends TestCase
     public function toggle_watcher_removes_watcher_when_already_watching(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         TicketUserWatcher::factory()->create([
             'ticket_id' => $ticket->id,
@@ -2309,7 +2324,7 @@ class TicketsControllerTest extends TestCase
     public function toggle_watcher_redirects_back(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->post("/tickets/watch/{$ticket->id}");
 
