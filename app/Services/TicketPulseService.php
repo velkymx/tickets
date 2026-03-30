@@ -34,7 +34,9 @@ class TicketPulseService
 
     protected function computePulse(Ticket $ticket): TicketPulse
     {
-        $notes = $ticket->notes()->with(['user', 'supersedes', 'replies'])->get();
+        $notes = $ticket->relationLoaded('notes')
+            ? $ticket->notes
+            : $ticket->notes()->with(['user', 'supersedes', 'replies'])->get();
 
         $activeBlocker = $notes
             ->where('notetype', 'blocker')

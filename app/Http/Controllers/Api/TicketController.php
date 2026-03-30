@@ -39,7 +39,14 @@ class TicketController extends Controller
         $user = $request->attributes->get('api_user');
         $perPage = min((int) $request->get('per_page', 20), 100);
 
-        $query = Ticket::with(['status', 'importance']);
+        $includePulse = $request->get('include') === 'pulse';
+
+        $eagerLoads = ['status', 'importance'];
+        if ($includePulse) {
+            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'assignee']);
+        }
+
+        $query = Ticket::with($eagerLoads);
 
         if ($request->boolean('unassigned')) {
             $query->where(function ($q) {
@@ -54,8 +61,6 @@ class TicketController extends Controller
         }
 
         $tickets = $query->orderBy('created_at', 'DESC')->paginate($perPage);
-
-        $includePulse = $request->get('include') === 'pulse';
         $pulseService = $includePulse ? app(TicketPulseService::class) : null;
 
         $data = $tickets->map(function ($ticket) use ($includePulse, $pulseService) {

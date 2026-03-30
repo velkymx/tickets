@@ -13,6 +13,8 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -965,6 +967,38 @@ class TicketControllerTest extends TestCase
         $data = $response->json('data');
         $this->assertNotEmpty($data);
         $this->assertArrayNotHasKey('pulse_summary', $data[0]);
+    }
+
+    #[Test]
+    public function index_with_pulse_does_not_n_plus_one_on_notes(): void
+    {
+        Cache::flush();
+
+        // Create 5 tickets each with a note
+        $tickets = collect(range(1, 5))->map(function () {
+            $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+            Note::factory()->create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $this->user->id,
+                'notetype' => 'action',
+                'resolved' => false,
+            ]);
+
+            return $ticket;
+        });
+
+        // Count queries for 5 tickets with pulse
+        DB::enableQueryLog();
+        $this->getJson('/api/v1/tickets?include=pulse', $this->apiHeaders())
+            ->assertStatus(200);
+        $queriesFor5 = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        // Should not have 5× note queries — eager loading keeps it constant
+        // Without fix: ~5 note queries (one per ticket) + base queries
+        // With fix: 1 bulk note query + base queries
+        // We assert queries < 5 * per-ticket-cost
+        $this->assertLessThan(20, $queriesFor5, "Too many queries ($queriesFor5) — likely N+1 on pulse notes");
     }
 
     #[Test]
