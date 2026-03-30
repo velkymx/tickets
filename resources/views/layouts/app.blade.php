@@ -46,10 +46,6 @@
                     <li class="nav-item"><a class="nav-link" href="{{ url('/login') }}">Login</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url('/register') }}">Register</a></li>
                 @else
-                    @php
-                        $latestNotifications = Auth::user()->notifications()->latest()->limit(5)->get();
-                        $unreadNotificationCount = Auth::user()->unreadNotifications()->count();
-                    @endphp
 
                     <li class="nav-item"><a class="nav-link" href="/ticket/create">New Ticket</a></li>
                     <li class="nav-item"><a class="nav-link" href="/tickets/import">Import</a></li>

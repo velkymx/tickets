@@ -17,9 +17,11 @@ use App\Policies\ProjectPolicy;
 use App\Policies\ReleasePolicy;
 use App\Policies\TicketPolicy;
 use App\Services\KbSearchService;
+use App\ViewComposers\NotificationComposer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -48,6 +50,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Release::class, ReleasePolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(KbArticle::class, KbArticlePolicy::class);
+
+        View::composer('layouts.app', NotificationComposer::class);
 
         RateLimiter::for('api', function ($request) {
             $userId = $request->user()?->id ?? $request->attributes->get('api_user')?->id;
