@@ -335,7 +335,7 @@ class TicketTest extends TestCase
     }
 
     #[Test]
-    public function it_computes_actual_hours_via_query_when_not_eager_loaded(): void
+    public function it_returns_zero_actual_hours_when_not_eager_loaded(): void
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create([
@@ -349,7 +349,7 @@ class TicketTest extends TestCase
             'hours' => 2,
         ]);
 
-        $this->assertEquals(2, $ticket->actual_hours);
+        $this->assertEquals(0, $ticket->actual_hours);
     }
 
     #[Test]

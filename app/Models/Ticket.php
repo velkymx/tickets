@@ -63,11 +63,7 @@ class Ticket extends Model
 
     public function getActualHoursAttribute()
     {
-        if (isset($this->attributes['notes_sum_hours'])) {
-            return (int) $this->attributes['notes_sum_hours'];
-        }
-
-        return $this->notes()->sum('hours');
+        return (int) ($this->attributes['notes_sum_hours'] ?? 0);
     }
 
     public function milestone(): BelongsTo
