@@ -18,7 +18,7 @@ class Ticket extends Model
         parent::boot();
 
         static::updated(function ($ticket) {
-            $ticket->notifyWatchers('Ticket');
+            $ticket->notifyWatchers('Ticket', auth()->id());
         });
     }
 

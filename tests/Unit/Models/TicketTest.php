@@ -378,6 +378,39 @@ class TicketTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_notify_the_acting_user_on_update(): void
+    {
+        Notification::fake();
+
+        $actor = User::factory()->create();
+        $otherWatcher = User::factory()->create();
+
+        $ticket = Ticket::factory()->create([
+            'user_id' => $actor->id,
+            'user_id2' => $actor->id,
+        ]);
+
+        // Both the actor and another user are watching
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $actor->id,
+        ]);
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $otherWatcher->id,
+        ]);
+
+        $this->actingAs($actor);
+
+        $ticket = $ticket->fresh()->load('watchers');
+        $ticket->subject = 'Updated Subject';
+        $ticket->save();
+
+        Notification::assertSentTo($otherWatcher, WatcherNotification::class);
+        Notification::assertNotSentTo($actor, WatcherNotification::class);
+    }
+
+    #[Test]
     public function it_skips_watchers_with_no_user(): void
     {
         Notification::fake();
