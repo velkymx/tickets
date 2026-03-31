@@ -9,6 +9,7 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SlashCommandService;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -284,5 +285,38 @@ class SlashCommandServiceTest extends TestCase
 
         $type = $this->service->getSignalType('/blocker Need API keys');
         $this->assertEquals('blocker', $type);
+    }
+
+    #[Test]
+    public function it_rolls_back_all_changes_when_a_command_throws(): void
+    {
+        $ticket = Ticket::factory()->create();
+        $originalStatusId = $ticket->status_id;
+        $activeStatus = Status::where('name', 'active')->first();
+
+        // Mock a service that throws on the second command
+        $service = new class extends SlashCommandService
+        {
+            protected int $executeCount = 0;
+
+            protected function execute(Ticket $ticket, string $command, string $args, string $rawLine): array
+            {
+                $this->executeCount++;
+                if ($this->executeCount > 1) {
+                    throw new \RuntimeException('Simulated failure');
+                }
+
+                return parent::execute($ticket, $command, $args, $rawLine);
+            }
+        };
+
+        try {
+            $service->handle($ticket, "/status active\n/close");
+        } catch (\RuntimeException) {
+            // expected
+        }
+
+        $ticket->refresh();
+        $this->assertEquals($originalStatusId, $ticket->status_id, 'Status change should be rolled back');
     }
 }

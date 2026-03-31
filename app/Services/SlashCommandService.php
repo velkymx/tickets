@@ -7,10 +7,18 @@ use App\Models\Milestone;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class SlashCommandService
 {
     public function handle(Ticket $ticket, string $text): array
+    {
+        return DB::transaction(function () use ($ticket, $text) {
+            return $this->processCommands($ticket, $text);
+        });
+    }
+
+    protected function processCommands(Ticket $ticket, string $text): array
     {
         $lines = explode("\n", $text);
         $results = [
