@@ -47,7 +47,8 @@ class TicketPolicy
     {
         return $user->id === $ticket->user_id
             || $user->id === $ticket->user_id2
-            || empty($ticket->user_id2);
+            || $ticket->user_id2 === null
+            || $ticket->user_id2 === 0;
     }
 
     public function estimate(User $user, Ticket $ticket): bool
