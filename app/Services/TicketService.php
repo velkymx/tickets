@@ -153,15 +153,18 @@ class TicketService
         }
 
         if (is_array($changes) && count($changes) > 0) {
-
-            $insert['body_markdown'] = collect($changes)
+            $changelogMarkdown = collect($changes)
                 ->map(fn (string $change) => '- '.$change)
                 ->implode("\n");
-            $insert['body'] = $this->markdownService->parse($insert['body_markdown']);
-            $insert['notetype'] = 'changelog';
-            $insert['hours'] = 0;
 
-            Note::create($insert);
+            Note::create([
+                'user_id' => Auth::id(),
+                'ticket_id' => $ticketId,
+                'body' => $this->markdownService->parse($changelogMarkdown),
+                'body_markdown' => $changelogMarkdown,
+                'notetype' => 'changelog',
+                'hours' => 0,
+            ]);
             $createdActivity = true;
         }
 

@@ -609,4 +609,40 @@ class TicketServiceTest extends TestCase
             $lookups['statuses']->values()->all()
         );
     }
+
+    #[Test]
+    public function notate_changelog_does_not_inherit_parent_id_from_message_note(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+        Auth::login($user);
+
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $parentNote = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $this->service->notate(
+            $ticket->id,
+            'A reply message',
+            ['Status changed to active'],
+            0,
+            $parentNote->id
+        );
+
+        $notes = Note::where('ticket_id', $ticket->id)
+            ->where('id', '!=', $parentNote->id)
+            ->orderBy('id')
+            ->get();
+
+        $messageNote = $notes->firstWhere('notetype', 'message');
+        $changelogNote = $notes->firstWhere('notetype', 'changelog');
+
+        $this->assertNotNull($messageNote);
+        $this->assertNotNull($changelogNote);
+        $this->assertEquals($parentNote->id, $messageNote->parent_id);
+        $this->assertNull($changelogNote->parent_id, 'Changelog note should not inherit parent_id from message');
+    }
 }
