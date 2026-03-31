@@ -296,11 +296,6 @@ class TicketsController extends Controller
 
         $ticket->update($data);
 
-        if (array_key_exists('closed_at', $data)) {
-            $ticket->closed_at = $data['closed_at'];
-            $ticket->save();
-        }
-
         $this->ticketService->notate($ticket->id, '', $change_list);
 
         return redirect('tickets/'.$id)->with('info_message', 'Ticket #'.$id.' updated');
@@ -506,6 +501,7 @@ class TicketsController extends Controller
 
         return TicketResource::collection(
             Ticket::with(['status', 'assignee', 'notes'])
+                ->withCount('notes')
                 ->where('user_id2', Auth::id())
                 ->whereBetween('closed_at', [$request->started_at, $request->completed_at])
                 ->get()

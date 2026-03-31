@@ -28,7 +28,7 @@ class TicketResource extends JsonResource
             'closed_at' => $this->closed_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'note_count' => $this->whenCounted('notes', $this->notes_count, fn () => $this->notes()->count()),
+            'note_count' => $this->whenCounted('notes', $this->notes_count),
             'notetype_summary' => $this->whenLoaded('notes', function () {
                 return $this->notes->groupBy('notetype')->map(fn ($notes) => $notes->count())->toArray();
             }),
