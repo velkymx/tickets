@@ -13,6 +13,7 @@ use App\Services\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class NotesController extends Controller
@@ -272,21 +273,24 @@ class NotesController extends Controller
 
         $note = Note::findOrFail($id);
 
-        $reaction = NoteReaction::query()
-            ->where('note_id', $note->id)
-            ->where('user_id', Auth::id())
-            ->where('emoji', $validated['emoji'])
-            ->first();
+        DB::transaction(function () use ($note, $validated) {
+            $reaction = NoteReaction::query()
+                ->where('note_id', $note->id)
+                ->where('user_id', Auth::id())
+                ->where('emoji', $validated['emoji'])
+                ->lockForUpdate()
+                ->first();
 
-        if ($reaction) {
-            $reaction->delete();
-        } else {
-            NoteReaction::create([
-                'note_id' => $note->id,
-                'user_id' => Auth::id(),
-                'emoji' => $validated['emoji'],
-            ]);
-        }
+            if ($reaction) {
+                $reaction->delete();
+            } else {
+                NoteReaction::create([
+                    'note_id' => $note->id,
+                    'user_id' => Auth::id(),
+                    'emoji' => $validated['emoji'],
+                ]);
+            }
+        });
 
         $note->load('reactions');
 
