@@ -71,7 +71,6 @@ class ReleaseController extends Controller
             },
         ])->where('release_id', $release->id)->get();
 
-        $tickets = [];
         $projects = [];
 
         foreach ($release_tickets as $ticket) {
