@@ -125,4 +125,13 @@ class KbArticlePolicyTest extends TestCase
 
         $this->assertFalse($this->policy->delete($author, $article));
     }
+
+    #[Test]
+    public function only_admins_can_restore(): void
+    {
+        $author = User::factory()->create(['kb_role' => 'author']);
+        $article = KbArticle::factory()->create(['owner_id' => $author->id]);
+
+        $this->assertFalse($this->policy->restore($author, $article));
+    }
 }

@@ -43,6 +43,6 @@ class KbArticlePolicy
 
     public function restore(?User $user, KbArticle $article): bool
     {
-        return $this->update($user, $article);
+        return false; // Only admins, handled by before()
     }
 }
