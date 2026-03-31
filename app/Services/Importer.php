@@ -32,26 +32,44 @@ class Importer
         }
 
         try {
-            DB::transaction(function () use ($file, $hasHeader) {
-                $i = 0;
-                while ($row = fgetcsv($file)) {
-                    if ($i === 0 && $hasHeader) {
-                        $i++;
+            $i = 0;
+            $chunk = [];
 
-                        continue;
-                    }
-
-                    if (count($row) < 7) {
-                        throw new Exception('CSV row must have at least 7 columns. Row '.($i + 1).' has '.count($row).' columns.');
-                    }
-
-                    $this->importRow($row, $i + 1);
+            while ($row = fgetcsv($file)) {
+                if ($i === 0 && $hasHeader) {
                     $i++;
+
+                    continue;
                 }
-            });
+
+                if (count($row) < 7) {
+                    throw new Exception('CSV row must have at least 7 columns. Row '.($i + 1).' has '.count($row).' columns.');
+                }
+
+                $chunk[] = ['row' => $row, 'index' => $i + 1];
+                $i++;
+
+                if (count($chunk) >= 100) {
+                    $this->importChunk($chunk);
+                    $chunk = [];
+                }
+            }
+
+            if (count($chunk) > 0) {
+                $this->importChunk($chunk);
+            }
         } finally {
             fclose($file);
         }
+    }
+
+    private function importChunk(array $chunk): void
+    {
+        DB::transaction(function () use ($chunk) {
+            foreach ($chunk as $item) {
+                $this->importRow($item['row'], $item['index']);
+            }
+        });
     }
 
     private function importRow(array $row, int $rowIndex): void

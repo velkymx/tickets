@@ -428,6 +428,29 @@ class ImporterTest extends TestCase
     }
 
     #[Test]
+    public function it_imports_large_files_in_chunks(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Bug']);
+        Importance::factory()->create(['name' => 'High']);
+        Status::factory()->create(['name' => 'Open']);
+        Project::factory()->create(['name' => 'Test Project', 'active' => true]);
+        Auth::login($user);
+
+        $rows = [];
+        for ($i = 0; $i < 250; $i++) {
+            $rows[] = ['Bug', "Ticket $i", 'Desc', 'High', 'Open', 'Test Project', 'Assignee'];
+        }
+
+        $this->writeCsv($rows);
+
+        $this->importer->call($milestone->id, $this->tempFile, false, $user->id);
+
+        $this->assertEquals(250, Ticket::where('milestone_id', $milestone->id)->count());
+    }
+
+    #[Test]
     public function it_reports_correct_column_number_in_error_messages(): void
     {
         $user = User::factory()->create(['name' => 'Assignee']);
