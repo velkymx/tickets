@@ -22,7 +22,7 @@ class FetchTicketsRequest extends FormRequest
             'user_id2' => 'nullable|integer|exists:users,id',
             'importance_id' => 'nullable|integer|exists:importances,id',
             'q' => 'nullable|string|max:255',
-            'perpage' => 'nullable|integer|in:10,25,50,100',
+            'perpage' => 'nullable|integer|in:10,20,30,40,50',
         ];
     }
 }
