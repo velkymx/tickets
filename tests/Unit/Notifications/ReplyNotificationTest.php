@@ -17,7 +17,7 @@ class ReplyNotificationTest extends TestCase
     {
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
-        $notification = new ReplyNotification($actor, 142, 55, 'I pushed the fix.', 'http://example.com/tickets/142#note_55');
+        $notification = new ReplyNotification($actor->id, $actor->name,142, 55, 'I pushed the fix.', 'http://example.com/tickets/142#note_55');
 
         $this->assertSame(['mail', 'database'], $notification->via($user));
     }
@@ -27,7 +27,7 @@ class ReplyNotificationTest extends TestCase
     {
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
-        $notification = new ReplyNotification($actor, 142, 55, 'I pushed the fix.', 'http://example.com/tickets/142#note_55');
+        $notification = new ReplyNotification($actor->id, $actor->name,142, 55, 'I pushed the fix.', 'http://example.com/tickets/142#note_55');
 
         $mail = $notification->toMail($user);
 
@@ -38,7 +38,7 @@ class ReplyNotificationTest extends TestCase
     public function it_returns_structured_database_payload(): void
     {
         $actor = User::factory()->create(['name' => 'Sarah']);
-        $notification = new ReplyNotification($actor, 142, 55, 'I pushed the fix.', 'http://example.com/tickets/142#note_55');
+        $notification = new ReplyNotification($actor->id, $actor->name,142, 55, 'I pushed the fix.', 'http://example.com/tickets/142#note_55');
 
         $payload = $notification->toArray(new User);
 

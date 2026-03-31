@@ -220,7 +220,8 @@ class TicketService
                 $this->notificationBatchService->dispatch(
                     $mention->user,
                     new MentionNotification(
-                        $note->user,
+                        $note->user->id,
+                        $note->user->name,
                         $note->ticket_id,
                         $note->id,
                         $excerpt,
@@ -262,7 +263,8 @@ class TicketService
         $this->notificationBatchService->dispatch(
             $recipient,
             new ReplyNotification(
-                $note->user,
+                $note->user->id,
+                $note->user->name,
                 $note->ticket_id,
                 $note->id,
                 trim(strip_tags($note->body_markdown ?: $note->body)),

@@ -29,7 +29,7 @@ class ActivityControllerTest extends TestCase
         $other = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
         $other->notifyNow(new WatcherNotification('Ticket', 'Unrelated update', 'http://example.com/tickets/999'));
 
         $response = $this->actingAs($user)->get('/activity');
@@ -49,8 +49,8 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor, 142, 55, 'Mention body', 'http://example.com/tickets/142'));
-        $user->notifyNow(new ReplyNotification($actor, 142, 56, 'Reply body', 'http://example.com/tickets/142#note_56'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Mention body', 'http://example.com/tickets/142'));
+        $user->notifyNow(new ReplyNotification($actor->id, $actor->name,142, 56, 'Reply body', 'http://example.com/tickets/142#note_56'));
 
         $response = $this->actingAs($user)->get('/activity?filter=mentions');
 
@@ -67,7 +67,7 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
 
         $response = $this->actingAs($user)->get('/activity');
 
@@ -87,7 +87,7 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
 
         $response = $this->actingAs($user)->get('/activity');
 
@@ -102,7 +102,7 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
         $notification = $user->notifications()->first();
 
         $response = $this->actingAs($user)->post("/activity/read/{$notification->id}");
@@ -117,8 +117,8 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
-        $user->notifyNow(new ReplyNotification($actor, 142, 56, 'I pushed the fix.', 'http://example.com/tickets/142#note_56'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new ReplyNotification($actor->id, $actor->name,142, 56, 'I pushed the fix.', 'http://example.com/tickets/142#note_56'));
 
         $response = $this->actingAs($user)->post('/activity/read-all');
 
@@ -134,7 +134,7 @@ class ActivityControllerTest extends TestCase
 
         foreach (range(1, 6) as $index) {
             $user->notifyNow(new MentionNotification(
-                $actor,
+                $actor->id, $actor->name,
                 140 + $index,
                 50 + $index,
                 "Mention {$index}",

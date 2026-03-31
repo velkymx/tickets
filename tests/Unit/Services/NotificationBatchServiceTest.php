@@ -25,7 +25,7 @@ class NotificationBatchServiceTest extends TestCase
 
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
-        $notification = new MentionNotification($actor, 142, 55, 'Can you check the deploy?', 'http://example.com/tickets/142');
+        $notification = new MentionNotification($actor->id, $actor->name,142, 55, 'Can you check the deploy?', 'http://example.com/tickets/142');
 
         app(NotificationBatchService::class)->dispatch($user, $notification, 142);
 
@@ -43,7 +43,7 @@ class NotificationBatchServiceTest extends TestCase
 
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
-        $notification = new MentionNotification($actor, 142, 55, 'Can you check the deploy?', 'http://example.com/tickets/142');
+        $notification = new MentionNotification($actor->id, $actor->name,142, 55, 'Can you check the deploy?', 'http://example.com/tickets/142');
 
         $service = app(NotificationBatchService::class);
         $service->dispatch($user, $notification, 142);
@@ -61,7 +61,7 @@ class NotificationBatchServiceTest extends TestCase
 
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
-        $notification = new MentionNotification($actor, 142, 55, 'Check deploy', 'http://example.com/tickets/142');
+        $notification = new MentionNotification($actor->id, $actor->name,142, 55, 'Check deploy', 'http://example.com/tickets/142');
 
         $service = app(NotificationBatchService::class);
         $lockKey = $service->batchKey($user->id, 142) . ':lock';

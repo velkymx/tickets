@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -14,7 +13,8 @@ class MentionNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly User $actor,
+        private readonly int $actorId,
+        private readonly string $actorName,
         private readonly int $ticketId,
         private readonly int $noteId,
         private readonly string $excerpt,
@@ -29,7 +29,7 @@ class MentionNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return app(MailMessage::class)
-            ->subject("{$this->actor->name} mentioned you in Ticket #{$this->ticketId}")
+            ->subject("{$this->actorName} mentioned you in Ticket #{$this->ticketId}")
             ->line(Str::limit($this->excerpt, 160))
             ->action('View Ticket', $this->url);
     }
@@ -40,8 +40,8 @@ class MentionNotification extends Notification implements ShouldQueue
             'type' => 'mention',
             'ticket_id' => $this->ticketId,
             'note_id' => $this->noteId,
-            'actor_id' => $this->actor->id,
-            'actor_name' => $this->actor->name,
+            'actor_id' => $this->actorId,
+            'actor_name' => $this->actorName,
             'excerpt' => $this->excerpt,
             'url' => $this->url,
         ];
