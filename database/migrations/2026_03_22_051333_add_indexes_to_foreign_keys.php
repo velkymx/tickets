@@ -29,10 +29,6 @@ return new class extends Migration
             $table->index(['ticket_id', 'user_id']);
         });
 
-        Schema::table('ticket_views', function (Blueprint $table) {
-            $table->index(['ticket_id', 'user_id']);
-        });
-
         Schema::table('milestones', function (Blueprint $table) {
             $table->index('owner_user_id');
             $table->index('scrummaster_user_id');
@@ -59,10 +55,6 @@ return new class extends Migration
         });
 
         Schema::table('ticket_user_watchers', function (Blueprint $table) {
-            $table->dropIndex(['ticket_id', 'user_id']);
-        });
-
-        Schema::table('ticket_views', function (Blueprint $table) {
             $table->dropIndex(['ticket_id', 'user_id']);
         });
 
