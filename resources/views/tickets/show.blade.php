@@ -633,7 +633,7 @@
         if (!textarea || !composer) return;
 
         const dropdown = composer.querySelector('.mention-autocomplete');
-        const users = JSON.parse(document.getElementById('all-users-json')?.textContent || '[]');
+        const users = JSON.parse(composer.dataset.users || '[]');
         let mentionStart = -1;
         let activeIndex = -1;
 
