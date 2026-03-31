@@ -56,6 +56,15 @@ class CrossReferenceServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_match_inside_pre_code_blocks(): void
+    {
+        $html = "<pre><code>#123\n#456</code></pre>";
+        $result = $this->service->resolve($html);
+
+        $this->assertStringNotContainsString('href=', $result);
+    }
+
+    #[Test]
     public function it_handles_multiple_references(): void
     {
         $html = '<p>See #1, #2, and kb:faq.</p>';
