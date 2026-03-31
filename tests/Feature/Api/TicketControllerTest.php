@@ -217,6 +217,10 @@ class TicketControllerTest extends TestCase
     {
         $response = $this->postJson('/api/v1/tickets', [
             'subject' => 'New Ticket',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
         ], $this->apiHeaders());
 
         $response->assertStatus(201)

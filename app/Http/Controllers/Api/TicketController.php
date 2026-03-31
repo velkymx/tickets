@@ -112,10 +112,10 @@ class TicketController extends Controller
         $request->validate([
             'subject' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type_id' => 'nullable|integer|exists:types,id',
-            'importance_id' => 'nullable|integer|exists:importances,id',
-            'project_id' => 'nullable|integer|exists:projects,id',
-            'milestone_id' => 'nullable|integer|exists:milestones,id',
+            'type_id' => 'required|integer|exists:types,id',
+            'importance_id' => 'required|integer|exists:importances,id',
+            'project_id' => 'required|integer|exists:projects,id',
+            'milestone_id' => 'required|integer|exists:milestones,id',
             'status_id' => 'nullable|integer|exists:statuses,id',
             'due_at' => 'nullable|date',
             'estimate' => 'nullable|numeric|min:0',
@@ -125,16 +125,16 @@ class TicketController extends Controller
         $ticket = Ticket::create([
             'subject' => $request->subject,
             'description' => $request->description ?? '',
-            'type_id' => $request->type_id ?? 1,
-            'importance_id' => $request->importance_id ?? 1,
-            'project_id' => $request->project_id ?? 1,
-            'milestone_id' => $request->milestone_id ?? 1,
+            'type_id' => $request->type_id,
+            'importance_id' => $request->importance_id,
+            'project_id' => $request->project_id,
+            'milestone_id' => $request->milestone_id,
             'due_at' => $request->due_at ?? null,
             'estimate' => $request->estimate ?? 0,
             'storypoints' => $request->storypoints ?? 0,
             'user_id' => $user->id,
             'user_id2' => $user->id,
-            'status_id' => $request->status_id ?? Status::orderBy('id')->first()?->id ?? 1,
+            'status_id' => $request->status_id ?? Status::orderBy('id')->first()?->id,
         ]);
 
         return response()->json([
