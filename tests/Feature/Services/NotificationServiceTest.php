@@ -46,15 +46,17 @@ class NotificationServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_does_not_duplicate_notify_mentioned_watchers(): void
+    public function it_skips_watcher_notification_for_mentioned_users(): void
     {
         Notification::fake();
 
         $author = User::factory()->create();
         $mentioned = User::factory()->create();
+        $otherWatcher = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
 
         TicketUserWatcher::create(['ticket_id' => $ticket->id, 'user_id' => $mentioned->id]);
+        TicketUserWatcher::create(['ticket_id' => $ticket->id, 'user_id' => $otherWatcher->id]);
 
         $note = Note::factory()->create([
             'ticket_id' => $ticket->id,
@@ -62,7 +64,6 @@ class NotificationServiceTest extends TestCase
             'body' => '@'.$mentioned->name,
         ]);
 
-        // Create mention record
         Mention::create([
             'note_id' => $note->id,
             'user_id' => $mentioned->id,
@@ -71,7 +72,11 @@ class NotificationServiceTest extends TestCase
         $service = app(NotificationService::class);
         $service->notifyWatchers($ticket, $note);
 
-        Notification::assertSentToTimes($mentioned, WatcherNotification::class, 1);
+        // Mentioned users already get MentionNotification, so skip watcher notification entirely
+        Notification::assertNotSentTo($mentioned, WatcherNotification::class);
+        Notification::assertNotSentTo($mentioned, WatcherDatabaseNotification::class);
+        // Non-mentioned watchers still get notified
+        Notification::assertSentTo($otherWatcher, WatcherNotification::class);
     }
 
     #[Test]

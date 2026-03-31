@@ -25,7 +25,12 @@ class NotificationService
                 continue;
             }
 
-            // Skip if already notified (deduplication for mentioned watchers)
+            // Skip mentioned users — they already receive a MentionNotification
+            if (in_array($user->id, $mentionedUserIds)) {
+                continue;
+            }
+
+            // Skip if already notified (deduplication)
             if (in_array($user->id, $notifiedUserIds)) {
                 continue;
             }
