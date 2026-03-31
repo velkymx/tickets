@@ -15,7 +15,7 @@ class UpdateArticleRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
-            'body_markdown' => 'required|string',
+            'body_markdown' => 'required|string|max:100000',
             'category_id' => 'required|integer|exists:kb_categories,id',
             'visibility' => 'required|in:public,internal,restricted',
             'commit_message' => 'required|string|max:255',
