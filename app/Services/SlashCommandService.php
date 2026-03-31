@@ -139,6 +139,10 @@ class SlashCommandService
                 break;
 
             case 'estimate':
+                if (! is_numeric($args) || (float) $args < 0) {
+                    $result['warnings'][] = "Invalid estimate value: {$args}";
+                    break;
+                }
                 $ticket->estimate = (int) $args;
                 $ticket->save();
                 $result['changes'][] = "Estimate changed to {$args}h";
@@ -146,6 +150,10 @@ class SlashCommandService
                 break;
 
             case 'hours':
+                if (! is_numeric($args) || (float) $args < 0) {
+                    $result['warnings'][] = "Invalid hours value: {$args}";
+                    break;
+                }
                 $result['hours'] = (float) $args;
                 $result['actions'][] = ['action' => 'hours_logged', 'value' => (float) $args];
                 break;
