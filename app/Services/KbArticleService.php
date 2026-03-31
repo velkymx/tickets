@@ -107,6 +107,9 @@ class KbArticleService
         $counter = 1;
 
         while (KbArticle::withTrashed()->where('slug', $slug)->exists()) {
+            if ($counter > 100) {
+                throw new \Exception("Unable to generate unique slug for '{$title}' after 100 attempts.");
+            }
             $slug = $original.'-'.$counter;
             $counter++;
         }

@@ -133,4 +133,28 @@ class KbArticleServiceTest extends TestCase
         $this->assertSame('verified', $article->fresh()->status);
         $this->assertNotNull($article->fresh()->published_at);
     }
+
+    #[Test]
+    public function it_throws_when_slug_collisions_exceed_limit(): void
+    {
+        $user = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+
+        // Create the base slug and 100 suffixed variants
+        KbArticle::factory()->create(['slug' => 'same-title']);
+        for ($i = 1; $i <= 100; $i++) {
+            KbArticle::factory()->create(['slug' => "same-title-{$i}"]);
+        }
+
+        $this->expectException(\Exception::class);
+
+        $this->service->create([
+            'title' => 'Same Title',
+            'body_markdown' => 'Content',
+            'category_id' => $category->id,
+            'visibility' => 'internal',
+            'tags' => [],
+            'commit_message' => 'Should fail',
+        ], $user);
+    }
 }
