@@ -15,7 +15,7 @@ class TicketPulseService
 {
     public function getPulse(Ticket $ticket): TicketPulse
     {
-        $pulse = Cache::remember("ticket_pulse:{$ticket->id}", now()->addHours(24), function () use ($ticket) {
+        $pulse = Cache::remember("ticket_pulse:{$ticket->id}", now()->addHour(), function () use ($ticket) {
             return $this->computePulse($ticket);
         });
 
