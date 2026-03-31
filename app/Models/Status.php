@@ -27,7 +27,7 @@ class Status extends Model
 
     public static function closedStatusIds(): array
     {
-        return cache()->rememberForever('closed_status_ids', function () {
+        return cache()->remember('closed_status_ids', now()->addHour(), function () {
             return self::query()
                 ->whereIn(DB::raw('LOWER(name)'), self::CLOSED_STATUS_NAMES)
                 ->pluck('id')
@@ -37,7 +37,7 @@ class Status extends Model
 
     public static function activeStatusIds(): array
     {
-        return cache()->rememberForever('active_status_ids', function () {
+        return cache()->remember('active_status_ids', now()->addHour(), function () {
             return self::query()
                 ->whereNotIn('id', self::closedStatusIds())
                 ->pluck('id')
