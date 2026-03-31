@@ -77,7 +77,7 @@ class Importer
     private function relation(string $class, string $value, int $rowIndex, int $columnNumber): ?int
     {
         if (empty(trim($value))) {
-            throw new Exception("Row $rowIndex: Column ".($columnNumber + 1).' ('.class_basename($class).') is required.');
+            throw new Exception("Row $rowIndex: Column ".$columnNumber.' ('.class_basename($class).') is required.');
         }
 
         $key = $class.'|'.$value;

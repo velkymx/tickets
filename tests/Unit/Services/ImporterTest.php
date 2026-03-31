@@ -426,4 +426,23 @@ class ImporterTest extends TestCase
         $models = $property->getValue($importer);
         $this->assertArrayHasKey('App\Models\Type|Bug', $models);
     }
+
+    #[Test]
+    public function it_reports_correct_column_number_in_error_messages(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+
+        Auth::login($user);
+
+        // Column 1 (Type) is empty — error should say "Column 1", not "Column 2"
+        $this->writeCsv([
+            ['', 'Subject', 'Description', 'high', 'new', 'Default Project', $user->name],
+        ]);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Column 1');
+
+        $this->importer->call($milestone->id, $this->tempFile, false, $user->id);
+    }
 }
