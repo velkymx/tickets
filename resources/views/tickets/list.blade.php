@@ -3,7 +3,10 @@
 @section('title', 'Ticket List')
 
 @section('content')
-    <h1 class="mb-4">Tickets</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Tickets</h1>
+        <a href="/ticket/create" class="btn btn-sm btn-primary">Create Ticket</a>
+    </div>
 
     {{-- Filter Form (Replaces Form::open) --}}
     <form method="GET" action="{{ url('tickets') }}" class="mb-4">
@@ -35,7 +38,7 @@
             {{-- Status Filter (Replaces Form::select) --}}
             <div class="col-md-auto">
                 <label for="status_id" class="form-label visually-hidden">Status</label>
-                <select name="status_id" id="status_id" class="form-select" required>
+                <select name="status_id" id="status_id" class="form-select">
                     {{-- The $viewfilters['statuses'] should be an array of key => value (id => name) --}}
                     @foreach ($viewfilters['statuses'] as $id => $name)
                         <option value="{{ $id }}" @if ($filter['status_id'] == $id) selected @endif>{{ $name }}</option>
@@ -46,7 +49,7 @@
             {{-- Milestone Filter (Replaces Form::select) --}}
             <div class="col-md-auto">
                 <label for="milestone_id" class="form-label visually-hidden">Milestone</label>
-                <select name="milestone_id" id="milestone_id" class="form-select" required>
+                <select name="milestone_id" id="milestone_id" class="form-select">
                     @foreach ($viewfilters['milestones'] as $id => $name)
                         <option value="{{ $id }}" @if ($filter['milestone_id'] == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -56,7 +59,7 @@
             {{-- Type Filter (Replaces Form::select) --}}
             <div class="col-md-auto">
                 <label for="type_id" class="form-label visually-hidden">Type</label>
-                <select name="type_id" id="type_id" class="form-select" required>
+                <select name="type_id" id="type_id" class="form-select">
                     @foreach ($viewfilters['types'] as $id => $name)
                         <option value="{{ $id }}" @if ($filter['type_id'] == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -76,7 +79,7 @@
         
         <div class="table-responsive">
             <table class="table table-striped align-middle"> {{-- Added align-middle for vertical alignment --}}
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Title</th>
                         <th>P</th>
@@ -89,7 +92,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($tickets->sortByDesc('importance_id') as $tick)
+                    @forelse ($tickets->sortByDesc('importance_id') as $tick)
                         <tr>
                             {{-- Checkbox and Title --}}
                             <td class="text-{{$tick->importance->class}}">
@@ -118,15 +121,15 @@
                             {{-- Assignee --}}
                             <td>{{$tick->assignee->name}}</td>
                             
-                            {{-- Notes --}}
-                            <td>
-                                @php
-                                    $noteCount = $tick->notes()->where('hide','0')->where('notetype','message')->count();
-                                @endphp
-                                @if ($noteCount > 0)
-                                    <span class="badge text-bg-info rounded-pill">{{ $noteCount }}</span>
-                                @endif
-                            </td>
+                             {{-- Notes --}}
+                             <td>
+                                 @php
+                                     $noteCount = $tick->notes->where('hide','0')->where('notetype','message')->count();
+                                 @endphp
+                                 @if ($noteCount > 0)
+                                     <span class="badge text-bg-info rounded-pill">{{ $noteCount }}</span>
+                                 @endif
+                             </td>
                             
                             {{-- Created --}}
                             <td>{{date('M jS, Y g:ia',strtotime($tick->created_at))}}</td>
@@ -134,7 +137,13 @@
                             {{-- Updated --}}
                             <td>{{date('M jS, Y g:ia',strtotime($tick->updated_at))}}</td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <p class="text-muted mb-0">No tickets found.</p>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -156,7 +165,7 @@
             {{-- Ticket Type --}}
             <div class="col-md-6 col-lg-4">
                 <label for="batch_type_id" class="form-label">Ticket Type</label>
-                <select name="type_id" id="batch_type_id" class="form-select" required>
+                <select name="type_id" id="batch_type_id" class="form-select">
                     @foreach ($lookups['types'] as $id => $name)
                         <option value="{{ $id }}" @if (old('type_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -166,7 +175,7 @@
             {{-- Ticket Importance --}}
             <div class="col-md-6 col-lg-4">
                 <label for="batch_importance_id" class="form-label">Ticket Importance</label>
-                <select name="importance_id" id="batch_importance_id" class="form-select" required>
+                <select name="importance_id" id="batch_importance_id" class="form-select">
                     @foreach ($lookups['importances'] as $id => $name)
                         <option value="{{ $id }}" @if (old('importance_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -176,7 +185,7 @@
             {{-- Ticket Milestone --}}
             <div class="col-md-6 col-lg-4">
                 <label for="batch_milestone_id" class="form-label">Ticket Milestone</label>
-                <select name="milestone_id" id="batch_milestone_id" class="form-select" required>
+                <select name="milestone_id" id="batch_milestone_id" class="form-select">
                     @foreach ($lookups['milestones'] as $id => $name)
                         <option value="{{ $id }}" @if (old('milestone_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -186,7 +195,7 @@
             {{-- Ticket Status --}}
             <div class="col-md-6 col-lg-4">
                 <label for="batch_status_id" class="form-label">Ticket Status</label>
-                <select name="status_id" id="batch_status_id" class="form-select" required>
+                <select name="status_id" id="batch_status_id" class="form-select">
                     @foreach ($lookups['statuses'] as $id => $name)
                         <option value="{{ $id }}" @if (old('status_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -196,7 +205,7 @@
             {{-- Ticket Project --}}
             <div class="col-md-6 col-lg-4">
                 <label for="batch_project_id" class="form-label">Ticket Project</label>
-                <select name="project_id" id="batch_project_id" class="form-select" required>
+                <select name="project_id" id="batch_project_id" class="form-select">
                     @foreach ($lookups['projects'] as $id => $name)
                         <option value="{{ $id }}" @if (old('project_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -206,7 +215,7 @@
             {{-- Assign To --}}
             <div class="col-md-6 col-lg-4">
                 <label for="batch_user_id2" class="form-label">Assign To</label>
-                <select name="user_id2" id="batch_user_id2" class="form-select" required>
+                <select name="user_id2" id="batch_user_id2" class="form-select">
                     @foreach ($lookups['users'] as $id => $name)
                         <option value="{{ $id }}" @if (old('user_id2') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -216,7 +225,7 @@
             {{-- Add to Release --}}
             <div class="col-md-6 col-lg-4">
                 <label for="batch_release_id" class="form-label">Add to Release</label>
-                <select name="release_id" id="batch_release_id" class="form-select" required>
+                <select name="release_id" id="batch_release_id" class="form-select">
                     @foreach ($lookups['releases'] as $id => $name)
                         <option value="{{ $id }}" @if (old('release_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -225,7 +234,7 @@
         </div> {{-- End Row g-3 --}}
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-info float-end">Save and Update Checked Tickets</button>
+            <button type="submit" class="btn btn-primary float-end">Save and Update Checked Tickets</button>
         </div>
 
     </form>

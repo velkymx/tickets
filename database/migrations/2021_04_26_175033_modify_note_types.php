@@ -15,7 +15,7 @@ class ModifyNoteTypes extends Migration
     {
         Schema::table('notes', function (Blueprint $table) {
             $table->enum('notetype', ['message', 'changelog', 'misc'])->default('message');
-          });        
+        });
     }
 
     /**

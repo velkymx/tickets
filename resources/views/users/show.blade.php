@@ -28,7 +28,7 @@
     @if ($user->bio)
     <h3>Bio</h3>
     <div class="mb-4">
-        {!! $user->bio !!}
+        {!! clean($user->bio) !!}
     </div>
     @endif
 </div>
@@ -38,42 +38,7 @@
 @foreach ($alltickets as $label => $tickets)
     @if ($tickets->isNotEmpty())
         <h3 class="mb-3 mt-4">{{ ucwords($label) }}</h3>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle table-sm">
-                <thead class="table-light">
-                    <tr>
-                        <th>Title</th>
-                        <th>T</th>
-                        <th>P</th>
-                        <th>Status</th>
-                        <th>Project</th>
-                        <th>Assignee</th>
-                        <th style="width: 80px;">Notes</th>
-                        <th style="width: 150px;">Created</th>
-                        <th style="width: 150px;">Updated</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($tickets as $tick)
-                    <tr>
-                        <td><a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-body">#{{ $tick->id }} {{ $tick->subject }}</a></td>
-                        <td><span class="badge text-bg-light border text-secondary">{{ $tick->type->name }}</span></td>
-                        <td><span class="badge text-bg-light border text-secondary">{{ $tick->importance->name }}</span></td>
-                        <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
-                        <td>{{ $tick->project->name }}</td>
-                        <td>{{ $tick->assignee->name }}</td>
-                        <td>
-                            @if ($tick->notes()->where('hide','0')->count() > 0)
-                                <span class="badge text-bg-info">{{ $tick->notes()->where('hide','0')->count() }}</span>
-                            @endif
-                        </td>
-                        <td class="small text-muted">{{ date('M jS, Y g:ia',strtotime($tick->created_at)) }}</td>
-                        <td class="small text-muted">{{ date('M jS, Y g:ia',strtotime($tick->updated_at)) }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+        <x-ticket-table :tickets="$tickets" :show-checkbox="false" :show-type="true" :show-estimate="false" :show-created="true" :show-updated="true" :small="true" />
     @endif
 @endforeach
 

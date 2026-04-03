@@ -7,7 +7,7 @@
     <h1 class="mb-4">Ticket Board</h1>
 
     {{-- Alert Container for AJAX updates (Vanilla JS will target this) --}}
-    <div id="update-alert" class="alert alert-success alert-dismissible fade" role="alert" style="display:none;">
+    <div id="update-alert" class="alert alert-success alert-dismissible fade d-none" role="alert">
         <span id="update-message"></span>
         <button type="button" class="btn-close" aria-label="Close" id="close-alert-btn"></button>
     </div>
@@ -19,19 +19,19 @@
         @foreach ($lookups['statuses'] as $status_id => $status_name)
             
             {{-- Column Container (Replaced <table>/<td> and old panel styling) --}}
-            <div class="me-4 flex-shrink-0" style="width: 280px;">
+            <div class="me-4 flex-shrink-0 kanban-column">
                 <div class="card shadow-sm h-100">
-                    <div class="card-header bg-light">
+                    <div class="card-header bg-body-secondary">
                         <h5 class="mb-0">{{ $status_name }}</h5>
                     </div>
                     
                     {{-- The List Container for SortableJS (must use a unique ID) --}}
-                    <div class="card-body p-2 bg-light-subtle">
+                    <div class="card-body p-2 bg-body-tertiary">
                         <ol class="list-group list-group-flush ticket-column" data-status-id="{{ $status_id }}" id="status-{{ $status_id }}">
                             
                             {{-- Iterate over tickets belonging to this status --}}
                             @foreach ($tickets->where('status_id', $status_id) as $ticket)
-                                <li class="list-group-item list-group-item-action p-2 mb-2 rounded shadow-sm bg-white" data-ticket-id="{{ $ticket->id }}">
+                                <li class="list-group-item list-group-item-action p-2 mb-2 rounded shadow-sm" data-ticket-id="{{ $ticket->id }}">
                                     <a href="/tickets/{{ $ticket->id }}" class="text-decoration-none text-body">
                                         #{{ $ticket->id }} {{ $ticket->subject }}
                                     </a>
@@ -71,22 +71,26 @@
                     placeholder.remove();
                 }
 
-                const url = `/tickets/api/${ticketId}/?status=${newStatusId}`;
+                const url = `/tickets/api/${ticketId}`;
 
-                fetch(url)
-                    .then(response => response.text())
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: `status=${newStatusId}`,
+                })
+                    .then(response => response.json())
                     .then(data => {
-                        // Display success message from the API call
-                        alertMessage.textContent = `Ticket ${ticketId} updated. ${data}`;
-                        alertDiv.classList.remove('fade');
+                        alertMessage.textContent = `Ticket #${ticketId} updated.`;
+                        alertDiv.classList.remove('d-none', 'fade');
                         alertDiv.classList.add('show');
-                        alertDiv.style.display = 'block';
                     })
                     .catch(error => {
                         alertMessage.textContent = `Error updating ticket ${ticketId}. See console for details.`;
-                        alertDiv.classList.remove('alert-success');
+                        alertDiv.classList.remove('alert-success', 'd-none');
                         alertDiv.classList.add('alert-danger', 'show');
-                        alertDiv.style.display = 'block';
                         console.error('API Update Error:', error);
                     });
             }
@@ -148,7 +152,7 @@
             closeAlertBtn.addEventListener('click', function() {
                 alertDiv.classList.remove('show');
                 setTimeout(() => {
-                    alertDiv.style.display = 'none';
+                    alertDiv.classList.add('d-none');
                 }, 150);
             });
             

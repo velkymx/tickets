@@ -6,36 +6,51 @@
 <hr>
 
 {{-- Replaced Form::open with standard HTML form --}}
-<form method="POST" action="/projects/store/{{ $project->id }}" class="form-horizontal">
+<form method="POST" action="/projects/store/{{ $project->id }}" class="form-horizontal" id="project_edit_form">
     @csrf 
     {{-- Assuming CSRF is handled by Laravel's @csrf directive --}}
+    <input type="hidden" name="id" value="{{ $project->id }}">
 
     {{-- Project Name Field --}}
     <div class="mb-3">
         <label for="name" class="form-label">Project Name</label>
         {{-- Replaced Form::text with standard input --}}
-        <input type="text" name="name" id="name" value="{{ old('name', $project->name) }}" class="form-control" required>
+        <input type="text" name="name" id="name" value="{{ old('name', $project->name) }}" 
+               class="form-control @error('name') is-invalid @enderror" required>
+        @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Project Description Field (Quill.js Target) --}}
     <div class="mb-3">
         <label for="editor-container" class="form-label">Describe Project</label>
+        <textarea
+            name="description"
+            id="description-input"
+            rows="8"
+            class="form-control @error('description') is-invalid @enderror mb-3"
+        >{{ old('description', $project->description) }}</textarea>
         {{-- Quill editor container --}}
-        <div id="editor-container" style="height: 250px;">
-            {!! old('description', $project->description) !!}
+        <div id="editor-container" class="d-none">
+            {!! clean(old('description', $project->description)) !!}
         </div>
-        {{-- Hidden input to hold the HTML content submitted by Quill --}}
-        <input type="hidden" name="description" id="description-input" value="{{ old('description', $project->description) }}">
+        @error('description')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Active Status Field --}}
     <div class="mb-3">
         <label for="active" class="form-label">Active</label>
         {{-- Replaced Form::select with standard select --}}
-        <select name="active" id="active" class="form-select" required>
+        <select name="active" id="active" class="form-select @error('active') is-invalid @enderror" required>
             <option value="0" @if (old('active', $project->active) == '0') selected @endif>Inactive</option>
             <option value="1" @if (old('active', $project->active) == '1') selected @endif>Active</option>
         </select>
+        @error('active')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Submit Button --}}
@@ -47,12 +62,16 @@
 @endsection
 
 @section('javascript')
-{{-- Quill.js CSS and JS --}}
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
+        if (typeof window.loadQuill !== 'function') {
+            return;
+        }
+
+        const Quill = await window.loadQuill();
+        if (!Quill) {
+            return;
+        }
         
         // --- 1. Quill Initialization ---
         const quillToolbarOptions = [
@@ -73,6 +92,14 @@
         // Load initial content from the hidden input/old value
         // FIXED: Using the correct ID 'description-input' from the HTML
         const initialContentInput = document.getElementById('description-input');
+        const editorContainer = document.getElementById('editor-container');
+
+        if (!initialContentInput || !editorContainer) {
+            return;
+        }
+
+        initialContentInput.classList.add('d-none');
+        editorContainer.classList.remove('d-none');
         
         if (initialContentInput && initialContentInput.value) {
             // Dangerously paste HTML content into the editor
@@ -81,7 +108,10 @@
 
         // --- 2. Form Submission Handler (Quill Content) ---
         // FIXED: Using the correct form ID 'milestone_form' from the HTML
-        const form = document.getElementById('milestone_form');
+        const form = document.getElementById('project_edit_form');
+        if (!form) {
+            return;
+        }
         const hiddenInput = initialContentInput;
 
         form.addEventListener('submit', function() {

@@ -2,110 +2,112 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Carbon\Carbon;
+use App\Http\Requests\StoreReleaseRequest;
 use App\Models\Release;
 use App\Models\ReleaseTicket;
 use App\Models\Type;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Foundation\Console\Presets\React;
 
 class ReleaseController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-    
     public function index()
-    {     
+    {
 
-        $releases = Release::all();
+        $releases = Release::orderBy('started_at', 'desc')->paginate(20);
 
-        return View('release/index',compact('releases'));
-        
+        return view('release/index', compact('releases'));
+
     }
 
     public function create()
     {
-        return View('release/create');
+        return view('release/create');
     }
 
-    public function edit(Request $request)
+    public function edit($id)
     {
+        $release = Release::findOrFail($id);
+        $this->authorize('update', $release);
 
-        $release = Release::findOrFail($request->id);
+        return view('release/edit', compact('release'));
+    }
 
-        return View('release/edit',compact('release'));
-    }    
-
-    public function put(Request $request)
+    public function put(StoreReleaseRequest $request, $id)
     {
+        $release = Release::findOrFail($id);
+        $this->authorize('update', $release);
 
-        $release = Release::findOrFail($request->id);
+        $validated = $request->validated();
 
-        $release->title = $request->title;
-        $release->body = $request->body;
+        $release->title = $validated['title'];
+        $release->body = $validated['body'] ?? null;
 
-        if ($request->started_at <> '') {
-            $release->started_at = date('Y-m-d', strtotime($request->started_at));
+        if (! empty($validated['started_at'])) {
+            $release->started_at = $validated['started_at'];
         } else {
-            $release->started_at = '';
-        }   
-        
-        if ($request->completed_at <> '') {
-            $release->completed_at = date('Y-m-d', strtotime($request->completed_at));
+            $release->started_at = null;
+        }
+
+        if (! empty($validated['completed_at'])) {
+            $release->completed_at = $validated['completed_at'];
         } else {
-            $release->completed_at = '';
-        }           
+            $release->completed_at = null;
+        }
 
         $release->save();
 
-        \Session::flash('info_message', 'Release Saved');
+        return redirect('release/'.$release->id)->with('info_message', 'Release Saved');
+    }
 
-        return redirect('release/' . $release->id);    
-    }        
-
-    public function show(Request $request)
+    public function show($id)
     {
-        $release = Release::findOrFail($request->id);
+        $release = Release::with('owner')->findOrFail($id);
 
-        $release_tickets = ReleaseTicket::where('release_id',$release->id)->get();
+        $this->authorize('view', $release);
 
-        $tickets = [];
+        $release_tickets = ReleaseTicket::with([
+            'ticket' => function ($q) {
+                $q->with(['project', 'type', 'status', 'assignee']);
+            },
+        ])->where('release_id', $release->id)->get();
+
         $projects = [];
 
-        foreach($release_tickets as $ticket){            
+        foreach ($release_tickets as $ticket) {
 
-            if(!array_key_exists($ticket->ticket->project_id,$projects)){
-
-                $projects[$ticket->ticket->project_id]['project'] = $ticket->ticket->project->name;
+            if (! $ticket->ticket) {
+                continue;
             }
 
-            $projects[$ticket->ticket->project_id]['tickets'][$ticket->ticket->type->name][] = $ticket->ticket;
+            if (! array_key_exists($ticket->ticket->project_id, $projects)) {
+
+                $projects[$ticket->ticket->project_id]['project'] = $ticket->ticket->project?->name ?? 'No Project';
+            }
+
+            $projects[$ticket->ticket->project_id]['tickets'][$ticket->ticket->type?->name ?? 'No Type'][] = $ticket->ticket;
 
         }
-  
-        $types = Type::pluck('icon','name');
 
-        return View('release/show',compact('release','projects','types','release_tickets'));        
+        $types = Type::pluck('icon', 'name');
+
+        return view('release/show', compact('release', 'projects', 'types', 'release_tickets'));
     }
 
-    public function store(Request $request)
+    public function store(StoreReleaseRequest $request)
     {
-        $release = new Release();
+        $this->authorize('create', Release::class);
 
-        $release->title = $request->title;
-        $release->started_at = new Carbon($request->started_at);
-        $release->completed_at = new Carbon($request->completed_at);
-        $release->body = $request->body;
-        $release->user_id = Auth::id();
+        $validated = $request->validated();
 
-        $release->save();
+        $release = Release::create([
+            'title' => $validated['title'],
+            'started_at' => $validated['started_at'] ?? null,
+            'completed_at' => $validated['completed_at'] ?? null,
+            'body' => $validated['body'] ?? null,
+            'user_id' => Auth::id(),
+        ]);
 
-        \Session::flash('info_message', 'Release Saved');
-
-        return redirect('release/' . $release->id);        
+        return redirect('release/'.$release->id)->with('info_message', 'Release Saved');
 
     }
 }

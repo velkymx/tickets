@@ -6,7 +6,7 @@
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             <div class="card shadow-lg border-0 rounded-3">
-                <div class="card-header bg-primary text-white text-center rounded-top-3">
+                <div class="card-header text-bg-primary text-center rounded-top-3">
                     <h2 class="h4 mb-0">Log In</h2>
                 </div>
                 <div class="card-body p-4">
@@ -57,13 +57,7 @@
                         </div>
 
                         {{-- Actions --}}
-                        <div class="d-flex justify-content-between align-items-center">
-                            @if (Route::has('password.request'))
-                                <a class="text-sm text-decoration-none text-muted" href="{{ route('password.request') }}">
-                                    {{ __('Forgot your password?') }}
-                                </a>
-                            @endif
-
+                        <div class="d-flex justify-content-end align-items-center">
                             <button type="submit" class="btn btn-primary">
                                 {{ __('Log in') }}
                             </button>

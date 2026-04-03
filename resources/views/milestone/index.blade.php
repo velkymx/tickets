@@ -5,15 +5,12 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Milestones</h1>
-        {{-- Replaced pull-right with d-flex utilities --}}
         <a href="/milestone/create" class="btn btn-sm btn-primary">Create Milestone</a>
     </div>
-    <hr>
 
-    {{-- Replaced table-striped with B5 table classes --}}
     <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
+    <table class="table table-striped table-hover align-middle">
+        <thead>
                 <tr>
                     <th>Name</th>
                     <th class="text-center">Tickets</th>
@@ -24,6 +21,13 @@
                 </tr>
             </thead>
             <tbody>
+                @if($milestones->isEmpty())
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <p class="text-muted mb-0">No milestones found.</p>
+                        </td>
+                    </tr>
+                @endif
                 {{-- Active Milestones --}}
                 @foreach ($milestones->where('end_at','') as $milestone)
                     <tr>
@@ -31,18 +35,18 @@
                         <td class="text-center">
                             {{-- Replaced old badge class with B5 badge class --}}
                             <span class="badge text-bg-info">
-                                {{ $milestone->tickets()->whereNotIn('status_id',[5,8,9])->count() }} / {{ $milestone->tickets()->count() }}
+                                {{ $milestone->tickets()->whereNotIn('status_id',\App\Models\Status::closedStatusIds())->count() }} / {{ $milestone->tickets()->count() }}
                             </span>
                         </td>
                         
-                        @if ($milestone->start_at && $milestone->start_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->start_at)) }}</td>
+                        @if ($milestone->start_at)
+                            <td>{{ $milestone->start_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
 
-                        @if ($milestone->due_at && $milestone->due_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->due_at)) }}</td>
+                        @if ($milestone->due_at)
+                            <td>{{ $milestone->due_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
@@ -72,24 +76,24 @@
                         <td class="text-center">
                             {{-- Replaced old badge class with B5 badge class --}}
                             <span class="badge text-bg-secondary">
-                                {{ $milestone->tickets()->whereNotIn('status_id',[5,8,9])->count() }} / {{ $milestone->tickets()->count() }}
+                                {{ $milestone->tickets()->whereNotIn('status_id',\App\Models\Status::closedStatusIds())->count() }} / {{ $milestone->tickets()->count() }}
                             </span>
                         </td>
 
-                        @if ($milestone->start_at && $milestone->start_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->start_at)) }}</td>
+                        @if ($milestone->start_at)
+                            <td>{{ $milestone->start_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
 
-                        @if ($milestone->due_at && $milestone->due_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->due_at)) }}</td>
+                        @if ($milestone->due_at)
+                            <td>{{ $milestone->due_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif
 
-                        @if ($milestone->end_at && $milestone->end_at != '0000-00-00 00:00:00')
-                            <td>{{ date('M jS, Y', strtotime($milestone->end_at)) }}</td>
+                        @if ($milestone->end_at)
+                            <td>{{ $milestone->end_at->format('M jS, Y') }}</td>
                         @else
                             <td></td>
                         @endif

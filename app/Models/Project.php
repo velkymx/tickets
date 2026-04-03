@@ -2,19 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Project extends Model
 {
+    use HasFactory;
 
-  public $timestamps = false;
+    public $timestamps = false;
 
-  protected $fillable = [
-      'name', 'description', 'active',
-  ];
+    protected $fillable = [
+        'name', 'description', 'active',
+    ];
 
-  public function tickets()
-  {
-      return $this->hasMany('App\Models\Ticket');
-  }
+    protected function casts(): array
+    {
+        return [
+            'active' => 'boolean',
+        ];
+    }
+
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

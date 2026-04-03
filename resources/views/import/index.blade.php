@@ -18,7 +18,7 @@ Import Tickets
     </div>
 @endif
 
-<form method="POST" action="{{ url('/tickets/import') }}" enctype="multipart/form-data" class="bg-white p-4 rounded-3 shadow">
+<form method="POST" action="{{ url('/tickets/import') }}" enctype="multipart/form-data" class="card p-4 shadow-sm">
     @csrf
     <div class="mb-3">
         <label for="milestone_id" class="form-label">Ticket Milestone</label>
@@ -38,14 +38,7 @@ Import Tickets
         <label class="form-check-label" for="hasHeader">Has Header Row</label>
     </div>
     <div class="mb-3">
-        <button type="submit" class="btn btn-info text-white">Import</button>
+        <button type="submit" class="btn btn-primary">Import</button>
     </div>
 </form>
-@endsection
-
-@section('javascript')
-<style>
-</style>
-<script>
-</script>
 @endsection

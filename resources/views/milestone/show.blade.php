@@ -2,30 +2,27 @@
 @section('title', $milestone->name . ' Milestone')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ $milestone->name }} Milestone</h1>
-    {{-- Replaced pull-right with d-flex utilities and btn-group --}}
-    <div class="btn-group" role="group" aria-label="Milestone Actions">
-        <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-sm btn-primary">Edit Milestone</a>
-        <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a>
-    </div>
-</div>
+<h1 class="mb-3">{{ $milestone->name }} Milestone</h1>
 
 {{-- Status Info --}}
-@if ($milestone->end_at && $milestone->end_at != '0000-00-00 00:00:00')
+@if ($milestone->end_at)
 <p class="text-success">
-    Started on {{ date('F jS, Y', strtotime($milestone->start_at)) }}, Released {{ date('F jS, Y', strtotime($milestone->end_at)) }}
+    Started on {{ $milestone->start_at?->format('F jS, Y') ?? 'Unknown' }}, Released {{ $milestone->end_at?->format('F jS, Y') }}
 </p>
 @else
 <p class="text-secondary">
-    Unreleased Version - Started on {{ date('F jS, Y', strtotime($milestone->start_at)) }}
+    @if ($milestone->start_at)
+    Unreleased Version - Started on {{ $milestone->start_at->format('F jS, Y') }}
+    @else
+    Unreleased Version - No start date set
+    @endif
 </p>
 @endif
 <hr class="mb-4">
 
 <div class="row">
-    {{-- Left Column: Tabs (9 columns) --}}
-    <div class="col-lg-9">
+    {{-- Left Column: Tabs --}}
+    <div class="col-lg-8">
  
         {{-- Bootstrap 5 Tab Navigation --}}
         {{-- NOTE: Tabs require the full Bootstrap JS bundle (or at least the 'tab' component JS) 
@@ -36,15 +33,15 @@
                 $available_status = [];
             @endphp
             
-            {{-- Dynamic Status Tabs --}}
-            @foreach ($statuscodes as $code_id => $code)
-                @if (!in_array($code_id, [5, 8, 9]) && $milestone->tickets()->where('status_id', $code_id)->count() > 0)
-                    @php
-                        $available_status[$code_id] = $code['slug'];
-                        $i++;
-                        $active_class = ($i === 1) ? ' active' : '';
-                        $ticket_count = $milestone->tickets()->where('status_id', $code_id)->count();
-                    @endphp
+             {{-- Dynamic Status Tabs --}}
+             @foreach ($statuscodes as $code_id => $code)
+                 @if (!in_array($code_id, \App\Models\Status::closedStatusIds()) && $milestone->tickets->where('status_id', $code_id)->count() > 0)
+                     @php
+                         $available_status[$code_id] = $code['slug'];
+                         $i++;
+                         $active_class = ($i === 1) ? ' active' : '';
+                         $ticket_count = $milestone->tickets->where('status_id', $code_id)->count();
+                     @endphp
                     <li class="nav-item" role="presentation">
                         <a class="nav-link{{ $active_class }}" 
                            id="{{ $code['slug'] }}-tab" 
@@ -84,7 +81,7 @@
                    role="tab" 
                    aria-controls="closed" 
                    aria-selected="false">
-                    Closed <span class="badge text-bg-secondary ms-1">{{ $milestone->tickets->whereIn('status_id', ['5', '8', '9'])->count() }}</span>
+                    Closed <span class="badge text-bg-secondary ms-1">{{ $milestone->tickets->whereIn('status_id', \App\Models\Status::closedStatusIds())->count() }}</span>
                 </a>
             </li>
         </ul>
@@ -97,8 +94,8 @@
                 <div class="tab-pane fade @if($i == 1) show active @endif" id="{{ $code }}" role="tabpanel" aria-labelledby="{{ $code }}-tab">
                     <div class="table-responsive">
                         {{-- Replaced table-striped with B5 table classes --}}
-                        <table class="table table-hover table-sm align-middle">
-                            <thead class="table-light">
+                        <table class="table table-striped table-hover table-sm align-middle">
+                            <thead>
                                 <tr>
                                     <th>Title</th>        
                                     <th>P</th>
@@ -115,16 +112,16 @@
                                 <tr>
                                     <td class="text-{{ $tick->importance->class }}"><i class="{{ $tick->type->icon }}" title="{{ $tick->type->name }}"></i> <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-{{ $tick->importance->class }}">#{{ $tick->id }} {{ $tick->subject }}</a></td>        
                                     <td><span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}"><i class="{{ $tick->importance->icon }}"></i></span></td>
-                                    <td><span class="badge text-bg-light border text-secondary">{{ $tick->status->name }}</span></td>
+                                    <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                                     <td>{{ $tick->project->name }}</td>
                                     <td>{{ $tick->assignee->name }}</td>
-                                    <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
-                                    <td>
-                                        @if ($tick->notes()->where('hide', '0')->where('notetype', 'message')->count() > 0)
-                                            <span class="badge text-bg-info">{{ $tick->notes()->where('hide', '0')->where('notetype', 'message')->count() }}</span>
-                                        @endif
-                                    </td>        
-                                    <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
+                                     <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
+                                  <td>
+                                      @if ($tick->notes->where('hide', '0')->where('notetype', 'message')->count() > 0)
+                                          <span class="badge text-bg-info">{{ $tick->notes->where('hide', '0')->where('notetype', 'message')->count() }}</span>
+                                      @endif
+                                  </td>
+                                     <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -136,8 +133,8 @@
             {{-- All Tickets Content --}}
             <div class="tab-pane fade @if($i == 0) show active @endif" id="all" role="tabpanel" aria-labelledby="all-tab">
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm align-middle">
-                        <thead class="table-light">
+                    <table class="table table-striped table-hover table-sm align-middle">
+                        <thead>
                             <tr>
                                 <th>Title</th>        
                                 <th>P</th>
@@ -154,13 +151,14 @@
                             <tr>
                                 <td class="text-{{ $tick->importance->class }}"><i class="{{ $tick->type->icon }}" title="{{ $tick->type->name }}"></i> <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-{{ $tick->importance->class }}">#{{ $tick->id }} {{ $tick->subject }}</a></td>        
                                 <td><span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}"><i class="{{ $tick->importance->icon }}"></i></span></td>
-                                <td><span class="badge text-bg-light border text-secondary">{{ $tick->status->name }}</span></td>
+                                <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                                 <td>{{ $tick->project->name }}</td>
                                 <td>{{ $tick->assignee->name }}</td>
                                 <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
                                 <td>
-                                    @if ($tick->notes()->where('hide', '0')->where('notetype', 'message')->count() > 0)
-                                        <span class="badge text-bg-info">{{ $tick->notes()->where('hide', '0')->where('notetype', 'message')->count() }}</span>
+                                    @php $noteCount = $tick->notes->where('hide', '0')->where('notetype', 'message')->count(); @endphp
+                                    @if ($noteCount > 0)
+                                        <span class="badge text-bg-info">{{ $noteCount }}</span>
                                     @endif
                                 </td>        
                                 <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
@@ -174,8 +172,8 @@
             {{-- Closed Tickets Content --}}
             <div class="tab-pane fade" id="closed" role="tabpanel" aria-labelledby="closed-tab">
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm align-middle">
-                        <thead class="table-light">
+                    <table class="table table-striped table-hover table-sm align-middle">
+                        <thead>
                             <tr>
                                 <th>Title</th>        
                                 <th>P</th>
@@ -188,17 +186,18 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($milestone->tickets->whereIn('status_id', ['5', '8', '9'])->sortByDesc('importance_id') as $tick)
+                            @foreach ($milestone->tickets->whereIn('status_id', \App\Models\Status::closedStatusIds())->sortByDesc('importance_id') as $tick)
                             <tr>
                                 <td class="text-{{ $tick->importance->class }}"><i class="{{ $tick->type->icon }}" title="{{ $tick->type->name }}"></i> <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-{{ $tick->importance->class }}">#{{ $tick->id }} {{ $tick->subject }}</a></td>        
                                 <td><span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}"><i class="{{ $tick->importance->icon }}"></i></span></td>
-                                <td><span class="badge text-bg-light border text-secondary">{{ $tick->status->name }}</span></td>
+                                <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                                 <td>{{ $tick->project->name }}</td>
                                 <td>{{ $tick->assignee->name }}</td>
                                 <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
                                 <td>
-                                    @if ($tick->notes()->where('hide', '0')->where('notetype', 'message')->count() > 0)
-                                        <span class="badge text-bg-info">{{ $tick->notes()->where('hide', '0')->where('notetype', 'message')->count() }}</span>
+                                    @php $noteCount = $tick->notes->where('hide', '0')->where('notetype', 'message')->count(); @endphp
+                                    @if ($noteCount > 0)
+                                        <span class="badge text-bg-info">{{ $noteCount }}</span>
                                     @endif
                                 </td>        
                                 <td class="small text-muted">{{ date('M jS, Y g:ia', strtotime($tick->updated_at)) }}</td>
@@ -211,11 +210,44 @@
         </div>
     </div>
     
-    {{-- Right Column: Summary Sidebar (3 columns) --}}
-    <div class="col-lg-3">
+    {{-- Right Column: Summary Sidebar --}}
+    <div class="col-lg-4 mt-4 mt-lg-0">
+
+        {{-- Action Buttons --}}
+        <div class="row g-2 mb-4 text-center">
+            <div class="col-6">
+                <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-secondary w-100">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="/milestone/report/{{ $milestone->id }}" class="btn btn-info w-100">
+                    <i class="fas fa-chart-line"></i> Report
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-secondary w-100">
+                    <i class="fas fa-print"></i> Print
+                </a>
+            </div>
+            <div class="col-6">
+                @auth
+                    @php
+                        $isWatching = $milestone->watchers->contains('user_id', auth()->id());
+                    @endphp
+                    <form action="/milestone/watch/{{ $milestone->id }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn w-100 {{ $isWatching ? 'btn-danger' : 'btn-outline-secondary' }}">
+                            {{ $isWatching ? 'Unwatch' : 'Watch' }}
+                        </button>
+                    </form>
+                @endauth
+            </div>
+        </div>
+
         {{-- Replaced list-group structure with B5 cards for better grouping --}}
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
+            <div class="card-header bg-body-secondary">
                 Team Roles
             </div>
             <ul class="list-group list-group-flush">
@@ -229,7 +261,7 @@
         </div>
 
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
+            <div class="card-header bg-body-secondary">
                 Team Members
             </div>
             <ul class="list-group list-group-flush">
@@ -248,7 +280,7 @@
         </div>
         
         <div class="card shadow-sm">
-            <div class="card-header bg-light">
+            <div class="card-header bg-body-secondary">
                 Sprint Summary
             </div>
             <ul class="list-group list-group-flush">
@@ -258,17 +290,17 @@
                 <li class="list-group-item text-success">
                     <strong>Progress: {{ $percent }}% Complete</strong>
                     {{-- Replaced old progress structure with B5 --}}
-                    <div class="progress mt-2" style="height: 10px;">
-                        <div class="progress-bar bg-success" 
-                             role="progressbar" 
-                             style="width:{{ $percent }}%;" 
-                             aria-valuenow="{{ $percent }}" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100">
-                        </div>
-                    </div>
+                     <div class="progress mt-2" style="height: 10px;">
+                         <div class="progress-bar bg-success" 
+                              role="progressbar" 
+                              style="width:{{ $percent }}%;"
+                              aria-valuenow="{{ $percent }}" 
+                              aria-valuemin="0" 
+                              aria-valuemax="100">
+                         </div>
+                     </div>
                 </li>
-                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $milestone->tickets()->whereIn('status_id', [5, 9])->count() }}</span></li>
+                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $milestone->tickets->whereIn('status_id', \App\Models\Status::closedStatusIds())->count() }}</span></li>
                 <li class="list-group-item">Actual Time: <span class="badge text-bg-info">{{ $milestone->tickets->sum('actual') }} Hrs</span></li>
             </ul>
         </div>

@@ -2,46 +2,51 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Importer;
-use App\Exceptions\ImportException;
-use Illuminate\Support\Facades\DB;
-
-
 use App\Models\Milestone;
-
+use App\Services\Importer;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ImportController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     public function index(Request $request)
     {
-        $milestones = Milestone::orderBy('name')->where('end_at', null)->pluck('name', 'id');
+        $milestones = Milestone::orderBy('name')->whereNull('end_at')->pluck('name', 'id');
+
         return view('import.index', compact('milestones'));
     }
-    
+
     public function create(Request $request)
     {
-        DB::beginTransaction();
+        $request->validate([
+            'milestone_id' => 'required|integer|exists:milestones,id',
+            'csv' => 'required|file|mimes:csv,txt|max:10240',
+        ]);
+
+        $csv = $request->file('csv');
+
         try {
-            (new Importer())->call(
-                (int) $request->milestone_id,
-                $request->csv->path(),
-                (string) $request->hasHeader,
-            );
-        } catch (ImportException $e) {
-            DB::rollBack();
-            $errors = [
-                $e->getMessage()
-            ];
-            return redirect('/tickets/import')->withErrors($errors)->withInput();
+            $content = file_get_contents($csv->path());
+            if (! mb_check_encoding($content, 'UTF-8')) {
+                throw new Exception('CSV file must be UTF-8 encoded.');
+            }
+        } catch (Exception $e) {
+            return redirect('/tickets/import')->withErrors([$e->getMessage()])->withInput();
         }
-        DB::commit();
-        return redirect('/milestone/show/' . $request->milestone_id)
-            ->with("info_message", "Tickets Successfully Imported");
+
+        try {
+            (new Importer)->call(
+                (int) $request->milestone_id,
+                $csv->path(),
+                (bool) $request->hasHeader,
+                Auth::id(),
+            );
+        } catch (Exception $e) {
+            return redirect('/tickets/import')->withErrors([$e->getMessage()])->withInput();
+        }
+
+        return redirect('/milestone/show/'.$request->milestone_id)
+            ->with('info_message', 'Tickets Successfully Imported');
     }
 }

@@ -8,10 +8,10 @@
     <h1 class="mb-3">{{ $milestone->name }}</h1>
 
     {{-- Milestone Status Info --}}
-    @if ($milestone->end_at && $milestone->end_at != '0000-00-00 00:00:00')
+    @if ($milestone->end_at)
         <p class="text-success">
-            Started on {{ date('F jS, Y', strtotime($milestone->start_at)) }}, 
-            Released {{ date('F jS, Y', strtotime($milestone->end_at)) }}
+            Started on {{ $milestone->start_at->format('F jS, Y') }}, 
+            Released {{ $milestone->end_at->format('F jS, Y') }}
         </p>
     @else
         <p class="text-secondary">
@@ -25,7 +25,7 @@
     @foreach($projects as $project_id => $project_name)
         
         <h2 class="h3 mb-3">
-            <i class="fas fa-folder me-2"></i> {{ $project_name }}
+            <i class="fas fa-folder me-2" aria-hidden="true"></i> {{ $project_name }}
         </h2>
         <hr class="mt-0 mb-4">
 
@@ -34,7 +34,7 @@
                 // Fetch tickets specific to this milestone, project, and type, excluding closed/invalid statuses
                 $tickets = $milestone->tickets()
                     ->where('type_id', $type->id)
-                    ->whereNotIn('status_id', [8, 9])
+                    ->whereNotIn('status_id', \App\Models\Status::closedStatusIds())
                     ->where('project_id', $project_id)
                     ->orderBy('subject')
                     ->get();

@@ -2,36 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+use App\Http\Requests\StoreProjectRequest;
 use App\Models\Project;
-use App\Models\Ticket;
 use App\Models\Status;
+use App\Models\Ticket;
+use Illuminate\Http\Request;
 
 class ProjectsController extends Controller
 {
-
-  public function __construct()
-  {
-      $this->middleware('auth');
-  }
-    
     public function index()
     {
-        $projects = Project::orderBy('name')->get();
+        $projects = Project::withCount([
+            'tickets as active_tickets_count' => function ($q) {
+                $q->whereIn('status_id', Status::activeStatusIds());
+            },
+            'tickets as total_tickets_count',
+        ])->orderBy('name')->paginate(25);
 
         return view('projects.index', compact('projects'));
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $project = Project::findOrFail($id);
+        $project = Project::with(['tickets' => function ($q) {
+            $q->with(['notes' => function ($noteQ) {
+                $noteQ->where('hide', 0)->where('notetype', 'message');
+            }]);
+        }])->findOrFail($id);
+
+        $this->authorize('view', $project);
 
         $perpage = 10;
 
-        $filters = array('milestone_id','project_id','sprint_id','status_id','type_id','user_id','importance_id');
+        $filters = ['milestone_id', 'status_id', 'type_id', 'user_id', 'importance_id'];
 
-        $queryfilter = array();
+        $queryfilter = [];
 
         foreach ($filters as $filter) {
             if (isset($request->$filter) && is_numeric($request->$filter)) {
@@ -39,28 +44,29 @@ class ProjectsController extends Controller
             }
         }
 
-        if (is_array($queryfilter) && sizeof($queryfilter)>0) {
-            $tickets = new Ticket;
+        $query = Ticket::query()->where('project_id', $project->id);
 
+        if (is_array($queryfilter) && count($queryfilter) > 0) {
             foreach ($queryfilter as $filter => $value) {
-                $tickets = $tickets->where($filter, $value);
+                $query = $query->where($filter, $value);
             }
-
-            $tickets = $tickets->paginate($perpage);
-        } else {
-            $tickets = Ticket::where('project_id', $project->id)->paginate($perpage);
         }
+
+        $tickets = $query
+            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
+                $q->where('hide', 0)->where('notetype', 'message');
+            }])
+            ->paginate($perpage);
 
         $statuscodes = Status::get();
 
         $percent = 0;
 
-        $completed = $project->tickets()->whereNotIn('status_id', ['5','8','9'])->count();
+        $total = $project->tickets()->count();
+        $completed = $project->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
 
-        $total = $project->tickets->count();
-
-        if ($total !== 0 && $completed !== 0) {
-            $percent = 100-(round($completed / $total, 2)*100);
+        if ($total !== 0) {
+            $percent = round($completed / $total, 2) * 100;
         }
 
         return view('projects.show', compact('project', 'tickets', 'queryfilter', 'total', 'completed', 'percent', 'statuscodes'));
@@ -68,31 +74,35 @@ class ProjectsController extends Controller
 
     public function create()
     {
+        $this->authorize('create', Project::class);
+
         return view('projects.create');
     }
 
-    public function edit(Request $request)
+    public function edit($id)
     {
-        $project = Project::findOrFail($request->id);
+        $project = Project::findOrFail($id);
+        $this->authorize('update', $project);
 
         return view('projects.edit', compact('project'));
     }
 
-    public function store(Request $request)
+    public function store(StoreProjectRequest $request)
     {
-        if ($request->id == 'new') {
-            $post = $request->toArray();
+        $validated = $request->validated();
 
-            $post['active'] = 1;
+        if ($request->id === 'new') {
+            $this->authorize('create', Project::class);
 
-            Project::create($post);
+            $validated['active'] = 1;
+
+            Project::create($validated);
         } else {
             $project = Project::findOrFail($request->id);
+            $this->authorize('update', $project);
 
-            $project->update($request->toArray());
+            $project->update($validated);
         }
-
-
 
         return redirect('projects');
     }

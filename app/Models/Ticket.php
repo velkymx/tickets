@@ -2,71 +2,117 @@
 
 namespace App\Models;
 
+use App\Notifications\WatcherNotification;
+use App\Services\NotificationBatchService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
-    //
+    use HasFactory;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updated(function ($ticket) {
+            $ticket->notifyWatchers('Ticket', auth()->id());
+        });
+    }
+
+    private function notifyWatchers(string $type, ?int $exceptUserId = null): void
+    {
+        $url = url("/tickets/{$this->id}");
+        $message = "The {$type} '{$this->subject}' has been updated.";
+
+        $this->load('watchers.user');
+
+        $this->watchers->each(function ($watcher) use ($type, $message, $url, $exceptUserId) {
+            if ($watcher->user_id !== $exceptUserId && ! $watcher->muted && $watcher->user?->email) {
+                app(NotificationBatchService::class)->dispatch(
+                    $watcher->user,
+                    new WatcherNotification($type, $message, $url),
+                    $this->id
+                );
+            }
+        });
+    }
 
     protected $fillable = [
-        'subject', 'description', 'type_id', 'user_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'user_id2', 'due_at', 'closed_at','estimate','storypoints'
+        'subject', 'description', 'type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id',
+        'due_at', 'closed_at', 'estimate', 'storypoints', 'actual', 'user_id', 'user_id2',
     ];
 
-    public function type()
+    protected function casts(): array
     {
-        return $this->belongsTo('App\Models\Type');
+        return [
+            'due_at' => 'datetime',
+            'closed_at' => 'datetime',
+            'estimate' => 'decimal:2',
+            'actual' => 'integer',
+            'storypoints' => 'integer',
+        ];
     }
 
-    public function milestone()
+    public function type(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Milestone');
+        return $this->belongsTo(Type::class);
     }
 
-    public function project()
+    public function getActualHoursAttribute()
     {
-        return $this->belongsTo('App\Models\Project');
+        return (int) ($this->attributes['notes_sum_hours'] ?? 0);
     }
 
-    public function status()
+    public function milestone(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Status');
+        return $this->belongsTo(Milestone::class);
     }
 
-    public function importance()
+    public function project(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Importance');
+        return $this->belongsTo(Project::class);
     }
 
-    public function user()
+    public function status(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User');
+        return $this->belongsTo(Status::class);
     }
 
-    public function assignee()
+    public function importance(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User', 'user_id2');
+        return $this->belongsTo(Importance::class);
     }
 
-    public function notes()
+    public function user(): BelongsTo
     {
-        return $this->hasMany('App\Models\Note');
+        return $this->belongsTo(User::class);
     }
 
-    public function userstorypoints()
+    public function assignee(): BelongsTo
     {
-        return $this->hasMany('App\Models\TicketEstimate');
-    }    
-
-    public function watchers()
-    {
-        return $this->hasMany('App\Models\TicketUserWatcher');
+        return $this->belongsTo(User::class, 'user_id2');
     }
 
-    public function views()
+    public function notes(): HasMany
     {
-        return $this->hasMany('App\Models\TicketView');
+        return $this->hasMany(Note::class);
     }
 
+    public function estimates(): HasMany
+    {
+        return $this->hasMany(TicketEstimate::class);
+    }
+
+    public function watchers(): HasMany
+    {
+        return $this->hasMany(TicketUserWatcher::class);
+    }
+
+    public function views(): HasMany
+    {
+        return $this->hasMany(TicketView::class);
+    }
 }

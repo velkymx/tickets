@@ -1,0 +1,49 @@
+# Tickets
+
+> Open-source agile ticket tracker built with Laravel. Includes a Kanban board, knowledge base, real-time collaboration, and a REST API.
+
+AI agents can interact with Tickets entirely through its REST API using Bearer token authentication.
+
+## Base URL
+
+`/api/v1` — All endpoints require `Authorization: Bearer YOUR_TOKEN`
+
+## Authentication
+
+Generate a token from the user profile page (`/user/api-token`). All API requests require the Bearer token in the Authorization header.
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check — returns `{"status": "ok"}` |
+| GET | `/lookups` | Returns statuses, types, importance levels, projects, milestones, releases, and users with IDs |
+| GET | `/tickets` | List tickets — supports `status`, `unassigned`, `pulse` query params |
+| POST | `/tickets` | Create ticket — requires `subject`; optional `description`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints` |
+| GET | `/tickets/{id}` | Get ticket detail with notes, reactions, replies, attachments |
+| POST | `/tickets/{id}/note` | Add note — supports `body`, `status_id`, `hours`, `claim`. Body supports slash commands: `/decision`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen` |
+| POST | `/tickets/{id}/notes/{noteId}/reply` | Reply to a note |
+| PUT | `/tickets/{id}/notes/{noteId}` | Edit a note |
+| POST | `/tickets/{id}/notes/{noteId}/react` | Toggle emoji reaction on a note — pass `emoji` param |
+| POST | `/tickets/{id}/notes/{noteId}/resolve` | Resolve a thread — requires `resolution_message` |
+| GET | `/tickets/{id}/pulse` | Returns execution state (ON TRACK, AT RISK, BLOCKED, IDLE), latest blocker, next action, latest decision, open threads |
+
+## Key Concepts
+
+- **Lookups first**: Always call `/lookups` to get valid IDs before creating/updating tickets
+- **Ticket Pulse**: Real-time execution state. Check pulse before acting — a BLOCKED ticket needs unblocking, not more status updates
+- **Slash commands**: Use `/blocker`, `/decision`, `/action` in note body to add structured signals that surface in pulse data
+
+## Web Features (Non-API)
+
+- CSV import: Navigate to `/tickets/import` in the UI — requires existing projects
+- Kanban board: `/tickets/board`
+- Knowledge base: `/kb`
+
+## Links
+
+- [Full API Docs](README.md#api)
+- [Repository](https://github.com/velkymx/tickets)
+- [Contributing Guide](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+- [License](LICENSE.md): MIT

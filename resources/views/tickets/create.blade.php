@@ -12,9 +12,13 @@
 
         {{-- Subject Field --}}
         <div class="mb-3">
-            <label for="subject" class="form-label visually-hidden">Ticket Subject</label>
-            <input type="text" name="subject" id="subject" class="form-control" 
+            <label for="subject" class="form-label">Ticket Subject</label>
+            <input type="text" name="subject" id="subject" 
+                   class="form-control @error('subject') is-invalid @enderror" 
                    placeholder="Ticket Subject" value="{{ old('subject') }}" required>
+            @error('subject')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         {{-- Ticket Details: The original textarea is kept, but will be HIDDEN. 
@@ -26,9 +30,12 @@
             <input type="hidden" name="description" id="description_hidden" value="{{ old('description') }}">
             
             {{-- This is the DIV that Quill will target and render the rich text editor into --}}
-            <div id="editor-container" style="height: 300px;">
+            <div id="editor-container" class="editor-lg">
                 {{ old('description') }}
             </div>
+            @error('description')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
         </div>
 
         {{-- Use a grid for select fields for a cleaner, modern look --}}
@@ -37,61 +44,79 @@
             {{-- Ticket Type --}}
             <div class="col-md-6 col-lg-4">
                 <label for="type_id" class="form-label">Ticket Type</label>
-                <select name="type_id" id="type_id" class="form-select" required>
+                <select name="type_id" id="type_id" class="form-select @error('type_id') is-invalid @enderror" required>
                     @foreach ($lookups['types'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('type_id', 3) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('type_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Ticket Importance --}}
             <div class="col-md-6 col-lg-4">
                 <label for="importance_id" class="form-label">Ticket Importance</label>
-                <select name="importance_id" id="importance_id" class="form-select" required>
+                <select name="importance_id" id="importance_id" class="form-select @error('importance_id') is-invalid @enderror" required>
                     @foreach ($lookups['importances'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('importance_id', 2) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('importance_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Ticket Milestone --}}
             <div class="col-md-6 col-lg-4">
                 <label for="milestone_id" class="form-label">Ticket Milestone</label>
-                <select name="milestone_id" id="milestone_id" class="form-select" required>
+                <select name="milestone_id" id="milestone_id" class="form-select @error('milestone_id') is-invalid @enderror" required>
                     @foreach ($lookups['milestones'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('milestone_id', 1) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('milestone_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Ticket Status --}}
             <div class="col-md-6 col-lg-4">
                 <label for="status_id" class="form-label">Ticket Status</label>
-                <select name="status_id" id="status_id" class="form-select" required>
+                <select name="status_id" id="status_id" class="form-select @error('status_id') is-invalid @enderror" required>
                     @foreach ($lookups['statuses'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('status_id', 1) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('status_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Ticket Project --}}
             <div class="col-md-6 col-lg-4">
                 <label for="project_id" class="form-label">Ticket Project</label>
-                <select name="project_id" id="project_id" class="form-select" required>
+                <select name="project_id" id="project_id" class="form-select @error('project_id') is-invalid @enderror" required>
                     @foreach ($lookups['projects'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('project_id', 4) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('project_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             {{-- Assign To --}}
             <div class="col-md-6 col-lg-4">
                 <label for="user_id2" class="form-label">Assign To</label>
-                <select name="user_id2" id="user_id2" class="form-select" required>
+                <select name="user_id2" id="user_id2" class="form-select @error('user_id2') is-invalid @enderror" required>
                     @foreach ($lookups['users'] as $id => $name)
                         <option value="{{ $id }}" @selected(old('user_id2') == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('user_id2')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             
         </div> {{-- End row g-3 --}}
@@ -101,85 +126,68 @@
             {{-- Due Date --}}
             <div class="col-md-6">
                 <label for="due_at" class="form-label">Due Date</label>
-                <input type="text" name="due_at" id="due_at" class="form-control datepicker" value="{{ old('due_at') }}">
+                <input type="date" name="due_at" id="due_at" class="form-control @error('due_at') is-invalid @enderror" value="{{ old('due_at') }}">
+                @error('due_at')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             
             {{-- Time Estimate --}}
             <div class="col-md-6">
                 <label for="estimate" class="form-label">Time Estimate (hours)</label>
-                <input type="text" name="estimate" id="estimate" class="form-control" value="{{ old('estimate', 0) }}">
+                <input type="text" name="estimate" id="estimate" class="form-control @error('estimate') is-invalid @enderror" value="{{ old('estimate', 0) }}">
+                @error('estimate')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div>
 
         {{-- Save Button --}}
         <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-info">Save Ticket</button>
+            <button type="submit" class="btn btn-primary">Save Ticket</button>
         </div>
         
     </form>
 @stop
 
 @section('javascript')
-{{-- 1. Quill.js CSS and JS --}}
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
-{{-- 2. Datepicker (assuming jQuery/jQuery UI are available in layouts.app) --}}
-<script>
-    $(function() {
-      $( ".datepicker" ).datepicker();
-    });
-</script>
-
-{{-- 3. Quill Initialization and Form Submission Logic --}}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+{{-- Quill Initialization and Form Submission Logic --}}
+<script type="module">
+    document.addEventListener('DOMContentLoaded', async function() {
+        const Quill = await window.loadQuill();
         
-        // --- Quill Initialization ---
         const toolbarOptions = [
-            ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+            ['bold', 'italic', 'underline', 'strike'],
             ['blockquote', 'code-block'],
-
-            [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+            [{ 'header': 1 }, { 'header': 2 }],
             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-            [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-            [{ 'direction': 'rtl' }],                         // text direction
-
-            [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'direction': 'rtl' }],
+            [{ 'size': ['small', false, 'large', 'huge'] }],
             [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-            [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+            [{ 'color': [] }, { 'background': [] }],
             [{ 'font': [] }],
             [{ 'align': [] }],
-            
-            ['link', 'image'], // added link and image handlers
-
-            ['clean']                                         // remove formatting button
+            ['link', 'image'],
+            ['clean']
         ];
 
         const quill = new Quill('#editor-container', {
-            modules: {
-                toolbar: toolbarOptions
-            },
-            theme: 'snow', // snow theme is clean and standard
+            modules: { toolbar: toolbarOptions },
+            theme: 'snow',
             placeholder: 'Enter ticket details here...'
         });
         
-        // Load old content into the editor if it exists
         const initialContent = document.getElementById('description_hidden').value;
         if (initialContent) {
-            // Using clipboard module to insert HTML content
             quill.clipboard.dangerouslyPasteHTML(initialContent);
         }
 
-        // --- Form Submission Handler ---
         const form = document.getElementById('ticket-form');
         const hiddenInput = document.getElementById('description_hidden');
 
         form.addEventListener('submit', function() {
-            // Get the content as HTML and set it to the hidden input
-            // This ensures the rich content is sent to the backend
             hiddenInput.value = quill.root.innerHTML;
         });
     });

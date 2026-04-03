@@ -1,61 +1,94 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if(auth()->check() && auth()->user()->theme !== 'auto') data-bs-theme="{{ auth()->user()->theme === 'darkly' ? 'dark' : 'light' }}" @endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Welcome') | Tickets!</title>
 
     <link rel="icon" type="image/png" sizes="16x16" href="/tickets.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/yeti/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    @auth
-    @if (Auth::user()->theme && (strtolower(Auth::user()->theme) == '/css/bootstrap.darkly.min.css'))
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/darkly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    @endif
-    @endauth
+    
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body id="app-layout">
-<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+<nav class="navbar navbar-expand-lg shadow-sm">
     <div class="container">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <span class="text-primary">Tickets</span>
+            <img src="/tickets.png" class="img-fluid" style="max-height: 32px;"> <span class="fw-bold">Tickets</span>
         </a>
 
-        {{-- Toggler Button: data-bs-target now points to the new ID --}}
         <button class="navbar-toggler" type="button" 
                 data-bs-toggle="collapse" 
-                data-bs-target="#navbarSupportedContent" {{-- CORRECTED ID --}}
+                data-bs-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" 
                 aria-expanded="false" 
                 aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+            <span class="navbar-toggler-icon"><img src="/tickets.png" alt="Tickets"></span>
         </button>
 
-        {{-- Collapsable Content: The ID must match the data-bs-target --}}
-        <div class="collapse navbar-collapse" id="navbarSupportedContent"> {{-- CORRECTED ID --}}
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
             
-            {{-- Left Side: Navigation Links (me-auto pushes it left) --}}
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="{{ url('/home') }}">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/tickets') }}">All Tickets</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/milestone') }}">Milestones</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/releases') }}">Releases</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/projects') }}">Projects</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('kb.index') }}">Knowledge Base</a></li>
             </ul>
 
-            {{-- Right Side: Authentication/User Links (ms-auto pushes it right) --}}
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 @guest
                     <li class="nav-item"><a class="nav-link" href="{{ url('/login') }}">Login</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url('/register') }}">Register</a></li>
                 @else
+
                     <li class="nav-item"><a class="nav-link" href="/ticket/create">New Ticket</a></li>
                     <li class="nav-item"><a class="nav-link" href="/tickets/import">Import</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-inline-flex align-items-center gap-2" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="{{ $unreadNotificationCount > 0 ? 'fas fa-bell' : 'far fa-bell' }}" aria-hidden="true"></i>
+                            <span class="visually-hidden">Notifications</span>
+                            @if ($unreadNotificationCount > 0)
+                                <span class="badge rounded-pill bg-danger notification-count-inline">
+                                    {{ $unreadNotificationCount }}
+                                </span>
+                            @endif
+                        </a>
+
+                        <div class="dropdown-menu dropdown-menu-end p-0 overflow-hidden" aria-labelledby="notificationsDropdown" style="min-width: 22rem;">
+                            <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                <strong>Notifications</strong>
+                                @if ($unreadNotificationCount > 0)
+                                    <span class="badge bg-danger-subtle text-danger">{{ $unreadNotificationCount }} unread</span>
+                                @endif
+                            </div>
+
+                            @forelse ($latestNotifications as $notification)
+                                <a class="dropdown-item py-3 border-bottom" href="{{ $notification->data['url'] ?? '/activity' }}">
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <div class="small">
+                                            <div class="fw-semibold">{{ $notification->data['excerpt'] ?? $notification->data['message'] ?? 'Activity update' }}</div>
+                                            <div class="text-muted">{{ $notification->created_at->diffForHumans() }}</div>
+                                        </div>
+                                        @if (! $notification->read_at)
+                                            <span class="text-danger">●</span>
+                                        @endif
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="px-3 py-4 text-muted small">No recent notifications.</div>
+                            @endforelse
+
+                            <div class="px-3 py-2 bg-body-tertiary">
+                                <a class="small fw-semibold text-decoration-none" href="/activity">View all</a>
+                            </div>
+                        </div>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             {{ Auth::user()->name }}
@@ -112,14 +145,7 @@
         </p>
     </footer>
 
-    {{-- Keep jQuery for legacy code (jquery-ui/jquery-validate) if necessary, 
-         but Bootstrap 5.3 does not require it. Load it first if needed. --}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    
     @yield('javascript')
+    @stack('scripts')
 </body>
 </html>

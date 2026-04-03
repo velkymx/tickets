@@ -14,50 +14,68 @@
     {{-- Milestone Name Field --}}
     <div class="mb-3">
         <label for="name" class="form-label">Milestone Name</label>
-        <input type="text" name="name" id="name" value="{{ old('name', $milestone->name) }}" class="form-control" required>
+        <input type="text" name="name" id="name" value="{{ old('name', $milestone->name) }}" 
+               class="form-control @error('name') is-invalid @enderror" required>
+        @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Milestone Description Field (Quill.js Target) --}}
     <div class="mb-3">
         <label for="editor-container" class="form-label">Describe Milestone</label>
         {{-- Quill editor container --}}
-        <div id="editor-container" style="height: 250px;">
+        <div id="editor-container">
             {{-- Initial content will be loaded by Quill.js script below --}}
         </div>
         {{-- Hidden input to hold the HTML content submitted by Quill. ID: 'description-input' --}}
         <input type="hidden" name="description" id="description-input" value="{{ old('description', $milestone->description) }}">
+        @error('description')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Active Status Field --}}
     <div class="mb-3">
         <label for="active" class="form-label">Active</label>
-        <select name="active" id="active" class="form-select" required>
+        <select name="active" id="active" class="form-select @error('active') is-invalid @enderror" required>
             <option value="0" @if (old('active', $milestone->active) == '0') selected @endif>Inactive</option>
             <option value="1" @if (old('active', $milestone->active) == '1') selected @endif>Active</option>
         </select>
+        @error('active')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
             <div class="row g-3 mb-4">
             {{-- Product Owner --}}
             <div class="col-md-6">
                 <label for="owner_user_id" class="form-label">Product Owner</label>
-                <select name="owner_user_id" id="owner_user_id" class="form-select" required>
+                <select name="owner_user_id" id="owner_user_id" 
+                        class="form-select @error('owner_user_id') is-invalid @enderror" required>
                     <option value="" disabled @selected(!old('owner_user_id'))>Select Owner</option>
                     @foreach ($users as $id => $name)
                         <option value="{{ $id }}" @selected(old('owner_user_id', $milestone->owner_user_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('owner_user_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             
             {{-- Scrum Master / Sprint Manager --}}
             <div class="col-md-6">
                 <label for="scrummaster_user_id" class="form-label">Scrum Master / Sprint Manager</label>
-                <select name="scrummaster_user_id" id="scrummaster_user_id" class="form-select" required>
+                <select name="scrummaster_user_id" id="scrummaster_user_id" 
+                        class="form-select @error('scrummaster_user_id') is-invalid @enderror" required>
                     <option value="" disabled @selected(!old('scrummaster_user_id'))>Select Scrum Master</option>
                     @foreach ($users as $id => $name)
                         <option value="{{ $id }}" @selected(old('scrummaster_user_id', $milestone->scrummaster_user_id) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
+                @error('scrummaster_user_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div>
 
@@ -69,14 +87,10 @@
 @endsection
 
 @section('javascript')
-{{-- Quill.js CSS and JS --}}
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+<script type="module">
+    document.addEventListener('DOMContentLoaded', async function() {
+        const Quill = await window.loadQuill();
         
-        // --- 1. Quill Initialization ---
         const quillToolbarOptions = [
             ['bold', 'italic', 'underline', 'strike'], 
             ['blockquote', 'code-block'],
@@ -92,27 +106,18 @@
             placeholder: 'Enter milestone details here...'
         });
         
-        // Load initial content from the hidden input/old value
-        // FIXED: Using the correct ID 'description-input' from the HTML
         const initialContentInput = document.getElementById('description-input');
         
         if (initialContentInput && initialContentInput.value) {
-            // Dangerously paste HTML content into the editor
             quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
         }
 
-        // --- 2. Form Submission Handler (Quill Content) ---
-        // FIXED: Using the correct form ID 'milestone_form' from the HTML
         const form = document.getElementById('milestone_form');
         const hiddenInput = initialContentInput;
 
         form.addEventListener('submit', function() {
-            // Get the HTML content from the editor and put it into the hidden input
             hiddenInput.value = quill.root.innerHTML;
         });
-        
-        // NOTE: The jQuery Datepicker block was removed to avoid using jQuery 
-        // and because there are no date fields in this form.
     });
 </script>
 @endsection

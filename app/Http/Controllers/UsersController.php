@@ -2,135 +2,129 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Requests;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Ticket;
-use App\Models\TicketUserWatcher;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\Status;
+use App\Models\Ticket;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class UsersController extends Controller
 {
-
     public function show($id)
     {
 
-      $user = User::findOrFail($id);
+        if ((int) $id !== Auth::id()) {
+            abort(403);
+        }
 
-      $statuses = Status::pluck('name','id');      
+        $user = User::findOrFail($id);
 
-      foreach($statuses as $status => $val){
+        $statuses = Status::pluck('name', 'id');
 
-          $alltickets[$val] = Ticket::where('user_id2',$id)->where('status_id',$status)->get();
+        $tickets = Ticket::where('user_id2', $id)
+            ->with('status')
+            ->get()
+            ->groupBy(fn ($ticket) => $ticket->status->name);
 
-          if(sizeof($alltickets[$val])==0) unset($alltickets[$val]);
+        $alltickets = [];
+        foreach ($tickets as $statusName => $ticketGroup) {
+            $alltickets[$statusName] = $ticketGroup;
+        }
 
-      }
+        $timezone = $user->timezone ?? config('app.timezone');
+        $time = new \DateTime(null, new \DateTimeZone($timezone));
 
-      $time = new \DateTime(NULL, new \DateTimeZone($user->timezone));
-    
-      // Us dumb Americans can't handle millitary time
-      $ampm = $time->format('H') > 12 ? ' ('. $time->format('g:i a'). ')' : '';
-  
-      // Remove region name and add a sample time
-      $currenttime = $time->format('H:i') . $ampm;      
+        // Add 12-hour format time for display
+        $ampm = $time->format('H') >= 12 ? ' ('.$time->format('g:i a').')' : '';
 
-      return View('users.show',compact('user','alltickets','currenttime'));
+        // Add sample time for current timezone
+        $currenttime = $time->format('H:i').$ampm;
+
+        return view('users.show', compact('user', 'alltickets', 'currenttime'));
 
     }
 
     public function edit()
     {
-      
-      $user = User::findOrFail(Auth::id());
 
-      $timezones = $this->get_timezones();
+        $user = User::findOrFail(Auth::id());
 
-      $themes = [
-        '/css/bootstrap.min.css' => 'Default',
-        '/css/bootstrap.darkly.min.css' => 'Darkly'
-      ];
+        $timezones = $this->get_timezones();
 
-      return View('users.edit',compact('user','timezones','themes'));
-      
+        $themes = [
+            'auto' => 'Automatic (OS Preference)',
+            'simplex' => 'Default (Light)',
+            'darkly' => 'Darkly (Dark)',
+        ];
+
+        return view('users.edit', compact('user', 'timezones', 'themes'));
+
     }
 
-    public function update(Request $request)
+    public function update(UpdateUserRequest $request)
     {
-      $user = User::findOrFail(Auth::id());
-      $user->name = $request->name;
-      $user->email = $request->email;
-      $user->phone = $request->phone;
-      $user->timezone = $request->timezone;
-      $user->theme = $request->theme;
-      $user->title = $request->title;
-      $user->bio = $request->bio;
+        $validated = $request->validated();
 
-      $user->save();
+        $user = User::findOrFail(Auth::id());
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->phone = $validated['phone'] ?? null;
+        $user->timezone = $validated['timezone'] ?? null;
+        $user->theme = $validated['theme'] ?? null;
+        $user->title = $validated['title'] ?? null;
+        $user->bio = $validated['bio'] ?? null;
 
-      \Session::flash('info_message', 'Profile Changes Saved');
+        $user->save();
 
-      return redirect('users/' . Auth::id());
+        return redirect('users/'.Auth::id())->with('info_message', 'Profile Changes Saved');
 
-    }    
+    }
 
-    public function watch($id)
+    public function generateApiToken()
     {
+        $user = User::findOrFail(Auth::id());
+        $token = $user->generateApiToken();
 
-      $ticket = Ticket::findOrFail($id);
+        return back()->with('api_token_plain', $token);
+    }
 
-      $watch = TicketUserWatcher::where('ticket_id',$id)->where('user_id',Auth::id())->first();
+    public function revokeApiToken()
+    {
+        $user = User::findOrFail(Auth::id());
+        $user->api_token = null;
+        $user->save();
 
-      if($watch){
-
-        $watch->delete();
-
-        $message = 'Watch stopped for this ticket';
-
-      } else {
-
-        TicketUserWatcher::create(['user_id'=>Auth::id(),'ticket_id'=>$id]);
-
-        $message = 'Watch started for this ticket';
-
-      }
-
-      return $message;
-
+        return back()->with('info_message', 'API token revoked.');
     }
 
     private function get_timezones()
     {
-      $regions = array(
-        'Africa' => \DateTimeZone::AFRICA,
-        'America' => \DateTimeZone::AMERICA,
-        'Antarctica' => \DateTimeZone::ANTARCTICA,
-        'Aisa' => \DateTimeZone::ASIA,
-        'Atlantic' => \DateTimeZone::ATLANTIC,
-        'Europe' => \DateTimeZone::EUROPE,
-        'Indian' => \DateTimeZone::INDIAN,
-        'Pacific' => \DateTimeZone::PACIFIC
-    );
-    
-    $timezones = array();
-    foreach ($regions as $name => $mask)
-    {
-        $zones = \DateTimeZone::listIdentifiers($mask);
-        foreach($zones as $timezone)
-        {
-        // Lets sample the time there right now
-        $time = new \DateTime(NULL, new \DateTimeZone($timezone));
-    
-        // Us dumb Americans can't handle millitary time
-        $ampm = $time->format('H') > 12 ? ' ('. $time->format('g:i a'). ')' : '';
-    
-        // Remove region name and add a sample time
-        $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1) . ' - ' . $time->format('H:i') . $ampm;
-      }
-    }     
-    
-    return $timezones;
-    }
+        $regions = [
+            'Africa' => \DateTimeZone::AFRICA,
+            'America' => \DateTimeZone::AMERICA,
+            'Antarctica' => \DateTimeZone::ANTARCTICA,
+            'Asia' => \DateTimeZone::ASIA,
+            'Atlantic' => \DateTimeZone::ATLANTIC,
+            'Europe' => \DateTimeZone::EUROPE,
+            'Indian' => \DateTimeZone::INDIAN,
+            'Pacific' => \DateTimeZone::PACIFIC,
+        ];
 
+        $timezones = [];
+        foreach ($regions as $name => $mask) {
+            $zones = \DateTimeZone::listIdentifiers($mask);
+            foreach ($zones as $timezone) {
+                // Get current time in this timezone
+                $time = new \DateTime(null, new \DateTimeZone($timezone));
+
+                // Add 12-hour format for display
+                $ampm = $time->format('H') >= 12 ? ' ('.$time->format('g:i a').')' : '';
+
+                // Format timezone name with current time
+                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$time->format('H:i').$ampm;
+            }
+        }
+
+        return $timezones;
+    }
 }

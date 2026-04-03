@@ -19,7 +19,7 @@ class Enhanceuser extends Migration
             $table->string('title')->nullable();
             $table->string('timezone')->default('UTC');
             $table->longText('bio')->nullable();
-  
+
         });
     }
 

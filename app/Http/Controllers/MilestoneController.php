@@ -2,162 +2,321 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Requests;
+use App\Http\Requests\StoreMilestoneRequest;
+use App\Http\Requests\UpdateMilestoneRequest;
+use App\Models\Milestone;
+use App\Models\MilestoneWatcher;
+use App\Models\Status;
+use App\Models\Type;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use App\Models\Milestone;
-use App\Models\Type;
-use App\Models\Status;
-use App\Models\User;
 
 class MilestoneController extends Controller
 {
-
-  public function __construct()
-  {
-      $this->middleware('auth');
-  }
-
-
     public function index()
     {
 
-      $milestones = Milestone::orderBy('name')->get();
+        $milestones = Milestone::orderBy('name')->paginate(20);
 
-      return view('milestone.index',compact('milestones'));
+        return view('milestone.index', compact('milestones'));
 
     }
 
-    public function print(Request $request)
+    public function print($id)
     {
 
-      $milestone = Milestone::findOrFail($request->id);
+        $milestone = Milestone::with([
+            'tickets' => function ($q) {
+                $q->with(['project', 'type', 'status', 'assignee']);
+            },
+        ])->findOrFail($id);
 
-      $projects = [];
+        $this->authorize('view', $milestone);
 
-      foreach($milestone->tickets as $tic){
-        $projects[$tic->project->id] = $tic->project->name;
-      }
+        $projects = [];
 
-      $types = Type::all();
+        foreach ($milestone->tickets as $tic) {
+            if ($tic->project) {
+                $projects[$tic->project->id] = $tic->project->name;
+            }
+        }
 
-      return view('milestone.print',compact('milestone','types','projects'));
+        $types = Type::all();
 
-    }    
+        return view('milestone.print', compact('milestone', 'types', 'projects'));
 
-    public function getShow(Request $request)
+    }
+
+    public function getShow($id)
     {
 
-      $milestone = Milestone::findOrFail($request->id);
+        $milestone = Milestone::with([
+            'watchers.user',
+            'tickets' => function ($q) {
+                $q->with(['project', 'type', 'status', 'importance', 'assignee', 'notes' => function ($noteQ) {
+                    $noteQ->where('hide', 0)->where('notetype', 'message');
+                }]);
+            },
+        ])->findOrFail($id);
 
-      $tmpcodes = Status::get();
+        $this->authorize('view', $milestone);
 
-      $statuscodes = [];
+        $tmpcodes = Status::get();
 
-      foreach($tmpcodes as $code){
+        $statuscodes = [];
 
-        $statuscodes[$code->id] = [
-          'name' => $code->name,
-          'slug' => Str::slug($code->name,'_')
-        ];
+        foreach ($tmpcodes as $code) {
 
-      }
+            $statuscodes[$code->id] = [
+                'name' => $code->name,
+                'slug' => Str::slug($code->name, '_'),
+            ];
 
-      $completed = 0;
+        }
 
-      $completed = $milestone->tickets()->whereIn('status_id',['5','8','9'])->count();
+        $completed = 0;
 
-      $total = $milestone->tickets->count();
+        $completed = $milestone->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
 
-      $percent = 0;
+        $total = $milestone->tickets->count();
 
-      if($total !== 0 && $completed !== 0){
+        $percent = 0;
 
-        $percent = (round($completed / $total,2)*100);
+        if ($total > 0) {
 
-      }
+            $percent = (round($completed / $total, 2) * 100);
 
-      if ($completed == $total){
+            if ($completed == $total) {
 
-        $percent = 100;
+                $percent = 100;
 
-      }
+            }
 
-      return view('milestone.show',compact('milestone','statuscodes','completed','percent'));
+        }
+
+        return view('milestone.show', compact('milestone', 'statuscodes', 'completed', 'percent'));
 
     }
 
     public function create()
     {
 
-      $users = User::pluck('name','id');
+        $users = User::pluck('name', 'id');
 
-      return view('milestone.create',compact('users'));
+        return view('milestone.create', compact('users'));
     }
 
-     public function update(Request $request, $id)
+    public function update(UpdateMilestoneRequest $request, $id)
     {
-        $validatedData = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'scrummaster_user_id' => ['nullable', 'integer'],
-            'owner_user_id' => ['nullable', 'integer'],
-            'start_at' => ['nullable', 'date'],
-            'due_at' => ['nullable', 'date', 'after_or_equal:start_at'],
-            'end_at' => ['nullable', 'date', 'after_or_equal:start_at', 'after_or_equal:due_at'],
-        ]);
+        $validatedData = $request->validated();
 
         $milestone = Milestone::findOrFail($id);
+
+        $this->authorize('update', $milestone);
 
         $milestone->fill($validatedData);
 
         $milestone->save();
 
-        return redirect('/milestone/show/' . $milestone->id)
-                    ->with('success', 'Milestone "' . $milestone->name . '" updated successfully!');
+        return redirect('/milestone/show/'.$milestone->id)
+            ->with('success', 'Milestone "'.$milestone->name.'" updated successfully!');
     }
 
-    public function edit(Request $request,$id)
+    public function edit($id)
     {
-      $milestone = Milestone::findOrFail($request->id);
+        $milestone = Milestone::findOrFail($id);
 
-      $users = User::pluck('name','id');
+        $this->authorize('update', $milestone);
 
-      return view('milestone.edit',compact('milestone','users'));
+        $users = User::pluck('name', 'id');
+
+        return view('milestone.edit', compact('milestone', 'users'));
     }
 
-    public function store(Request $request)
+    public function store(StoreMilestoneRequest $request)
     {
+        $validated = $request->validated();
 
-      $post = $request->toArray();
+        if ($request->id === 'new') {
+            $validated['active'] = 1;
 
-      foreach(['start_at','due_at','end_at'] as $date){
-
-        if(isset($post[$date]) && $post[$date] <> ''){
-
-          $post[$date] = date('Y-m-d',strtotime($post[$date]));
+            Milestone::create($validated);
 
         } else {
+            $milestone = Milestone::findOrFail($request->id);
 
-          $post[$date] = null;
+            $this->authorize('update', $milestone);
+
+            $milestone->update($validated);
         }
-      }
 
-      if($request->id == 'new'){
+        return redirect('milestone');
+    }
 
-        $post['active'] = 1;
+    public function toggleWatcher($id)
+    {
+        $milestone = Milestone::findOrFail($id);
 
-        Milestone::create($post);
+        $this->authorize('watch', $milestone);
 
-      } else {
+        $watcher = MilestoneWatcher::where('milestone_id', $id)->where('user_id', Auth::id())->first();
 
-        $milestone = Milestone::findOrFail($request->id);
+        if ($watcher) {
+            $watcher->delete();
+        } else {
+            MilestoneWatcher::create([
+                'milestone_id' => $id,
+                'user_id' => Auth::id(),
+            ]);
+        }
 
-        $milestone->update($post);
+        return redirect()->back();
+    }
 
-      }
+    public function report($id)
+    {
+        // Any authenticated user can view milestone reports
+        $milestone = Milestone::with(['owner', 'scrummaster'])->findOrFail($id);
 
-      return redirect('milestone');
+        $this->authorize('viewReport', $milestone);
+
+        $tickets = $milestone->tickets()
+            ->with([
+                'status', 'type', 'importance', 'project', 'assignee',
+                'notes' => function ($q) {
+                    $q->where('hide', 0);
+                },
+                'notes.user',
+            ])
+            ->get();
+
+        $closedStatusIds = Status::closedStatusIds();
+        $totalTickets = $tickets->count();
+        $completedTickets = $tickets->whereIn('status_id', $closedStatusIds)->count();
+        $openTickets = $tickets->whereNotIn('status_id', $closedStatusIds)->count();
+
+        $totalStoryPoints = $tickets->sum('storypoints');
+        $completedStoryPoints = $tickets->whereIn('status_id', $closedStatusIds)->sum('storypoints');
+        $remainingStoryPoints = $totalStoryPoints - $completedStoryPoints;
+        $completionPercentage = $totalStoryPoints > 0 ? round(($completedStoryPoints / $totalStoryPoints) * 100) : 0;
+
+        $statusBreakdown = $tickets->groupBy('status_id')->map(function ($group) {
+            return [
+                'name' => $group->first()->status->name ?? 'Unknown',
+                'count' => $group->count(),
+            ];
+        })->values();
+
+        $typeBreakdown = $tickets->groupBy('type_id')->map(function ($group) {
+            return [
+                'name' => $group->first()->type->name ?? 'Unknown',
+                'count' => $group->count(),
+            ];
+        })->values();
+
+        $teamHours = $tickets->flatMap(function ($ticket) {
+            return $ticket->notes->map(function ($note) use ($ticket) {
+                return [
+                    'user_id' => $note->user_id,
+                    'user_name' => $note->user->name ?? 'Unknown',
+                    'hours' => $note->hours,
+                    'ticket_id' => $ticket->id,
+                ];
+            });
+        })->groupBy('user_id')->map(function ($notes, $userId) {
+            return [
+                'user_name' => $notes->first()['user_name'],
+                'total_hours' => $notes->sum('hours'),
+                'ticket_count' => $notes->unique('ticket_id')->count(),
+            ];
+        })->values();
+
+        $ticketDetails = $tickets->map(function ($ticket) {
+            $loggedHours = $ticket->notes->sum('hours');
+
+            return [
+                'id' => $ticket->id,
+                'subject' => $ticket->subject,
+                'status' => $ticket->status->name ?? 'Unknown',
+                'type' => $ticket->type->name ?? 'Unknown',
+                'assignee' => $ticket->assignee->name ?? 'Unassigned',
+                'storypoints' => $ticket->storypoints ?? 0,
+                'logged_hours' => $loggedHours,
+            ];
+        });
+
+        $startDate = $milestone->start_at ? Carbon::parse($milestone->start_at) : null;
+        $endDate = $milestone->due_at ? Carbon::parse($milestone->due_at) : null;
+        $duration = $startDate && $endDate ? $startDate->diffInDays($endDate) : 0;
+
+        $burndownData = [];
+        if ($startDate && $endDate) {
+            $sprintEnd = $endDate;
+
+            $idealBurndown = [];
+            $actualBurndown = [];
+            $dates = [];
+
+            $daysInSprint = $startDate->diffInDays($sprintEnd) + 1;
+            $pointsPerDay = $totalStoryPoints / max($daysInSprint, 1);
+            $pointsPerDay = $pointsPerDay > 0 ? $pointsPerDay : 0;
+
+            for ($i = 0; $i <= $daysInSprint; $i++) {
+                $date = $startDate->copy()->addDays($i);
+                $dates[] = $date->format('M j');
+                $idealBurndown[] = max(0, $totalStoryPoints - ($pointsPerDay * $i));
+            }
+
+            $closedAtDates = $tickets->whereIn('status_id', $closedStatusIds)
+                ->map(function ($ticket) {
+                    $ticket->closed_at = $ticket->closed_at ?? $ticket->updated_at;
+
+                    return $ticket;
+                })
+                ->filter(fn ($ticket) => $ticket->closed_at)
+                ->groupBy(fn ($ticket) => $ticket->closed_at->format('Y-m-d'))
+                ->sortKeys();
+
+            $cumulativeClosed = 0;
+            $runningDates = [];
+            foreach ($closedAtDates as $dateStr => $ticketsOnDate) {
+                $cumulativeClosed += $ticketsOnDate->sum('storypoints');
+                $runningDates[$dateStr] = $cumulativeClosed;
+            }
+
+            $lastClosed = 0;
+            for ($i = 0; $i <= $daysInSprint; $i++) {
+                $date = $startDate->copy()->addDays($i)->format('Y-m-d');
+                if (isset($runningDates[$date])) {
+                    $lastClosed = $runningDates[$date];
+                }
+                $actualBurndown[] = max(0, $totalStoryPoints - $lastClosed);
+            }
+
+            $burndownData = [
+                'labels' => $dates,
+                'ideal' => $idealBurndown,
+                'actual' => $actualBurndown,
+            ];
+        }
+
+        return view('milestone.report', compact(
+            'milestone',
+            'totalTickets',
+            'completedTickets',
+            'openTickets',
+            'totalStoryPoints',
+            'completedStoryPoints',
+            'remainingStoryPoints',
+            'completionPercentage',
+            'statusBreakdown',
+            'typeBreakdown',
+            'teamHours',
+            'ticketDetails',
+            'duration',
+            'burndownData'
+        ));
     }
 }

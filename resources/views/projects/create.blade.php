@@ -9,23 +9,35 @@
 <form method="POST" action="/projects/store/new" class="form-horizontal" id="project_create_form">
     @csrf 
     {{-- Ensures CSRF protection for the POST request --}}
+    <input type="hidden" name="id" value="new">
 
     {{-- Project Name Field --}}
     <div class="mb-3">
         <label for="name" class="form-label">Project Name</label>
         {{-- Replaced Form::text with standard input. 'null' is replaced by old('name') --}}
-        <input type="text" name="name" id="name" value="{{ old('name') }}" class="form-control" required>
+        <input type="text" name="name" id="name" value="{{ old('name') }}" 
+               class="form-control @error('name') is-invalid @enderror" required>
+        @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Project Description Field (Quill.js Target) --}}
     <div class="mb-3">
         <label for="editor-container" class="form-label">Describe Project</label>
+        <textarea
+            name="description"
+            id="description-input"
+            rows="8"
+            class="form-control @error('description') is-invalid @enderror mb-3"
+        >{{ old('description') }}</textarea>
         {{-- Quill editor container --}}
-        <div id="editor-container" style="height: 250px;">
+        <div id="editor-container" class="d-none">
             {{-- Initial content for a new project is empty, but we can load old input if the form fails validation --}}
         </div>
-        {{-- Hidden input to hold the HTML content submitted by Quill. ID: 'description-input' --}}
-        <input type="hidden" name="description" id="description-input" value="{{ old('description') }}">
+        @error('description')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
     </div>
 
     {{-- Submit Button --}}
@@ -37,13 +49,16 @@
 @endsection
 
 @section('javascript')
-{{-- Load Quill CSS using the specified CDN path --}}
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-{{-- Load Quill.js 2.0.3 using the specified CDN path --}}
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
+        if (typeof window.loadQuill !== 'function') {
+            return;
+        }
+
+        const Quill = await window.loadQuill();
+        if (!Quill) {
+            return;
+        }
         
         // --- 1. Quill Initialization ---
         const quillToolbarOptions = [
@@ -65,6 +80,14 @@
         
         // Load old input if available (e.g., if the form failed validation)
         const initialContentInput = document.getElementById('description-input');
+        const editorContainer = document.getElementById('editor-container');
+
+        if (!initialContentInput || !editorContainer) {
+            return;
+        }
+
+        initialContentInput.classList.add('d-none');
+        editorContainer.classList.remove('d-none');
         
         if (initialContentInput && initialContentInput.value) {
             quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);

@@ -2,37 +2,39 @@
 @section('title', 'Ticket List')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Projects</h1>
-    {{-- Replaced pull-right with d-flex utilities --}}
-    <div>
-        <a href="/projects/create" class="btn btn-sm btn-primary">Create Project</a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Projects</h1>
+    <a href="/projects/create" class="btn btn-sm btn-primary">Create Project</a>
 </div>
-<hr class="mb-4">
 
-{{-- Replaced table-striped with B5 table classes and table-responsive for mobile view --}}
 <div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
+    <table class="table table-striped table-hover align-middle">
+        <thead>
             <tr>
                 <th>Name</th>
-                <th style="width: 150px;">Tickets</th>
-                <th style="width: 150px;"></th>
+                <th class="col-2">Tickets</th>
+                <th class="col-2"></th>
             </tr>
         </thead>
         <tbody>
+            @if($projects->isEmpty())
+                <tr>
+                    <td colspan="3" class="text-center py-5">
+                        <p class="text-muted mb-0">No projects found.</p>
+                    </td>
+                </tr>
+            @else
             @foreach ($projects as $project)
             <tr>
                 <td>{{ $project->name }}</td>
                 <td>
                     {{-- Status counts shown using B5 badge classes --}}
                     <span class="badge text-bg-secondary me-2">
-                        {{ $project->tickets()->whereIn('status_id',['1','2','3','6'])->count() }}
+                        {{ $project->active_tickets_count }}
                     </span>
                     /
-                    <span class="badge text-bg-light border ms-2 text-dark">
-                        {{ $project->tickets()->count() }}
+                    <span class="badge text-bg-secondary ms-2">
+                        {{ $project->total_tickets_count }}
                     </span>
                 </td>
                 {{-- Button Group for actions --}}
@@ -44,7 +46,10 @@
                 </td>
             </tr>
             @endforeach
+            @endif
         </tbody>
     </table>
 </div>
+
+{{ $projects->links() }}
 @endsection

@@ -1,3 +1,142 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Import Bootstrap */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* Quill rich text editor (lazy loaded in JS) */
+@import 'quill/dist/quill.snow.css';
+
+/* EasyMDE markdown editor */
+@import 'easymde/dist/easymde.min.css';
+
+/* Custom styles */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Quill editor height variants */
+#editor-container,
+#note-editor-container {
+    height: 250px;
+}
+
+#editor-container.editor-lg,
+#note-editor-container.editor-lg {
+    height: 300px;
+}
+
+#editor-container.editor-xl,
+#note-editor-container.editor-xl {
+    height: 500px;
+}
+
+#editor-container.editor-sm,
+#note-editor-container.editor-sm {
+    height: 200px;
+}
+
+/* Kanban board columns */
+.kanban-column {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+}
+
+@media (max-width: 576px) {
+    .kanban-column {
+        width: 260px;
+        min-width: 260px;
+        max-width: 260px;
+    }
+}
+
+/* Quill Dark Mode Support */
+html[data-bs-theme="dark"] .ql-toolbar.ql-snow,
+html[data-bs-theme="dark"] .ql-container.ql-snow {
+    border-color: var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+}
+
+html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-formats button:hover,
+html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-formats button.ql-active {
+    color: var(--bs-primary);
+}
+
+html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-picker {
+    color: var(--bs-body-color);
+}
+
+html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-picker-label {
+    color: var(--bs-body-color);
+}
+
+html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-picker-options {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+
+html[data-bs-theme="dark"] .ql-snow .ql-tooltip {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+    box-shadow: var(--bs-box-shadow);
+}
+
+html[data-bs-theme="dark"] .ql-snow .ql-tooltip input[type="text"] {
+    background-color: var(--bs-body);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+html[data-bs-theme="dark"] .ql-editor {
+    color: var(--bs-body-color);
+}
+
+html[data-bs-theme="dark"] .ql-editor.ql-blank::before {
+    color: var(--bs-secondary-color);
+}
+
+html[data-bs-theme="dark"] .ql-snow .ql-stroke {
+    stroke: var(--bs-body-color);
+}
+
+html[data-bs-theme="dark"] .ql-snow .ql-fill {
+    fill: var(--bs-body-color);
+}
+
+html[data-bs-theme="dark"] .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+    border-color: var(--bs-border-color);
+}
+
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:hover,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:focus,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:focus,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button.ql-active,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar .ql-picker-label:hover,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar .ql-picker-label:hover,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar .ql-picker-label.ql-active,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar .ql-picker-label.ql-active,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar .ql-picker-item:hover,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar .ql-picker-item:hover,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar .ql-picker-item.ql-selected,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar .ql-picker-item.ql-selected {
+    color: var(--bs-primary);
+}
+
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:hover .ql-stroke,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover .ql-stroke,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:focus .ql-stroke,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:focus .ql-stroke,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active .ql-stroke {
+    stroke: var(--bs-primary);
+}
+
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:hover .ql-fill,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover .ql-fill,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:focus .ql-fill,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:focus .ql-fill,
+html[data-bs-theme="dark"] .ql-snow.ql-toolbar button.ql-active .ql-fill,
+html[data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active .ql-fill {
+    fill: var(--bs-primary);
+}
