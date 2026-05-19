@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Api\ApiDocsController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\Kb\KbAdminController;
 use App\Http\Controllers\Kb\KbController;
@@ -180,6 +181,12 @@ Route::middleware(['auth'])->prefix('kb')->group(function () {
 // Public KB show route (MUST be last — wildcard)
 Route::get('/kb/{slug}', [KbController::class, 'show'])->name('kb.show')
     ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');
+
+// API Documentation
+Route::prefix('api')->group(function () {
+    Route::get('/docs', [ApiDocsController::class, 'index'])->name('api.docs');
+    Route::get('/openapi.yaml', [ApiDocsController::class, 'spec'])->name('api.openapi.spec');
+});
 
 // Authentication routes
 require __DIR__.'/auth.php';

@@ -1,0 +1,781 @@
+openapi: "3.1.0"
+info:
+  title: "Tickets API"
+  description: "Agile ticket tracker REST API. Authenticate all requests with a Bearer token generated from your user profile."
+  version: "1.0.0"
+  contact:
+    name: "Tickets Support"
+
+servers:
+  - url: "{protocol}://{host}/api/v1"
+    variables:
+      protocol:
+        default: "https"
+        enum: ["https", "http"]
+      host:
+        default: "your-app.test"
+
+security:
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: "Health check"
+      description: "Returns API health status. No authentication required."
+      operationId: health
+      security: []
+      responses:
+        "200":
+          description: "API is healthy"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+
+  /lookups:
+    get:
+      summary: "Get lookup values"
+      description: "Returns all reference data needed to create or update tickets (statuses, types, priorities, projects, milestones)."
+      operationId: getLookups
+      responses:
+        "200":
+          description: "Lookup data"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      statuses:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/LookupItem"
+                      types:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/LookupItem"
+                      importance:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/LookupItem"
+                      projects:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/LookupItem"
+                      milestones:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/LookupItem"
+
+  /tickets:
+    get:
+      summary: "List tickets"
+      description: "Returns paginated tickets assigned to the authenticated user. Use `unassigned=1` to see unassigned tickets."
+      operationId: listTickets
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: "Items per page (max 100)"
+        - name: status
+          in: query
+          schema:
+            type: integer
+          description: "Filter by status ID"
+        - name: unassigned
+          in: query
+          schema:
+            type: boolean
+          description: "Show unassigned tickets instead of assigned"
+        - name: include
+          in: query
+          schema:
+            type: string
+            enum: ["pulse"]
+          description: "Include pulse summary data"
+      responses:
+        "200":
+          description: "Paginated ticket list"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TicketListItem"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+
+    post:
+      summary: "Create ticket"
+      description: "Creates a new ticket assigned to the authenticated user."
+      operationId: createTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subject
+                - type_id
+                - importance_id
+                - project_id
+                - milestone_id
+              properties:
+                subject:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                type_id:
+                  type: integer
+                importance_id:
+                  type: integer
+                project_id:
+                  type: integer
+                milestone_id:
+                  type: integer
+                status_id:
+                  type: integer
+                due_at:
+                  type: string
+                  format: date
+                estimate:
+                  type: number
+                  minimum: 0
+                storypoints:
+                  type: integer
+                  minimum: 0
+      responses:
+        "201":
+          description: "Ticket created"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  ticket:
+                    $ref: "#/components/schemas/TicketReference"
+        "422":
+          description: "Validation error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tickets/{id}:
+    get:
+      summary: "Get ticket details"
+      description: "Returns full ticket details including notes, reactions, attachments, mentions, and pulse summary."
+      operationId: getTicket
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: notetype
+          in: query
+          schema:
+            type: string
+            enum: ["message", "blocker", "action", "decision", "changelog"]
+          description: "Filter notes by type"
+      responses:
+        "200":
+          description: "Ticket details"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TicketDetail"
+        "404":
+          description: "Ticket not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tickets/{id}/note:
+    post:
+      summary: "Add note to ticket"
+      description: "Adds a note, changes status, claims the ticket, or runs slash commands. Supports `/status`, `/assign`, `/close`, `/reopen`, `/estimate`, `/hours`, `/priority`, `/milestone`, `/pin`, `/decision`, `/blocker`, `/action`, `/update`."
+      operationId: addNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  maxLength: 65535
+                  description: "Note content in Markdown. May include slash commands."
+                status_id:
+                  type: integer
+                  description: "Change ticket status"
+                hours:
+                  type: number
+                  minimum: 0
+                  maximum: 999
+                  description: "Log hours"
+                claim:
+                  type: boolean
+                  description: "Claim the ticket"
+      responses:
+        "200":
+          description: "Note added"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                  ticket:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      status:
+                        type: string
+                      assignee:
+                        type: string
+                  note:
+                    $ref: "#/components/schemas/Note"
+        "422":
+          description: "Validation or command error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tickets/{id}/notes/{noteId}/reply:
+    post:
+      summary: "Reply to a note"
+      description: "Adds a reply to a top-level note. Cannot reply to a reply."
+      operationId: replyToNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: string
+                  maxLength: 65535
+      responses:
+        "200":
+          description: "Reply added"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  note:
+                    $ref: "#/components/schemas/Note"
+        "422":
+          description: "Cannot reply to a reply"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tickets/{id}/notes/{noteId}:
+    put:
+      summary: "Edit a note"
+      description: "Updates note content. Decisions cannot be edited."
+      operationId: editNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: string
+                  maxLength: 65535
+      responses:
+        "200":
+          description: "Note updated"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  note:
+                    $ref: "#/components/schemas/Note"
+        "403":
+          description: "Not the note author"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: "Decisions cannot be edited"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tickets/{id}/notes/{noteId}/resolve:
+    post:
+      summary: "Resolve a note"
+      description: "Marks a note as resolved with a resolution message. Creates a reply with the message."
+      operationId: resolveNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resolution_message
+              properties:
+                resolution_message:
+                  type: string
+                  maxLength: 65535
+      responses:
+        "200":
+          description: "Note resolved"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  note:
+                    $ref: "#/components/schemas/Note"
+        "403":
+          description: "Not authorized to resolve"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tickets/{id}/notes/{noteId}/react:
+    post:
+      summary: "Toggle reaction on a note"
+      description: "Adds or removes a reaction. Supported emojis: thumbsup, eyes."
+      operationId: reactToNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - emoji
+              properties:
+                emoji:
+                  type: string
+                  enum: ["thumbsup", "eyes"]
+      responses:
+        "200":
+          description: "Reaction toggled"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reactions:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        count:
+                          type: integer
+                        reacted:
+                          type: boolean
+
+  /tickets/{id}/pulse:
+    get:
+      summary: "Get ticket pulse"
+      description: "Returns a summary of ticket activity: blockers, actions, decisions, open threads, execution state, staleness."
+      operationId: getTicketPulse
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Pulse data"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/TicketPulse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "Generate a token from your user profile settings page."
+
+  schemas:
+    LookupItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    TicketListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        estimate:
+          type: number
+        status:
+          type: string
+        importance:
+          type: string
+        due_at:
+          type: string
+          format: date
+        closed_at:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date
+        link:
+          type: string
+        pulse_summary:
+          $ref: "#/components/schemas/TicketPulse"
+
+    TicketDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        description:
+          type: string
+        estimate:
+          type: number
+        storypoints:
+          type: integer
+        status:
+          type: string
+        type:
+          type: string
+        importance:
+          type: string
+        milestone:
+          type: string
+        project:
+          type: string
+        assignee:
+          type: string
+        due_at:
+          type: string
+          format: date
+        closed_at:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date
+        pulse:
+          $ref: "#/components/schemas/TicketPulse"
+        notes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+
+    TicketReference:
+      type: object
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        status:
+          type: string
+        link:
+          type: string
+
+    TicketPulse:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        is_blocked:
+          type: boolean
+        blocker_reason:
+          type: string
+        owner_id:
+          type: integer
+        owner_label:
+          type: string
+        next_action:
+          type: object
+          properties:
+            id:
+              type: integer
+            body:
+              type: string
+            assignee:
+              type: string
+            created_at:
+              type: string
+        latest_decision:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            body:
+              type: string
+            author:
+              type: string
+            created_at:
+              type: string
+        open_threads:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              subject:
+                type: string
+              reply_count:
+                type: integer
+        latest_blocker:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            body:
+              type: string
+            author:
+              type: string
+            created_at:
+              type: string
+        execution_state:
+          type: string
+          enum: ["BLOCKED", "IDLE", "AT RISK", "ON TRACK"]
+        last_activity_at:
+          type: string
+          format: date-time
+        is_stale:
+          type: boolean
+        staleness_message:
+          type: string
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+        user:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        body:
+          type: string
+        body_markdown:
+          type: string
+        notetype:
+          type: string
+          enum: ["message", "blocker", "action", "decision", "changelog"]
+        hours:
+          type: number
+        pinned:
+          type: boolean
+        edited_at:
+          type: string
+          format: date-time
+        resolved:
+          type: boolean
+        resolved_by:
+          type: integer
+        resolution_message:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+        supersedes_id:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        reactions:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              count:
+                type: integer
+              reacted:
+                type: boolean
+        replies:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              user:
+                type: object
+                nullable: true
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+              body:
+                type: string
+              created_at:
+                type: string
+                format: date-time
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              filename:
+                type: string
+              url:
+                type: string
+              mime_type:
+                type: string
+              is_image:
+                type: boolean
+        mentions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              user:
+                type: object
+                nullable: true
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        last_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
