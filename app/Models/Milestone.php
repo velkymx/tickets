@@ -32,7 +32,9 @@ class Milestone extends Model
         parent::boot();
 
         static::updated(function ($milestone) {
-            $milestone->notifyWatchers('Milestone');
+            if ($milestone->wasChanged(['name', 'description', 'scrummaster_user_id', 'owner_user_id', 'start_at', 'due_at', 'end_at'])) {
+                $milestone->notifyWatchers('Milestone', auth()->id() ?? 0);
+            }
         });
     }
 
