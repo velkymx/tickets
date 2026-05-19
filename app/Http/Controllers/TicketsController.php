@@ -450,22 +450,18 @@ class TicketsController extends Controller
         $ticket = Ticket::findOrFail($ticket_id);
         $this->authorize('estimate', $ticket);
 
-        $check = TicketEstimate::updateOrCreate(
+        TicketEstimate::updateOrCreate(
             ['ticket_id' => $ticket_id, 'user_id' => Auth::id()],
             ['storypoints' => $validated['storypoints']]
         );
 
-        $getAvg = TicketEstimate::where('ticket_id', $ticket_id)->get();
+        $estimates = TicketEstimate::where('ticket_id', $ticket_id)->get();
 
-        $total = $getAvg->sum('storypoints');
+        $total = $estimates->sum('storypoints');
 
         $fibs = [0, 1, 2, 3, 5, 8, 13, 21];
 
-        if ($getAvg->count() === 0) {
-            return redirect('tickets/'.$ticket_id);
-        }
-
-        $avg = $total / $getAvg->count();
+        $avg = $total / $estimates->count();
 
         $sp = end($fibs);
         foreach ($fibs as $fib) {
@@ -475,16 +471,13 @@ class TicketsController extends Controller
             }
         }
 
-        $ticket = Ticket::find($ticket_id);
         $old = clone $ticket;
 
         $ticket->storypoints = $sp;
 
         $ticket->save();
 
-        $change_list = $this->ticketService->changes($old->toArray(), $ticket->toArray());
-
-        $this->ticketService->notate($ticket->id, '', ['Story Points changed to '.$request->storypoints]);
+        $this->ticketService->notate($ticket->id, '', ['Story Points changed to '.$sp]);
 
         return redirect('tickets/'.$ticket_id);
     }
