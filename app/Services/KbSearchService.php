@@ -16,11 +16,13 @@ class KbSearchService implements SearchableRepository
 
         // Search by keyword (LIKE fallback — works on SQLite and MySQL)
         if ($query !== '') {
-            $builder->where(function ($q) use ($query) {
-                $q->where('title', 'like', "%{$query}%")
-                    ->orWhere('body_markdown', 'like', "%{$query}%")
-                    ->orWhereHas('tags', function ($tagQuery) use ($query) {
-                        $tagQuery->where('name', 'like', "%{$query}%");
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $query);
+
+            $builder->where(function ($q) use ($escaped) {
+                $q->where('title', 'like', "%{$escaped}%")
+                    ->orWhere('body_markdown', 'like', "%{$escaped}%")
+                    ->orWhereHas('tags', function ($tagQuery) use ($escaped) {
+                        $tagQuery->where('name', 'like', "%{$escaped}%");
                     });
             });
         }
