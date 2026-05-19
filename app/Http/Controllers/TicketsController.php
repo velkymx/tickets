@@ -164,18 +164,14 @@ class TicketsController extends Controller
 
         $this->authorize('claim', $ticket);
 
-        $oldUser = $ticket->user_id2;
+        if ($ticket->user_id2 === Auth::id()) {
+            return redirect('tickets/'.$id)->with('info_message', 'You are already assigned to Ticket #'.$id);
+        }
 
         $ticket->user_id2 = Auth::id();
         $ticket->save();
 
-        $change_list = [];
-
-        if ($oldUser != Auth::id()) {
-            $change_list[] = 'Assigned user changed';
-        }
-
-        $this->ticketService->notate($ticket->id, '', $change_list);
+        $this->ticketService->notate($ticket->id, '', ['Assigned user changed']);
 
         return redirect('tickets/'.$id)->with('info_message', 'You are assigned to Ticket #'.$id);
     }
