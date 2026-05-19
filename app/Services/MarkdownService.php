@@ -9,7 +9,7 @@ class MarkdownService
 {
     public function parse(?string $text): string
     {
-        if (empty($text)) {
+        if ($text === null || $text === '') {
             return '';
         }
 
