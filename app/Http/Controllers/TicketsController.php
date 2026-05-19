@@ -16,6 +16,7 @@ use App\Models\TicketEstimate;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\User;
+use App\Services\AttachmentService;
 use App\Services\TicketPulseService;
 use App\Services\TicketService;
 use Carbon\Carbon;
@@ -313,12 +314,14 @@ class TicketsController extends Controller
         return redirect('tickets/'.$insert->id)->with('status', 'Task was created successfully!');
     }
 
-    public function upload(UploadTicketRequest $request)
+    public function upload(UploadTicketRequest $request, AttachmentService $attachmentService)
     {
         $file = $request->file('file');
         $folder = preg_replace('/[^a-zA-Z0-9_-]/', '', $request->input('folder'));
 
-        $filename = time().'_'.Str::random(10).'.'.$file->getClientOriginalExtension();
+        $attachmentService->validateFileType($file);
+
+        $filename = time().'_'.Str::uuid().'.'.$file->getClientOriginalExtension();
         $path = 'images/'.$folder.'/'.$filename;
 
         $file->move(public_path('images/'.$folder), $filename);
