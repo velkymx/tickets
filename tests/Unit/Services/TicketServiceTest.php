@@ -50,10 +50,10 @@ class TicketServiceTest extends TestCase
     public function it_detects_status_change_with_lookup_name(): void
     {
         Cache::flush();
-        $status = Status::factory()->create(['name' => 'Closed', 'id' => 10]);
+        $status = Status::factory()->create(['name' => 'Closed', 'id' => 99]);
 
         $old = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
-        $new = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 10, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $new = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 99, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
 
         $changes = $this->service->changes($old, $new);
 
