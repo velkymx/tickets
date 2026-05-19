@@ -18,7 +18,9 @@ class Ticket extends Model
         parent::boot();
 
         static::updated(function ($ticket) {
-            $ticket->notifyWatchers('Ticket', auth()->id());
+            if ($ticket->wasChanged(['subject', 'description', 'status_id', 'user_id2', 'milestone_id', 'project_id', 'importance_id', 'due_at', 'closed_at', 'estimate', 'storypoints', 'actual'])) {
+                $ticket->notifyWatchers('Ticket', auth()->id() ?? 0);
+            }
         });
     }
 
