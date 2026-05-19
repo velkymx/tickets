@@ -560,7 +560,7 @@ class TicketServiceTest extends TestCase
         $this->assertEquals(['bug', 'enhancement', 'task', 'proposal'], $lookups['types']->values()->toArray());
 
         // Statuses ordered by id
-        $this->assertEquals(['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined'], $lookups['statuses']->values()->toArray());
+        $this->assertEquals(['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined', 'backlog'], $lookups['statuses']->values()->toArray());
 
         // Importances ordered by id
         $this->assertEquals(['trivial', 'minor', 'major', 'critical', 'blocker'], $lookups['importances']->values()->toArray());
@@ -586,8 +586,8 @@ class TicketServiceTest extends TestCase
 
         $lookups = $this->service->getLookups();
 
-        // 9 seeded statuses + 2 created by test = 11
-        $this->assertSame(11, $lookups['statuses']->count());
+        // 10 seeded statuses + 2 created by test = 12
+        $this->assertSame(12, $lookups['statuses']->count());
         $this->assertTrue($lookups['statuses']->contains($open->name));
         $this->assertTrue($lookups['statuses']->contains($closed->name));
     }
@@ -601,11 +601,11 @@ class TicketServiceTest extends TestCase
 
         // Seeded statuses in ID order
         $this->assertSame(
-            [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             $lookups['statuses']->keys()->values()->all()
         );
         $this->assertSame(
-            ['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined'],
+            ['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined', 'backlog'],
             $lookups['statuses']->values()->all()
         );
     }

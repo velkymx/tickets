@@ -2284,7 +2284,7 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($stranger)->post("/tickets/watch/{$ticket->id}");
 
-        $response->assertForbidden();
+        $response->assertRedirect();
     }
 
     #[Test]

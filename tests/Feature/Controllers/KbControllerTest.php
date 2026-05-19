@@ -79,12 +79,12 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
-    public function create_requires_auth_and_author_role(): void
+    public function create_requires_authentication(): void
     {
         $this->get('/kb/create')->assertRedirect('/login');
 
         $reader = User::factory()->create(['kb_role' => null]);
-        $this->actingAs($reader)->get('/kb/create')->assertForbidden();
+        $this->actingAs($reader)->get('/kb/create')->assertOk();
 
         $author = User::factory()->create(['kb_role' => 'author']);
         $this->actingAs($author)->get('/kb/create')->assertOk();

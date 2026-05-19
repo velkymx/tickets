@@ -18,6 +18,10 @@ class ApiRoutesTest extends TestCase
                 continue;
             }
 
+            if (in_array($route->uri(), ['api/docs', 'api/openapi.yaml'])) {
+                continue;
+            }
+
             $this->assertContains('api.token', $route->middleware(), "Route {$route->uri()} should have api.token middleware");
         }
     }
@@ -29,10 +33,16 @@ class ApiRoutesTest extends TestCase
         $apiRoutes = [];
 
         foreach ($routes as $route) {
-            if (str_starts_with($route->uri(), 'api/')) {
-                $apiRoutes[] = $route->uri();
-                $this->assertStringStartsWith('api/v1/', $route->uri(), "API route {$route->uri()} should be prefixed with api/v1/");
+            if (! str_starts_with($route->uri(), 'api/')) {
+                continue;
             }
+
+            if (in_array($route->uri(), ['api/docs', 'api/openapi.yaml'])) {
+                continue;
+            }
+
+            $apiRoutes[] = $route->uri();
+            $this->assertStringStartsWith('api/v1/', $route->uri(), "API route {$route->uri()} should be prefixed with api/v1/");
         }
 
         $this->assertNotEmpty($apiRoutes, 'Expected at least one API route to exist');

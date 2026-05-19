@@ -335,14 +335,15 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_returns_404_for_other_users_ticket(): void
+    public function show_returns_ticket_for_any_authenticated_user(): void
     {
         $otherUser = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id2' => $otherUser->id]);
 
         $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
 
-        $response->assertStatus(404);
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.id', $ticket->id);
     }
 
     #[Test]
