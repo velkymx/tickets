@@ -12,6 +12,7 @@
         "laravel/socialite": "^5.10",
         "laravel/tinker": "^2.10.1",
         "mews/purifier": "^3.4",
+        "mustache/mustache": "^3.2",
         "symfony/yaml": "^8.0"
     },
     "require-dev": {
