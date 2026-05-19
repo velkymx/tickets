@@ -463,14 +463,14 @@ class TicketController extends Controller
         $markdownService = app(MarkdownService::class);
         $mentionService = app(MentionService::class);
 
-        $bodyMarkdown = $markdownService->parse($request->body);
+        $bodyHtml = $markdownService->parse($request->body);
 
         $reply = Note::create([
             'user_id' => $user->id,
             'ticket_id' => $ticket->id,
             'parent_id' => $parent->id,
-            'body' => $request->body,
-            'body_markdown' => $bodyMarkdown,
+            'body' => $bodyHtml,
+            'body_markdown' => $request->body,
             'notetype' => 'message',
         ]);
 
