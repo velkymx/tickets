@@ -31,9 +31,9 @@
                 deepLinking: true,
                 presets: [
                     SwaggerUIBundle.presets.apis,
-                    SwaggerUIBundle.StandalonePreset,
+                    SwaggerUIBundle.SwaggerUIStandalonePreset,
                 ],
-                layout: 'StandaloneLayout',
+                layout: 'BaseLayout',
                 persistAuthorization: true,
                 displayRequestDuration: true,
                 filter: true,
