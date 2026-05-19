@@ -413,35 +413,32 @@ class TicketsController extends Controller
     {
         $validated = $request->validated();
 
-        if ($request->has('status_id') && $request->has('ticket_id')) {
+        $ticket = Ticket::withSum('notes', 'hours')->findOrFail($request->ticket_id);
 
-            $ticket = Ticket::withSum('notes', 'hours')->findOrFail($request->ticket_id);
+        $this->authorize('addNote', $ticket);
 
-            $this->authorize('addNote', $ticket);
+        $old = $ticket->toArray();
 
-            $old = $ticket->toArray();
+        if ($request->has('status_id') && $ticket->status_id != $request->status_id) {
 
-            if ($ticket->status_id != $request->status_id) {
-
-                if (Status::isClosed($request->status_id)) {
-                    $ticket->closed_at = now();
-                } else {
-                    $ticket->closed_at = null;
-                }
-
-                $ticket->status_id = $request->status_id;
-                $ticket->save();
+            if (Status::isClosed($request->status_id)) {
+                $ticket->closed_at = now();
+            } else {
+                $ticket->closed_at = null;
             }
 
-            $change_list = $this->ticketService->changes($old, $ticket->toArray());
-
-            $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
-
-            $ticket->unsetRelation('notes');
-            $ticket->loadSum('notes', 'hours');
-            $ticket->actual = $ticket->notes_sum_hours ?? 0;
+            $ticket->status_id = $request->status_id;
             $ticket->save();
         }
+
+        $change_list = $this->ticketService->changes($old, $ticket->toArray());
+
+        $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
+
+        $ticket->unsetRelation('notes');
+        $ticket->loadSum('notes', 'hours');
+        $ticket->actual = $ticket->notes_sum_hours ?? 0;
+        $ticket->save();
 
         return redirect('tickets/'.$request['ticket_id']);
     }
