@@ -6,6 +6,10 @@ return [
 
     'default' => env('CACHE_STORE', 'database'),
 
+    'serializable_classes' => [
+        App\ValueObjects\TicketPulse::class,
+    ],
+
     'stores' => [
 
         'array' => [
