@@ -55,13 +55,15 @@
             </li>
         </template>
 
-        <li class="list-group-item">
-            <strong>Next Action:</strong>
-            <span x-html="pulse.next_action.body"></span>
-            <template x-if="pulse.next_action.assignee">
-                <span class="small text-muted ms-1" x-text="pulse.next_action.assignee"></span>
-            </template>
-        </li>
+        <template x-if="pulse.next_action.id">
+            <li class="list-group-item">
+                <strong>Next Action:</strong>
+                <span x-html="pulse.next_action.body"></span>
+                <template x-if="pulse.next_action.assignee">
+                    <span class="small text-muted ms-1" x-text="pulse.next_action.assignee"></span>
+                </template>
+            </li>
+        </template>
 
         <li class="list-group-item">
             <strong>Latest Decision:</strong>
