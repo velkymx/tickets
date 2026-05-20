@@ -80,7 +80,7 @@
 </form>
 
 <h3 class="mt-5 mb-3">API Token</h3>
-<p class="text-muted">Generate a bearer token to authenticate API requests. <a href="https://github.com/velkymx/tickets/blob/master/README.md" target="_blank">View API documentation</a>.</p>
+<p class="text-muted">Generate a bearer token to authenticate API requests. <a href="{{ route('api.docs') }}">View API documentation</a>.</p>
 
 @if (session('api_token_plain'))
     <div class="alert alert-warning">
