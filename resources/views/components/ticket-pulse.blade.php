@@ -11,12 +11,19 @@
                     this.pulse = data;
                 });
         },
+        resolving: null,
+        resolutionMessage: '',
         resolve(id) {
+            this.resolving = id;
+            this.resolutionMessage = '';
+        },
+        submitResolve(id) {
+            if (!this.resolutionMessage.trim()) return;
             fetch(`/notes/${id}/resolve`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': this.csrf, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ resolution_message: 'Resolved' })
-            }).then(() => this.refresh());
+                body: JSON.stringify({ resolution_message: this.resolutionMessage })
+            }).then(() => { this.resolving = null; this.resolutionMessage = ''; this.refresh(); location.reload(); });
         }
     }"
     x-init="refresh(); setInterval(() => refresh(), 30000)"

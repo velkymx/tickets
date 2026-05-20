@@ -37,8 +37,21 @@
                 <span class="text-danger" x-html="pulse.latest_blocker.body"></span>
                 <div class="d-flex justify-content-between align-items-center mt-1">
                     <span class="small text-muted" x-text="pulse.latest_blocker.author"></span>
-                    <button type="button" class="btn btn-outline-danger btn-sm" @click="resolve(pulse.latest_blocker.id)">Resolve</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm"
+                            x-show="resolving !== pulse.latest_blocker.id"
+                            @click="resolve(pulse.latest_blocker.id)">Resolve</button>
                 </div>
+                <template x-if="resolving === pulse.latest_blocker.id">
+                    <div class="mt-2">
+                        <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
+                               placeholder="How was this resolved?" @keydown.escape="resolving = null">
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-danger btn-sm" :disabled="!resolutionMessage.trim()"
+                                    @click="submitResolve(pulse.latest_blocker.id)">Mark Resolved</button>
+                            <button class="btn btn-outline-secondary btn-sm" @click="resolving = null">Cancel</button>
+                        </div>
+                    </div>
+                </template>
             </li>
         </template>
 
@@ -73,13 +86,28 @@
             <template x-if="pulse.open_threads.length">
                 <div class="mt-1 d-flex flex-column gap-1">
                     <template x-for="thread in pulse.open_threads" :key="thread.id">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a
-                                class="text-decoration-none"
-                                :href="`#note_${thread.id}`"
-                                x-text="`${thread.subject} (${thread.reply_count})`"
-                            ></a>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" @click="resolve(thread.id)">Resolve</button>
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a
+                                    class="text-decoration-none"
+                                    :href="`#note_${thread.id}`"
+                                    x-text="`${thread.subject} (${thread.reply_count})`"
+                                ></a>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        x-show="resolving !== thread.id"
+                                        @click="resolve(thread.id)">Resolve</button>
+                            </div>
+                            <template x-if="resolving === thread.id">
+                                <div class="mt-1">
+                                    <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
+                                           placeholder="How was this resolved?" @keydown.escape="resolving = null">
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-secondary btn-sm" :disabled="!resolutionMessage.trim()"
+                                                @click="submitResolve(thread.id)">Mark Resolved</button>
+                                        <button class="btn btn-outline-secondary btn-sm" @click="resolving = null">Cancel</button>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>

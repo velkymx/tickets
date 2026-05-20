@@ -51,9 +51,6 @@
                         <button type="submit" class="dropdown-item">{{ $note->pinned ? 'Unpin' : 'Pin' }}</button>
                     </form>
                 </li>
-                @if(!$isResolved && $note->replies && $note->replies->count() > 0)
-                    <li><button class="dropdown-item" data-action="resolve" data-note-id="{{ $note->id }}">Resolve</button></li>
-                @endif
                 <li>
                     <button class="dropdown-item text-danger" onclick="hideNote('{{ $note->id }}')">Hide</button>
                 </li>
@@ -98,7 +95,65 @@
                 @endforeach
             </div>
         @endif
+
+        {{-- Blocker resolution message --}}
+        @if($note->notetype === 'blocker' && $isResolved && $note->resolution_message)
+            <div class="mt-2 p-2 rounded bg-body-secondary border-start border-3 border-secondary small text-muted">
+                <i class="fas fa-check-circle text-success me-1"></i>
+                <strong>{{ $note->resolvedByUser->name ?? 'Someone' }}</strong>: {{ $note->resolution_message }}
+            </div>
+        @endif
     </div>
+
+    {{-- Blocker action bar --}}
+    @if($note->notetype === 'blocker' && !$isResolved)
+        @php
+            $canResolve = auth()->id() === (int) $note->user_id
+                || auth()->id() === (int) ($ticket->user_id2 ?? null)
+                || auth()->id() === (int) ($ticket->user_id ?? null);
+        @endphp
+        <div class="card-body border-top pt-2 pb-2"
+             x-data="{ resolving: false, message: '', submitting: false }"
+        >
+            <div x-show="!resolving" class="d-flex align-items-center gap-2">
+                @if($canResolve)
+                    <button class="btn btn-sm btn-danger" @click="resolving = true">
+                        <i class="fas fa-check-circle me-1"></i>Resolve Blocker
+                    </button>
+                @endif
+                <button class="btn btn-sm btn-outline-secondary"
+                        onclick="(function(){var r=document.querySelector('#note_{{ $note->id }} .reply-composer textarea');if(r){r.placeholder='What\'s being done to unblock this?';r.focus();}})()">
+                    <i class="fas fa-arrow-right me-1"></i>Next Step
+                </button>
+            </div>
+            @if($canResolve)
+                <div x-show="resolving" x-cloak>
+                    <textarea x-model="message" class="form-control form-control-sm mb-2" rows="2"
+                              placeholder="What resolved this blocker? (required)"
+                              :disabled="submitting"></textarea>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-danger"
+                                :disabled="submitting || !message.trim()"
+                                @click="
+                                    submitting = true;
+                                    fetch('/notes/{{ $note->id }}/resolve', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json'
+                                        },
+                                        body: JSON.stringify({ resolution_message: message })
+                                    }).then(r => r.json()).then(() => location.reload()).catch(() => { submitting = false; });
+                                ">
+                            <span x-text="submitting ? 'Resolving…' : 'Mark Resolved'"></span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" @click="resolving = false; message = ''" :disabled="submitting">Cancel</button>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
 
     {{-- Footer: Reactions + Edited --}}
     <div class="card-footer bg-transparent border-0 py-1 d-flex align-items-center gap-2 small">
