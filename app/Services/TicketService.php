@@ -84,7 +84,7 @@ class TicketService
                             }
                         }
 
-                        $change_list[] = ucwords($label).' changed to '.($lookups[$lookup][$newValue] ?? 'Unknown');
+                        $change_list[] = ucwords($label).' changed to '.($lookups[$lookup][$newValue] ?? ($newValue ? 'Unknown' : 'None'));
                     } else {
                         $change_list[] = ucwords($change).' changed to '.$newValue;
                     }

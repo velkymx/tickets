@@ -23,7 +23,7 @@ class KbArticlePolicy
 
     public function create(?User $user): bool
     {
-        return $user !== null && $user->isKbAuthor();
+        return $user !== null;
     }
 
     public function update(?User $user, KbArticle $article): bool

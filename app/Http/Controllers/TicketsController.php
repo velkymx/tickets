@@ -16,6 +16,7 @@ use App\Models\TicketEstimate;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\User;
+use App\Services\AttachmentService;
 use App\Services\TicketPulseService;
 use App\Services\TicketService;
 use Carbon\Carbon;
@@ -164,18 +165,14 @@ class TicketsController extends Controller
 
         $this->authorize('claim', $ticket);
 
-        $oldUser = $ticket->user_id2;
+        if ($ticket->user_id2 === Auth::id()) {
+            return redirect('tickets/'.$id)->with('info_message', 'You are already assigned to Ticket #'.$id);
+        }
 
         $ticket->user_id2 = Auth::id();
         $ticket->save();
 
-        $change_list = [];
-
-        if ($oldUser != Auth::id()) {
-            $change_list[] = 'Assigned user changed';
-        }
-
-        $this->ticketService->notate($ticket->id, '', $change_list);
+        $this->ticketService->notate($ticket->id, '', ['Assigned user changed']);
 
         return redirect('tickets/'.$id)->with('info_message', 'You are assigned to Ticket #'.$id);
     }
@@ -317,12 +314,14 @@ class TicketsController extends Controller
         return redirect('tickets/'.$insert->id)->with('status', 'Task was created successfully!');
     }
 
-    public function upload(UploadTicketRequest $request)
+    public function upload(UploadTicketRequest $request, AttachmentService $attachmentService)
     {
         $file = $request->file('file');
         $folder = preg_replace('/[^a-zA-Z0-9_-]/', '', $request->input('folder'));
 
-        $filename = time().'_'.Str::random(10).'.'.$file->getClientOriginalExtension();
+        $attachmentService->validateFileType($file);
+
+        $filename = time().'_'.Str::uuid().'.'.$file->getClientOriginalExtension();
         $path = 'images/'.$folder.'/'.$filename;
 
         $file->move(public_path('images/'.$folder), $filename);
@@ -413,35 +412,32 @@ class TicketsController extends Controller
     {
         $validated = $request->validated();
 
-        if ($request->has('status_id') && $request->has('ticket_id')) {
+        $ticket = Ticket::withSum('notes', 'hours')->findOrFail($request->ticket_id);
 
-            $ticket = Ticket::withSum('notes', 'hours')->findOrFail($request->ticket_id);
+        $this->authorize('addNote', $ticket);
 
-            $this->authorize('addNote', $ticket);
+        $old = $ticket->toArray();
 
-            $old = $ticket->toArray();
+        if ($request->has('status_id') && $ticket->status_id != $request->status_id) {
 
-            if ($ticket->status_id != $request->status_id) {
-
-                if (Status::isClosed($request->status_id)) {
-                    $ticket->closed_at = now();
-                } else {
-                    $ticket->closed_at = null;
-                }
-
-                $ticket->status_id = $request->status_id;
-                $ticket->save();
+            if (Status::isClosed($request->status_id)) {
+                $ticket->closed_at = now();
+            } else {
+                $ticket->closed_at = null;
             }
 
-            $change_list = $this->ticketService->changes($old, $ticket->toArray());
-
-            $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
-
-            $ticket->unsetRelation('notes');
-            $ticket->loadSum('notes', 'hours');
-            $ticket->actual = $ticket->notes_sum_hours ?? 0;
+            $ticket->status_id = $request->status_id;
             $ticket->save();
         }
+
+        $change_list = $this->ticketService->changes($old, $ticket->toArray());
+
+        $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
+
+        $ticket->unsetRelation('notes');
+        $ticket->loadSum('notes', 'hours');
+        $ticket->actual = $ticket->notes_sum_hours ?? 0;
+        $ticket->save();
 
         return redirect('tickets/'.$request['ticket_id']);
     }
@@ -453,22 +449,18 @@ class TicketsController extends Controller
         $ticket = Ticket::findOrFail($ticket_id);
         $this->authorize('estimate', $ticket);
 
-        $check = TicketEstimate::updateOrCreate(
+        TicketEstimate::updateOrCreate(
             ['ticket_id' => $ticket_id, 'user_id' => Auth::id()],
             ['storypoints' => $validated['storypoints']]
         );
 
-        $getAvg = TicketEstimate::where('ticket_id', $ticket_id)->get();
+        $estimates = TicketEstimate::where('ticket_id', $ticket_id)->get();
 
-        $total = $getAvg->sum('storypoints');
+        $total = $estimates->sum('storypoints');
 
         $fibs = [0, 1, 2, 3, 5, 8, 13, 21];
 
-        if ($getAvg->count() === 0) {
-            return redirect('tickets/'.$ticket_id);
-        }
-
-        $avg = $total / $getAvg->count();
+        $avg = $total / $estimates->count();
 
         $sp = end($fibs);
         foreach ($fibs as $fib) {
@@ -478,16 +470,13 @@ class TicketsController extends Controller
             }
         }
 
-        $ticket = Ticket::find($ticket_id);
         $old = clone $ticket;
 
         $ticket->storypoints = $sp;
 
         $ticket->save();
 
-        $change_list = $this->ticketService->changes($old->toArray(), $ticket->toArray());
-
-        $this->ticketService->notate($ticket->id, '', ['Story Points changed to '.$request->storypoints]);
+        $this->ticketService->notate($ticket->id, '', ['Story Points changed to '.$sp]);
 
         return redirect('tickets/'.$ticket_id);
     }

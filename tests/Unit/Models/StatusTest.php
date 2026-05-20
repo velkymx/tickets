@@ -53,7 +53,7 @@ class StatusTest extends TestCase
 
         sort($activeIds);
 
-        $this->assertEquals([1, 2, 3, 4, 6, 7], $activeIds);
+        $this->assertEquals([1, 2, 3, 4, 6, 7, 10], $activeIds);
     }
 
     #[Test]

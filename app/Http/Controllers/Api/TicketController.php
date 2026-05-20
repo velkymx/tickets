@@ -164,9 +164,7 @@ class TicketController extends Controller
                     $q->where('notetype', $request->notetype);
                 }
             },
-        ])
-            ->where('user_id2', $user->id)->orWhere('user_id', $user->id)
-            ->findOrFail($id);
+        ])->findOrFail($id);
 
         $apiUserId = $user->id;
         $notes = $ticket->notes->map(fn ($note) => $this->formatNote($note, $apiUserId));
@@ -345,8 +343,7 @@ class TicketController extends Controller
 
     public function pulse(Request $request, $id)
     {
-        $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::findOrFail($id);
 
         $pulse = app(TicketPulseService::class)->getPulse($ticket)->toArray();
 
@@ -463,14 +460,14 @@ class TicketController extends Controller
         $markdownService = app(MarkdownService::class);
         $mentionService = app(MentionService::class);
 
-        $bodyMarkdown = $markdownService->parse($request->body);
+        $bodyHtml = $markdownService->parse($request->body);
 
         $reply = Note::create([
             'user_id' => $user->id,
             'ticket_id' => $ticket->id,
             'parent_id' => $parent->id,
-            'body' => $request->body,
-            'body_markdown' => $bodyMarkdown,
+            'body' => $bodyHtml,
+            'body_markdown' => $request->body,
             'notetype' => 'message',
         ]);
 

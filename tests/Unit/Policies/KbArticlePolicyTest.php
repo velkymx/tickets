@@ -90,13 +90,13 @@ class KbArticlePolicyTest extends TestCase
     }
 
     #[Test]
-    public function only_kb_authors_can_create(): void
+    public function any_authenticated_user_can_create(): void
     {
         $author = User::factory()->create(['kb_role' => 'author']);
         $reader = User::factory()->create(['kb_role' => null]);
 
         $this->assertTrue($this->policy->create($author));
-        $this->assertFalse($this->policy->create($reader));
+        $this->assertTrue($this->policy->create($reader));
     }
 
     #[Test]

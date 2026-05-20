@@ -72,6 +72,10 @@ class NotesController extends Controller
         });
 
         if ($validator->fails()) {
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
             return redirect('tickets/'.$note->ticket_id)->withErrors($validator)->withInput();
         }
 

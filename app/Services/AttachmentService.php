@@ -47,7 +47,7 @@ class AttachmentService
         Storage::disk('public')->delete($path);
     }
 
-    private function validateFileType(UploadedFile $file): void
+    public function validateFileType(UploadedFile $file): void
     {
         $mime = strtolower($file->getMimeType());
         $extension = strtolower($file->getClientOriginalExtension());

@@ -27,6 +27,7 @@ class DefaultsSeeder extends Seeder
                 7 => 'reopened',
                 8 => 'duplicate',
                 9 => 'declined',
+                10 => 'backlog',
             ],
             'types' => [
                 1 => 'bug',

@@ -50,14 +50,16 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_denies_unrelated_user_from_viewing(): void
+    public function it_allows_any_authenticated_user_to_view(): void
     {
         $unrelated = User::factory()->create();
         $owner = User::factory()->create();
         $assignee = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
 
-        $this->assertFalse($this->policy->view($unrelated, $ticket));
+        $this->assertTrue($this->policy->view($unrelated, $ticket));
+        $this->assertTrue($this->policy->view($owner, $ticket));
+        $this->assertTrue($this->policy->view($assignee, $ticket));
     }
 
     #[Test]

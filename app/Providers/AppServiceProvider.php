@@ -16,9 +16,15 @@ use App\Policies\MilestonePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ReleasePolicy;
 use App\Policies\TicketPolicy;
+use App\Automations\ContextBuilders\TicketCreatedContextBuilder;
+use App\Automations\ContextBuilders\TicketUpdatedContextBuilder;
+use App\Automations\Services\AutomationEngine;
+use App\Events\TicketCreated;
+use App\Events\TicketUpdated;
 use App\Services\KbSearchService;
 use App\ViewComposers\NotificationComposer;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
@@ -65,6 +71,16 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
+        });
+
+        Event::listen(TicketCreated::class, function (TicketCreated $event) {
+            $context = (new TicketCreatedContextBuilder())->build($event);
+            app(AutomationEngine::class)->process('ticket.created', $context);
+        });
+
+        Event::listen(TicketUpdated::class, function (TicketUpdated $event) {
+            $context = (new TicketUpdatedContextBuilder())->build($event);
+            app(AutomationEngine::class)->process('ticket.updated', $context);
         });
     }
 }
