@@ -46,9 +46,10 @@
                         <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
                                placeholder="How was this resolved?" @keydown.escape="resolving = null">
                         <div class="d-flex gap-1">
-                            <button class="btn btn-danger btn-sm" :disabled="!resolutionMessage.trim()"
-                                    @click="submitResolve(pulse.latest_blocker.id)">Mark Resolved</button>
-                            <button class="btn btn-outline-secondary btn-sm" @click="resolving = null">Cancel</button>
+                            <button class="btn btn-danger btn-sm" :disabled="!resolutionMessage.trim() || submitting"
+                                    @click="submitResolve(pulse.latest_blocker.id)"
+                                    x-text="submitting ? 'Resolving…' : 'Mark Resolved'"></button>
+                            <button class="btn btn-outline-secondary btn-sm" :disabled="submitting" @click="resolving = null">Cancel</button>
                         </div>
                     </div>
                 </template>
@@ -74,9 +75,10 @@
                         <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
                                placeholder="How was this completed?" @keydown.escape="resolving = null">
                         <div class="d-flex gap-1">
-                            <button class="btn btn-secondary btn-sm" :disabled="!resolutionMessage.trim()"
-                                    @click="submitResolve(pulse.next_action.id)">Mark Done</button>
-                            <button class="btn btn-outline-secondary btn-sm" @click="resolving = null">Cancel</button>
+                            <button class="btn btn-secondary btn-sm" :disabled="!resolutionMessage.trim() || submitting"
+                                    @click="submitResolve(pulse.next_action.id)"
+                                    x-text="submitting ? 'Saving…' : 'Mark Done'"></button>
+                            <button class="btn btn-outline-secondary btn-sm" :disabled="submitting" @click="resolving = null">Cancel</button>
                         </div>
                     </div>
                 </template>
@@ -122,9 +124,10 @@
                                     <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
                                            placeholder="How was this resolved?" @keydown.escape="resolving = null">
                                     <div class="d-flex gap-1">
-                                        <button class="btn btn-secondary btn-sm" :disabled="!resolutionMessage.trim()"
-                                                @click="submitResolve(thread.id)">Mark Resolved</button>
-                                        <button class="btn btn-outline-secondary btn-sm" @click="resolving = null">Cancel</button>
+                                        <button class="btn btn-secondary btn-sm" :disabled="!resolutionMessage.trim() || submitting"
+                                                @click="submitResolve(thread.id)"
+                                                x-text="submitting ? 'Resolving…' : 'Mark Resolved'"></button>
+                                        <button class="btn btn-outline-secondary btn-sm" :disabled="submitting" @click="resolving = null">Cancel</button>
                                     </div>
                                 </div>
                             </template>

@@ -135,16 +135,31 @@
                         <button class="btn btn-sm btn-danger"
                                 :disabled="submitting || !message.trim()"
                                 @click="
-                                    submitting = true;
-                                    fetch('/notes/{{ $note->id }}/resolve', {
-                                        method: 'POST',
-                                        headers: {
-                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                            'Content-Type': 'application/json',
-                                            'Accept': 'application/json'
-                                        },
-                                        body: JSON.stringify({ resolution_message: message })
-                                    }).then(r => r.json()).then(() => location.reload()).catch(() => { submitting = false; });
+                                    (async () => {
+                                        if (submitting || !message.trim()) return;
+                                        submitting = true;
+                                        try {
+                                            const res = await fetch('/notes/{{ $note->id }}/resolve', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                                    'Content-Type': 'application/json',
+                                                    'Accept': 'application/json'
+                                                },
+                                                body: JSON.stringify({ resolution_message: message })
+                                            });
+                                            if (!res.ok) {
+                                                const err = await res.json().catch(() => ({}));
+                                                alert(err.message || 'Could not resolve. Check permissions.');
+                                                submitting = false;
+                                            } else {
+                                                location.reload();
+                                            }
+                                        } catch (e) {
+                                            alert('Network error. Please try again.');
+                                            submitting = false;
+                                        }
+                                    })()
                                 ">
                             <span x-text="submitting ? 'Resolving…' : 'Mark Resolved'"></span>
                         </button>
