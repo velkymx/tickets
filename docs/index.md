@@ -19,7 +19,6 @@ This index covers all documentation in this directory. Target readers: administr
 | Document | What it covers |
 |----------|---------------|
 | [REST API](api.md) | All endpoints, authentication, request/response examples, slash commands, error codes |
-| [AI Agents with CrewAI](crewai.md) | Example of orchestrating AI agents against the Tickets API using CrewAI (Python) |
 
 Interactive API docs (Swagger UI) are available at `/api/docs` on any running instance.
 
