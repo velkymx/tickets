@@ -57,10 +57,28 @@
 
         <template x-if="pulse.next_action.id">
             <li class="list-group-item">
-                <strong>Next Action:</strong>
-                <span x-html="pulse.next_action.body"></span>
-                <template x-if="pulse.next_action.assignee">
-                    <span class="small text-muted ms-1" x-text="pulse.next_action.assignee"></span>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>Next Action:</strong>
+                        <span x-html="pulse.next_action.body"></span>
+                        <template x-if="pulse.next_action.assignee">
+                            <span class="small text-muted ms-1" x-text="pulse.next_action.assignee"></span>
+                        </template>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2 flex-shrink-0"
+                            x-show="resolving !== pulse.next_action.id"
+                            @click="resolve(pulse.next_action.id)">Done</button>
+                </div>
+                <template x-if="resolving === pulse.next_action.id">
+                    <div class="mt-1">
+                        <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
+                               placeholder="How was this completed?" @keydown.escape="resolving = null">
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-secondary btn-sm" :disabled="!resolutionMessage.trim()"
+                                    @click="submitResolve(pulse.next_action.id)">Mark Done</button>
+                            <button class="btn btn-outline-secondary btn-sm" @click="resolving = null">Cancel</button>
+                        </div>
+                    </div>
                 </template>
             </li>
         </template>
