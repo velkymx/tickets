@@ -535,8 +535,8 @@ class TicketServiceTest extends TestCase
 
         $lookups = $this->service->getLookups();
 
-        $this->assertTrue($lookups['projects']->contains('Active Project'));
-        $this->assertFalse($lookups['projects']->contains('Inactive Project'));
+        $this->assertContains('Active Project', $lookups['projects']);
+        $this->assertNotContains('Inactive Project', $lookups['projects']);
     }
 
     #[Test]
@@ -547,8 +547,8 @@ class TicketServiceTest extends TestCase
 
         $lookups = $this->service->getLookups();
 
-        $this->assertTrue($lookups['milestones']->contains('Open Milestone'));
-        $this->assertFalse($lookups['milestones']->contains('Closed Milestone'));
+        $this->assertContains('Open Milestone', $lookups['milestones']);
+        $this->assertNotContains('Closed Milestone', $lookups['milestones']);
     }
 
     #[Test]
@@ -557,13 +557,13 @@ class TicketServiceTest extends TestCase
         $lookups = $this->service->getLookups();
 
         // Types ordered by id
-        $this->assertEquals(['bug', 'enhancement', 'task', 'proposal'], $lookups['types']->values()->toArray());
+        $this->assertEquals(['bug', 'enhancement', 'task', 'proposal'], array_values($lookups['types']));
 
         // Statuses ordered by id
-        $this->assertEquals(['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined', 'backlog'], $lookups['statuses']->values()->toArray());
+        $this->assertEquals(['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined', 'backlog'], array_values($lookups['statuses']));
 
         // Importances ordered by id
-        $this->assertEquals(['trivial', 'minor', 'major', 'critical', 'blocker'], $lookups['importances']->values()->toArray());
+        $this->assertEquals(['trivial', 'minor', 'major', 'critical', 'blocker'], array_values($lookups['importances']));
     }
 
     #[Test]
@@ -575,21 +575,21 @@ class TicketServiceTest extends TestCase
         $closed = Status::factory()->create(['name' => 'Closed']);
 
         Cache::put('ticket_lookups', [
-            'types' => collect(),
-            'milestones' => collect(),
-            'importances' => collect(),
-            'projects' => collect(),
-            'statuses' => collect([$open->id => $open->name]),
-            'releases' => collect(),
-            'users' => collect(),
+            'types' => [],
+            'milestones' => [],
+            'importances' => [],
+            'projects' => [],
+            'statuses' => [$open->id => $open->name],
+            'releases' => [],
+            'users' => [],
         ], now()->addMinutes(60));
 
         $lookups = $this->service->getLookups();
 
         // 10 seeded statuses + 2 created by test = 12
-        $this->assertSame(12, $lookups['statuses']->count());
-        $this->assertTrue($lookups['statuses']->contains($open->name));
-        $this->assertTrue($lookups['statuses']->contains($closed->name));
+        $this->assertCount(12, $lookups['statuses']);
+        $this->assertContains($open->name, $lookups['statuses']);
+        $this->assertContains($closed->name, $lookups['statuses']);
     }
 
     #[Test]
@@ -602,11 +602,11 @@ class TicketServiceTest extends TestCase
         // Seeded statuses in ID order
         $this->assertSame(
             [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            $lookups['statuses']->keys()->values()->all()
+            array_keys($lookups['statuses'])
         );
         $this->assertSame(
             ['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined', 'backlog'],
-            $lookups['statuses']->values()->all()
+            array_values($lookups['statuses'])
         );
     }
 

@@ -300,13 +300,13 @@ class TicketService
     private function buildLookups(): array
     {
         return [
-            'types' => Type::orderBy('id')->pluck('name', 'id'),
-            'milestones' => Milestone::orderBy('id')->whereNull('end_at')->pluck('name', 'id'),
-            'importances' => Importance::orderBy('id')->pluck('name', 'id'),
-            'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id'),
-            'statuses' => Status::orderBy('id')->pluck('name', 'id'),
-            'releases' => Release::orderBy('id')->pluck('title', 'id'),
-            'users' => User::orderBy('id')->pluck('name', 'id'),
+            'types' => Type::orderBy('id')->pluck('name', 'id')->all(),
+            'milestones' => Milestone::orderBy('id')->whereNull('end_at')->pluck('name', 'id')->all(),
+            'importances' => Importance::orderBy('id')->pluck('name', 'id')->all(),
+            'projects' => Project::orderBy('name')->where('active', 1)->pluck('name', 'id')->all(),
+            'statuses' => Status::orderBy('id')->pluck('name', 'id')->all(),
+            'releases' => Release::orderBy('id')->pluck('title', 'id')->all(),
+            'users' => User::orderBy('id')->pluck('name', 'id')->all(),
             '_counts' => [
                 'types' => Type::count(),
                 'milestones' => Milestone::whereNull('end_at')->count(),
