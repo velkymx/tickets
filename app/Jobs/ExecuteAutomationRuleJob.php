@@ -2,6 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Automations\Contracts\AutomationActionDriverInterface;
+use App\Automations\Drivers\WebhookActionDriver;
+use App\Models\AutomationActionLog;
+use App\Models\AutomationRule;
 use App\Models\AutomationRun;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,7 +35,34 @@ class ExecuteAutomationRuleJob implements ShouldQueue
         $run = AutomationRun::findOrFail($this->automationRunId);
         $run->update(['status' => 'running', 'started_at' => now()]);
 
-        // Action execution will be added in Task 8
+        $rule = AutomationRule::with('actions')->findOrFail($this->automationRuleId);
+
+        foreach ($rule->actions as $action) {
+            $driver = $this->resolveDriver($action->type);
+
+            try {
+                $driver->execute($action, $this->context, $run);
+            } catch (\Throwable $e) {
+                AutomationActionLog::create([
+                    'automation_run_id' => $run->id,
+                    'automation_action_id' => $action->id,
+                    'status' => 'failed',
+                    'error_message' => $e->getMessage(),
+                    'attempts' => $this->attempts(),
+                    'executed_at' => now(),
+                ]);
+                throw $e;
+            }
+        }
+
         $run->update(['status' => 'success', 'finished_at' => now()]);
+    }
+
+    private function resolveDriver(string $type): AutomationActionDriverInterface
+    {
+        return match ($type) {
+            'call_webhook', 'call_api' => app(WebhookActionDriver::class),
+            default => throw new \RuntimeException("Unknown action driver: {$type}"),
+        };
     }
 }
