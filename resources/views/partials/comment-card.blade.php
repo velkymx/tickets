@@ -12,8 +12,10 @@
         'update'   => ['text' => 'Update', 'class' => 'text-bg-info'],
         'action'   => ['text' => 'Action', 'class' => 'text-bg-warning'],
     ];
-    $cardClass = $signalStyles[$note->notetype] ?? '';
     $isResolved = $note->isResolved();
+    $cardClass = ($note->notetype === 'blocker' && $isResolved)
+        ? 'border-start border-4 border-secondary'
+        : ($signalStyles[$note->notetype] ?? '');
 @endphp
 
 <div class="card mb-0 {{ $cardClass }}" id="note_{{ $note->id }}">
@@ -23,7 +25,12 @@
             <x-avatar :user="$note->user" :size="32" />
             <strong><a href="/users/{{ $note->user->id }}" class="text-decoration-none">{{ $note->user->name }}</a></strong>
             @if(isset($signalBadges[$note->notetype]))
-                <span class="badge {{ $signalBadges[$note->notetype]['class'] }} badge-sm">{{ $signalBadges[$note->notetype]['text'] }}</span>
+                @php
+                    $badgeClass = ($note->notetype === 'blocker' && $isResolved)
+                        ? 'text-bg-secondary'
+                        : $signalBadges[$note->notetype]['class'];
+                @endphp
+                <span class="badge {{ $badgeClass }} badge-sm">{{ $signalBadges[$note->notetype]['text'] }}</span>
             @endif
             @if($isResolved)
                 <span class="badge text-bg-secondary">Resolved</span>
