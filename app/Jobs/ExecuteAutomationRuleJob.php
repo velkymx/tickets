@@ -33,7 +33,11 @@ class ExecuteAutomationRuleJob implements ShouldQueue
     public function handle(): void
     {
         $run = AutomationRun::findOrFail($this->automationRunId);
-        $run->update(['status' => 'running', 'started_at' => now()]);
+        $updateData = ['status' => 'running'];
+        if ($this->attempts() === 1) {
+            $updateData['started_at'] = now();
+        }
+        $run->update($updateData);
 
         $rule = AutomationRule::with('actions')->findOrFail($this->automationRuleId);
 
@@ -56,6 +60,14 @@ class ExecuteAutomationRuleJob implements ShouldQueue
         }
 
         $run->update(['status' => 'success', 'finished_at' => now()]);
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        AutomationRun::find($this->automationRunId)?->update([
+            'status' => 'failed',
+            'finished_at' => now(),
+        ]);
     }
 
     private function resolveDriver(string $type): AutomationActionDriverInterface

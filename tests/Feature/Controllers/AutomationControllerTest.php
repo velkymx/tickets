@@ -21,7 +21,7 @@ class AutomationControllerTest extends TestCase
     #[Test]
     public function index_lists_automations(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['admin' => true]);
         Automation::factory()->count(3)->create();
 
         $this->actingAs($user)->get(route('automations.index'))->assertStatus(200);
@@ -30,14 +30,14 @@ class AutomationControllerTest extends TestCase
     #[Test]
     public function create_shows_form(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['admin' => true]);
         $this->actingAs($user)->get(route('automations.create'))->assertStatus(200);
     }
 
     #[Test]
     public function store_creates_automation(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['admin' => true]);
 
         $this->actingAs($user)->post(route('automations.store'), [
             'name' => 'My Automation',
@@ -53,7 +53,7 @@ class AutomationControllerTest extends TestCase
     #[Test]
     public function update_modifies_automation(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['admin' => true]);
         $automation = Automation::factory()->create(['name' => 'Old Name']);
 
         $this->actingAs($user)->put(route('automations.update', $automation), [
@@ -69,7 +69,7 @@ class AutomationControllerTest extends TestCase
     #[Test]
     public function destroy_deletes_automation(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['admin' => true]);
         $automation = Automation::factory()->create();
 
         $this->actingAs($user)->delete(route('automations.destroy', $automation))->assertRedirect();
@@ -80,7 +80,7 @@ class AutomationControllerTest extends TestCase
     #[Test]
     public function show_displays_automation_runs(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['admin' => true]);
         $automation = Automation::factory()->create();
 
         $this->actingAs($user)->get(route('automations.show', $automation))->assertStatus(200);

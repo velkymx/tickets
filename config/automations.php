@@ -26,7 +26,6 @@ return [
     'action_types' => [
         'call_webhook' => 'Send Webhook',
         'call_api' => 'Call API',
-        'send_email' => 'Send Email',
     ],
 
 ];

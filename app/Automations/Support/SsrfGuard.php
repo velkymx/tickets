@@ -21,7 +21,7 @@ class SsrfGuard
 
         $ip = gethostbyname($host);
 
-        if ($this->isLoopback($ip) || $this->isPrivate($ip) || $this->isBlocked($ip)) {
+        if ($this->isLoopback($ip) || $this->isPrivate($ip) || $this->isBlocked($ip) || $this->isCgnat($ip)) {
             throw new SsrfException("Blocked request to [{$url}]: resolved to private/reserved address [{$ip}]");
         }
     }
@@ -43,5 +43,15 @@ class SsrfGuard
     private function isBlocked(string $ip): bool
     {
         return in_array($ip, self::BLOCKED_IPS, true);
+    }
+
+    private function isCgnat(string $ip): bool
+    {
+        $long = ip2long($ip);
+        if ($long === false) {
+            return false;
+        }
+        // 100.64.0.0/10
+        return ($long & 0xFFC00000) === ip2long('100.64.0.0');
     }
 }

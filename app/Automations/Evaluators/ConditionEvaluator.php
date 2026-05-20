@@ -29,7 +29,10 @@ class ConditionEvaluator
 
     private function evaluateLeaf(array $condition, array $context): bool
     {
-        $operator = $condition['operator'];
+        $operator = $condition['operator'] ?? null;
+        if (! $operator) {
+            return false;
+        }
         $target = $condition['value'] ?? null;
 
         if ($operator === 'changed') {
