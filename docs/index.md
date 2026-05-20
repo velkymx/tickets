@@ -6,6 +6,17 @@ This index covers all documentation in this directory. Target readers: administr
 
 ---
 
+## Concepts
+
+| Document | What it covers |
+|----------|---------------|
+| [Agile Workflow](agile-workflow.md) | Project → Milestone → Ticket hierarchy, sprint planning, kanban, sprint report |
+| [Ticket Pulse](pulse.md) | Execution states (ON TRACK / AT RISK / BLOCKED / IDLE), triage, state transitions |
+| [Note Signals](note-signals.md) | Signal types, slash commands, decisions, blockers, actions, reactions, @mentions |
+| [Notifications](notifications.md) | Watchers, notification batching, @mentions, muting, notification bell |
+
+---
+
 ## System Setup
 
 | Document | What it covers |
