@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\Api\ApiDocsController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\Kb\KbAdminController;
@@ -129,6 +130,10 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::post('/user/update', [UsersController::class, 'update'])->name('user.update');
     Route::post('/user/api-token', [UsersController::class, 'generateApiToken'])->name('user.api-token');
     Route::delete('/user/api-token', [UsersController::class, 'revokeApiToken'])->name('user.api-token.revoke');
+
+    // Automations
+    Route::get('automations/fields/{trigger}', [AutomationController::class, 'fields'])->name('automations.fields');
+    Route::resource('automations', AutomationController::class);
 });
 
 // --- Knowledge Base Routes ---
