@@ -37,18 +37,53 @@
                 <span class="text-danger" x-html="pulse.latest_blocker.body"></span>
                 <div class="d-flex justify-content-between align-items-center mt-1">
                     <span class="small text-muted" x-text="pulse.latest_blocker.author"></span>
-                    <button type="button" class="btn btn-outline-danger btn-sm" @click="resolve(pulse.latest_blocker.id)">Resolve</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm"
+                            x-show="resolving !== pulse.latest_blocker.id"
+                            @click="resolve(pulse.latest_blocker.id)">Resolve</button>
                 </div>
+                <template x-if="resolving === pulse.latest_blocker.id">
+                    <div class="mt-2">
+                        <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
+                               placeholder="How was this resolved?" @keydown.escape="resolving = null">
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-danger btn-sm" :disabled="!resolutionMessage.trim() || submitting"
+                                    @click="submitResolve(pulse.latest_blocker.id)"
+                                    x-text="submitting ? 'Resolving…' : 'Mark Resolved'"></button>
+                            <button class="btn btn-outline-secondary btn-sm" :disabled="submitting" @click="resolving = null">Cancel</button>
+                        </div>
+                    </div>
+                </template>
             </li>
         </template>
 
-        <li class="list-group-item">
-            <strong>Next Action:</strong>
-            <span x-html="pulse.next_action.body"></span>
-            <template x-if="pulse.next_action.assignee">
-                <span class="small text-muted ms-1" x-text="pulse.next_action.assignee"></span>
-            </template>
-        </li>
+        <template x-if="pulse.next_action.id">
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>Next Action:</strong>
+                        <span x-html="pulse.next_action.body"></span>
+                        <template x-if="pulse.next_action.assignee">
+                            <span class="small text-muted ms-1" x-text="pulse.next_action.assignee"></span>
+                        </template>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2 flex-shrink-0"
+                            x-show="resolving !== pulse.next_action.id"
+                            @click="resolve(pulse.next_action.id)">Done</button>
+                </div>
+                <template x-if="resolving === pulse.next_action.id">
+                    <div class="mt-1">
+                        <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
+                               placeholder="How was this completed?" @keydown.escape="resolving = null">
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-secondary btn-sm" :disabled="!resolutionMessage.trim() || submitting"
+                                    @click="submitResolve(pulse.next_action.id)"
+                                    x-text="submitting ? 'Saving…' : 'Mark Done'"></button>
+                            <button class="btn btn-outline-secondary btn-sm" :disabled="submitting" @click="resolving = null">Cancel</button>
+                        </div>
+                    </div>
+                </template>
+            </li>
+        </template>
 
         <li class="list-group-item">
             <strong>Latest Decision:</strong>
@@ -73,13 +108,29 @@
             <template x-if="pulse.open_threads.length">
                 <div class="mt-1 d-flex flex-column gap-1">
                     <template x-for="thread in pulse.open_threads" :key="thread.id">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a
-                                class="text-decoration-none"
-                                :href="`#note_${thread.id}`"
-                                x-text="`${thread.subject} (${thread.reply_count})`"
-                            ></a>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" @click="resolve(thread.id)">Resolve</button>
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a
+                                    class="text-decoration-none"
+                                    :href="`#note_${thread.id}`"
+                                    x-text="`${thread.subject} (${thread.reply_count})`"
+                                ></a>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        x-show="resolving !== thread.id"
+                                        @click="resolve(thread.id)">Resolve</button>
+                            </div>
+                            <template x-if="resolving === thread.id">
+                                <div class="mt-1">
+                                    <input type="text" class="form-control form-control-sm mb-1" x-model="resolutionMessage"
+                                           placeholder="How was this resolved?" @keydown.escape="resolving = null">
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-secondary btn-sm" :disabled="!resolutionMessage.trim() || submitting"
+                                                @click="submitResolve(thread.id)"
+                                                x-text="submitting ? 'Resolving…' : 'Mark Resolved'"></button>
+                                        <button class="btn btn-outline-secondary btn-sm" :disabled="submitting" @click="resolving = null">Cancel</button>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>

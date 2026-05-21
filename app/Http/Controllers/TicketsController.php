@@ -187,6 +187,7 @@ class TicketsController extends Controller
                 $q->where('hide', 0)->orderBy('created_at', 'asc');
             },
             'notes.user',
+            'notes.resolvedByUser',
             'notes.replies.user',
             'notes.reactions',
             'notes.attachments',
