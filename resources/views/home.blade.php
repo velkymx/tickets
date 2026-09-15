@@ -65,7 +65,9 @@ Dashboard
     {{-- Sidebar: Recent Activity & Quick Links --}}
     <div class="col-lg-3">
         {{-- My Blockers --}}
-        <x-blocker-box :blockers="$blockers" title="My Blockers" />
+        @if ($blockers->count())
+            <x-blocker-box :blockers="$blockers" title="My Blockers" />
+        @endif
 
         {{-- Quick Links --}}
         <div class="card mb-4">

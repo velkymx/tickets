@@ -48,7 +48,9 @@
     {{-- Sidebar --}}
     <div class="col-lg-3 mt-4 mt-lg-0">
         {{-- Blockers --}}
-        <x-blocker-box :blockers="$blockers" title="Project Blockers" />
+        @if ($blockers->count())
+            <x-blocker-box :blockers="$blockers" title="Project Blockers" />
+        @endif
 
         {{-- Progress --}}
         <div class="card shadow-sm mb-4">
