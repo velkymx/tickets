@@ -19,6 +19,11 @@ class WebRoutesTest extends TestCase
                 continue;
             }
 
+            // Package-registered MCP transport stubs, not app routes.
+            if (str_starts_with($route->uri(), 'mcp/')) {
+                continue;
+            }
+
             $appUris = ['ticket', 'milestone', 'project', 'release', 'note', 'user'];
             $isAppRoute = false;
 
