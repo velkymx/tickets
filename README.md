@@ -23,6 +23,7 @@ Open [http://localhost](http://localhost) and log in with the default administra
 ### Ticket Management
 - Create, edit, clone, and batch-update tickets with full metadata (type, status, importance, project, milestone, assignee, due date, story points, estimates)
 - Kanban board with drag-and-drop status changes (powered by SortableJS)
+- Query-bar search (`status:completed assignee:me importance:blocker`) with presets on tickets, projects, milestones, and home
 - Multi-filter list view with search, pagination, and per-page control
 - CSV import for bulk ticket creation
 - Ticket Pulse — real-time execution state (ON TRACK, AT RISK, BLOCKED, IDLE) with blocker surfacing, decision tracking, and open thread monitoring
@@ -54,10 +55,11 @@ Open [http://localhost](http://localhost) and log in with the default administra
 ### Other
 - Milestones with milestone reports, burndown charts, and progress tracking
 - Releases with ticket association
-- Projects with progress tracking and filtered views
+- Projects with progress tracking, filtered views, and an Action Priority Matrix
 - Theme support: Light (Simplex), Dark (Darkly), or Auto (OS preference)
-- User profiles with Gravatar avatars
+- User profiles with contact info, local time, and contribution calendar
 - REST API with token authentication
+- MCP server (`POST /mcp/tickets`, 11 tools) for AI assistants — same Bearer token as the REST API
 - AI agent integration via the API — see [docs/crewai.md](docs/crewai.md) for an example using CrewAI
 
 ## Screenshots
@@ -381,6 +383,36 @@ curl -H "Authorization: Bearer YOUR_TOKEN" https://your-domain.com/api/v1/ticket
 ```
 
 Returns execution state, latest blocker, next action, latest decision, and open threads.
+
+#### Update Ticket
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"subject": "Fix login bug", "status_id": 2}' \
+  https://your-domain.com/api/v1/tickets/1
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| subject | string | New title |
+| description | string | New description |
+| status_id | integer | Move ticket to status |
+
+#### MCP Server
+
+AI assistants can use the Model Context Protocol endpoint instead of raw REST calls. Same Bearer token.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' \
+  https://your-domain.com/mcp/tickets
+```
+
+Tools: `get-lookups`, `list-tickets`, `get-ticket`, `get-pulse`, `create-ticket`, `update-ticket`, `add-note`, `reply-to-note`, `edit-note`, `resolve-note`, `react-to-note`. See [docs/api.md](docs/api.md) for details. Local stdio handle: `tickets` (set `MCP_USER_ID`).
 
 ## CSV Import
 
