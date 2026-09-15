@@ -1,10 +1,28 @@
 # Tickets!
 
-A self-hosted, open-source agile ticket tracker for small teams who want Kanban boards, a knowledge base, real-time collaboration, and a REST API — without the overhead of Jira or the cost of Linear.
+[![Latest Release](https://img.shields.io/github/v/release/velkymx/tickets)](https://github.com/velkymx/tickets/releases)
+[![License](https://img.shields.io/github/license/velkymx/tickets)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/velkymx/tickets)](https://github.com/velkymx/tickets/stargazers)
 
-> **Built with [Laravel](https://laravel.com).** Tickets is proudly powered by the Laravel framework — its expressive syntax, robust ecosystem, and first-class tooling make it the backbone of this application.
+A self-hosted, open-source issue and sprint tracker for small teams. Tickets combines Kanban boards, backlogs, a knowledge base, real-time collaboration, and a REST API without the complexity of Jira or the cost of Linear.
+
+Built with [Laravel](https://laravel.com), Tickets is designed to be easy to run, easy to understand, and easy to customize.
 
 ![Ticket detail view](screenshots/ticket.png)
+
+## Why Tickets?
+
+Tickets is for teams that have outgrown a simple GitHub Issues workflow but don't need the complexity of Jira.
+
+Run it on your own infrastructure, keep your project data under your control, and customize the application to fit the way your team works.
+
+* Self-hosted and open source
+* Projects, backlogs, milestones, and sprints
+* Kanban boards
+* Real-time collaboration
+* Built-in knowledge base
+* REST API + AI MCP
+* Laravel application you can extend and customize
 
 ## Quick Start
 
@@ -20,37 +38,53 @@ Open [http://localhost](http://localhost) and log in with the default administra
 
 ## Features
 
-### Ticket Management
-- Create, edit, clone, and batch-update tickets with full metadata (type, status, importance, project, milestone, assignee, due date, story points, estimates)
-- Kanban board with drag-and-drop status changes (powered by SortableJS)
-- Query-bar search (`status:completed assignee:me importance:blocker`) with presets on tickets, projects, milestones, and home
-- Multi-filter list view with search, pagination, and per-page control
-- CSV import for bulk ticket creation
-- Ticket Pulse — real-time execution state (ON TRACK, AT RISK, BLOCKED, IDLE) with blocker surfacing, decision tracking, and open thread monitoring
+### Issues, Projects & Sprints
 
-### Notes & Activity
-- Threaded notes with reply support, pinning, hiding, and emoji reactions
-- Signal types: message, decision, blocker, action, update (auto-generated changelog entries)
-- Slash commands: `/decision`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen`, `/pin`, `/update`
-- @mention autocomplete with keyboard navigation
-- Smart paste detection (auto-formats stack traces, JSON, and URLs)
-- Markdown toolbar with live preview
-- File attachments on notes and KB articles
+Manage the work your team actually needs to get done.
+
+* Projects, milestones, sprints, and backlogs
+* Issues with status, priority, type, assignee, due date, estimates, and story points
+* Kanban boards with drag-and-drop workflow
+* Batch updates and CSV import
+* Query-based filtering such as `status:completed assignee:me importance:blocker`
+* Full-text and filtered search
+
+### Real-Time Collaboration
+
+Keep the conversation attached to the work instead of scattered across chat and email.
+
+* Threaded notes and replies
+* Decisions, blockers, actions, messages, and updates
+* @mentions
+* File attachments
+* Markdown editing and live preview
+* Slash commands for common actions
+* Real-time ticket activity
 
 ### Knowledge Base
-- Article management with Markdown (EasyMDE editor), categories, and tags
-- Version history with diff comparison and restore
-- Article visibility: public, internal, restricted (with per-user permissions)
-- Full-text search across articles, categories, and tags
-- Quick-create categories and tags inline during article creation
-- Soft deletes with admin trash recovery
 
-### Collaboration
-- Live presence indicators showing who's viewing a ticket (with composing status)
-- Watcher system with email + database notifications
-- Notification batching — rapid updates to the same ticket are grouped into digest emails
-- Notification bell with unread count and activity feed
-- Cross-reference linking: `#123` links to tickets, `kb:slug` links to KB articles
+Keep project knowledge where the team can actually find it.
+
+* Markdown articles
+* Categories and tags
+* Version history with diff and restore
+* Public, internal, and restricted articles
+* Per-user permissions
+* Full-text search
+* File attachments
+
+### Ticket Pulse
+
+See what needs attention without opening every ticket.
+
+Ticket Pulse surfaces execution state across your work:
+
+* ON TRACK
+* AT RISK
+* BLOCKED
+* IDLE
+
+It also surfaces blockers, decisions, open threads, and other signals that need attention.
 
 ### Other
 - Milestones with milestone reports, burndown charts, and progress tracking
@@ -71,6 +105,25 @@ Open [http://localhost](http://localhost) and log in with the default administra
 | Ticket Detail | Milestone Report |
 |---------------|-----------------|
 | ![Ticket detail](screenshots/ticket.png) | ![Milestone](screenshots/milestone.png) |
+
+## A simpler alternative to Jira
+
+Jira is built for organizations that need a highly configurable enterprise project management platform. Tickets takes a different approach.
+
+If your team needs projects, issues, sprints, Kanban boards, collaboration, and documentation without a large administration layer, Tickets gives you the core workflow in a self-hosted application you control.
+
+Choose Tickets when you want:
+
+* Your own infrastructure
+* Open-source software
+* A simpler project management workflow
+* A Laravel application you can customize
+* No per-user SaaS subscription
+* Project data you control
+
+Choose Jira when you need its larger enterprise ecosystem and extensive integrations.
+
+Tickets isn't trying to replace every feature Jira has. It's trying to eliminate the complexity you don't need.
 
 ## Requirements
 
