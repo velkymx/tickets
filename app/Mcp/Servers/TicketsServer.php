@@ -6,6 +6,7 @@ use App\Mcp\Tools\AddNoteTool;
 use App\Mcp\Tools\CreateTicketTool;
 use App\Mcp\Tools\EditNoteTool;
 use App\Mcp\Tools\GetLookupsTool;
+use App\Mcp\Tools\GetPulseTool;
 use App\Mcp\Tools\GetTicketTool;
 use App\Mcp\Tools\ListTicketsTool;
 use App\Mcp\Tools\ReactToNoteTool;
@@ -31,6 +32,7 @@ class TicketsServer extends Server
         GetLookupsTool::class,
         ListTicketsTool::class,
         GetTicketTool::class,
+        GetPulseTool::class,
         CreateTicketTool::class,
         UpdateTicketTool::class,
         AddNoteTool::class,
