@@ -91,19 +91,22 @@ Dashboard
         {{-- Recent Activity --}}
         <div class="card">
             <div class="card-header bg-body-secondary">
-                <h3 class="h6 mb-0">Recent Activity</h3>
+                <h3 class="h6 mb-0"><i class="fa-regular fa-clock text-muted me-2"></i>Recent Activity</h3>
             </div>
             <div class="card-body p-0">
                 @if($recentNotes->isNotEmpty())
                     <div class="list-group list-group-flush">
                         @foreach($recentNotes as $note)
-                            <a href="/tickets/{{ $note->ticket->id }}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between align-items-start">
-                                    <div>
-                                        <span class="badge text-bg-secondary mb-1">#{{ $note->ticket->id }}</span>
-                                        <p class="mb-1 small text-truncate">{{ Str::words(strip_tags($note->body), 8) }}</p>
+                            <a href="/tickets/{{ $note->ticket->id }}" class="list-group-item list-group-item-action py-2">
+                                <div class="d-flex gap-2 align-items-start">
+                                    <i class="fa-regular fa-comment text-primary mt-1 flex-shrink-0"></i>
+                                    <div class="flex-grow-1" style="min-width:0;">
+                                        <div class="d-flex justify-content-between align-items-center gap-2">
+                                            <span class="badge text-bg-secondary">#{{ $note->ticket->id }}</span>
+                                            <small class="text-muted text-nowrap flex-shrink-0">{{ $note->created_at->diffForHumans(['short' => true]) }}</small>
+                                        </div>
+                                        <p class="mb-0 mt-1 small text-body-secondary text-truncate">{{ Str::words(strip_tags($note->body), 12) }}</p>
                                     </div>
-                                    <small class="text-muted">{{ $note->created_at->diffForHumans() }}</small>
                                 </div>
                             </a>
                         @endforeach
@@ -111,19 +114,23 @@ Dashboard
                 @elseif($recentTickets->isNotEmpty())
                     <div class="list-group list-group-flush">
                         @foreach($recentTickets as $ticket)
-                            <a href="/tickets/{{ $ticket->id }}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between align-items-start">
-                                    <div>
-                                        <span class="badge text-bg-{{ $ticket->importance->class }} mb-1">{{ $ticket->importance->name }}</span>
-                                        <p class="mb-1 small">{{ $ticket->subject }}</p>
+                            <a href="/tickets/{{ $ticket->id }}" class="list-group-item list-group-item-action py-2">
+                                <div class="d-flex gap-2 align-items-start">
+                                    <i class="{{ $ticket->type->icon }} text-{{ $ticket->importance->class }} mt-1 flex-shrink-0"></i>
+                                    <div class="flex-grow-1" style="min-width:0;">
+                                        <div class="d-flex justify-content-between align-items-center gap-2">
+                                            <span class="badge text-bg-{{ $ticket->importance->class }}">{{ $ticket->importance->name }}</span>
+                                            <small class="text-muted text-nowrap flex-shrink-0">{{ $ticket->updated_at->diffForHumans(['short' => true]) }}</small>
+                                        </div>
+                                        <p class="mb-0 mt-1 small text-truncate">#{{ $ticket->id }} {{ $ticket->subject }}</p>
                                     </div>
-                                    <small class="text-muted">{{ $ticket->updated_at->diffForHumans() }}</small>
                                 </div>
                             </a>
                         @endforeach
                     </div>
                 @else
                     <div class="p-4 text-center text-muted">
+                        <i class="fa-regular fa-bell-slash mb-2" style="font-size: 1.5rem;"></i>
                         <p class="mb-0 small">No recent activity.</p>
                     </div>
                 @endif
