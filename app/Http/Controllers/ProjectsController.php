@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Services\PriorityMatrixService;
+use App\Services\TicketQueryParser;
 use App\Services\TicketService;
 use Illuminate\Http\Request;
 
@@ -15,6 +16,7 @@ class ProjectsController extends Controller
     public function __construct(
         private PriorityMatrixService $priorityMatrix,
         private TicketService $ticketService,
+        private TicketQueryParser $ticketQueryParser,
     ) {
     }
 
@@ -42,11 +44,12 @@ class ProjectsController extends Controller
 
         $perpage = $request->filled('perpage') ? min(max((int) $request->perpage, 1), 100) : 10;
 
-        $queryfilter = $request->only(Ticket::FILTER_KEYS);
+        $searchQuery = (string) $request->input('q', '');
+        $searchTokens = $this->ticketQueryParser->tokenize($searchQuery);
 
         $tickets = Ticket::query()
             ->where('project_id', $project->id)
-            ->filter($queryfilter)
+            ->filter($this->ticketQueryParser->parse($searchQuery))
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
@@ -56,10 +59,6 @@ class ProjectsController extends Controller
             )
             ->paginate($perpage)
             ->withQueryString();
-
-        ['viewfilters' => $viewfilters, 'filter' => $filter] = $this->ticketService->listFilterData($request);
-
-        $tabCounts = Ticket::tabCounts(Ticket::where('project_id', $project->id));
 
         $statuscodes = Status::get();
 
@@ -80,7 +79,7 @@ class ProjectsController extends Controller
 
         $matrix = $this->priorityMatrix->classify($openTickets);
 
-        return view('projects.show', compact('project', 'tickets', 'queryfilter', 'total', 'completed', 'percent', 'statuscodes', 'matrix', 'viewfilters', 'filter', 'tabCounts'));
+        return view('projects.show', compact('project', 'tickets', 'total', 'completed', 'percent', 'statuscodes', 'matrix', 'searchQuery', 'searchTokens'));
     }
 
     public function create()

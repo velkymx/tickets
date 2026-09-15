@@ -10,7 +10,7 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
-use App\Services\TicketService;
+use App\Services\TicketQueryParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 
 class MilestoneController extends Controller
 {
-    public function __construct(private TicketService $ticketService)
+    public function __construct(private TicketQueryParser $ticketQueryParser)
     {
     }
 
@@ -65,11 +65,12 @@ class MilestoneController extends Controller
 
         $perpage = $request->filled('perpage') ? min(max((int) $request->perpage, 1), 100) : 10;
 
-        $queryfilter = $request->only(Ticket::FILTER_KEYS);
+        $searchQuery = (string) $request->input('q', '');
+        $searchTokens = $this->ticketQueryParser->tokenize($searchQuery);
 
         $tickets = Ticket::query()
             ->where('milestone_id', $milestone->id)
-            ->filter($queryfilter)
+            ->filter($this->ticketQueryParser->parse($searchQuery))
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
@@ -80,15 +81,11 @@ class MilestoneController extends Controller
             ->paginate($perpage)
             ->withQueryString();
 
-        ['viewfilters' => $viewfilters, 'filter' => $filter] = $this->ticketService->listFilterData($request);
-
-        $tabCounts = Ticket::tabCounts(Ticket::where('milestone_id', $milestone->id));
-
         $completed = $milestone->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
         $total = $milestone->tickets()->count();
         $percent = $total > 0 ? min(100, (int) round($completed / $total * 100)) : 0;
 
-        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'percent', 'viewfilters', 'filter', 'tabCounts'));
+        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'percent', 'searchQuery', 'searchTokens'));
 
     }
 

@@ -51,8 +51,7 @@ Dashboard
     {{-- My Tickets --}}
     <div class="col-lg-9">
         <h2 class="h5 mb-3">My Tickets</h2>
-        <x-ticket-filters :viewfilters="$viewfilters" :filter="$filter" :action="url('home')" />
-        <x-ticket-filter-tabs :counts="$tabCounts" />
+        <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('home')" />
         <x-ticket-table
             :tickets="$tickets"
             :paginator="$tickets"

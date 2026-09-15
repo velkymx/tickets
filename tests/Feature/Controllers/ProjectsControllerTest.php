@@ -131,8 +131,8 @@ class ProjectsControllerTest extends TestCase
         $sorted->assertStatus(200);
         $this->assertSame(['Alpha', 'Zebra'], $sorted->viewData('tickets')->pluck('subject')->all());
 
-        // Filter to my assigned tickets only.
-        $mine = $this->actingAs($user)->get("/projects/show/{$project->id}?assignee=me");
+        // Filter to my assigned tickets only via the query bar.
+        $mine = $this->actingAs($user)->get("/projects/show/{$project->id}?q=".urlencode('assignee:me'));
         $this->assertSame(['Zebra'], $mine->viewData('tickets')->pluck('subject')->values()->all());
     }
 

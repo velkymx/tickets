@@ -16,7 +16,6 @@ use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -273,30 +272,6 @@ class TicketService
             ),
             $note->ticket_id
         );
-    }
-
-    /**
-     * Option lists and current selections for the shared ticket filter bar
-     * (<x-ticket-filters>). Used by every paginated ticket list.
-     *
-     * @return array{viewfilters: array, filter: array}
-     */
-    public function listFilterData(Request $request): array
-    {
-        $viewfilters = $this->getLookups();
-        $viewfilters['statuses']['none'] = 'Any Active Status';
-        $viewfilters['statuses']['all'] = 'Any Status';
-        $viewfilters['types']['none'] = 'Any Type';
-        $viewfilters['milestones']['none'] = 'Any Milestone';
-
-        $filter = ['milestone_id' => 'none', 'type_id' => 'none', 'status_id' => 'none'];
-        foreach (array_keys($filter) as $key) {
-            if ($request->has($key)) {
-                $filter[$key] = $request->$key;
-            }
-        }
-
-        return ['viewfilters' => $viewfilters, 'filter' => $filter];
     }
 
     public function getLookups(): array

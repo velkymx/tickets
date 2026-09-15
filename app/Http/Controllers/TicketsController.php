@@ -43,13 +43,14 @@ class TicketsController extends Controller
         $closedStatusIds = Status::closedStatusIds();
 
         // Home lists the current user's tickets via the canonical list component.
-        $myTickets = fn () => Ticket::where('user_id2', $user->id);
+        $searchQuery = (string) $request->input('q', '');
+        $searchTokens = $this->ticketQueryParser->tokenize($searchQuery);
 
-        $queryfilter = $request->only(Ticket::FILTER_KEYS);
-        $queryfilter['status_id'] ??= 'none'; // default to active statuses
+        $parsed = $this->ticketQueryParser->parse($searchQuery);
+        $parsed['status_id'] ??= 'none'; // default to active statuses
 
-        $tickets = $myTickets()
-            ->filter($queryfilter)
+        $tickets = Ticket::where('user_id2', $user->id)
+            ->filter($parsed)
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
@@ -59,10 +60,6 @@ class TicketsController extends Controller
             )
             ->paginate(15)
             ->withQueryString();
-
-        ['viewfilters' => $viewfilters, 'filter' => $filter] = $this->ticketService->listFilterData($request);
-
-        $tabCounts = Ticket::tabCounts($myTickets());
 
         $stats = [
             'assigned' => Ticket::where('user_id2', $user->id)->count(),
@@ -88,7 +85,7 @@ class TicketsController extends Controller
             ->get()
             ->filter(fn ($note) => $note->ticket !== null);
 
-        return View('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'viewfilters', 'filter', 'tabCounts'));
+        return View('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens'));
     }
 
     public function index(Request $request)

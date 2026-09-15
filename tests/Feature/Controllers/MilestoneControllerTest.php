@@ -165,8 +165,7 @@ class MilestoneControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('tickets');
-        $response->assertViewHas('tabCounts');
-        $response->assertViewHas('viewfilters');
+        $response->assertViewHas('searchTokens');
         $this->assertSame(['Alpha', 'Zebra'], $response->viewData('tickets')->pluck('subject')->all());
     }
 

@@ -30,8 +30,7 @@
         <div class="tab-content">
             {{-- Tab 1: Ticket Table --}}
             <div class="tab-pane fade show active" id="tickets" role="tabpanel" aria-labelledby="tickets-tab">
-                <x-ticket-filters :viewfilters="$viewfilters" :filter="$filter" :action="url('projects/show/'.$project->id)" />
-                <x-ticket-filter-tabs :counts="$tabCounts" />
+                <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('projects/show/'.$project->id)" />
                 <x-ticket-table
                     :tickets="$tickets"
                     :paginator="$tickets"

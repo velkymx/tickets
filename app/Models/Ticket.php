@@ -50,21 +50,6 @@ class Ticket extends Model
         return $query;
     }
 
-    /**
-     * Counts for the ticket filter tabs (Mine / Critical / Blocker) over a base
-     * query (e.g. all tickets, or one project's/milestone's tickets).
-     *
-     * @return array{mine: int, critical: int, blocker: int}
-     */
-    public static function tabCounts(Builder $base): array
-    {
-        return [
-            'mine' => auth()->check() ? (clone $base)->where('user_id2', auth()->id())->count() : 0,
-            'critical' => (clone $base)->where('importance_id', 4)->count(),
-            'blocker' => (clone $base)->where('importance_id', 5)->count(),
-        ];
-    }
-
     protected static function boot()
     {
         parent::boot();

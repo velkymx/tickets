@@ -25,8 +25,7 @@
     <div class="col-lg-9">
  
         {{-- Ticket List (shared canonical component) --}}
-        <x-ticket-filters :viewfilters="$viewfilters" :filter="$filter" :action="url('milestone/show/'.$milestone->id)" />
-        <x-ticket-filter-tabs :counts="$tabCounts" />
+        <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('milestone/show/'.$milestone->id)" />
         <x-ticket-table
             :tickets="$tickets"
             :paginator="$tickets"
