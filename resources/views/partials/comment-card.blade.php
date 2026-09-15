@@ -183,7 +183,7 @@
 
         {{-- Edited indicator --}}
         @if($note->isEdited())
-            <span class="text-muted ms-auto">Edited by {{ $note->user->name }} on {{ $note->edited_at->format('M j, Y') }}</span>
+            <span class="text-muted ms-auto">Edited by <a href="/users/{{ $note->user->id }}" class="text-decoration-none">{{ $note->user->name }}</a> on {{ $note->edited_at->format('M j, Y') }}</span>
         @endif
     </div>
 

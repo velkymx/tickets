@@ -77,7 +77,7 @@
                     </td>
                     <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                     <td>{{ $tick->project->name }}</td>
-                    <td>{{ $tick->assignee->name }}</td>
+                    <td><a href="/users/{{ $tick->assignee->id }}" class="text-decoration-none text-body">{{ $tick->assignee->name }}</a></td>
                     @if($showEstimate)
                         <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
                     @endif

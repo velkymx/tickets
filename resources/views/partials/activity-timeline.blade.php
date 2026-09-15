@@ -17,7 +17,7 @@
                 <div class="alert alert-light border-start border-4 border-primary d-flex align-items-start gap-2 py-2" role="alert">
                     <i class="fas fa-thumbtack text-primary mt-1"></i>
                     <div>
-                        <strong>{{ $pinned->user->name }}:</strong>
+                        <strong><a href="/users/{{ $pinned->user->id }}" class="text-decoration-none">{{ $pinned->user->name }}</a>:</strong>
                         {!! clean($pinned->body) !!}
                     </div>
                 </div>
