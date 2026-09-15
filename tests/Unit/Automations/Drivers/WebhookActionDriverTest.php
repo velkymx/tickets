@@ -54,6 +54,35 @@ class WebhookActionDriverTest extends TestCase
     }
 
     #[Test]
+    public function it_rejects_a_non_http_verb_method(): void
+    {
+        Http::fake(['https://example.com/webhook' => Http::response('ok', 200)]);
+
+        $automation = Automation::factory()->create();
+        $rule = AutomationRule::factory()->create(['automation_id' => $automation->id]);
+        $action = AutomationAction::factory()->create([
+            'automation_rule_id' => $rule->id,
+            'type' => 'call_webhook',
+            'config_json' => [
+                'url' => 'https://example.com/webhook',
+                'method' => 'sink', // not an HTTP verb — must be rejected
+                'headers' => [],
+                'payload' => [],
+            ],
+        ]);
+        $run = AutomationRun::create([
+            'automation_id' => $automation->id,
+            'automation_rule_id' => $rule->id,
+            'trigger_name' => 'ticket.updated',
+            'status' => 'running',
+            'context_json' => [],
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        app(WebhookActionDriver::class)->execute($action, [], $run);
+    }
+
+    #[Test]
     public function it_blocks_ssrf_urls_and_throws(): void
     {
         $automation = Automation::factory()->create();

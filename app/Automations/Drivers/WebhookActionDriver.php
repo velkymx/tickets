@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Http;
 
 class WebhookActionDriver implements AutomationActionDriverInterface
 {
+    /** HTTP verbs a webhook may use — prevents dynamic dispatch to arbitrary PendingRequest methods. */
+    private const ALLOWED_METHODS = ['get', 'post', 'put', 'patch', 'delete'];
+
     public function __construct(
         private readonly SsrfGuard $ssrfGuard,
         private readonly PayloadRenderer $renderer,
@@ -32,6 +35,11 @@ class WebhookActionDriver implements AutomationActionDriverInterface
         }
 
         $method = strtolower($config['method'] ?? 'post');
+
+        if (! in_array($method, self::ALLOWED_METHODS, true)) {
+            throw new \InvalidArgumentException("Unsupported webhook method [{$method}].");
+        }
+
         $headers = $config['headers'] ?? [];
 
         $response = Http::timeout(10)
