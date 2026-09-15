@@ -81,7 +81,7 @@ class TicketQueryParser
 
     private function applyStatus(array &$filters, string $v, bool $allowNames): bool
     {
-        if (in_array($v, ['active', 'open'], true)) {
+        if ($v === 'open') {
             $filters['status_id'] = 'none';
 
             return true;

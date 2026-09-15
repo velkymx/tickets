@@ -10,8 +10,8 @@
     $presets = [
         ['label' => 'All tickets', 'query' => ''],
         ['label' => 'My tickets', 'query' => 'assignee:me'],
-        ['label' => 'My open', 'query' => 'assignee:me status:active'],
-        ['label' => 'Active', 'query' => 'status:active'],
+        ['label' => 'My open', 'query' => 'assignee:me is:open'],
+        ['label' => 'Open', 'query' => 'is:open'],
         ['label' => 'Critical', 'query' => 'importance:critical'],
         ['label' => 'Blockers', 'query' => 'importance:blocker'],
         ['label' => 'Completed', 'query' => 'status:completed'],
