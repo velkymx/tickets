@@ -18,9 +18,11 @@ use App\Models\TicketView;
 use App\Models\User;
 use App\Services\AttachmentService;
 use App\Services\TicketPulseService;
+use App\Services\TicketQueryParser;
 use App\Services\TicketService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -29,7 +31,8 @@ use Illuminate\Support\Str;
 class TicketsController extends Controller
 {
     public function __construct(
-        private TicketService $ticketService
+        private TicketService $ticketService,
+        private TicketQueryParser $ticketQueryParser,
     ) {}
 
     public function home(Request $request)
@@ -96,10 +99,17 @@ class TicketsController extends Controller
             $perpage = min(max((int) $request->perpage, 1), 100);
         }
 
-        $queryfilter = $request->only(Ticket::FILTER_KEYS);
+        $searchQuery = (string) $request->input('q', '');
+        $searchTokens = $this->ticketQueryParser->tokenize($searchQuery);
+
+        // Query bar drives filtering; legacy direct params (?status_id=…) still work.
+        $filters = array_merge(
+            Arr::except($request->only(Ticket::FILTER_KEYS), ['q']),
+            $this->ticketQueryParser->parse($searchQuery),
+        );
 
         $tickets = Ticket::query()
-            ->filter($queryfilter)
+            ->filter($filters)
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
@@ -109,10 +119,6 @@ class TicketsController extends Controller
             )
             ->paginate($perpage)
             ->withQueryString();
-
-        if ($request->filled('perpage')) {
-            $queryfilter['perpage'] = $perpage;
-        }
 
         $lookups = $this->ticketService->getLookups();
 
@@ -124,11 +130,7 @@ class TicketsController extends Controller
         $lookups['users'][0] = 'No Change';
         $lookups['releases'][0] = 'No Change';
 
-        ['viewfilters' => $viewfilters, 'filter' => $filter] = $this->ticketService->listFilterData($request);
-
-        $tabCounts = Ticket::tabCounts(Ticket::query());
-
-        return view('tickets.list', compact('tickets', 'queryfilter', 'lookups', 'viewfilters', 'filter', 'tabCounts'));
+        return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens'));
     }
 
     public function claim($id)

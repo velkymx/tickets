@@ -8,11 +8,8 @@
         <a href="/ticket/create" class="btn btn-sm btn-primary">Create Ticket</a>
     </div>
 
-    {{-- Filter Form --}}
-    <x-ticket-filters :viewfilters="$viewfilters" :filter="$filter" :action="url('tickets')" />
-
-    {{-- Quick Filter Tabs --}}
-    <x-ticket-filter-tabs :counts="$tabCounts" />
+    {{-- Query Search --}}
+    <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('tickets')" />
 
     {{-- Batch Update Form (Starts here, closes at the end of the section) --}}
     <form method="POST" action="{{ url('tickets/batch') }}">

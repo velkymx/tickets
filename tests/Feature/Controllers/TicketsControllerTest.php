@@ -210,22 +210,19 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_provides_tab_counts_and_hides_empty_priority_tabs(): void
+    public function index_filters_via_query_string(): void
     {
         $user = User::factory()->create();
-        // 1 blocker assigned to me, no critical tickets.
-        Ticket::factory()->create(['user_id2' => $user->id, 'importance_id' => 5]);
+        $blocker = Ticket::factory()->create(['importance_id' => 5, 'subject' => 'Blocker one']);
+        $minor = Ticket::factory()->create(['importance_id' => 2, 'subject' => 'Minor one']);
 
-        $response = $this->actingAs($user)->get('/tickets');
+        $response = $this->actingAs($user)->get('/tickets?q='.urlencode('importance:blocker'));
 
         $response->assertStatus(200);
-        $counts = $response->viewData('tabCounts');
-        $this->assertSame(1, $counts['blocker']);
-        $this->assertSame(0, $counts['critical']);
-        $this->assertSame(1, $counts['mine']);
-
-        $response->assertSee('Blocker');       // count > 0 -> shown
-        $response->assertDontSee('>Critical'); // count 0 -> hidden
+        $ids = $response->viewData('tickets')->pluck('id');
+        $this->assertTrue($ids->contains($blocker->id));
+        $this->assertFalse($ids->contains($minor->id));
+        $response->assertViewHas('searchTokens');
     }
 
     #[Test]
@@ -418,7 +415,7 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('lookups');
-        $response->assertViewHas('viewfilters');
+        $response->assertViewHas('searchTokens');
     }
 
     #[Test]
