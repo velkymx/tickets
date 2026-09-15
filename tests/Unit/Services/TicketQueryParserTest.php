@@ -33,10 +33,18 @@ class TicketQueryParserTest extends TestCase
     }
 
     #[Test]
-    public function status_active_and_open_map_to_active_set(): void
+    public function status_open_maps_to_active_set(): void
     {
-        $this->assertSame(['status_id' => 'none'], $this->parser()->parse('status:active'));
+        $this->assertSame(['status_id' => 'none'], $this->parser()->parse('status:open'));
         $this->assertSame(['status_id' => 'none'], $this->parser()->parse('is:open'));
+    }
+
+    #[Test]
+    public function status_active_resolves_the_active_status_by_name(): void
+    {
+        $active = \App\Models\Status::whereRaw('LOWER(name) = ?', ['active'])->firstOrFail();
+
+        $this->assertSame(['status_id' => $active->id], $this->parser()->parse('status:active'));
     }
 
     #[Test]
