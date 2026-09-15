@@ -86,7 +86,7 @@ class TicketsController extends Controller
     {
         $perpage = 10;
 
-        if ($request->has('perpage')) {
+        if ($request->filled('perpage')) {
             $perpage = min(max((int) $request->perpage, 1), 100);
         }
 
@@ -123,6 +123,10 @@ class TicketsController extends Controller
             }])
             ->orderBy('importance_id', 'DESC')
             ->paginate($perpage);
+
+        if ($request->filled('perpage')) {
+            $queryfilter['perpage'] = $perpage;
+        }
 
         $lookups = $this->ticketService->getLookups();
 
