@@ -3,15 +3,20 @@
 namespace App\Mcp\Servers;
 
 use App\Mcp\Tools\AddNoteTool;
+use App\Mcp\Tools\CreateKbArticleTool;
 use App\Mcp\Tools\CreateTicketTool;
 use App\Mcp\Tools\EditNoteTool;
+use App\Mcp\Tools\GetKbArticleTool;
+use App\Mcp\Tools\GetKbLookupsTool;
 use App\Mcp\Tools\GetLookupsTool;
 use App\Mcp\Tools\GetPulseTool;
 use App\Mcp\Tools\GetTicketTool;
+use App\Mcp\Tools\KbSearchTool;
 use App\Mcp\Tools\ListTicketsTool;
 use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
+use App\Mcp\Tools\UpdateKbArticleTool;
 use App\Mcp\Tools\UpdateTicketTool;
 use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
@@ -20,7 +25,7 @@ use Laravel\Mcp\Server\Attributes\Version;
 
 #[Name('Tickets Server')]
 #[Version('1.0.0')]
-#[Instructions('This server manages tickets: list and read assigned tickets, create tickets, add notes with slash commands, and resolve lookup IDs. Always call get-lookups first to resolve type, importance, project, milestone, status, and user names to IDs. Web access requires an Authorization Bearer API token generated at Profile -> Edit Profile -> API Token.')]
+#[Instructions('This server manages tickets and the knowledge base: list and read assigned tickets, create tickets, add notes with slash commands, and search/read/write KB articles. Call get-lookups-tool first for ticket IDs and get-kb-lookups-tool for KB category/tag IDs before creating or updating. Web access requires an Authorization Bearer API token generated at Profile -> Edit Profile -> API Token.')]
 class TicketsServer extends Server
 {
     /**
@@ -40,6 +45,11 @@ class TicketsServer extends Server
         EditNoteTool::class,
         ResolveNoteTool::class,
         ReactToNoteTool::class,
+        GetKbLookupsTool::class,
+        KbSearchTool::class,
+        GetKbArticleTool::class,
+        CreateKbArticleTool::class,
+        UpdateKbArticleTool::class,
     ];
 
     /**
