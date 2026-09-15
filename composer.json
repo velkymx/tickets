@@ -13,6 +13,7 @@
         "laravel/socialite": "^5.10",
         "laravel/tinker": "^3.0",
         "mustache/mustache": "^3.2",
+        "symfony/html-sanitizer": "^8.1",
         "symfony/yaml": "^8.0"
     },
     "require-dev": {
