@@ -17,7 +17,7 @@
             <div class="col-md-8">
                 <h4>{{ $milestone->name }}</h4>
                 @if($milestone->description)
-                    <p class="text-muted">{{ $milestone->description }}</p>
+                    <div class="text-muted">{!! clean($milestone->description) !!}</div>
                 @endif
                 <p>
                     <strong>Owner:</strong> @if($milestone->owner)<a href="/users/{{ $milestone->owner->id }}" class="text-decoration-none">{{ $milestone->owner->name }}</a>@else Unassigned @endif<br>
