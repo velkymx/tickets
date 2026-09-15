@@ -103,6 +103,35 @@ class ConditionEvaluatorTest extends TestCase
     }
 
     #[Test]
+    public function equals_does_not_loosely_match_null_field_against_zero(): void
+    {
+        // A missing field resolves to null; `null == 0` is true under loose
+        // comparison but must not fire an equals condition.
+        $conditions = ['all' => [
+            ['field' => 'ticket.nonexistent', 'operator' => 'equals', 'value' => 0],
+        ]];
+        $this->assertFalse($this->evaluator->matches($conditions, $this->ctx()));
+    }
+
+    #[Test]
+    public function not_equals_treats_null_field_as_different_from_zero(): void
+    {
+        $conditions = ['all' => [
+            ['field' => 'ticket.nonexistent', 'operator' => 'not_equals', 'value' => 0],
+        ]];
+        $this->assertTrue($this->evaluator->matches($conditions, $this->ctx()));
+    }
+
+    #[Test]
+    public function greater_than_compares_numeric_strings(): void
+    {
+        $conditions = ['all' => [
+            ['field' => 'ticket.id', 'operator' => 'greater_than', 'value' => '10'],
+        ]];
+        $this->assertTrue($this->evaluator->matches($conditions, $this->ctx()));
+    }
+
+    #[Test]
     public function in_operator(): void
     {
         $conditions = ['all' => [
