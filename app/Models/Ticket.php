@@ -68,11 +68,65 @@ class Ticket extends Model
     {
         parent::boot();
 
+        static::updating(function ($ticket) {
+            if (! $ticket->isDirty('status_id')) {
+                return;
+            }
+
+            $wasClosed = Status::isClosed((int) $ticket->getOriginal('status_id'));
+            $isClosed = Status::isClosed((int) $ticket->status_id);
+
+            // Auto-manage closed_at on status transitions, unless explicitly set.
+            if ($isClosed && ! $wasClosed && ! $ticket->isDirty('closed_at')) {
+                $ticket->closed_at = now();
+            }
+
+            if ($wasClosed && ! $isClosed && ! $ticket->isDirty('closed_at')) {
+                $ticket->closed_at = null;
+            }
+        });
+
         static::updated(function ($ticket) {
+            if ($ticket->wasChanged('status_id')) {
+                $wasClosed = Status::isClosed((int) $ticket->getOriginal('status_id'));
+                $isClosed = Status::isClosed((int) $ticket->status_id);
+
+                if ($wasClosed && ! $isClosed) {
+                    $ticket->recordReopenAuditNote();
+                }
+
+                app(\App\Services\TicketPulseService::class)->invalidatePulse($ticket->id);
+            }
+
             if ($ticket->wasChanged(['subject', 'description', 'status_id', 'user_id2', 'milestone_id', 'project_id', 'importance_id', 'due_at', 'closed_at', 'estimate', 'storypoints', 'actual'])) {
                 $ticket->notifyWatchers('Ticket', auth()->id() ?? 0);
             }
         });
+    }
+
+    /**
+     * Leave a small changelog audit note when a closed ticket is reopened.
+     */
+    public function recordReopenAuditNote(): void
+    {
+        $userId = auth()->id() ?? $this->user_id2 ?? $this->user_id;
+
+        if (! $userId) {
+            return;
+        }
+
+        $oldStatus = Status::find($this->getOriginal('status_id'));
+        $message = 'Ticket reopened (status changed from '
+            .($oldStatus->name ?? 'closed')
+            .' to '.($this->status->name ?? 'open').').';
+
+        Note::create([
+            'user_id' => $userId,
+            'ticket_id' => $this->id,
+            'body' => $message,
+            'body_markdown' => $message,
+            'notetype' => 'changelog',
+        ]);
     }
 
     private function notifyWatchers(string $type, ?int $exceptUserId = null): void
