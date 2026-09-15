@@ -49,7 +49,7 @@
 
     <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
-        <div class="col-lg-8">
+        <div class="col-lg-9">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <h2 class="mb-0">
                     <i class="{{ $ticket->type->icon }}" title="{{ $ticket->type->name }}" aria-hidden="true"></i>
@@ -169,7 +169,7 @@
         </div>
 
         {{-- Right Column (Details) --}}
-        <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="col-lg-3 mt-4 mt-lg-0">
             
             {{-- Action Buttons --}}
             <div class="row g-2 mb-4 text-center">

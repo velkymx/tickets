@@ -49,7 +49,7 @@ Dashboard
 
 <div class="row g-4">
     {{-- Tickets by Status --}}
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         @if (count($alltickets) > 0)
             <h2 class="h5 mb-3">My Tickets by Status</h2>
             @foreach ($alltickets as $label => $tickets)
@@ -68,7 +68,7 @@ Dashboard
     </div>
 
     {{-- Sidebar: Recent Activity & Quick Links --}}
-    <div class="col-lg-4">
+    <div class="col-lg-3">
         {{-- Quick Links --}}
         <div class="card mb-4">
             <div class="card-header bg-body-secondary">

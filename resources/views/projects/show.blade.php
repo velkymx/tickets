@@ -11,7 +11,7 @@
 
 <div class="row">
     {{-- Main Content --}}
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         <ul class="nav nav-tabs mb-3" role="tablist">
             <li class="nav-item" role="presentation">
                 <a class="nav-link active" id="tickets-tab" data-bs-toggle="tab" data-bs-target="#tickets"
@@ -47,7 +47,7 @@
     </div>
 
     {{-- Sidebar --}}
-    <div class="col-lg-4 mt-4 mt-lg-0">
+    <div class="col-lg-3 mt-4 mt-lg-0">
         {{-- Progress --}}
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-body-secondary">

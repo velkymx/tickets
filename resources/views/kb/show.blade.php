@@ -16,7 +16,7 @@
 
 <div class="row">
     {{-- Main Content --}}
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         <div class="d-flex justify-content-between align-items-start mb-3">
             <h1 class="mb-0">{{ $article->title }}</h1>
         </div>
@@ -69,7 +69,7 @@
     </div>
 
     {{-- Metadata Sidebar --}}
-    <div class="col-lg-4 mt-4 mt-lg-0">
+    <div class="col-lg-3 mt-4 mt-lg-0">
         @can('update', $article)
             <div class="d-grid gap-2 mb-4">
                 <a href="{{ route('kb.edit', $article->slug) }}" class="btn btn-secondary">

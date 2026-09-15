@@ -22,7 +22,7 @@
 
 <div class="row">
     {{-- Left Column: Tabs --}}
-    <div class="col-lg-8">
+    <div class="col-lg-9">
  
         {{-- Ticket List (shared canonical component) --}}
         <x-ticket-filters :viewfilters="$viewfilters" :filter="$filter" :action="url('milestone/show/'.$milestone->id)" />
@@ -36,7 +36,7 @@
     </div>
     
     {{-- Right Column: Summary Sidebar --}}
-    <div class="col-lg-4 mt-4 mt-lg-0">
+    <div class="col-lg-3 mt-4 mt-lg-0">
 
         {{-- Action Buttons --}}
         <div class="row g-2 mb-4 text-center">
