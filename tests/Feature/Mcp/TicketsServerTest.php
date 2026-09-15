@@ -1,0 +1,147 @@
+<?php
+
+namespace Tests\Feature\Mcp;
+
+use App\Mcp\Servers\TicketsServer;
+use App\Mcp\Tools\AddNoteTool;
+use App\Mcp\Tools\CreateTicketTool;
+use App\Mcp\Tools\EditNoteTool;
+use App\Mcp\Tools\GetLookupsTool;
+use App\Mcp\Tools\GetTicketTool;
+use App\Mcp\Tools\ListTicketsTool;
+use App\Mcp\Tools\ReactToNoteTool;
+use App\Mcp\Tools\ReplyToNoteTool;
+use App\Mcp\Tools\ResolveNoteTool;
+use App\Mcp\Tools\UpdateTicketTool;
+use App\Models\Importance;
+use App\Models\Milestone;
+use App\Models\Note;
+use App\Models\Project;
+use App\Models\Status;
+use App\Models\Ticket;
+use App\Models\Type;
+use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
+
+class TicketsServerTest extends TestCase
+{
+    use SeedsDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+    }
+
+    #[Test]
+    public function lookups_tool_returns_all_lookup_tables(): void
+    {
+        $user = User::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(GetLookupsTool::class, []);
+
+        $response->assertOk();
+        $response->assertSee('milestones');
+    }
+
+    #[Test]
+    public function lookups_tool_rejects_unauthenticated_calls(): void
+    {
+        $response = TicketsServer::tool(GetLookupsTool::class, []);
+
+        $response->assertHasErrors(['Unauthenticated']);
+    }
+
+    #[Test]
+    public function list_tickets_tool_returns_assigned_tickets(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(ListTicketsTool::class, []);
+
+        $response->assertOk();
+        $response->assertSee($ticket->subject);
+    }
+
+    #[Test]
+    public function get_ticket_tool_returns_detail_and_pulse(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(GetTicketTool::class, [
+            'ticket_id' => $ticket->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee($ticket->subject);
+        $response->assertSee('pulse');
+    }
+
+    #[Test]
+    public function create_ticket_tool_creates_ticket(): void
+    {
+        $user = User::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(CreateTicketTool::class, [
+            'subject' => 'MCP created ticket',
+            'type_id' => Type::factory()->create()->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Ticket created.');
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'MCP created ticket',
+            'user_id' => $user->id,
+        ]);
+    }
+
+    #[Test]
+    public function add_note_tool_adds_note_with_hours(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => 'Investigating via MCP',
+            'hours' => 1.5,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Note added.');
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    #[Test]
+    public function add_note_tool_supports_slash_commands(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/close Fixed via MCP',
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue(Status::isClosed($ticket->fresh()->status_id));
+    }
+
+}
