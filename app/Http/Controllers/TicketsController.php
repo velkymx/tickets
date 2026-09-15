@@ -217,14 +217,6 @@ class TicketsController extends Controller
 
         $lookups = $this->ticketService->getLookups();
 
-        if (! empty($ticket->closed_at)) {
-            $ticket->closed_at = Carbon::parse($ticket->closed_at)->format('m/d/Y');
-        }
-
-        if (! empty($ticket->due_at)) {
-            $ticket->due_at = Carbon::parse($ticket->due_at)->format('m/d/Y');
-        }
-
         return view('tickets.clone', compact('ticket', 'lookups'));
     }
 
@@ -235,14 +227,6 @@ class TicketsController extends Controller
         $this->authorize('update', $ticket);
 
         $lookups = $this->ticketService->getLookups();
-
-        if (! empty($ticket->closed_at)) {
-            $ticket->closed_at = Carbon::parse($ticket->closed_at)->format('m/d/Y');
-        }
-
-        if (! empty($ticket->due_at)) {
-            $ticket->due_at = Carbon::parse($ticket->due_at)->format('m/d/Y');
-        }
 
         return view('tickets.edit', compact('ticket', 'lookups'));
     }
