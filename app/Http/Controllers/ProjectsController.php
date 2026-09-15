@@ -6,10 +6,15 @@ use App\Http\Requests\StoreProjectRequest;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
+use App\Services\PriorityMatrixService;
 use Illuminate\Http\Request;
 
 class ProjectsController extends Controller
 {
+    public function __construct(private PriorityMatrixService $priorityMatrix)
+    {
+    }
+
     public function index()
     {
         $projects = Project::withCount([
@@ -69,7 +74,15 @@ class ProjectsController extends Controller
             $percent = round($completed / $total, 2) * 100;
         }
 
-        return view('projects.show', compact('project', 'tickets', 'queryfilter', 'total', 'completed', 'percent', 'statuscodes'));
+        $openTickets = Ticket::query()
+            ->where('project_id', $project->id)
+            ->whereNotIn('status_id', Status::closedStatusIds())
+            ->with('importance')
+            ->get();
+
+        $matrix = $this->priorityMatrix->classify($openTickets);
+
+        return view('projects.show', compact('project', 'tickets', 'queryfilter', 'total', 'completed', 'percent', 'statuscodes', 'matrix'));
     }
 
     public function create()

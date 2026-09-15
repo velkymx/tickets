@@ -17,6 +17,9 @@
 
         {{-- Pagination Links --}}
         {!! $tickets->appends($queryfilter)->links('pagination::bootstrap-5') !!}
+
+        {{-- Action Priority Matrix --}}
+        @include('projects.partials.priority-matrix', ['matrix' => $matrix])
     </div>
 
     {{-- Sidebar --}}
