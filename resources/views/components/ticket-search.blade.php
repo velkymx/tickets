@@ -14,7 +14,7 @@
         ['label' => 'Active', 'query' => 'status:active'],
         ['label' => 'Critical', 'query' => 'importance:critical'],
         ['label' => 'Blockers', 'query' => 'importance:blocker'],
-        ['label' => 'Closed', 'query' => 'status:closed'],
+        ['label' => 'Completed', 'query' => 'status:completed'],
     ];
 
     // Removing a chip strips its raw token from the current query.
