@@ -7,6 +7,7 @@ use App\Mcp\Tools\AddNoteTool;
 use App\Mcp\Tools\CreateTicketTool;
 use App\Mcp\Tools\EditNoteTool;
 use App\Mcp\Tools\GetLookupsTool;
+use App\Mcp\Tools\GetPulseTool;
 use App\Mcp\Tools\GetTicketTool;
 use App\Mcp\Tools\ListTicketsTool;
 use App\Mcp\Tools\ReactToNoteTool;
@@ -142,6 +143,20 @@ class TicketsServerTest extends TestCase
 
         $response->assertOk();
         $this->assertTrue(Status::isClosed($ticket->fresh()->status_id));
+    }
+
+    #[Test]
+    public function get_pulse_tool_returns_execution_state(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(GetPulseTool::class, [
+            'ticket_id' => $ticket->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('execution_state');
     }
 
     #[Test]
