@@ -1187,4 +1187,28 @@ class TicketControllerTest extends TestCase
         $this->assertEquals(0, Note::where('ticket_id', $lowerTicket->id)->count());
     }
 
+    #[Test]
+    public function close_slash_command_sets_a_closed_status(): void
+    {
+        Cache::flush();
+        $openStatus = Status::factory()->open()->create();
+        $closedStatus = Status::factory()->create(['name' => 'closed']);
+
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+            'status_id' => $openStatus->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/close',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $ticket->refresh();
+        $this->assertEquals($closedStatus->id, $ticket->status_id);
+        $this->assertTrue(Status::isClosed($ticket->status_id));
+        $this->assertNotNull($ticket->closed_at);
+    }
 }
