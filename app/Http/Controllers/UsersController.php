@@ -21,9 +21,11 @@ class UsersController extends Controller
         $statuses = Status::pluck('name', 'id');
 
         // Ticket lists are private: only visible on your own profile.
+        // Closed tickets are excluded: the profile shows active work only.
         $alltickets = [];
         if ($isOwnProfile) {
             $tickets = Ticket::where('user_id2', $id)
+                ->whereNotIn('status_id', Status::closedStatusIds())
                 ->with('status')
                 ->get()
                 ->groupBy(fn ($ticket) => $ticket->status->name);

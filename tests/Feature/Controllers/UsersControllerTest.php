@@ -98,6 +98,28 @@ class UsersControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_hides_closed_tickets_on_own_profile(): void
+    {
+        $user = User::factory()->create();
+        $open = Status::factory()->create(['name' => 'Open']);
+        $closed = Status::factory()->closed()->create();
+        $openTicket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $open->id,
+        ]);
+        $closedTicket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $closed->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee($openTicket->subject);
+        $response->assertDontSee($closedTicket->subject);
+    }
+
+    #[Test]
     public function show_passes_contribution_data(): void
     {
         $user = User::factory()->create();
