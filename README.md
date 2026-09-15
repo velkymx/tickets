@@ -101,24 +101,25 @@ The API supports tickets, notes, projects, milestones, releases, users, knowledg
 
 See the [API documentation](docs/api.md) for the complete reference.
 
-### AI and MCP
+### AI Agents and MCP
 
-Tickets includes a [Model Context Protocol](https://modelcontextprotocol.io/) server for AI assistants and agents.
+Tickets can act as a coordination layer for human teams and AI agents.
 
-The MCP endpoint provides tools for working with tickets and the knowledge base using the same Bearer token authentication as the REST API.
+The built-in Model Context Protocol (MCP) server gives compatible AI clients access to tickets and the knowledge base. The REST API provides the same underlying capabilities for custom agents and automation.
 
-The current MCP server provides 16 tools covering:
+This makes it possible to build workflows where specialized AI agents share the same projects, tickets, decisions, blockers, documentation, and execution state as human developers.
 
-* Ticket listing and retrieval
-* Ticket creation and updates
-* Notes and collaboration
-* Ticket Pulse
-* Knowledge base search
-* Knowledge base article management
+Use [CrewAI](docs/crewai.md) to build role-based agent crews, or connect other MCP-compatible clients and agent runtimes to Tickets.
 
-See the [MCP documentation](docs/mcp.md) for setup and the complete tool reference.
+* 16 MCP tools for tickets and the knowledge base
+* REST API with token authentication
+* Ticket Pulse for execution state
+* Agent-accessible decisions, blockers, actions, and notes
+* Shared knowledge base
+* Human-in-the-loop workflows
+* MCP remote HTTP and local stdio support
 
-Tickets can also be integrated with AI agent frameworks through the REST API. See the [CrewAI integration example](docs/crewai.md).
+See [MCP Server](docs/mcp.md) and [AI Agents with CrewAI](docs/crewai.md).
 
 ## Screenshots
 
