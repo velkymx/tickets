@@ -4,9 +4,14 @@ namespace App\Mcp\Servers;
 
 use App\Mcp\Tools\AddNoteTool;
 use App\Mcp\Tools\CreateTicketTool;
+use App\Mcp\Tools\EditNoteTool;
 use App\Mcp\Tools\GetLookupsTool;
 use App\Mcp\Tools\GetTicketTool;
 use App\Mcp\Tools\ListTicketsTool;
+use App\Mcp\Tools\ReactToNoteTool;
+use App\Mcp\Tools\ReplyToNoteTool;
+use App\Mcp\Tools\ResolveNoteTool;
+use App\Mcp\Tools\UpdateTicketTool;
 use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
@@ -27,7 +32,12 @@ class TicketsServer extends Server
         ListTicketsTool::class,
         GetTicketTool::class,
         CreateTicketTool::class,
+        UpdateTicketTool::class,
         AddNoteTool::class,
+        ReplyToNoteTool::class,
+        EditNoteTool::class,
+        ResolveNoteTool::class,
+        ReactToNoteTool::class,
     ];
 
     /**
