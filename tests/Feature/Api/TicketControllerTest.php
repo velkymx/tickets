@@ -1160,4 +1160,31 @@ class TicketControllerTest extends TestCase
         $this->assertArrayHasKey('notetype', $note);
         $this->assertArrayHasKey('reactions', $note);
     }
+
+    #[Test]
+    public function note_attaches_to_the_ticket_named_in_the_route(): void
+    {
+        // User owns two tickets. Note must land on the one in the URL,
+        // not the lowest-id ticket they happen to own.
+        $lowerTicket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+        $targetTicket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$targetTicket->id}/note", [
+            'body' => 'Route-bound note',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('ticket.id', $targetTicket->id);
+
+        $note = Note::where('body_markdown', 'Route-bound note')->firstOrFail();
+        $this->assertEquals($targetTicket->id, $note->ticket_id);
+        $this->assertEquals(0, Note::where('ticket_id', $lowerTicket->id)->count());
+    }
+
 }
