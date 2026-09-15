@@ -64,6 +64,75 @@ class UsersControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_hides_tickets_from_other_users(): void
+    {
+        $me = User::factory()->create();
+        $other = User::factory()->create();
+        $status = Status::factory()->create(['name' => 'Open']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $other->id,
+            'status_id' => $status->id,
+        ]);
+
+        $response = $this->actingAs($me)->get("/users/{$other->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('alltickets', []);
+        $response->assertDontSee($ticket->subject);
+    }
+
+    #[Test]
+    public function show_shows_tickets_on_own_profile(): void
+    {
+        $user = User::factory()->create();
+        $status = Status::factory()->create(['name' => 'Open']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee($ticket->subject);
+    }
+
+    #[Test]
+    public function show_passes_contribution_data(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('contributions');
+        $response->assertViewHas('contributionTotal');
+        $response->assertViewHas('contributionMax');
+    }
+
+    #[Test]
+    public function show_hides_bio_section_when_bio_is_empty(): void
+    {
+        $user = User::factory()->create(['bio' => null]);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertDontSee('<h3>Bio</h3>', false);
+    }
+
+    #[Test]
+    public function show_shows_bio_section_when_bio_is_present(): void
+    {
+        $user = User::factory()->create(['bio' => 'I build things.']);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('<h3>Bio</h3>', false);
+    }
+
+    #[Test]
     public function show_loads_user_tickets_grouped_by_status(): void
     {
         $user = User::factory()->create();
