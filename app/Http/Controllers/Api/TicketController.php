@@ -305,29 +305,33 @@ class TicketController extends Controller
 
             $bodyText = $commandResult['body'] ?? '';
             $bodyHtml = $markdownService->parse($bodyText);
+            $totalHours = ($request->hours ?? 0) + ($commandResult['hours'] ?? 0);
 
-            $createdNote = Note::create([
-                'user_id' => $user->id,
-                'ticket_id' => $ticket->id,
-                'body' => $bodyHtml,
-                'body_markdown' => $bodyText,
-                'hours' => ($request->hours ?? 0) + ($commandResult['hours'] ?? 0),
-                'notetype' => $noteType,
-                'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
-            ]);
+            // Skip commands that leave no text behind (e.g. /estimate, /close).
+            if (trim(strip_tags($bodyHtml)) !== '' || $totalHours > 0) {
+                $createdNote = Note::create([
+                    'user_id' => $user->id,
+                    'ticket_id' => $ticket->id,
+                    'body' => $bodyHtml,
+                    'body_markdown' => $bodyText,
+                    'hours' => $totalHours,
+                    'notetype' => $noteType,
+                    'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
+                ]);
 
-            // Create mention records
-            $mentionUsernames = $mentionService->parseMentions($bodyText);
-            $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-            $mentionService->createMentions($createdNote, $mentionUserIds);
+                // Create mention records
+                $mentionUsernames = $mentionService->parseMentions($bodyText);
+                $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
+                $mentionService->createMentions($createdNote, $mentionUserIds);
 
-            $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+                $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+            }
         }
 
         $ticket->load(['status', 'assignee']);
 
         $response = [
-            'message' => 'Note added successfully',
+            'message' => $createdNote ? 'Note added successfully' : 'Command applied, no note stored.',
             'warnings' => $warnings,
             'ticket' => [
                 'id' => $ticket->id,
@@ -410,6 +414,10 @@ class TicketController extends Controller
 
         if (! $isAuthor && ! $isAssignee) {
             return response()->json(['message' => 'Forbidden: only the thread author or ticket assignee can resolve'], 403);
+        }
+
+        if ($note->resolved) {
+            return response()->json(['message' => 'Note is already resolved.'], 422);
         }
 
         $note->update([
