@@ -79,7 +79,13 @@ class ProjectsController extends Controller
 
         $matrix = $this->priorityMatrix->classify($openTickets);
 
-        return view('projects.show', compact('project', 'tickets', 'total', 'completed', 'percent', 'statuscodes', 'matrix', 'searchQuery', 'searchTokens'));
+        $blockers = Ticket::where('project_id', $project->id)
+            ->blockers()
+            ->with(['importance', 'status'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return view('projects.show', compact('project', 'tickets', 'total', 'completed', 'percent', 'statuscodes', 'matrix', 'searchQuery', 'searchTokens', 'blockers'));
     }
 
     public function create()

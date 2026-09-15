@@ -47,6 +47,9 @@
 
     {{-- Sidebar --}}
     <div class="col-lg-3 mt-4 mt-lg-0">
+        {{-- Blockers --}}
+        <x-blocker-box :blockers="$blockers" title="Project Blockers" />
+
         {{-- Progress --}}
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-body-secondary">

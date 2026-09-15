@@ -64,6 +64,9 @@ Dashboard
 
     {{-- Sidebar: Recent Activity & Quick Links --}}
     <div class="col-lg-3">
+        {{-- My Blockers --}}
+        <x-blocker-box :blockers="$blockers" title="My Blockers" />
+
         {{-- Quick Links --}}
         <div class="card mb-4">
             <div class="card-header bg-body-secondary">

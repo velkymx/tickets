@@ -84,6 +84,9 @@
             </ul>
         </div>
 
+        {{-- Blockers --}}
+        <x-blocker-box :blockers="$blockers" title="Milestone Blockers" />
+
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-body-secondary">
                 Team Members

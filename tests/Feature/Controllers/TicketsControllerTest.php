@@ -113,6 +113,21 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function home_provides_my_open_blockers_only(): void
+    {
+        $user = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id2' => $user->id, 'importance_id' => 5]);
+        $theirs = Ticket::factory()->create(['user_id2' => User::factory()->create()->id, 'importance_id' => 5]);
+
+        $response = $this->actingAs($user)->get('/home');
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('blockers')->pluck('id');
+        $this->assertTrue($ids->contains($mine->id));
+        $this->assertFalse($ids->contains($theirs->id));
+    }
+
+    #[Test]
     public function home_returns_home_view(): void
     {
         $user = User::factory()->create();

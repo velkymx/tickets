@@ -85,7 +85,13 @@ class MilestoneController extends Controller
         $total = $milestone->tickets()->count();
         $percent = $total > 0 ? min(100, (int) round($completed / $total * 100)) : 0;
 
-        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'percent', 'searchQuery', 'searchTokens'));
+        $blockers = Ticket::where('milestone_id', $milestone->id)
+            ->blockers()
+            ->with(['importance', 'status'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'percent', 'searchQuery', 'searchTokens', 'blockers'));
 
     }
 

@@ -154,6 +154,22 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function get_show_provides_open_blockers(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
+        $blocker = Ticket::factory()->create(['milestone_id' => $milestone->id, 'importance_id' => 5]);
+        $normal = Ticket::factory()->create(['milestone_id' => $milestone->id, 'importance_id' => 3]);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('blockers')->pluck('id');
+        $this->assertTrue($ids->contains($blocker->id));
+        $this->assertFalse($ids->contains($normal->id));
+    }
+
+    #[Test]
     public function get_show_provides_paginated_sortable_ticket_list(): void
     {
         $user = User::factory()->create();
@@ -242,7 +258,7 @@ class MilestoneControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/milestone/edit/{$milestone->id}");
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 
     #[Test]

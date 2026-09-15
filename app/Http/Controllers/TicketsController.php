@@ -85,7 +85,13 @@ class TicketsController extends Controller
             ->get()
             ->filter(fn ($note) => $note->ticket !== null);
 
-        return View('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens'));
+        $blockers = Ticket::where('user_id2', $user->id)
+            ->blockers()
+            ->with(['importance', 'status'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return View('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers'));
     }
 
     public function index(Request $request)

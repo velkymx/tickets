@@ -119,6 +119,27 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_provides_open_blockers(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $closed = Status::factory()->closed()->create();
+        cache()->forget('closed_status_ids');
+
+        $blocker = Ticket::factory()->create(['project_id' => $project->id, 'importance_id' => 5]);
+        $normal = Ticket::factory()->create(['project_id' => $project->id, 'importance_id' => 2]);
+        $closedBlocker = Ticket::factory()->create(['project_id' => $project->id, 'importance_id' => 5, 'status_id' => $closed->id]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('blockers')->pluck('id');
+        $this->assertTrue($ids->contains($blocker->id));
+        $this->assertFalse($ids->contains($normal->id));
+        $this->assertFalse($ids->contains($closedBlocker->id));
+    }
+
+    #[Test]
     public function show_sorts_and_filters_the_ticket_list(): void
     {
         $user = User::factory()->create();

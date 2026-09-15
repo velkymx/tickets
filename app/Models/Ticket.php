@@ -17,6 +17,20 @@ class Ticket extends Model
     /** Request keys accepted by the filter scope (also used to repopulate the filter UI). */
     public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q', 'assignee'];
 
+    /** Importance level id for "blocker" (seeded by DefaultsSeeder). */
+    public const IMPORTANCE_BLOCKER = 5;
+
+    /**
+     * Open tickets flagged as blockers (importance = blocker, not closed).
+     * Surfaced in the blocker boxes on project/milestone/home pages.
+     */
+    public function scopeBlockers(Builder $query): Builder
+    {
+        return $query
+            ->where('importance_id', self::IMPORTANCE_BLOCKER)
+            ->whereNotIn('status_id', Status::closedStatusIds());
+    }
+
     /**
      * Apply the shared ticket-list filters from a request-parameter array.
      * Used by every paginated ticket list (/tickets, projects, milestones) so
