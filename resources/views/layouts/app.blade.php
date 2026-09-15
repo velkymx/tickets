@@ -97,6 +97,10 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="/users/{{ Auth::id() }}">Profile</a></li>
                             <li><a class="dropdown-item" href="/user/edit">Edit Profile</a></li>
+                            @if (Auth::user()->isAdmin())
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">Manage Users</a></li>
+                            @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item" href="{{ route('logout') }}"

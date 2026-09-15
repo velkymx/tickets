@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\Api\ApiDocsController;
 use App\Http\Controllers\ImportController;
@@ -99,6 +100,13 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     // --- Users Routes ---
     Route::get('/user/edit', [UsersController::class, 'edit'])->name('user.edit');
     Route::get('/users/{id}', [UsersController::class, 'show'])->name('user.show');
+
+    // --- Admin: User Management ---
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+    });
 
     // --- POST/PUT/PATCH Routes ---
 
