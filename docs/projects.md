@@ -29,7 +29,7 @@ The project page shows:
 
 ## Milestones
 
-Milestones represent sprints or time-boxed work periods. Tickets are assigned to a milestone.
+Milestones represent time-boxed work periods. Tickets are assigned to a milestone.
 
 **Navigate to:** Milestones (top navigation)
 
@@ -37,9 +37,9 @@ Milestones represent sprints or time-boxed work periods. Tickets are assigned to
 
 1. Navigate to **Milestones → New Milestone**.
 2. Fill in:
-   - **Name** — e.g. `Sprint 14`
-   - **Start Date** — sprint start (used for burndown chart)
-   - **Due Date** — sprint end (used for burndown chart)
+   - **Name** — e.g. `Milestone 14`
+   - **Start Date** — milestone start (used for burndown chart)
+   - **Due Date** — milestone end (used for burndown chart)
    - **Owner** — accountable team member
    - **Scrum Master** — optional
 3. Click **Save**.
@@ -51,7 +51,7 @@ The milestone page shows:
 - Progress bar: closed / total tickets
 - Watcher toggle (subscribe to milestone updates)
 
-### Sprint report
+### Milestone report
 
 **Navigate to:** Milestones → (select milestone) → **Report**
 
@@ -63,7 +63,7 @@ The report shows:
 - Type breakdown (chart)
 - Team hours by user
 - Per-ticket detail: subject, status, type, assignee, story points, logged hours
-- **Burndown chart** — ideal vs actual story point burndown over the sprint. Requires both Start Date and Due Date to be set on the milestone.
+- **Burndown chart** — ideal vs actual story point burndown over the milestone. Requires both Start Date and Due Date to be set on the milestone.
 
 ### Print view
 

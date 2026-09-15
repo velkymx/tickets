@@ -63,9 +63,9 @@
                 @enderror
             </div>
             
-            {{-- Scrum Master / Sprint Manager --}}
+            {{-- Scrum Master / Milestone Manager --}}
             <div class="col-md-6">
-                <label for="scrummaster_user_id" class="form-label">Scrum Master / Sprint Manager</label>
+                <label for="scrummaster_user_id" class="form-label">Scrum Master / Milestone Manager</label>
                 <select name="scrummaster_user_id" id="scrummaster_user_id" 
                         class="form-select @error('scrummaster_user_id') is-invalid @enderror" required>
                     <option value="" disabled @selected(!old('scrummaster_user_id'))>Select Scrum Master</option>

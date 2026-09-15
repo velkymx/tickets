@@ -3,7 +3,7 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ $milestone->name }} - Sprint Report</h1>
+    <h1>{{ $milestone->name }} - Milestone Report</h1>
     <div class="btn-group" role="group">
         <a href="/milestone/show/{{ $milestone->id }}" class="btn btn-sm btn-outline-secondary">Back to Milestone</a>
         <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a>

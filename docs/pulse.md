@@ -71,5 +71,5 @@ Example: find all BLOCKED tickets and surface them in a standup report by readin
 ## See also
 
 - [Note Signals](note-signals.md) — creating blocker, action, and decision notes that drive Pulse state
-- [Agile Workflow](agile-workflow.md) — using Pulse during sprint execution
+- [Agile Workflow](agile-workflow.md) — using Pulse during milestone execution
 - [API](api.md) — `GET /tickets/{id}/pulse` and `?include=pulse` query parameter

@@ -73,7 +73,7 @@ curl -H "Authorization: Bearer <token>" \
     "types": [{ "id": 1, "name": "Bug" }],
     "importance": [{ "id": 1, "name": "High" }],
     "projects": [{ "id": 1, "name": "Backend" }],
-    "milestones": [{ "id": 1, "name": "Sprint 1" }]
+    "milestones": [{ "id": 1, "name": "Milestone 1" }]
   }
 }
 ```
@@ -199,7 +199,7 @@ Adds a note, logs hours, changes status, or runs slash commands.
 | `/blocker` | Mark note as a blocker |
 | `/action @user Task description` | Create an action item |
 | `/update` | Mark as a status update |
-| `/milestone Sprint 2` | Move to milestone by name |
+| `/milestone Milestone 2` | Move to milestone by name |
 
 ```bash
 curl -X POST \

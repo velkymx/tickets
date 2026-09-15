@@ -1,36 +1,36 @@
 # Agile Workflow
 
-Tickets is designed around a three-level hierarchy that maps directly to agile practice: **Projects** contain **Milestones** (sprints), which contain **Tickets** (work items).
+Tickets is designed around a three-level hierarchy that maps directly to agile practice: **Projects** contain **Milestones**, which contain **Tickets** (work items).
 
 ## The hierarchy
 
 ```
-Project → Milestone (Sprint) → Ticket
+Project → Milestone → Ticket
 ```
 
 - **Project** — a team, product area, or initiative. Tickets belong to one project.
-- **Milestone** — a time-boxed sprint or delivery goal. Has a start date, due date, owner, and scrum master.
+- **Milestone** — a time-boxed milestone or delivery goal. Has a start date, due date, owner, and scrum master.
 - **Ticket** — a single unit of work. Has type, status, importance, story points, estimate, assignee, and due date.
 
-## Sprint setup
+## Milestone setup
 
 ### 1. Create the project (if needed)
 
 Navigate to **Projects → New Project**. Enter a name and save.
 
-### 2. Create the milestone (sprint)
+### 2. Create the milestone
 
 Navigate to **Milestones → New Milestone**. Fill in:
 
 | Field | Notes |
 |-------|-------|
-| Name | e.g. `Sprint 14` or `Q2 Launch` |
-| Start Date | Sprint start — required for burndown chart |
-| Due Date | Sprint end — required for burndown chart |
+| Name | e.g. `Milestone 14` or `Q2 Launch` |
+| Start Date | Milestone start — required for burndown chart |
+| Due Date | Milestone end — required for burndown chart |
 | Owner | Accountable team member |
 | Scrum Master | Optional |
 
-### 3. Add tickets to the sprint
+### 3. Add tickets to the milestone
 
 **Option A — Create individually:** Navigate to **Tickets → New Ticket**. Select the milestone in the form.
 
@@ -40,9 +40,9 @@ Navigate to **Milestones → New Milestone**. Fill in:
 
 ### 4. Set story points
 
-Open each ticket and set **Story Points**. These power the burndown chart and sprint report velocity calculations.
+Open each ticket and set **Story Points**. These power the burndown chart and milestone report velocity calculations.
 
-## Running the sprint
+## Running the milestone
 
 ### Kanban board
 
@@ -70,13 +70,13 @@ Resolve the blocker note when the impediment is cleared — the Pulse recalculat
 
 ### Logging decisions
 
-Use `/decision` notes to record choices made during the sprint. Decisions are immutable once saved and appear in the ticket's decision history.
+Use `/decision` notes to record choices made during the milestone. Decisions are immutable once saved and appear in the ticket's decision history.
 
-## Sprint review
+## Milestone review
 
 Navigate to **Milestones → (select milestone) → Report**.
 
-The sprint report shows:
+The milestone report shows:
 
 | Section | What it contains |
 |---------|----------------|
@@ -86,15 +86,15 @@ The sprint report shows:
 | Type breakdown | Ticket count per type (bug, feature, etc.) |
 | Team hours | Hours logged per team member |
 | Ticket detail | Per-ticket: status, assignee, story points, logged hours |
-| Burndown chart | Ideal vs actual story point burndown over the sprint |
+| Burndown chart | Ideal vs actual story point burndown over the milestone |
 
 The burndown chart requires both **Start Date** and **Due Date** to be set on the milestone.
 
-## Closing a sprint
+## Closing a milestone
 
-1. Close or move remaining open tickets to the next sprint.
+1. Close or move remaining open tickets to the next milestone.
 2. Mark finished tickets as closed (use `/close` or drag to a closed-status column).
-3. Review the sprint report to capture velocity and team hours.
+3. Review the milestone report to capture velocity and team hours.
 4. Create the next milestone and repeat.
 
 ## Ticket lifecycle
@@ -112,4 +112,4 @@ Status names are configurable — the above is the default seeded data. Closed s
 - [Projects, Milestones & Releases](projects.md) — creating and managing the containers
 - [Note Signals](note-signals.md) — slash commands, decisions, blockers, actions
 - [Pulse](pulse.md) — automated ticket health signal
-- [CSV Import](csv-import.md) — bulk ticket creation for sprint planning
+- [CSV Import](csv-import.md) — bulk ticket creation for milestone planning

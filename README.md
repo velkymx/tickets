@@ -52,7 +52,7 @@ Open [http://localhost](http://localhost) and log in with the default administra
 - Cross-reference linking: `#123` links to tickets, `kb:slug` links to KB articles
 
 ### Other
-- Milestones with sprint reports, burndown charts, and progress tracking
+- Milestones with milestone reports, burndown charts, and progress tracking
 - Releases with ticket association
 - Projects with progress tracking and filtered views
 - Theme support: Light (Simplex), Dark (Darkly), or Auto (OS preference)

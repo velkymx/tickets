@@ -108,7 +108,7 @@
         
         <div class="card shadow-sm">
             <div class="card-header bg-body-secondary">
-                Sprint Summary
+                Milestone Summary
             </div>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item">Total Tickets: <span class="badge text-bg-primary">{{ $milestone->tickets->count() }}</span></li>

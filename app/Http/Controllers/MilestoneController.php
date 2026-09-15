@@ -248,17 +248,17 @@ class MilestoneController extends Controller
 
         $burndownData = [];
         if ($startDate && $endDate) {
-            $sprintEnd = $endDate;
+            $milestoneEnd = $endDate;
 
             $idealBurndown = [];
             $actualBurndown = [];
             $dates = [];
 
-            $daysInSprint = $startDate->diffInDays($sprintEnd) + 1;
-            $pointsPerDay = $totalStoryPoints / max($daysInSprint, 1);
+            $daysInMilestone = $startDate->diffInDays($milestoneEnd) + 1;
+            $pointsPerDay = $totalStoryPoints / max($daysInMilestone, 1);
             $pointsPerDay = $pointsPerDay > 0 ? $pointsPerDay : 0;
 
-            for ($i = 0; $i <= $daysInSprint; $i++) {
+            for ($i = 0; $i <= $daysInMilestone; $i++) {
                 $date = $startDate->copy()->addDays($i);
                 $dates[] = $date->format('M j');
                 $idealBurndown[] = max(0, $totalStoryPoints - ($pointsPerDay * $i));
@@ -282,7 +282,7 @@ class MilestoneController extends Controller
             }
 
             $lastClosed = 0;
-            for ($i = 0; $i <= $daysInSprint; $i++) {
+            for ($i = 0; $i <= $daysInMilestone; $i++) {
                 $date = $startDate->copy()->addDays($i)->format('Y-m-d');
                 if (isset($runningDates[$date])) {
                     $lastClosed = $runningDates[$date];

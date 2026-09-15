@@ -10,7 +10,7 @@ This index covers all documentation in this directory. Target readers: administr
 
 | Document | What it covers |
 |----------|---------------|
-| [Agile Workflow](agile-workflow.md) | Project → Milestone → Ticket hierarchy, sprint planning, kanban, sprint report |
+| [Agile Workflow](agile-workflow.md) | Project → Milestone → Ticket hierarchy, milestone planning, kanban, milestone report |
 | [Ticket Pulse](pulse.md) | Execution states (ON TRACK / AT RISK / BLOCKED / IDLE), triage, state transitions |
 | [Note Signals](note-signals.md) | Signal types, slash commands, decisions, blockers, actions, reactions, @mentions |
 | [Notifications](notifications.md) | Watchers, notification batching, @mentions, muting, notification bell |
@@ -42,7 +42,7 @@ Interactive API docs (Swagger UI) are available at `/api/docs` on any running in
 | [Users](users.md) | Admin flag, KB roles, profile fields, avatar, API token generation/revocation, password reset |
 | [Automations](automations.md) | Triggers, condition builder, operators, webhook/API actions, run history, enable/disable |
 | [CSV Import](csv-import.md) | Bulk ticket creation — column format, required fields, error handling |
-| [Projects, Milestones & Releases](projects.md) | Creating projects, milestone sprint reports, burndown charts, release management |
+| [Projects, Milestones & Releases](projects.md) | Creating projects, milestone reports, burndown charts, release management |
 | [Knowledge Base Admin](kb-admin.md) | Categories, tags, article visibility, version history, trash recovery |
 
 ---
