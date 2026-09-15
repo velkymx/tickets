@@ -59,11 +59,11 @@
                             <input type="checkbox" name="tickets[{{ $tick->id }}]" value="{{ $tick->id }}" class="form-check-input">
                         </td>
                     @endif
-                    <td class="text-{{ $tick->importance->class }}">
+                    <td>
                         @if(!$showType)
                             <i class="{{ $tick->type->icon }} me-1" title="{{ $tick->type->name }}" aria-hidden="true"></i>
                         @endif
-                        <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-{{ $tick->importance->class }}">
+                        <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-body">
                             #{{ $tick->id }} {{ $tick->subject }}
                         </a>
                     </td>
