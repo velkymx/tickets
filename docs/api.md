@@ -334,6 +334,7 @@ AI assistants can work with tickets through the built-in [Model Context Protocol
 | `get-lookups` | ID lookups for statuses, types, importance, projects, milestones, users. Call first. |
 | `list-tickets` | Tickets assigned to you. Optional `status_id`, `unassigned`, `include_pulse`, `per_page`. |
 | `get-ticket` | Full detail, notes, and pulse for one `ticket_id`. |
+| `get-pulse` | Standalone pulse health state for one `ticket_id`. |
 | `create-ticket` | Create a ticket (same required fields as `POST /tickets`). |
 | `update-ticket` | Update subject, description, or status on a ticket you own or hold. |
 | `add-note` | Note with hours, status change, claim, and full slash-command support (`/close`, `/blocker`, `/decision`, `/action @user`, ...). |

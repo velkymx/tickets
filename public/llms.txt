@@ -13,6 +13,7 @@ Model Context Protocol endpoint: `POST /mcp/tickets` with `Authorization: Bearer
 | `get-lookups` | none — returns statuses, types, importance, active projects, milestones, users with IDs. Call first. |
 | `list-tickets` | `status_id`, `unassigned` (bool), `include_pulse` (bool), `per_page` (max 100, default 20). Lists your assigned tickets, newest first. |
 | `get-ticket` | `ticket_id` (required) — full detail, visible notes with replies, pulse state. |
+| `get-pulse` | `ticket_id` (required) — standalone execution state, blocker, next action, decisions, threads. |
 | `create-ticket` | `subject` (required), `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you. |
 | `update-ticket` | `ticket_id` (required); `subject`, `description`, `status_id`. Own/assigned only. |
 | `add-note` | `ticket_id` (required, must own or be assigned); `body` (slash commands work: `/close`, `/status`, `/hours`, `/blocker`, `/decision`, `/action @user`, `/estimate`); `hours` (max 999); `status_id`; `claim` (bool, self-assign). `/action` requires exactly one @assignee. |
