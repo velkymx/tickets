@@ -119,6 +119,24 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_sorts_and_filters_the_ticket_list(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        Ticket::factory()->create(['project_id' => $project->id, 'subject' => 'Zebra', 'user_id2' => $user->id]);
+        Ticket::factory()->create(['project_id' => $project->id, 'subject' => 'Alpha', 'user_id2' => User::factory()->create()->id]);
+
+        // Sort by subject asc.
+        $sorted = $this->actingAs($user)->get("/projects/show/{$project->id}?sort=subject&dir=asc");
+        $sorted->assertStatus(200);
+        $this->assertSame(['Alpha', 'Zebra'], $sorted->viewData('tickets')->pluck('subject')->all());
+
+        // Filter to my assigned tickets only.
+        $mine = $this->actingAs($user)->get("/projects/show/{$project->id}?assignee=me");
+        $this->assertSame(['Zebra'], $mine->viewData('tickets')->pluck('subject')->values()->all());
+    }
+
+    #[Test]
     public function show_filters_tickets_by_query_parameters(): void
     {
         $user = User::factory()->create();

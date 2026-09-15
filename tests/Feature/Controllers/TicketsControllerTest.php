@@ -195,6 +195,40 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_provides_tab_counts_and_hides_empty_priority_tabs(): void
+    {
+        $user = User::factory()->create();
+        // 1 blocker assigned to me, no critical tickets.
+        Ticket::factory()->create(['user_id2' => $user->id, 'importance_id' => 5]);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $counts = $response->viewData('tabCounts');
+        $this->assertSame(1, $counts['blocker']);
+        $this->assertSame(0, $counts['critical']);
+        $this->assertSame(1, $counts['mine']);
+
+        $response->assertSee('Blocker');       // count > 0 -> shown
+        $response->assertDontSee('>Critical'); // count 0 -> hidden
+    }
+
+    #[Test]
+    public function index_filters_by_assignee_me(): void
+    {
+        $user = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id2' => $user->id]);
+        $theirs = Ticket::factory()->create(['user_id2' => User::factory()->create()->id]);
+
+        $response = $this->actingAs($user)->get('/tickets?assignee=me');
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('tickets')->pluck('id');
+        $this->assertTrue($ids->contains($mine->id));
+        $this->assertFalse($ids->contains($theirs->id));
+    }
+
+    #[Test]
     public function index_filters_by_milestone_id(): void
     {
         $user = User::factory()->create();

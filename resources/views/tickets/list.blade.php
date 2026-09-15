@@ -8,146 +8,22 @@
         <a href="/ticket/create" class="btn btn-sm btn-primary">Create Ticket</a>
     </div>
 
-    {{-- Filter Form (Replaces Form::open) --}}
-    <form method="GET" action="{{ url('tickets') }}" class="mb-4">
-        {{-- Bootstrap 5 uses 'row' and 'col' for layout, replacing the old table layout for forms --}}
-        <div class="row g-2 align-items-end"> 
-            
-            <div class="col-auto">
-                <span class="btn btn-outline-secondary disabled">Filter Tickets</span>
-            </div>
-            
-            <div class="col-md-3 col-lg-3">
-                <label for="q" class="form-label visually-hidden">Search</label>
-                <input type="text" placeholder="Search" class="form-control" name="q" id="q" value="{{ request('q') }}">
-            </div>
-            
-            <div class="col-md-auto">
-                <label for="perpage" class="form-label visually-hidden"># Rows</label>
-                <select name="perpage" id="perpage" class="form-select">
-                    {{-- Retained the existing options, use selected attribute for existing value --}}
-                    <option value="" @if(request('perpage') == '') selected @endif># Rows</option>
-                    <option value="10" @if(request('perpage') == '10') selected @endif>10 Rows</option>
-                    <option value="20" @if(request('perpage') == '20') selected @endif>20 Rows</option>
-                    <option value="30" @if(request('perpage') == '30') selected @endif>30 Rows</option>
-                    <option value="40" @if(request('perpage') == '40') selected @endif>40 Rows</option>
-                    <option value="50" @if(request('perpage') == '50') selected @endif>50 Rows</option>
-                </select>
-            </div>
-            
-            {{-- Status Filter (Replaces Form::select) --}}
-            <div class="col-md-auto">
-                <label for="status_id" class="form-label visually-hidden">Status</label>
-                <select name="status_id" id="status_id" class="form-select">
-                    {{-- The $viewfilters['statuses'] should be an array of key => value (id => name) --}}
-                    @foreach ($viewfilters['statuses'] as $id => $name)
-                        <option value="{{ $id }}" @if ($filter['status_id'] == $id) selected @endif>{{ $name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            
-            {{-- Milestone Filter (Replaces Form::select) --}}
-            <div class="col-md-auto">
-                <label for="milestone_id" class="form-label visually-hidden">Milestone</label>
-                <select name="milestone_id" id="milestone_id" class="form-select">
-                    @foreach ($viewfilters['milestones'] as $id => $name)
-                        <option value="{{ $id }}" @if ($filter['milestone_id'] == $id) selected @endif>{{ $name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            
-            {{-- Type Filter (Replaces Form::select) --}}
-            <div class="col-md-auto">
-                <label for="type_id" class="form-label visually-hidden">Type</label>
-                <select name="type_id" id="type_id" class="form-select">
-                    @foreach ($viewfilters['types'] as $id => $name)
-                        <option value="{{ $id }}" @if ($filter['type_id'] == $id) selected @endif>{{ $name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary">Refresh Rows</button>
-            </div>
-        </div>
-    </form>
-    {{-- End Filter Form --}}
+    {{-- Filter Form --}}
+    <x-ticket-filters :viewfilters="$viewfilters" :filter="$filter" :action="url('tickets')" />
+
+    {{-- Quick Filter Tabs --}}
+    <x-ticket-filter-tabs :counts="$tabCounts" />
 
     {{-- Batch Update Form (Starts here, closes at the end of the section) --}}
     <form method="POST" action="{{ url('tickets/batch') }}">
         @csrf {{-- Add CSRF token for POST request --}}
         
-        <div class="table-responsive">
-            <table class="table table-striped align-middle"> {{-- Added align-middle for vertical alignment --}}
-                <thead>
-                    <tr>
-                        <x-sort-header column="subject" label="Title" />
-                        <x-sort-header column="importance_id" label="P" />
-                        <x-sort-header column="status_id" label="Status" />
-                        <x-sort-header column="project_id" label="Project" />
-                        <th>Assignee</th>
-                        <th>Notes</th>
-                        <x-sort-header column="updated_at" label="Updated" />
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($tickets as $tick)
-                        <tr>
-                            {{-- Checkbox and Title --}}
-                            <td class="text-{{$tick->importance->class}}">
-                                <input type="checkbox" name="tickets[{{$tick->id}}]" value="{{$tick->id}}" class="form-check-input me-1"> 
-                                <i class="{{$tick->type->icon}}" title="{{$tick->type->name}}"></i> 
-                                <a href="/tickets/{{$tick->id}}" class="text-{{$tick->importance->class}} text-decoration-none">
-                                    #{{$tick->id}} {{ $tick->subject }}
-                                </a>
-                            </td>
-                            
-                            {{-- Priority (P) --}}
-                            <td>
-                                <span class="text-{{$tick->importance->class}}" title="Priority: {{$tick->importance->name}}">
-                                    <i class="{{$tick->importance->icon}}"></i>
-                                </span>
-                            </td>
-                            
-                            {{-- Status: Replaced old 'label' class with Bootstrap 5 'badge' --}}
-                            <td class="text-center">
-                                <span class="badge text-bg-secondary">{{$tick->status->name}}</span>
-                            </td>
-                            
-                            {{-- Project --}}
-                            <td>{{$tick->project->name}}</td>
-                            
-                            {{-- Assignee --}}
-                            <td>{{$tick->assignee->name}}</td>
-                            
-                             {{-- Notes --}}
-                             <td>
-                                 @php
-                                     $noteCount = $tick->notes->where('hide','0')->where('notetype','message')->count();
-                                 @endphp
-                                 @if ($noteCount > 0)
-                                     <span class="badge text-bg-info rounded-pill">{{ $noteCount }}</span>
-                                 @endif
-                             </td>
-                            
-                            {{-- Updated --}}
-                            <td>{{date('M jS, Y g:ia',strtotime($tick->updated_at))}}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <p class="text-muted mb-0">No tickets found.</p>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Pagination Links --}}
-        <div class="d-flex justify-content-center my-3">
-            {!! $tickets->appends($queryfilter)->links('pagination::bootstrap-5') !!}
-        </div>
+        <x-ticket-table
+            :tickets="$tickets"
+            :paginator="$tickets"
+            :sortable="true"
+            :show-checkbox="true"
+            :show-updated="true" />
 
         {{-- Check All Button: Replaced old 'btn btn-danger' --}}
         <button type="button" class="btn btn-outline-danger btn-sm" id="checkAll">Check All</button>

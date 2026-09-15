@@ -7,14 +7,21 @@ use App\Http\Requests\UpdateMilestoneRequest;
 use App\Models\Milestone;
 use App\Models\MilestoneWatcher;
 use App\Models\Status;
+use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\TicketService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class MilestoneController extends Controller
 {
+    public function __construct(private TicketService $ticketService)
+    {
+    }
+
     public function index()
     {
 
@@ -49,54 +56,39 @@ class MilestoneController extends Controller
 
     }
 
-    public function getShow($id)
+    public function getShow(Request $request, $id)
     {
 
-        $milestone = Milestone::with([
-            'watchers.user',
-            'tickets' => function ($q) {
-                $q->with(['project', 'type', 'status', 'importance', 'assignee', 'notes' => function ($noteQ) {
-                    $noteQ->where('hide', 0)->where('notetype', 'message');
-                }]);
-            },
-        ])->findOrFail($id);
+        $milestone = Milestone::with(['watchers.user', 'tickets.assignee'])->findOrFail($id);
 
         $this->authorize('view', $milestone);
 
-        $tmpcodes = Status::get();
+        $perpage = $request->filled('perpage') ? min(max((int) $request->perpage, 1), 100) : 10;
 
-        $statuscodes = [];
+        $queryfilter = $request->only(Ticket::FILTER_KEYS);
 
-        foreach ($tmpcodes as $code) {
+        $tickets = Ticket::query()
+            ->where('milestone_id', $milestone->id)
+            ->filter($queryfilter)
+            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
+                $q->where('hide', 0)->where('notetype', 'message');
+            }])
+            ->sortable(
+                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                ['importance_id', 'desc']
+            )
+            ->paginate($perpage)
+            ->withQueryString();
 
-            $statuscodes[$code->id] = [
-                'name' => $code->name,
-                'slug' => Str::slug($code->name, '_'),
-            ];
+        ['viewfilters' => $viewfilters, 'filter' => $filter] = $this->ticketService->listFilterData($request);
 
-        }
-
-        $completed = 0;
+        $tabCounts = Ticket::tabCounts(Ticket::where('milestone_id', $milestone->id));
 
         $completed = $milestone->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
+        $total = $milestone->tickets()->count();
+        $percent = $total > 0 ? min(100, (int) round($completed / $total * 100)) : 0;
 
-        $total = $milestone->tickets->count();
-
-        $percent = 0;
-
-        if ($total > 0) {
-
-            $percent = (round($completed / $total, 2) * 100);
-
-            if ($completed == $total) {
-
-                $percent = 100;
-
-            }
-
-        }
-
-        return view('milestone.show', compact('milestone', 'statuscodes', 'completed', 'percent'));
+        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'percent', 'viewfilters', 'filter', 'tabCounts'));
 
     }
 

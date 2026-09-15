@@ -90,34 +90,10 @@ class TicketsController extends Controller
             $perpage = min(max((int) $request->perpage, 1), 100);
         }
 
-        $filters = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q'];
+        $queryfilter = $request->only(Ticket::FILTER_KEYS);
 
-        $query = Ticket::query();
-
-        $queryfilter = [];
-
-        foreach ($filters as $filter) {
-
-            $queryfilter[$filter] = $request->$filter;
-
-            if ($request->has($filter) && is_numeric($request->$filter)) {
-
-                $query = $query->where($filter, $request->$filter);
-            }
-
-            if ($filter == 'q' && $request->filled('q')) {
-                $search = str_replace(['%', '_'], ['\\%', '\\_'], $request->$filter);
-                $query = $query->where('subject', 'like', '%'.$search.'%');
-            }
-
-            if ($filter == 'status_id' && $request->status_id == 'none') {
-
-                $query = $query->whereNotIn('status_id', Status::closedStatusIds());
-
-            }
-        }
-
-        $tickets = $query
+        $tickets = Ticket::query()
+            ->filter($queryfilter)
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
@@ -142,29 +118,11 @@ class TicketsController extends Controller
         $lookups['users'][0] = 'No Change';
         $lookups['releases'][0] = 'No Change';
 
-        $viewfilters = $this->ticketService->getLookups();
+        ['viewfilters' => $viewfilters, 'filter' => $filter] = $this->ticketService->listFilterData($request);
 
-        $viewfilters['statuses']['none'] = 'Any Active Status';
-        $viewfilters['statuses']['all'] = 'Any Status';
-        $viewfilters['types']['none'] = 'Any Type';
-        $viewfilters['milestones']['none'] = 'Any Milestone';
+        $tabCounts = Ticket::tabCounts(Ticket::query());
 
-        $filter = [
-            'milestone_id' => 'none',
-            'type_id' => 'none',
-            'status_id' => 'none',
-        ];
-
-        foreach ($filter as $fk => $fv) {
-
-            if ($request->has($fk)) {
-
-                $filter[$fk] = $request->$fk;
-            }
-
-        }
-
-        return view('tickets.list', compact('tickets', 'queryfilter', 'lookups', 'viewfilters', 'filter'));
+        return view('tickets.list', compact('tickets', 'queryfilter', 'lookups', 'viewfilters', 'filter', 'tabCounts'));
     }
 
     public function claim($id)

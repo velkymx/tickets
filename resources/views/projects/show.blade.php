@@ -30,10 +30,13 @@
         <div class="tab-content">
             {{-- Tab 1: Ticket Table --}}
             <div class="tab-pane fade show active" id="tickets" role="tabpanel" aria-labelledby="tickets-tab">
-                <x-ticket-table :tickets="$tickets->sortByDesc('importance_id')" :show-checkbox="false" :show-type="false" :show-estimate="false" :show-updated="true" />
-
-                {{-- Pagination Links --}}
-                {!! $tickets->appends($queryfilter)->links('pagination::bootstrap-5') !!}
+                <x-ticket-filters :viewfilters="$viewfilters" :filter="$filter" :action="url('projects/show/'.$project->id)" />
+                <x-ticket-filter-tabs :counts="$tabCounts" />
+                <x-ticket-table
+                    :tickets="$tickets"
+                    :paginator="$tickets"
+                    :sortable="true"
+                    :show-updated="true" />
             </div>
 
             {{-- Tab 2: Action Priority Matrix --}}

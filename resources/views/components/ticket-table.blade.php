@@ -4,6 +4,8 @@
     $showEstimate = $showEstimate ?? false;
     $showUpdated = $showUpdated ?? true;
     $small = $small ?? false;
+    $sortable = $sortable ?? false;
+    $paginator = $paginator ?? null;
     $emptyMessage = $emptyMessage ?? null;
 
     $colCount = 1 + ($showCheckbox ? 1 : 0) + ($showType ? 1 : 0) + 1 + 1 + 1 + 1 + ($showEstimate ? 1 : 0) + 1 + ($showUpdated ? 1 : 0);
@@ -18,20 +20,34 @@
                         <input type="checkbox" class="form-check-input" id="selectAll">
                     </th>
                 @endif
-                <th class="text-nowrap">Title</th>
+                @if($sortable)
+                    <x-sort-header column="subject" label="Title" />
+                @else
+                    <th class="text-nowrap">Title</th>
+                @endif
                 @if($showType)
                     <th class="col-1">T</th>
                 @endif
-                <th class="col-1">P</th>
-                <th class="col-2">Status</th>
-                <th class="col-2">Project</th>
+                @if($sortable)
+                    <x-sort-header column="importance_id" label="P" />
+                    <x-sort-header column="status_id" label="Status" />
+                    <x-sort-header column="project_id" label="Project" />
+                @else
+                    <th class="col-1">P</th>
+                    <th class="col-2">Status</th>
+                    <th class="col-2">Project</th>
+                @endif
                 <th class="col-2">Assignee</th>
                 @if($showEstimate)
                     <th class="col-1">Est</th>
                 @endif
                 <th class="col-1">Notes</th>
                 @if($showUpdated)
-                    <th class="col-2">Updated</th>
+                    @if($sortable)
+                        <x-sort-header column="updated_at" label="Updated" />
+                    @else
+                        <th class="col-2">Updated</th>
+                    @endif
                 @endif
             </tr>
         </thead>
@@ -44,7 +60,7 @@
                         </td>
                     @endif
                     <td class="text-{{ $tick->importance->class }}">
-                        @if(!$showCheckbox)
+                        @if(!$showType)
                             <i class="{{ $tick->type->icon }} me-1" title="{{ $tick->type->name }}" aria-hidden="true"></i>
                         @endif
                         <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-{{ $tick->importance->class }}">
@@ -85,3 +101,7 @@
         </tbody>
     </table>
 </div>
+
+@if($paginator)
+    {!! $paginator->links('pagination::bootstrap-5') !!}
+@endif

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Notifications\WatcherNotification;
 use App\Services\NotificationBatchService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,53 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Ticket extends Model
 {
     use HasFactory;
+
+    /** Request keys accepted by the filter scope (also used to repopulate the filter UI). */
+    public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q', 'assignee'];
+
+    /**
+     * Apply the shared ticket-list filters from a request-parameter array.
+     * Used by every paginated ticket list (/tickets, projects, milestones) so
+     * the filtering rules live in one place.
+     */
+    public function scopeFilter(Builder $query, array $params): Builder
+    {
+        foreach (['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id'] as $field) {
+            if (isset($params[$field]) && is_numeric($params[$field])) {
+                $query->where($field, $params[$field]);
+            }
+        }
+
+        if (($params['status_id'] ?? null) === 'none') {
+            $query->whereNotIn('status_id', Status::closedStatusIds());
+        }
+
+        if (! empty($params['q'])) {
+            $search = str_replace(['%', '_'], ['\\%', '\\_'], $params['q']);
+            $query->where('subject', 'like', '%'.$search.'%');
+        }
+
+        if (($params['assignee'] ?? null) === 'me' && auth()->check()) {
+            $query->where('user_id2', auth()->id());
+        }
+
+        return $query;
+    }
+
+    /**
+     * Counts for the ticket filter tabs (Mine / Critical / Blocker) over a base
+     * query (e.g. all tickets, or one project's/milestone's tickets).
+     *
+     * @return array{mine: int, critical: int, blocker: int}
+     */
+    public static function tabCounts(Builder $base): array
+    {
+        return [
+            'mine' => auth()->check() ? (clone $base)->where('user_id2', auth()->id())->count() : 0,
+            'critical' => (clone $base)->where('importance_id', 4)->count(),
+            'blocker' => (clone $base)->where('importance_id', 5)->count(),
+        ];
+    }
 
     protected static function boot()
     {

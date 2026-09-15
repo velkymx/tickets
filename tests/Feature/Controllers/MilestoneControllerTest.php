@@ -154,16 +154,20 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
-    public function get_show_builds_status_codes_array(): void
+    public function get_show_provides_paginated_sortable_ticket_list(): void
     {
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create();
-        Status::factory()->create(['name' => 'Open']);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'subject' => 'Zebra']);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'subject' => 'Alpha']);
 
-        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}?sort=subject&dir=asc");
 
         $response->assertStatus(200);
-        $response->assertViewHas('statuscodes');
+        $response->assertViewHas('tickets');
+        $response->assertViewHas('tabCounts');
+        $response->assertViewHas('viewfilters');
+        $this->assertSame(['Alpha', 'Zebra'], $response->viewData('tickets')->pluck('subject')->all());
     }
 
     #[Test]

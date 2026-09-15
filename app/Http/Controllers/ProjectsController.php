@@ -7,12 +7,15 @@ use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Services\PriorityMatrixService;
+use App\Services\TicketService;
 use Illuminate\Http\Request;
 
 class ProjectsController extends Controller
 {
-    public function __construct(private PriorityMatrixService $priorityMatrix)
-    {
+    public function __construct(
+        private PriorityMatrixService $priorityMatrix,
+        private TicketService $ticketService,
+    ) {
     }
 
     public function index()
@@ -37,31 +40,26 @@ class ProjectsController extends Controller
 
         $this->authorize('view', $project);
 
-        $perpage = 10;
+        $perpage = $request->filled('perpage') ? min(max((int) $request->perpage, 1), 100) : 10;
 
-        $filters = ['milestone_id', 'status_id', 'type_id', 'user_id', 'importance_id'];
+        $queryfilter = $request->only(Ticket::FILTER_KEYS);
 
-        $queryfilter = [];
-
-        foreach ($filters as $filter) {
-            if (isset($request->$filter) && is_numeric($request->$filter)) {
-                $queryfilter[$filter] = $request->$filter;
-            }
-        }
-
-        $query = Ticket::query()->where('project_id', $project->id);
-
-        if (is_array($queryfilter) && count($queryfilter) > 0) {
-            foreach ($queryfilter as $filter => $value) {
-                $query = $query->where($filter, $value);
-            }
-        }
-
-        $tickets = $query
+        $tickets = Ticket::query()
+            ->where('project_id', $project->id)
+            ->filter($queryfilter)
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
-            ->paginate($perpage);
+            ->sortable(
+                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                ['importance_id', 'desc']
+            )
+            ->paginate($perpage)
+            ->withQueryString();
+
+        ['viewfilters' => $viewfilters, 'filter' => $filter] = $this->ticketService->listFilterData($request);
+
+        $tabCounts = Ticket::tabCounts(Ticket::where('project_id', $project->id));
 
         $statuscodes = Status::get();
 
@@ -82,7 +80,7 @@ class ProjectsController extends Controller
 
         $matrix = $this->priorityMatrix->classify($openTickets);
 
-        return view('projects.show', compact('project', 'tickets', 'queryfilter', 'total', 'completed', 'percent', 'statuscodes', 'matrix'));
+        return view('projects.show', compact('project', 'tickets', 'queryfilter', 'total', 'completed', 'percent', 'statuscodes', 'matrix', 'viewfilters', 'filter', 'tabCounts'));
     }
 
     public function create()
