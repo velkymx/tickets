@@ -81,18 +81,17 @@
             <table class="table table-striped align-middle"> {{-- Added align-middle for vertical alignment --}}
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>P</th>
-                        <th>Status</th>
-                        <th>Project</th>
+                        <x-sort-header column="subject" label="Title" />
+                        <x-sort-header column="importance_id" label="P" />
+                        <x-sort-header column="status_id" label="Status" />
+                        <x-sort-header column="project_id" label="Project" />
                         <th>Assignee</th>
                         <th>Notes</th>
-                        <th>Created</th>
-                        <th>Updated</th>
+                        <x-sort-header column="updated_at" label="Updated" />
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($tickets->sortByDesc('importance_id') as $tick)
+                    @forelse ($tickets as $tick)
                         <tr>
                             {{-- Checkbox and Title --}}
                             <td class="text-{{$tick->importance->class}}">
@@ -131,15 +130,12 @@
                                  @endif
                              </td>
                             
-                            {{-- Created --}}
-                            <td>{{date('M jS, Y g:ia',strtotime($tick->created_at))}}</td>
-                            
                             {{-- Updated --}}
                             <td>{{date('M jS, Y g:ia',strtotime($tick->updated_at))}}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <p class="text-muted mb-0">No tickets found.</p>
                             </td>
                         </tr>

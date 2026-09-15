@@ -121,8 +121,12 @@ class TicketsController extends Controller
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
-            ->orderBy('importance_id', 'DESC')
-            ->paginate($perpage);
+            ->sortable(
+                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                ['importance_id', 'desc']
+            )
+            ->paginate($perpage)
+            ->withQueryString();
 
         if ($request->filled('perpage')) {
             $queryfilter['perpage'] = $perpage;

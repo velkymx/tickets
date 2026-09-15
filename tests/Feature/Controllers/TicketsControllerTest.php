@@ -129,6 +129,72 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_sorts_by_subject_ascending(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['subject' => 'Zebra topic']);
+        Ticket::factory()->create(['subject' => 'Alpha topic']);
+        Ticket::factory()->create(['subject' => 'Mango topic']);
+
+        $response = $this->actingAs($user)->get('/tickets?sort=subject&dir=asc');
+
+        $response->assertStatus(200);
+        $subjects = $response->viewData('tickets')->pluck('subject')->values()->all();
+        $this->assertSame(['Alpha topic', 'Mango topic', 'Zebra topic'], $subjects);
+    }
+
+    #[Test]
+    public function index_sorts_by_subject_descending(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['subject' => 'Alpha topic']);
+        Ticket::factory()->create(['subject' => 'Zebra topic']);
+        Ticket::factory()->create(['subject' => 'Mango topic']);
+
+        $response = $this->actingAs($user)->get('/tickets?sort=subject&dir=desc');
+
+        $response->assertStatus(200);
+        $subjects = $response->viewData('tickets')->pluck('subject')->values()->all();
+        $this->assertSame(['Zebra topic', 'Mango topic', 'Alpha topic'], $subjects);
+    }
+
+    #[Test]
+    public function index_ignores_unwhitelisted_sort_column(): void
+    {
+        $user = User::factory()->create();
+        $low = Importance::factory()->create(['name' => 'low sort']);
+        $high = Importance::factory()->create(['name' => 'high sort']);
+        // importance_id desc is the default order; higher id should come first.
+        [$lowId, $highId] = $low->id < $high->id ? [$low->id, $high->id] : [$high->id, $low->id];
+        Ticket::factory()->create(['importance_id' => $lowId, 'subject' => 'Low prio']);
+        Ticket::factory()->create(['importance_id' => $highId, 'subject' => 'High prio']);
+
+        // Non-whitelisted / malicious column must be ignored, falling back to default.
+        $response = $this->actingAs($user)->get('/tickets?sort=description&dir=asc');
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('tickets')->pluck('importance_id')->values()->all();
+        $this->assertSame($highId, $ids[0]);
+    }
+
+    #[Test]
+    public function index_defaults_to_importance_descending(): void
+    {
+        $user = User::factory()->create();
+        $a = Importance::factory()->create(['name' => 'a']);
+        $b = Importance::factory()->create(['name' => 'b']);
+        [$lowId, $highId] = $a->id < $b->id ? [$a->id, $b->id] : [$b->id, $a->id];
+        Ticket::factory()->create(['importance_id' => $lowId]);
+        Ticket::factory()->create(['importance_id' => $highId]);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('tickets')->pluck('importance_id')->values()->all();
+        $this->assertSame($highId, $ids[0]);
+    }
+
+    #[Test]
     public function index_filters_by_milestone_id(): void
     {
         $user = User::factory()->create();
