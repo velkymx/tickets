@@ -23,7 +23,7 @@
         @endif
         @if($article->owner)
             <li class="list-group-item">
-                <strong>Owner:</strong> {{ $article->owner->name }}
+                <strong>Owner:</strong> <a href="/users/{{ $article->owner->id }}" class="text-decoration-none">{{ $article->owner->name }}</a>
             </li>
         @endif
         @if($article->tags && $article->tags->count())
