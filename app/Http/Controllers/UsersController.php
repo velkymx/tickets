@@ -12,11 +12,7 @@ class UsersController extends Controller
 {
     public function show($id)
     {
-
-        if ((int) $id !== Auth::id()) {
-            abort(403);
-        }
-
+        // Any authenticated user can view any user's public profile.
         $user = User::findOrFail($id);
 
         $statuses = Status::pluck('name', 'id');

@@ -42,24 +42,25 @@ class UsersControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_returns_403_for_different_user(): void
+    public function show_returns_404_for_unknown_user(): void
     {
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/users/99999');
 
-        $response->assertStatus(403);
+        $response->assertStatus(404);
     }
 
     #[Test]
-    public function show_blocks_viewing_other_users_profile(): void
+    public function show_allows_viewing_other_users_profile(): void
     {
         $me = User::factory()->create();
         $other = User::factory()->create();
 
         $response = $this->actingAs($me)->get("/users/{$other->id}");
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
+        $response->assertViewIs('users.show');
     }
 
     #[Test]
