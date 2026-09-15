@@ -27,7 +27,7 @@
 
         <div class="text-muted small mt-2">
             @if($article->owner)
-                By {{ $article->owner->name }}
+                By <a href="/users/{{ $article->owner->id }}" class="text-decoration-none">{{ $article->owner->name }}</a>
             @endif
             &middot; Updated {{ $article->updated_at->diffForHumans() }}
         </div>

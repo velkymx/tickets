@@ -42,13 +42,13 @@ class ConditionEvaluator
         $value = data_get($context, $condition['field']);
 
         return match ($operator) {
-            'equals'       => $value == $target,
-            'not_equals'   => $value != $target,
+            'equals'       => $value === $target,
+            'not_equals'   => $value !== $target,
             'contains'     => str_contains((string) $value, (string) $target),
             'starts_with'  => str_starts_with((string) $value, (string) $target),
             'ends_with'    => str_ends_with((string) $value, (string) $target),
-            'greater_than' => $value > $target,
-            'less_than'    => $value < $target,
+            'greater_than' => (float) $value > (float) $target,
+            'less_than'    => (float) $value < (float) $target,
             'in'           => in_array($value, (array) $target),
             'not_in'       => ! in_array($value, (array) $target),
             'is_empty'     => empty($value),

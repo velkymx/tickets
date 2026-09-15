@@ -11,16 +11,47 @@
 
 <div class="row">
     {{-- Main Content --}}
-    <div class="col-lg-8">
-        {{-- Ticket Table --}}
-        <x-ticket-table :tickets="$tickets->sortByDesc('importance_id')" :show-checkbox="false" :show-type="false" :show-estimate="false" :show-created="true" :show-updated="true" />
+    <div class="col-lg-9">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="tickets-tab" data-bs-toggle="tab" data-bs-target="#tickets"
+                   type="button" role="tab" aria-controls="tickets" aria-selected="true">
+                    Tickets <span class="badge text-bg-secondary ms-1">{{ $total }}</span>
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="matrix-tab" data-bs-toggle="tab" data-bs-target="#matrix"
+                   type="button" role="tab" aria-controls="matrix" aria-selected="false">
+                    Priority Matrix
+                </a>
+            </li>
+        </ul>
 
-        {{-- Pagination Links --}}
-        {!! $tickets->appends($queryfilter)->links('pagination::bootstrap-5') !!}
+        <div class="tab-content">
+            {{-- Tab 1: Ticket Table --}}
+            <div class="tab-pane fade show active" id="tickets" role="tabpanel" aria-labelledby="tickets-tab">
+                <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('projects/show/'.$project->id)" />
+                <x-ticket-table
+                    :tickets="$tickets"
+                    :paginator="$tickets"
+                    :sortable="true"
+                    :show-updated="true" />
+            </div>
+
+            {{-- Tab 2: Action Priority Matrix --}}
+            <div class="tab-pane fade" id="matrix" role="tabpanel" aria-labelledby="matrix-tab">
+                @include('projects.partials.priority-matrix', ['matrix' => $matrix])
+            </div>
+        </div>
     </div>
 
     {{-- Sidebar --}}
-    <div class="col-lg-4 mt-4 mt-lg-0">
+    <div class="col-lg-3 mt-4 mt-lg-0">
+        {{-- Blockers --}}
+        @if ($blockers->count())
+            <x-blocker-box :blockers="$blockers" title="Project Blockers" />
+        @endif
+
         {{-- Progress --}}
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-body-secondary">

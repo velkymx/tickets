@@ -7,14 +7,21 @@ use App\Http\Requests\UpdateMilestoneRequest;
 use App\Models\Milestone;
 use App\Models\MilestoneWatcher;
 use App\Models\Status;
+use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\TicketQueryParser;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class MilestoneController extends Controller
 {
+    public function __construct(private TicketQueryParser $ticketQueryParser)
+    {
+    }
+
     public function index()
     {
 
@@ -49,54 +56,42 @@ class MilestoneController extends Controller
 
     }
 
-    public function getShow($id)
+    public function getShow(Request $request, $id)
     {
 
-        $milestone = Milestone::with([
-            'watchers.user',
-            'tickets' => function ($q) {
-                $q->with(['project', 'type', 'status', 'importance', 'assignee', 'notes' => function ($noteQ) {
-                    $noteQ->where('hide', 0)->where('notetype', 'message');
-                }]);
-            },
-        ])->findOrFail($id);
+        $milestone = Milestone::with(['watchers.user', 'tickets.assignee'])->findOrFail($id);
 
         $this->authorize('view', $milestone);
 
-        $tmpcodes = Status::get();
+        $perpage = $request->filled('perpage') ? min(max((int) $request->perpage, 1), 100) : 10;
 
-        $statuscodes = [];
+        $searchQuery = (string) $request->input('q', '');
+        $searchTokens = $this->ticketQueryParser->tokenize($searchQuery);
 
-        foreach ($tmpcodes as $code) {
-
-            $statuscodes[$code->id] = [
-                'name' => $code->name,
-                'slug' => Str::slug($code->name, '_'),
-            ];
-
-        }
-
-        $completed = 0;
+        $tickets = Ticket::query()
+            ->where('milestone_id', $milestone->id)
+            ->filter($this->ticketQueryParser->parse($searchQuery))
+            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
+                $q->where('hide', 0)->where('notetype', 'message');
+            }])
+            ->sortable(
+                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                ['importance_id', 'desc']
+            )
+            ->paginate($perpage)
+            ->withQueryString();
 
         $completed = $milestone->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
+        $total = $milestone->tickets()->count();
+        $percent = $total > 0 ? min(100, (int) round($completed / $total * 100)) : 0;
 
-        $total = $milestone->tickets->count();
+        $blockers = Ticket::where('milestone_id', $milestone->id)
+            ->blockers()
+            ->with(['importance', 'status'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
-        $percent = 0;
-
-        if ($total > 0) {
-
-            $percent = (round($completed / $total, 2) * 100);
-
-            if ($completed == $total) {
-
-                $percent = 100;
-
-            }
-
-        }
-
-        return view('milestone.show', compact('milestone', 'statuscodes', 'completed', 'percent'));
+        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'percent', 'searchQuery', 'searchTokens', 'blockers'));
 
     }
 
@@ -200,7 +195,13 @@ class MilestoneController extends Controller
         $totalStoryPoints = $tickets->sum('storypoints');
         $completedStoryPoints = $tickets->whereIn('status_id', $closedStatusIds)->sum('storypoints');
         $remainingStoryPoints = $totalStoryPoints - $completedStoryPoints;
-        $completionPercentage = $totalStoryPoints > 0 ? round(($completedStoryPoints / $totalStoryPoints) * 100) : 0;
+        // Story points drive the percentage, but fall back to ticket counts
+        // when nothing has been estimated yet (total of 0 points).
+        if ($totalStoryPoints > 0) {
+            $completionPercentage = round(($completedStoryPoints / $totalStoryPoints) * 100);
+        } else {
+            $completionPercentage = $totalTickets > 0 ? round(($completedTickets / $totalTickets) * 100) : 0;
+        }
 
         $statusBreakdown = $tickets->groupBy('status_id')->map(function ($group) {
             return [
@@ -227,6 +228,7 @@ class MilestoneController extends Controller
             });
         })->groupBy('user_id')->map(function ($notes, $userId) {
             return [
+                'user_id' => $userId,
                 'user_name' => $notes->first()['user_name'],
                 'total_hours' => $notes->sum('hours'),
                 'ticket_count' => $notes->unique('ticket_id')->count(),
@@ -242,6 +244,7 @@ class MilestoneController extends Controller
                 'status' => $ticket->status->name ?? 'Unknown',
                 'type' => $ticket->type->name ?? 'Unknown',
                 'assignee' => $ticket->assignee->name ?? 'Unassigned',
+                'assignee_id' => $ticket->assignee->id ?? null,
                 'storypoints' => $ticket->storypoints ?? 0,
                 'logged_hours' => $loggedHours,
             ];
@@ -253,17 +256,17 @@ class MilestoneController extends Controller
 
         $burndownData = [];
         if ($startDate && $endDate) {
-            $sprintEnd = $endDate;
+            $milestoneEnd = $endDate;
 
             $idealBurndown = [];
             $actualBurndown = [];
             $dates = [];
 
-            $daysInSprint = $startDate->diffInDays($sprintEnd) + 1;
-            $pointsPerDay = $totalStoryPoints / max($daysInSprint, 1);
+            $daysInMilestone = $startDate->diffInDays($milestoneEnd) + 1;
+            $pointsPerDay = $totalStoryPoints / max($daysInMilestone, 1);
             $pointsPerDay = $pointsPerDay > 0 ? $pointsPerDay : 0;
 
-            for ($i = 0; $i <= $daysInSprint; $i++) {
+            for ($i = 0; $i <= $daysInMilestone; $i++) {
                 $date = $startDate->copy()->addDays($i);
                 $dates[] = $date->format('M j');
                 $idealBurndown[] = max(0, $totalStoryPoints - ($pointsPerDay * $i));
@@ -287,7 +290,7 @@ class MilestoneController extends Controller
             }
 
             $lastClosed = 0;
-            for ($i = 0; $i <= $daysInSprint; $i++) {
+            for ($i = 0; $i <= $daysInMilestone; $i++) {
                 $date = $startDate->copy()->addDays($i)->format('Y-m-d');
                 if (isset($runningDates[$date])) {
                     $lastClosed = $runningDates[$date];

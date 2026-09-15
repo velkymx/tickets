@@ -101,14 +101,14 @@
             <div class="col-md-4">
                 <label for="due_at" class="form-label">Due Date</label>
                 <input type="date" name="due_at" id="due_at" class="form-control" 
-                       value="{{ old('due_at', $ticket->due_at) }}">
+                       value="{{ old('due_at', $ticket->due_at?->format('Y-m-d')) }}">
             </div>
             
             {{-- Completed Date (Cloned) --}}
             <div class="col-md-4">
                 <label for="closed_at" class="form-label">Completed Date</label>
                 <input type="date" name="closed_at" id="closed_at" class="form-control" 
-                       value="{{ old('closed_at', $ticket->closed_at) }}">
+                       value="{{ old('closed_at', $ticket->closed_at?->format('Y-m-d')) }}">
             </div>
 
             {{-- Time Estimate (Cloned) --}}

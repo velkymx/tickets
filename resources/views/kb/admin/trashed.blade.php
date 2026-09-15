@@ -42,7 +42,7 @@
                                 <span class="text-muted">None</span>
                             @endif
                         </td>
-                        <td>{{ $article->owner->name ?? 'Unknown' }}</td>
+                        <td>@if($article->owner)<a href="/users/{{ $article->owner->id }}" class="text-decoration-none">{{ $article->owner->name }}</a>@else<span class="text-muted">Unknown</span>@endif</td>
                         <td>{{ $article->deleted_at->format('M jS, Y g:ia') }}</td>
                         <td>
                             <form method="POST" action="{{ route('kb.admin.trashed.restore', $article->id) }}"

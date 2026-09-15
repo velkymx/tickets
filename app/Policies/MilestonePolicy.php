@@ -33,8 +33,9 @@ class MilestonePolicy
 
     public function update(User $user, Milestone $milestone): bool
     {
+        // An unassigned milestone can be claimed/edited by any authenticated user.
         if (! $milestone->scrummaster_user_id && ! $milestone->owner_user_id) {
-            return false;
+            return true;
         }
 
         return $milestone->scrummaster_user_id === $user->id

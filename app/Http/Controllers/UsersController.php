@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
@@ -12,24 +13,55 @@ class UsersController extends Controller
 {
     public function show($id)
     {
-
-        if ((int) $id !== Auth::id()) {
-            abort(403);
-        }
-
+        // Any authenticated user can view any user's public profile.
         $user = User::findOrFail($id);
+
+        $isOwnProfile = (int) $id === Auth::id();
 
         $statuses = Status::pluck('name', 'id');
 
-        $tickets = Ticket::where('user_id2', $id)
-            ->with('status')
-            ->get()
-            ->groupBy(fn ($ticket) => $ticket->status->name);
-
+        // Ticket lists are private: only visible on your own profile.
+        // Closed and New tickets are excluded: the profile shows active work only.
         $alltickets = [];
-        foreach ($tickets as $statusName => $ticketGroup) {
-            $alltickets[$statusName] = $ticketGroup;
+        if ($isOwnProfile) {
+            $newStatusIds = Status::whereRaw('LOWER(name) = ?', ['new'])->pluck('id')->toArray();
+
+            $tickets = Ticket::where('user_id2', $id)
+                ->whereNotIn('status_id', array_merge(Status::closedStatusIds(), $newStatusIds))
+                ->with('status')
+                ->get()
+                ->groupBy(fn ($ticket) => $ticket->status->name);
+
+            foreach ($tickets as $statusName => $ticketGroup) {
+                $alltickets[$statusName] = $ticketGroup;
+            }
         }
+
+        // Contribution calendar: notes authored + tickets created per day, last 12 months.
+        $yearAgo = now()->subYear()->startOfDay();
+
+        $noteCounts = Note::where('user_id', $user->id)
+            ->where('created_at', '>=', $yearAgo)
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $ticketCounts = Ticket::where('user_id', $user->id)
+            ->where('created_at', '>=', $yearAgo)
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $contributions = [];
+        foreach ($noteCounts as $day => $count) {
+            $contributions[$day] = ($contributions[$day] ?? 0) + $count;
+        }
+        foreach ($ticketCounts as $day => $count) {
+            $contributions[$day] = ($contributions[$day] ?? 0) + $count;
+        }
+
+        $contributionTotal = array_sum($contributions);
+        $contributionMax = $contributions ? max($contributions) : 0;
 
         $timezone = $user->timezone ?? config('app.timezone');
         $time = new \DateTime(null, new \DateTimeZone($timezone));
@@ -40,7 +72,7 @@ class UsersController extends Controller
         // Add sample time for current timezone
         $currenttime = $time->format('H:i').$ampm;
 
-        return view('users.show', compact('user', 'alltickets', 'currenttime'));
+        return view('users.show', compact('user', 'alltickets', 'currenttime', 'isOwnProfile', 'contributions', 'contributionTotal', 'contributionMax'));
 
     }
 

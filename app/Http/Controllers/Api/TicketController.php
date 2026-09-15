@@ -244,7 +244,9 @@ class TicketController extends Controller
 
         $user = $request->attributes->get('api_user');
 
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->findOrFail($id);
 
         if ($request->boolean('claim')) {
             $ticket->user_id2 = $user->id;
@@ -303,29 +305,33 @@ class TicketController extends Controller
 
             $bodyText = $commandResult['body'] ?? '';
             $bodyHtml = $markdownService->parse($bodyText);
+            $totalHours = ($request->hours ?? 0) + ($commandResult['hours'] ?? 0);
 
-            $createdNote = Note::create([
-                'user_id' => $user->id,
-                'ticket_id' => $ticket->id,
-                'body' => $bodyHtml,
-                'body_markdown' => $bodyText,
-                'hours' => ($request->hours ?? 0) + ($commandResult['hours'] ?? 0),
-                'notetype' => $noteType,
-                'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
-            ]);
+            // Skip commands that leave no text behind (e.g. /estimate, /close).
+            if (trim(strip_tags($bodyHtml)) !== '' || $totalHours > 0) {
+                $createdNote = Note::create([
+                    'user_id' => $user->id,
+                    'ticket_id' => $ticket->id,
+                    'body' => $bodyHtml,
+                    'body_markdown' => $bodyText,
+                    'hours' => $totalHours,
+                    'notetype' => $noteType,
+                    'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
+                ]);
 
-            // Create mention records
-            $mentionUsernames = $mentionService->parseMentions($bodyText);
-            $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-            $mentionService->createMentions($createdNote, $mentionUserIds);
+                // Create mention records
+                $mentionUsernames = $mentionService->parseMentions($bodyText);
+                $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
+                $mentionService->createMentions($createdNote, $mentionUserIds);
 
-            $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+                $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+            }
         }
 
         $ticket->load(['status', 'assignee']);
 
         $response = [
-            'message' => 'Note added successfully',
+            'message' => $createdNote ? 'Note added successfully' : 'Command applied, no note stored.',
             'warnings' => $warnings,
             'ticket' => [
                 'id' => $ticket->id,
@@ -339,6 +345,48 @@ class TicketController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'subject' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|nullable|string',
+            'status_id' => 'sometimes|required|integer|exists:statuses,id',
+        ]);
+
+        $user = $request->attributes->get('api_user');
+
+        $ticket = Ticket::where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->findOrFail($id);
+
+        if ($request->has('subject')) {
+            $ticket->subject = $request->subject;
+        }
+
+        if ($request->has('description')) {
+            $ticket->description = $request->description ?? '';
+        }
+
+        if ($request->has('status_id') && $request->status_id != $ticket->status_id) {
+            $ticket->status_id = $request->status_id;
+            $ticket->closed_at = Status::isClosed($request->status_id) ? now() : null;
+        }
+
+        $ticket->save();
+        $ticket->load(['status', 'assignee']);
+
+        return response()->json([
+            'message' => 'Ticket updated successfully',
+            'ticket' => [
+                'id' => $ticket->id,
+                'subject' => $ticket->subject,
+                'description' => $ticket->description,
+                'status' => $ticket->status->name ?? null,
+                'assignee' => $ticket->assignee->name ?? null,
+            ],
+        ]);
     }
 
     public function pulse(Request $request, $id)
@@ -357,7 +405,9 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Only thread author or ticket assignee can resolve
@@ -366,6 +416,10 @@ class TicketController extends Controller
 
         if (! $isAuthor && ! $isAssignee) {
             return response()->json(['message' => 'Forbidden: only the thread author or ticket assignee can resolve'], 403);
+        }
+
+        if ($note->resolved) {
+            return response()->json(['message' => 'Note is already resolved.'], 422);
         }
 
         $note->update([
@@ -402,7 +456,9 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Author-only
@@ -447,7 +503,9 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
         $parent = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Reject nested replies
@@ -490,7 +548,9 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         $existing = NoteReaction::where('note_id', $note->id)

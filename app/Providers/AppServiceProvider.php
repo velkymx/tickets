@@ -24,6 +24,7 @@ use App\Events\TicketUpdated;
 use App\Services\KbSearchService;
 use App\ViewComposers\NotificationComposer;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -48,6 +49,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->registerSortableMacro();
+
         Note::observe(NoteObserver::class);
         Ticket::observe(TicketObserver::class);
 
@@ -81,6 +84,39 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(TicketUpdated::class, function (TicketUpdated $event) {
             $context = (new TicketUpdatedContextBuilder())->build($event);
             app(AutomationEngine::class)->process('ticket.updated', $context);
+        });
+    }
+
+    /**
+     * Register a reusable ->sortable() query macro for paginated list views.
+     *
+     * Usage: $query->sortable(['subject', 'status_id' => 'status_id'], ['importance_id', 'desc'])
+     *   - $allowed: whitelist of sortable columns. A string value is a column
+     *     whose request key equals itself; a key => column pair maps a public
+     *     sort key to a real column (for aliasing). Anything not whitelisted is
+     *     ignored, so the raw ?sort= value never reaches orderBy (injection-safe).
+     *   - $default: [column, direction] applied when no valid sort is requested.
+     */
+    protected function registerSortableMacro(): void
+    {
+        Builder::macro('sortable', function (array $allowed, array $default) {
+            /** @var Builder $this */
+            $columns = [];
+            foreach ($allowed as $key => $column) {
+                $columns[is_int($key) ? $column : $key] = $column;
+            }
+
+            $request = request();
+            $sort = $request->query('sort');
+            $dir = strtolower((string) $request->query('dir')) === 'desc' ? 'desc' : 'asc';
+
+            if ($sort !== null && isset($columns[$sort])) {
+                return $this->orderBy($columns[$sort], $dir);
+            }
+
+            [$defaultColumn, $defaultDir] = $default;
+
+            return $this->orderBy($defaultColumn, $defaultDir);
         });
     }
 }

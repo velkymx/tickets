@@ -31,7 +31,7 @@
     @method('PUT')
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-9">
             {{-- Title --}}
             <div class="mb-3">
                 <label for="title" class="form-label">Title</label>
@@ -52,7 +52,7 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             {{-- Category --}}
             <div class="mb-3" x-data="{ adding: false, name: '', error: '', saving: false }">
                 <label for="category_id" class="form-label">Category</label>

@@ -29,7 +29,7 @@
                     <i class="fas fa-calendar-check"></i>
                 </div>
                 <h3 class="card-title h4 fw-bold">Milestone Management</h3>
-                <p class="card-text text-muted">Plan and track sprints, releases, and deadlines with granular control. See progress instantly across all associated tickets.</p>
+                <p class="card-text text-muted">Plan and track milestones, releases, and deadlines with granular control. See progress instantly across all associated tickets.</p>
             </div>
         </div>
     </div>

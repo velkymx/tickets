@@ -9,7 +9,7 @@
 
 <div class="row">
     {{-- Main Content --}}
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 {!! clean($release->body ?? '<p class="text-muted">No release notes.</p>') !!}
@@ -43,7 +43,7 @@
     </div>
 
     {{-- Sidebar --}}
-    <div class="col-lg-4 mt-4 mt-lg-0">
+    <div class="col-lg-3 mt-4 mt-lg-0">
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-body-secondary">
                 <strong>Release Details</strong>

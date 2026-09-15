@@ -2,12 +2,13 @@
     $showCheckbox = $showCheckbox ?? false;
     $showType = $showType ?? false;
     $showEstimate = $showEstimate ?? false;
-    $showCreated = $showCreated ?? true;
     $showUpdated = $showUpdated ?? true;
     $small = $small ?? false;
+    $sortable = $sortable ?? false;
+    $paginator = $paginator ?? null;
     $emptyMessage = $emptyMessage ?? null;
-    
-    $colCount = 1 + ($showCheckbox ? 1 : 0) + ($showType ? 1 : 0) + 1 + 1 + 1 + 1 + ($showEstimate ? 1 : 0) + 1 + ($showCreated ? 1 : 0) + ($showUpdated ? 1 : 0);
+
+    $colCount = 1 + ($showCheckbox ? 1 : 0) + ($showType ? 1 : 0) + 1 + 1 + 1 + 1 + ($showEstimate ? 1 : 0) + 1 + ($showUpdated ? 1 : 0);
 @endphp
 
 <div class="table-responsive">
@@ -19,23 +20,34 @@
                         <input type="checkbox" class="form-check-input" id="selectAll">
                     </th>
                 @endif
-                <th class="text-nowrap">Title</th>
+                @if($sortable)
+                    <x-sort-header column="subject" label="Title" />
+                @else
+                    <th class="text-nowrap">Title</th>
+                @endif
                 @if($showType)
                     <th class="col-1">T</th>
                 @endif
-                <th class="col-1">P</th>
-                <th class="col-2">Status</th>
-                <th class="col-2">Project</th>
+                @if($sortable)
+                    <x-sort-header column="importance_id" label="P" />
+                    <x-sort-header column="status_id" label="Status" />
+                    <x-sort-header column="project_id" label="Project" />
+                @else
+                    <th class="col-1">P</th>
+                    <th class="col-2">Status</th>
+                    <th class="col-2">Project</th>
+                @endif
                 <th class="col-2">Assignee</th>
                 @if($showEstimate)
                     <th class="col-1">Est</th>
                 @endif
                 <th class="col-1">Notes</th>
-                @if($showCreated)
-                    <th class="col-2">Created</th>
-                @endif
                 @if($showUpdated)
-                    <th class="col-2">Updated</th>
+                    @if($sortable)
+                        <x-sort-header column="updated_at" label="Updated" />
+                    @else
+                        <th class="col-2">Updated</th>
+                    @endif
                 @endif
             </tr>
         </thead>
@@ -47,11 +59,11 @@
                             <input type="checkbox" name="tickets[{{ $tick->id }}]" value="{{ $tick->id }}" class="form-check-input">
                         </td>
                     @endif
-                    <td class="text-{{ $tick->importance->class }}">
-                        @if(!$showCheckbox)
+                    <td>
+                        @if(!$showType)
                             <i class="{{ $tick->type->icon }} me-1" title="{{ $tick->type->name }}" aria-hidden="true"></i>
                         @endif
-                        <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-{{ $tick->importance->class }}">
+                        <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-body">
                             #{{ $tick->id }} {{ $tick->subject }}
                         </a>
                     </td>
@@ -65,7 +77,13 @@
                     </td>
                     <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                     <td>{{ $tick->project->name }}</td>
-                    <td>{{ $tick->assignee->name }}</td>
+                    <td>
+                        @if ($tick->assignee)
+                            <a href="/users/{{ $tick->assignee->id }}" class="text-decoration-none text-body">{{ $tick->assignee->name }}</a>
+                        @else
+                            <span class="text-muted fst-italic">Unassigned</span>
+                        @endif
+                    </td>
                     @if($showEstimate)
                         <td><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
                     @endif
@@ -75,9 +93,6 @@
                             <span class="badge text-bg-info">{{ $noteCount }}</span>
                         @endif
                     </td>
-                    @if($showCreated)
-                        <td class="small text-muted">{{ $tick->created_at->format('M jS, Y g:ia') }}</td>
-                    @endif
                     @if($showUpdated)
                         <td class="small text-muted">{{ $tick->updated_at->format('M jS, Y g:ia') }}</td>
                     @endif
@@ -92,3 +107,7 @@
         </tbody>
     </table>
 </div>
+
+@if($paginator)
+    {!! $paginator->links('pagination::bootstrap-5') !!}
+@endif

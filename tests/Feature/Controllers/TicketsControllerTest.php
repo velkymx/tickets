@@ -98,6 +98,36 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function home_provides_sortable_paginated_list_of_my_tickets(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['user_id2' => $user->id, 'subject' => 'Zebra']);
+        Ticket::factory()->create(['user_id2' => $user->id, 'subject' => 'Alpha']);
+
+        $response = $this->actingAs($user)->get('/home?sort=subject&dir=asc');
+
+        $response->assertStatus(200);
+        $response->assertViewHas('tickets');
+        $response->assertViewHas('searchTokens');
+        $this->assertSame(['Alpha', 'Zebra'], $response->viewData('tickets')->pluck('subject')->all());
+    }
+
+    #[Test]
+    public function home_provides_my_open_blockers_only(): void
+    {
+        $user = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id2' => $user->id, 'importance_id' => 5]);
+        $theirs = Ticket::factory()->create(['user_id2' => User::factory()->create()->id, 'importance_id' => 5]);
+
+        $response = $this->actingAs($user)->get('/home');
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('blockers')->pluck('id');
+        $this->assertTrue($ids->contains($mine->id));
+        $this->assertFalse($ids->contains($theirs->id));
+    }
+
+    #[Test]
     public function home_returns_home_view(): void
     {
         $user = User::factory()->create();
@@ -126,6 +156,128 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('tickets');
+    }
+
+    #[Test]
+    public function index_sorts_by_subject_ascending(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['subject' => 'Zebra topic']);
+        Ticket::factory()->create(['subject' => 'Alpha topic']);
+        Ticket::factory()->create(['subject' => 'Mango topic']);
+
+        $response = $this->actingAs($user)->get('/tickets?sort=subject&dir=asc');
+
+        $response->assertStatus(200);
+        $subjects = $response->viewData('tickets')->pluck('subject')->values()->all();
+        $this->assertSame(['Alpha topic', 'Mango topic', 'Zebra topic'], $subjects);
+    }
+
+    #[Test]
+    public function index_sorts_by_subject_descending(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['subject' => 'Alpha topic']);
+        Ticket::factory()->create(['subject' => 'Zebra topic']);
+        Ticket::factory()->create(['subject' => 'Mango topic']);
+
+        $response = $this->actingAs($user)->get('/tickets?sort=subject&dir=desc');
+
+        $response->assertStatus(200);
+        $subjects = $response->viewData('tickets')->pluck('subject')->values()->all();
+        $this->assertSame(['Zebra topic', 'Mango topic', 'Alpha topic'], $subjects);
+    }
+
+    #[Test]
+    public function index_ignores_unwhitelisted_sort_column(): void
+    {
+        $user = User::factory()->create();
+        $low = Importance::factory()->create(['name' => 'low sort']);
+        $high = Importance::factory()->create(['name' => 'high sort']);
+        // importance_id desc is the default order; higher id should come first.
+        [$lowId, $highId] = $low->id < $high->id ? [$low->id, $high->id] : [$high->id, $low->id];
+        Ticket::factory()->create(['importance_id' => $lowId, 'subject' => 'Low prio']);
+        Ticket::factory()->create(['importance_id' => $highId, 'subject' => 'High prio']);
+
+        // Non-whitelisted / malicious column must be ignored, falling back to default.
+        $response = $this->actingAs($user)->get('/tickets?sort=description&dir=asc');
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('tickets')->pluck('importance_id')->values()->all();
+        $this->assertSame($highId, $ids[0]);
+    }
+
+    #[Test]
+    public function index_defaults_to_importance_descending(): void
+    {
+        $user = User::factory()->create();
+        $a = Importance::factory()->create(['name' => 'a']);
+        $b = Importance::factory()->create(['name' => 'b']);
+        [$lowId, $highId] = $a->id < $b->id ? [$a->id, $b->id] : [$b->id, $a->id];
+        Ticket::factory()->create(['importance_id' => $lowId]);
+        Ticket::factory()->create(['importance_id' => $highId]);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('tickets')->pluck('importance_id')->values()->all();
+        $this->assertSame($highId, $ids[0]);
+    }
+
+    #[Test]
+    public function index_filters_via_query_string(): void
+    {
+        $user = User::factory()->create();
+        $blocker = Ticket::factory()->create(['importance_id' => 5, 'subject' => 'Blocker one']);
+        $minor = Ticket::factory()->create(['importance_id' => 2, 'subject' => 'Minor one']);
+
+        $response = $this->actingAs($user)->get('/tickets?q='.urlencode('importance:blocker'));
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('tickets')->pluck('id');
+        $this->assertTrue($ids->contains($blocker->id));
+        $this->assertFalse($ids->contains($minor->id));
+        $response->assertViewHas('searchTokens');
+    }
+
+    #[Test]
+    public function index_renders_unassigned_tickets_without_error(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->unassigned()->create(['subject' => 'Orphan task']);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee('Orphan task');
+        $response->assertSee('Unassigned');
+    }
+
+    #[Test]
+    public function show_renders_an_unassigned_ticket_without_error(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->unassigned()->create();
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('currently unassigned');
+    }
+
+    #[Test]
+    public function index_filters_by_assignee_me(): void
+    {
+        $user = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id2' => $user->id]);
+        $theirs = Ticket::factory()->create(['user_id2' => User::factory()->create()->id]);
+
+        $response = $this->actingAs($user)->get('/tickets?assignee=me');
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('tickets')->pluck('id');
+        $this->assertTrue($ids->contains($mine->id));
+        $this->assertFalse($ids->contains($theirs->id));
     }
 
     #[Test]
@@ -303,7 +455,7 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('lookups');
-        $response->assertViewHas('viewfilters');
+        $response->assertViewHas('searchTokens');
     }
 
     #[Test]
@@ -1219,6 +1371,23 @@ class TicketsControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('tickets.edit');
         $response->assertViewHas('ticket');
+    }
+
+    #[Test]
+    public function edit_fills_date_inputs_in_html_date_format(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'due_at' => '2026-09-20',
+            'closed_at' => '2026-09-21 14:30:00',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/edit/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('value="2026-09-20"', false);
+        $response->assertSee('value="2026-09-21"', false);
     }
 
     #[Test]

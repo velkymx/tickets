@@ -1160,4 +1160,163 @@ class TicketControllerTest extends TestCase
         $this->assertArrayHasKey('notetype', $note);
         $this->assertArrayHasKey('reactions', $note);
     }
+
+    #[Test]
+    public function note_attaches_to_the_ticket_named_in_the_route(): void
+    {
+        // User owns two tickets. Note must land on the one in the URL,
+        // not the lowest-id ticket they happen to own.
+        $lowerTicket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+        $targetTicket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$targetTicket->id}/note", [
+            'body' => 'Route-bound note',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('ticket.id', $targetTicket->id);
+
+        $note = Note::where('body_markdown', 'Route-bound note')->firstOrFail();
+        $this->assertEquals($targetTicket->id, $note->ticket_id);
+        $this->assertEquals(0, Note::where('ticket_id', $lowerTicket->id)->count());
+    }
+
+    #[Test]
+    public function close_slash_command_sets_a_closed_status(): void
+    {
+        Cache::flush();
+        $openStatus = Status::factory()->open()->create();
+        $closedStatus = Status::factory()->create(['name' => 'closed']);
+
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+            'status_id' => $openStatus->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/close',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $ticket->refresh();
+        $this->assertEquals($closedStatus->id, $ticket->status_id);
+        $this->assertTrue(Status::isClosed($ticket->status_id));
+        $this->assertNotNull($ticket->closed_at);
+    }
+
+    #[Test]
+    public function update_changes_subject_description_and_status(): void
+    {
+        Cache::flush();
+        $openStatus = Status::factory()->open()->create();
+        $closedStatus = Status::factory()->create(['name' => 'closed']);
+
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+            'status_id' => $openStatus->id,
+            'subject' => 'Old subject',
+            'description' => 'Old description',
+        ]);
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'subject' => 'New subject',
+            'description' => 'New description',
+            'status_id' => $closedStatus->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('ticket.subject', 'New subject');
+
+        $ticket->refresh();
+        $this->assertEquals('New subject', $ticket->subject);
+        $this->assertEquals('New description', $ticket->description);
+        $this->assertEquals($closedStatus->id, $ticket->status_id);
+        $this->assertNotNull($ticket->closed_at);
+    }
+
+    #[Test]
+    public function update_reopens_ticket_when_status_moves_to_open(): void
+    {
+        Cache::flush();
+        $closedStatus = Status::factory()->create(['name' => 'closed']);
+        $openStatus = Status::factory()->open()->create();
+
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+            'status_id' => $closedStatus->id,
+            'closed_at' => now(),
+        ]);
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'status_id' => $openStatus->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $ticket->refresh();
+        $this->assertEquals($openStatus->id, $ticket->status_id);
+        $this->assertNull($ticket->closed_at);
+    }
+
+    #[Test]
+    public function update_requires_authentication(): void
+    {
+        $response = $this->putJson('/api/v1/tickets/1', ['subject' => 'x']);
+
+        $response->assertStatus(401);
+    }
+
+    #[Test]
+    public function update_rejects_tickets_the_user_does_not_own(): void
+    {
+        $otherUser = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $otherUser->id,
+            'user_id2' => $otherUser->id,
+        ]);
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'subject' => 'Hijacked',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(404);
+    }
+
+    #[Test]
+    public function reply_targets_the_requested_ticket_not_the_users_first_ticket(): void
+    {
+        // A ticket the user is assigned to with a LOWER id — the old ungrouped
+        // orWhere would resolve to this one regardless of the requested id.
+        Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+
+        $target = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $target->id,
+            'user_id' => $this->user->id,
+            'parent_id' => null,
+        ]);
+
+        $response = $this->postJson(
+            "/api/v1/tickets/{$target->id}/notes/{$note->id}/reply",
+            ['body' => 'Reply on the correct ticket'],
+            $this->apiHeaders(),
+        );
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $target->id,
+            'parent_id' => $note->id,
+            'body_markdown' => 'Reply on the correct ticket',
+        ]);
+    }
 }

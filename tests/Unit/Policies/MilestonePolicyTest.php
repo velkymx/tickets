@@ -88,12 +88,13 @@ class MilestonePolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_denies_anyone_from_updating_unassigned_milestone(): void
+    public function it_allows_anyone_to_update_an_unassigned_milestone(): void
     {
+        // Unassigned milestones (no owner/scrummaster) can be claimed by anyone.
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create(['scrummaster_user_id' => null, 'owner_user_id' => null]);
 
-        $this->assertFalse($this->policy->update($user, $milestone));
+        $this->assertTrue($this->policy->update($user, $milestone));
     }
 
     #[Test]

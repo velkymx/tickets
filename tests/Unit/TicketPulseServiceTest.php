@@ -68,7 +68,31 @@ class TicketPulseServiceTest extends TestCase
 
         $this->assertTrue($pulse->is_blocked);
         $this->assertEquals('Waiting on API', $pulse->blocker_reason);
-        $this->assertEquals('BLOCKED', $pulse->status);
+        $this->assertEquals('BLOCKED', $pulse->execution_state);
+        $this->assertEquals($ticket->status->name, $pulse->status);
+    }
+
+    #[Test]
+    public function it_exposes_iso8601_dates_safe_for_cache_and_json()
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+
+        Note::create([
+            'body' => 'Waiting on API',
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $pulse = $this->service->getPulse($ticket);
+        $cached = Cache::get("ticket_pulse:{$ticket->id}");
+
+        $this->assertIsString($pulse->last_activity_at);
+        $this->assertIsString($pulse->latest_blocker['created_at']);
+        $this->assertEquals($pulse->toArray(), $cached->toArray());
+        $this->assertStringNotContainsString('Incomplete_Class', json_encode($cached->toArray()));
     }
 
     #[Test]
@@ -263,9 +287,10 @@ class TicketPulseServiceTest extends TestCase
 
         $pulse = $this->service->getPulse($ticket);
 
-        $this->assertCount(1, $pulse->open_threads);
+        $this->assertCount(2, $pulse->open_threads);
         $this->assertEquals('Race condition discussion', $pulse->open_threads[0]['subject']);
         $this->assertEquals(2, $pulse->open_threads[0]['reply_count']);
+        $this->assertEquals('blocker', $pulse->open_threads[1]['notetype']);
         $this->assertEquals($blocker->id, $pulse->latest_blocker['id']);
         $this->assertEquals('Sarah', $pulse->latest_blocker['author']);
     }

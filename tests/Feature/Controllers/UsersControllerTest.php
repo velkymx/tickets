@@ -42,24 +42,138 @@ class UsersControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_returns_403_for_different_user(): void
+    public function show_returns_404_for_unknown_user(): void
     {
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/users/99999');
 
-        $response->assertStatus(403);
+        $response->assertStatus(404);
     }
 
     #[Test]
-    public function show_blocks_viewing_other_users_profile(): void
+    public function show_allows_viewing_other_users_profile(): void
     {
         $me = User::factory()->create();
         $other = User::factory()->create();
 
         $response = $this->actingAs($me)->get("/users/{$other->id}");
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
+        $response->assertViewIs('users.show');
+    }
+
+    #[Test]
+    public function show_hides_tickets_from_other_users(): void
+    {
+        $me = User::factory()->create();
+        $other = User::factory()->create();
+        $status = Status::factory()->create(['name' => 'Open']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $other->id,
+            'status_id' => $status->id,
+        ]);
+
+        $response = $this->actingAs($me)->get("/users/{$other->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('alltickets', []);
+        $response->assertDontSee($ticket->subject);
+    }
+
+    #[Test]
+    public function show_shows_tickets_on_own_profile(): void
+    {
+        $user = User::factory()->create();
+        $status = Status::factory()->create(['name' => 'Open']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $status->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee($ticket->subject);
+    }
+
+    #[Test]
+    public function show_hides_closed_tickets_on_own_profile(): void
+    {
+        $user = User::factory()->create();
+        $open = Status::factory()->create(['name' => 'Open']);
+        $closed = Status::factory()->closed()->create();
+        $openTicket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $open->id,
+        ]);
+        $closedTicket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $closed->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee($openTicket->subject);
+        $response->assertDontSee($closedTicket->subject);
+    }
+
+    #[Test]
+    public function show_hides_new_tickets_on_own_profile(): void
+    {
+        $user = User::factory()->create();
+        $open = Status::factory()->create(['name' => 'Open']);
+        $new = Status::factory()->create(['name' => 'New']);
+        $openTicket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $open->id,
+        ]);
+        $newTicket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $new->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee($openTicket->subject);
+        $response->assertDontSee($newTicket->subject);
+    }
+
+    #[Test]
+    public function show_passes_contribution_data(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('contributions');
+        $response->assertViewHas('contributionTotal');
+        $response->assertViewHas('contributionMax');
+    }
+
+    #[Test]
+    public function show_hides_bio_section_when_bio_is_empty(): void
+    {
+        $user = User::factory()->create(['bio' => null]);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertDontSee('<h3>Bio</h3>', false);
+    }
+
+    #[Test]
+    public function show_shows_bio_section_when_bio_is_present(): void
+    {
+        $user = User::factory()->create(['bio' => 'I build things.']);
+
+        $response = $this->actingAs($user)->get("/users/{$user->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('<h3>Bio</h3>', false);
     }
 
     #[Test]

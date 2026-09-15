@@ -154,16 +154,47 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
-    public function get_show_builds_status_codes_array(): void
+    public function get_show_renders_unassigned_tickets_without_error(): void
     {
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create();
-        Status::factory()->create(['name' => 'Open']);
+        Ticket::factory()->unassigned()->create(['milestone_id' => $milestone->id]);
 
         $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
 
         $response->assertStatus(200);
-        $response->assertViewHas('statuscodes');
+    }
+
+    #[Test]
+    public function get_show_provides_open_blockers(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
+        $blocker = Ticket::factory()->create(['milestone_id' => $milestone->id, 'importance_id' => 5]);
+        $normal = Ticket::factory()->create(['milestone_id' => $milestone->id, 'importance_id' => 3]);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('blockers')->pluck('id');
+        $this->assertTrue($ids->contains($blocker->id));
+        $this->assertFalse($ids->contains($normal->id));
+    }
+
+    #[Test]
+    public function get_show_provides_paginated_sortable_ticket_list(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'subject' => 'Zebra']);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'subject' => 'Alpha']);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}?sort=subject&dir=asc");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('tickets');
+        $response->assertViewHas('searchTokens');
+        $this->assertSame(['Alpha', 'Zebra'], $response->viewData('tickets')->pluck('subject')->all());
     }
 
     #[Test]
@@ -239,7 +270,7 @@ class MilestoneControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/milestone/edit/{$milestone->id}");
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 
     #[Test]
@@ -468,6 +499,31 @@ class MilestoneControllerTest extends TestCase
         $response->assertViewHas('totalStoryPoints', 8);
         $response->assertViewHas('completedStoryPoints', 8);
         $response->assertViewHas('remainingStoryPoints', 0);
+    }
+
+    #[Test]
+    public function report_falls_back_to_ticket_counts_when_no_story_points(): void
+    {
+        $user = User::factory()->create();
+        $openStatus = Status::factory()->create(['name' => 'Open']);
+        $closedStatus = Status::factory()->closed()->create();
+        $milestone = Milestone::factory()->create();
+
+        Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'status_id' => $closedStatus->id,
+            'storypoints' => 0,
+        ]);
+        Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'status_id' => $openStatus->id,
+            'storypoints' => 0,
+        ]);
+
+        $response = $this->actingAs($user)->get("/milestone/report/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('completionPercentage', 50);
     }
 
     #[Test]

@@ -432,4 +432,69 @@ class TicketTest extends TestCase
 
         Notification::assertNothingSent();
     }
+
+    #[Test]
+    public function it_sets_closed_at_when_moved_to_completed(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+            'status_id' => $this->openStatus->id,
+            'closed_at' => null,
+        ]);
+
+        $ticket->status_id = $this->closedStatus->id;
+        $ticket->save();
+
+        $this->assertNotNull($ticket->fresh()->closed_at);
+    }
+
+    #[Test]
+    public function it_clears_closed_at_and_audits_when_reopened(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+            'status_id' => $this->closedStatus->id,
+            'closed_at' => now(),
+        ]);
+
+        $ticket->status_id = $this->openStatus->id;
+        $ticket->save();
+
+        $this->assertNull($ticket->fresh()->closed_at);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
+        $note = Note::where('ticket_id', $ticket->id)
+            ->where('notetype', 'changelog')
+            ->latest('id')
+            ->first();
+        $this->assertStringContainsString('reopened', strtolower($note->body_markdown));
+    }
+
+    #[Test]
+    public function it_keeps_explicit_closed_at_when_closing(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+            'status_id' => $this->openStatus->id,
+            'closed_at' => null,
+        ]);
+
+        $ticket->status_id = $this->closedStatus->id;
+        $ticket->closed_at = '2026-01-15 10:00:00';
+        $ticket->save();
+
+        $this->assertEquals(
+            '2026-01-15 10:00:00',
+            $ticket->fresh()->closed_at->format('Y-m-d H:i:s')
+        );
+    }
 }

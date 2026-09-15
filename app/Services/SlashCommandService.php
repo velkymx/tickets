@@ -125,6 +125,15 @@ class SlashCommandService
                     break;
                 }
 
+                $closedStatusId = Status::whereRaw('LOWER(name) = ?', ['closed'])->value('id')
+                    ?? Status::closedStatusIds()[0] ?? null;
+
+                if (! $closedStatusId) {
+                    $result['warnings'][] = 'No closed status configured';
+                    break;
+                }
+
+                $ticket->status_id = $closedStatusId;
                 $ticket->closed_at = now();
                 $ticket->save();
                 $result['changes'][] = 'Ticket closed';

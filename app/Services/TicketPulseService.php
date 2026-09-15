@@ -63,9 +63,10 @@ class TicketPulseService
         $openThreads = $notes
             ->whereNull('parent_id')
             ->where('resolved', false)
-            ->filter(fn (Note $note) => $note->replies->isNotEmpty())
+            ->filter(fn (Note $note) => $note->replies->isNotEmpty() || in_array($note->notetype, ['blocker', 'action'], true))
             ->map(fn (Note $note) => [
                 'id' => $note->id,
+                'notetype' => $note->notetype,
                 'subject' => Str::of(strip_tags($note->body))->before("\n")->trim()->toString(),
                 'reply_count' => $note->replies->count(),
             ])
@@ -78,11 +79,10 @@ class TicketPulseService
 
         $isClosed = $ticket->closed_at !== null || Status::isClosed($ticket->status_id);
         $isStale = $lastActivity !== null && $lastActivity->lt(now()->subHours(48));
-        $status = $activeBlocker ? 'BLOCKED' : $ticket->status->name;
 
         return new TicketPulse(
             id: $ticket->id,
-            status: $status,
+            status: $ticket->status->name ?? 'unknown',
             is_blocked: $activeBlocker !== null,
             blocker_reason: $activeBlocker ? strip_tags($activeBlocker->body) : null,
             owner_id: $ticket->user_id2,
@@ -92,7 +92,7 @@ class TicketPulseService
             open_threads: $openThreads,
             latest_blocker: $this->buildLatestBlocker($activeBlocker),
             execution_state: $this->deriveExecutionState($activeBlocker, $latestAction, $lastActivity, $isClosed),
-            last_activity_at: $lastActivity,
+            last_activity_at: $lastActivity?->toISOString(),
             is_stale: $isStale,
             staleness_message: $isStale ? 'No updates in '.$lastActivity->diffForHumans(now(), [
                 'parts' => 2,
@@ -148,7 +148,7 @@ class TicketPulseService
             'id' => $latestAction->id,
             'body' => $latestAction->body,
             'assignee' => $this->extractMention($latestAction->body),
-            'created_at' => $latestAction->created_at,
+            'created_at' => $latestAction->created_at?->toISOString(),
         ];
     }
 
@@ -162,7 +162,7 @@ class TicketPulseService
             'id' => $latestDecision->id,
             'body' => $latestDecision->body,
             'author' => $latestDecision->user?->name,
-            'created_at' => $latestDecision->created_at,
+            'created_at' => $latestDecision->created_at?->toISOString(),
             'supersedes' => $latestDecision->supersedes?->body,
         ];
     }
@@ -177,7 +177,7 @@ class TicketPulseService
             'id' => $activeBlocker->id,
             'body' => $activeBlocker->body,
             'author' => $activeBlocker->user?->name,
-            'created_at' => $activeBlocker->created_at,
+            'created_at' => $activeBlocker->created_at?->toISOString(),
         ];
     }
 

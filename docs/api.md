@@ -73,7 +73,7 @@ curl -H "Authorization: Bearer <token>" \
     "types": [{ "id": 1, "name": "Bug" }],
     "importance": [{ "id": 1, "name": "High" }],
     "projects": [{ "id": 1, "name": "Backend" }],
-    "milestones": [{ "id": 1, "name": "Sprint 1" }]
+    "milestones": [{ "id": 1, "name": "Milestone 1" }]
   }
 }
 ```
@@ -199,7 +199,7 @@ Adds a note, logs hours, changes status, or runs slash commands.
 | `/blocker` | Mark note as a blocker |
 | `/action @user Task description` | Create an action item |
 | `/update` | Mark as a status update |
-| `/milestone Sprint 2` | Move to milestone by name |
+| `/milestone Milestone 2` | Move to milestone by name |
 
 ```bash
 curl -X POST \
@@ -314,6 +314,18 @@ All errors return JSON:
 | 403 | Authenticated but not authorized |
 | 404 | Resource not found |
 | 422 | Validation error |
+
+---
+
+## MCP Server (AI Integration)
+
+AI assistants can work with tickets and the knowledge base through the built-in
+[Model Context Protocol](https://modelcontextprotocol.io) server (official
+`laravel/mcp` package) instead of raw REST calls — `POST /mcp/tickets` with the
+same Bearer token, or the local stdio handle `tickets`.
+
+The full MCP reference — connection, all 16 tools with arguments, slash
+commands, pulse fields, and error conventions — lives in **[mcp.md](mcp.md)**.
 
 ---
 

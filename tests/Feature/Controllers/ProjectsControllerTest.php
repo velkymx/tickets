@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\PriorityMatrixService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -71,6 +72,89 @@ class ProjectsControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('project');
         $response->assertViewHas('tickets');
+    }
+
+    #[Test]
+    public function show_builds_priority_matrix_from_open_tickets_only(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $open = Status::factory()->open()->create();
+        $closed = Status::factory()->closed()->create();
+        cache()->forget('closed_status_ids');
+
+        // importance 5 = blocker (high impact); estimate 3h = low effort.
+        $quickWin = Ticket::factory()->create([
+            'project_id' => $project->id, 'status_id' => $open->id,
+            'importance_id' => 5, 'estimate' => 3, 'subject' => 'Quick win task',
+        ]);
+        // importance 5 + 13h = high effort.
+        Ticket::factory()->create([
+            'project_id' => $project->id, 'status_id' => $open->id,
+            'importance_id' => 5, 'estimate' => 13, 'subject' => 'Major project task',
+        ]);
+        // Closed ticket must be excluded from the matrix.
+        $closedTicket = Ticket::factory()->create([
+            'project_id' => $project->id, 'status_id' => $closed->id,
+            'importance_id' => 5, 'estimate' => 2, 'subject' => 'Closed hidden task',
+        ]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('matrix');
+
+        $matrix = $response->viewData('matrix');
+        $this->assertCount(1, $matrix[PriorityMatrixService::QUICK_WINS]);
+        $this->assertSame($quickWin->id, $matrix[PriorityMatrixService::QUICK_WINS][0]->id);
+        $this->assertCount(1, $matrix[PriorityMatrixService::MAJOR_PROJECTS]);
+
+        // Closed ticket is excluded from every matrix bucket (it still appears
+        // in the page's main ticket table, which is not status-filtered).
+        $allIds = collect($matrix)->flatMap(fn ($bucket) => $bucket->pluck('id'));
+        $this->assertFalse($allIds->contains($closedTicket->id));
+
+        $response->assertSee('Quick win task');
+        $response->assertSee('Major project task');
+    }
+
+    #[Test]
+    public function show_provides_open_blockers(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $closed = Status::factory()->closed()->create();
+        cache()->forget('closed_status_ids');
+
+        $blocker = Ticket::factory()->create(['project_id' => $project->id, 'importance_id' => 5]);
+        $normal = Ticket::factory()->create(['project_id' => $project->id, 'importance_id' => 2]);
+        $closedBlocker = Ticket::factory()->create(['project_id' => $project->id, 'importance_id' => 5, 'status_id' => $closed->id]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $ids = $response->viewData('blockers')->pluck('id');
+        $this->assertTrue($ids->contains($blocker->id));
+        $this->assertFalse($ids->contains($normal->id));
+        $this->assertFalse($ids->contains($closedBlocker->id));
+    }
+
+    #[Test]
+    public function show_sorts_and_filters_the_ticket_list(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        Ticket::factory()->create(['project_id' => $project->id, 'subject' => 'Zebra', 'user_id2' => $user->id]);
+        Ticket::factory()->create(['project_id' => $project->id, 'subject' => 'Alpha', 'user_id2' => User::factory()->create()->id]);
+
+        // Sort by subject asc.
+        $sorted = $this->actingAs($user)->get("/projects/show/{$project->id}?sort=subject&dir=asc");
+        $sorted->assertStatus(200);
+        $this->assertSame(['Alpha', 'Zebra'], $sorted->viewData('tickets')->pluck('subject')->all());
+
+        // Filter to my assigned tickets only via the query bar.
+        $mine = $this->actingAs($user)->get("/projects/show/{$project->id}?q=".urlencode('assignee:me'));
+        $this->assertSame(['Zebra'], $mine->viewData('tickets')->pluck('subject')->values()->all());
     }
 
     #[Test]

@@ -37,7 +37,7 @@
         </div>
     @endif
 
-    @if($ticket->assignee->name == 'Unassigned')
+    @if(! $ticket->assignee || $ticket->assignee->name == 'Unassigned')
         <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert"> 
             <span>This Ticket is currently unassigned.</span>
             <form action="/tickets/claim/{{ $ticket->id }}" method="POST">
@@ -49,7 +49,7 @@
 
     <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
-        <div class="col-lg-8">
+        <div class="col-lg-9">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <h2 class="mb-0">
                     <i class="{{ $ticket->type->icon }}" title="{{ $ticket->type->name }}" aria-hidden="true"></i>
@@ -169,7 +169,7 @@
         </div>
 
         {{-- Right Column (Details) --}}
-        <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="col-lg-3 mt-4 mt-lg-0">
             
             {{-- Action Buttons --}}
             <div class="row g-2 mb-4 text-center">
@@ -221,7 +221,11 @@
                     </li>
                     <li class="list-group-item">
                         <strong>Assignee:</strong>
-                        <a href="/users/{{ $ticket->assignee->id }}" class="text-decoration-none">{{ $ticket->assignee->name }}</a>
+                        @if ($ticket->assignee)
+                            <a href="/users/{{ $ticket->assignee->id }}" class="text-decoration-none">{{ $ticket->assignee->name }}</a>
+                        @else
+                            <span class="text-muted fst-italic">Unassigned</span>
+                        @endif
                     </li>
                     <li class="list-group-item">
                         <strong>Owner:</strong>
@@ -266,7 +270,7 @@
                         @foreach($ticket->estimates as $usp)
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 {{ $usp->storypoints }} points
-                                <span class="badge text-bg-secondary">{{ $usp->user->name }}</span>
+                                <span class="badge text-bg-secondary"><a href="/users/{{ $usp->user->id }}" class="text-decoration-none text-reset">{{ $usp->user->name }}</a></span>
                             </li>
                         @endforeach
                     @endif
@@ -289,13 +293,13 @@
                     @foreach ($ticket->watchers as $watcher)
                         <li class="list-group-item">
                             <i class="fas fa-eye me-2"></i>
-                            <a href="mailto:{{ $watcher->user->email }}?subject=Ticket #{{ $ticket->id }}" class="text-decoration-none">{{ $watcher->user->name }}</a>
+                            <a href="/users/{{ $watcher->user->id }}" class="text-decoration-none">{{ $watcher->user->name }}</a>
                         </li>
                     @endforeach
                     @foreach ($ticketViews as $view)
                         <li class="list-group-item text-muted small">
                             <i class="fas fa-user me-2"></i>
-                            {{ $view->user->name }} - {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}
+                            <a href="/users/{{ $view->user->id }}" class="text-decoration-none">{{ $view->user->name }}</a> - {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}
                         </li>
                     @endforeach
                 </ul>

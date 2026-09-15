@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\Api\ApiDocsController;
 use App\Http\Controllers\ImportController;
@@ -100,6 +101,13 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::get('/user/edit', [UsersController::class, 'edit'])->name('user.edit');
     Route::get('/users/{id}', [UsersController::class, 'show'])->name('user.show');
 
+    // --- Admin: User Management ---
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+    });
+
     // --- POST/PUT/PATCH Routes ---
 
     // Tickets
@@ -195,3 +203,12 @@ Route::prefix('api')->group(function () {
 
 // Authentication routes
 require __DIR__.'/auth.php';
+
+// MCP endpoint must speak JSON-RPC, not HTML, on GET.
+Route::get('/mcp/tickets', function () {
+    return response()->json([
+        'jsonrpc' => '2.0',
+        'id' => null,
+        'error' => ['code' => -32600, 'message' => 'Use POST with a JSON-RPC body.'],
+    ], 405, ['Allow' => 'POST']);
+})->name('mcp.tickets.info');

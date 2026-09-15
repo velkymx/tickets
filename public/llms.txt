@@ -2,7 +2,32 @@
 
 > Open-source agile ticket tracker built with Laravel. Includes a Kanban board, knowledge base, real-time collaboration, and a REST API.
 
-AI agents can interact with Tickets entirely through its REST API using Bearer token authentication.
+AI agents can interact with Tickets through its REST API or its MCP server, both using Bearer token authentication.
+
+## MCP Server (preferred for AI assistants)
+
+Model Context Protocol endpoint: `POST /mcp/tickets` with `Authorization: Bearer YOUR_TOKEN` (same token as the REST API). JSON-RPC with `method: tools/list` or `tools/call`. Local stdio server handle is `tickets` — set `MCP_USER_ID` to the acting user id since there is no HTTP auth layer.
+
+| Tool | Arguments |
+|------|-----------|
+| `get-lookups-tool` | none — returns statuses, types, importance, active projects, milestones, users with IDs. Call first. |
+| `list-tickets-tool` | `status_id`, `unassigned` (bool), `include_pulse` (bool), `per_page` (max 100, default 20). Lists your assigned tickets, newest first. |
+| `get-ticket-tool` | `ticket_id` (required) — full detail, visible notes with replies, pulse state. |
+| `get-pulse-tool` | `ticket_id` (required) — standalone execution state, blocker, next action, decisions, threads. |
+| `create-ticket-tool` | `subject` (required), `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you. |
+| `update-ticket-tool` | `ticket_id` (required); `subject`, `description`, `status_id`. Own/assigned only. |
+| `add-note-tool` | `ticket_id` (required, must own or be assigned); `body` (slash commands work: `/close`, `/status`, `/hours`, `/blocker`, `/decision`, `/action @user`, `/estimate`); `hours` (max 999); `status_id`; `claim` (bool, self-assign). `/action` requires exactly one @assignee. |
+| `reply-to-note-tool` | `ticket_id`, `note_id` (top-level only), `body` (all required). |
+| `edit-note-tool` | `ticket_id`, `note_id`, `body` (all required). Own notes only; decisions immutable. |
+| `resolve-note-tool` | `ticket_id`, `note_id`, `resolution_message` (all required). Author or assignee only. |
+| `react-to-note-tool` | `ticket_id`, `note_id`, `emoji` (thumbsup, eyes). Toggles. |
+| `get-kb-lookups-tool` | none — knowledge base categories and tags with IDs. Call first for KB writes. |
+| `kb-search-tool` | `query`, `category_id`, `status` (draft/verified/deprecated), `tag_id`, `per_page` (max 100). Keyword search over title/body/tags, scoped to what you can see. |
+| `get-kb-article-tool` | `slug` (or numeric id, required) — body, category, tags, status, version count. Visible articles only. |
+| `create-kb-article-tool` | `title`, `body_markdown`, `category_id`, `visibility` (public/internal/restricted), `commit_message`, `tags` (≥1) required; `status` optional. You become the owner. |
+| `update-kb-article-tool` | `id`, `title`, `body_markdown`, `category_id`, `visibility`, `commit_message`, `tags` (≥1) required; `status` optional. Owner or permitted editor; creates a new version. |
+
+Note: `tools/list` is paginated (15 per page) — follow `nextCursor` for the rest. Full reference: [docs/mcp.md](https://github.com/velkymx/tickets/blob/master/docs/mcp.md).
 
 ## Base URL
 

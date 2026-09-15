@@ -49,9 +49,15 @@
                 $excerpt = $notification->data['excerpt'] ?? $notification->data['message'] ?? '';
                 $url = $notification->data['url'] ?? '/activity';
                 $dotClass = $notification->read_at ? 'bg-secondary-subtle text-secondary' : 'bg-danger-subtle text-danger';
+                $actorId = $notification->data['actor_id'] ?? null;
+                $actorName = $notification->data['actor_name'] ?? null;
+                $actorLabel = $actorName ? '@'.$actorName : null;
+                $titleSuffix = match ($type) {
+                    'mention' => ' mentioned you',
+                    'reply' => ' replied to your comment',
+                    default => null,
+                };
                 $title = match ($type) {
-                    'mention' => '@'.$notification->data['actor_name'].' mentioned you',
-                    'reply' => $notification->data['actor_name'].' replied to your comment',
                     'watching' => 'Ticket update',
                     'assigned' => 'Assignment update',
                     default => 'Activity update',
@@ -67,7 +73,7 @@
                     <div class="flex-grow-1">
                         <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 mb-2">
                             <div>
-                                <h2 class="h6 mb-1">{{ $title }}</h2>
+                                <h2 class="h6 mb-1">@if($titleSuffix && $actorLabel)@if($actorId)<a href="/users/{{ $actorId }}" class="text-decoration-none">{{ $actorLabel }}</a>@else{{ $actorLabel }}@endif{{ $titleSuffix }}@else{{ $title }}@endif</h2>
                                 <p class="mb-0 text-muted">{{ $excerpt }}</p>
                             </div>
                             <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>

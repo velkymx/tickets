@@ -18,9 +18,11 @@ use App\Models\TicketView;
 use App\Models\User;
 use App\Services\AttachmentService;
 use App\Services\TicketPulseService;
+use App\Services\TicketQueryParser;
 use App\Services\TicketService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -29,31 +31,35 @@ use Illuminate\Support\Str;
 class TicketsController extends Controller
 {
     public function __construct(
-        private TicketService $ticketService
+        private TicketService $ticketService,
+        private TicketQueryParser $ticketQueryParser,
     ) {}
 
-    public function home()
+    public function home(Request $request)
     {
         $user = Auth::user();
 
         $openStatusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
         $closedStatusIds = Status::closedStatusIds();
 
+        // Home lists the current user's tickets via the canonical list component.
+        $searchQuery = (string) $request->input('q', '');
+        $searchTokens = $this->ticketQueryParser->tokenize($searchQuery);
+
+        $parsed = $this->ticketQueryParser->parse($searchQuery);
+        $parsed['status_id'] ??= 'none'; // default to active statuses
+
         $tickets = Ticket::where('user_id2', $user->id)
-            ->whereIn('status_id', $openStatusIds)
+            ->filter($parsed)
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
-            ->get()
-            ->groupBy('status_id');
-
-        $alltickets = [];
-        foreach ($tickets as $statusId => $ticketGroup) {
-            $statusName = $ticketGroup->first()->status->name ?? null;
-            if ($statusName) {
-                $alltickets[$statusName] = $ticketGroup;
-            }
-        }
+            ->sortable(
+                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                ['importance_id', 'desc']
+            )
+            ->paginate(15)
+            ->withQueryString();
 
         $stats = [
             'assigned' => Ticket::where('user_id2', $user->id)->count(),
@@ -79,50 +85,43 @@ class TicketsController extends Controller
             ->get()
             ->filter(fn ($note) => $note->ticket !== null);
 
-        return View('home', compact('alltickets', 'stats', 'recentTickets', 'recentNotes'));
+        $blockers = Ticket::where('user_id2', $user->id)
+            ->blockers()
+            ->with(['importance', 'status'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return View('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers'));
     }
 
     public function index(Request $request)
     {
         $perpage = 10;
 
-        if ($request->has('perpage')) {
+        if ($request->filled('perpage')) {
             $perpage = min(max((int) $request->perpage, 1), 100);
         }
 
-        $filters = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q'];
+        $searchQuery = (string) $request->input('q', '');
+        $searchTokens = $this->ticketQueryParser->tokenize($searchQuery);
 
-        $query = Ticket::query();
+        // Query bar drives filtering; legacy direct params (?status_id=…) still work.
+        $filters = array_merge(
+            Arr::except($request->only(Ticket::FILTER_KEYS), ['q']),
+            $this->ticketQueryParser->parse($searchQuery),
+        );
 
-        $queryfilter = [];
-
-        foreach ($filters as $filter) {
-
-            $queryfilter[$filter] = $request->$filter;
-
-            if ($request->has($filter) && is_numeric($request->$filter)) {
-
-                $query = $query->where($filter, $request->$filter);
-            }
-
-            if ($filter == 'q' && $request->filled('q')) {
-                $search = str_replace(['%', '_'], ['\\%', '\\_'], $request->$filter);
-                $query = $query->where('subject', 'like', '%'.$search.'%');
-            }
-
-            if ($filter == 'status_id' && $request->status_id == 'none') {
-
-                $query = $query->whereNotIn('status_id', Status::closedStatusIds());
-
-            }
-        }
-
-        $tickets = $query
+        $tickets = Ticket::query()
+            ->filter($filters)
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
-            ->orderBy('importance_id', 'DESC')
-            ->paginate($perpage);
+            ->sortable(
+                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                ['importance_id', 'desc']
+            )
+            ->paginate($perpage)
+            ->withQueryString();
 
         $lookups = $this->ticketService->getLookups();
 
@@ -134,29 +133,7 @@ class TicketsController extends Controller
         $lookups['users'][0] = 'No Change';
         $lookups['releases'][0] = 'No Change';
 
-        $viewfilters = $this->ticketService->getLookups();
-
-        $viewfilters['statuses']['none'] = 'Any Active Status';
-        $viewfilters['statuses']['all'] = 'Any Status';
-        $viewfilters['types']['none'] = 'Any Type';
-        $viewfilters['milestones']['none'] = 'Any Milestone';
-
-        $filter = [
-            'milestone_id' => 'none',
-            'type_id' => 'none',
-            'status_id' => 'none',
-        ];
-
-        foreach ($filter as $fk => $fv) {
-
-            if ($request->has($fk)) {
-
-                $filter[$fk] = $request->$fk;
-            }
-
-        }
-
-        return view('tickets.list', compact('tickets', 'queryfilter', 'lookups', 'viewfilters', 'filter'));
+        return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens'));
     }
 
     public function claim($id)
@@ -240,14 +217,6 @@ class TicketsController extends Controller
 
         $lookups = $this->ticketService->getLookups();
 
-        if (! empty($ticket->closed_at)) {
-            $ticket->closed_at = Carbon::parse($ticket->closed_at)->format('m/d/Y');
-        }
-
-        if (! empty($ticket->due_at)) {
-            $ticket->due_at = Carbon::parse($ticket->due_at)->format('m/d/Y');
-        }
-
         return view('tickets.clone', compact('ticket', 'lookups'));
     }
 
@@ -258,14 +227,6 @@ class TicketsController extends Controller
         $this->authorize('update', $ticket);
 
         $lookups = $this->ticketService->getLookups();
-
-        if (! empty($ticket->closed_at)) {
-            $ticket->closed_at = Carbon::parse($ticket->closed_at)->format('m/d/Y');
-        }
-
-        if (! empty($ticket->due_at)) {
-            $ticket->due_at = Carbon::parse($ticket->due_at)->format('m/d/Y');
-        }
 
         return view('tickets.edit', compact('ticket', 'lookups'));
     }

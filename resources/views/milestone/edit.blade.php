@@ -11,6 +11,30 @@
     @method('PUT') 
     {{-- This tells Laravel to treat the submission as an update (PUT) request --}}
 
+    <div class="row g-3">
+        {{-- Start Date --}}
+        <div class="col-md-6 mb-3">
+            <label for="start_at" class="form-label">Start Date</label>
+            <input type="date" name="start_at" id="start_at"
+                   class="form-control @error('start_at') is-invalid @enderror"
+                   value="{{ old('start_at', $milestone->start_at?->format('Y-m-d')) }}">
+            @error('start_at')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
+        {{-- Due Date --}}
+        <div class="col-md-6 mb-3">
+            <label for="due_at" class="form-label">Due Date</label>
+            <input type="date" name="due_at" id="due_at"
+                   class="form-control @error('due_at') is-invalid @enderror"
+                   value="{{ old('due_at', $milestone->due_at?->format('Y-m-d')) }}">
+            @error('due_at')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+
     {{-- Milestone Name Field --}}
     <div class="mb-3">
         <label for="name" class="form-label">Milestone Name</label>
@@ -63,9 +87,9 @@
                 @enderror
             </div>
             
-            {{-- Scrum Master / Sprint Manager --}}
+            {{-- Scrum Master / Milestone Manager --}}
             <div class="col-md-6">
-                <label for="scrummaster_user_id" class="form-label">Scrum Master / Sprint Manager</label>
+                <label for="scrummaster_user_id" class="form-label">Scrum Master / Milestone Manager</label>
                 <select name="scrummaster_user_id" id="scrummaster_user_id" 
                         class="form-select @error('scrummaster_user_id') is-invalid @enderror" required>
                     <option value="" disabled @selected(!old('scrummaster_user_id'))>Select Scrum Master</option>

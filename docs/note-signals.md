@@ -40,7 +40,7 @@ Type a slash command at the start of any line in the note body. Commands can be 
 | `/estimate` | `/estimate 8` | Set estimate in hours |
 | `/hours` | `/hours 2.5` | Log hours against this ticket |
 | `/priority` | `/priority High` | Set importance/priority by name |
-| `/milestone` | `/milestone Sprint 15` | Move ticket to a milestone by name |
+| `/milestone` | `/milestone Milestone 15` | Move ticket to a milestone by name |
 | `/pin` | `/pin` | Pin this note to the top of the thread |
 
 ### Signal commands
@@ -50,7 +50,7 @@ Type a slash command at the start of any line in the note body. Commands can be 
 | `/decision` | `/decision We will use Postgres` | Mark note as a decision |
 | `/blocker` | `/blocker Waiting on legal approval` | Mark note as a blocker |
 | `/action` | `/action @jane Deploy to staging` | Create an action item assigned to @jane |
-| `/update` | `/update Sprint is on track` | Mark note as a status update |
+| `/update` | `/update Milestone is on track` | Mark note as a status update |
 
 ### Combining commands
 
@@ -104,5 +104,5 @@ Paste content into the note editor and it auto-formats:
 
 - [Pulse](pulse.md) — how signal types drive Pulse state
 - [Notifications](notifications.md) — how @mentions and watcher notifications work
-- [Agile Workflow](agile-workflow.md) — using signals during sprints
+- [Agile Workflow](agile-workflow.md) — using signals during milestones
 - [API](api.md) — `POST /tickets/{id}/note`, resolve, react endpoints

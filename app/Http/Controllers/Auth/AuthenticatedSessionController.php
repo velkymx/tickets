@@ -46,6 +46,14 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
+        if (! Auth::user()->active) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'This account has been deactivated. Contact an administrator.',
+            ]);
+        }
+
         RateLimiter::clear($throttleKey);
 
         $request->session()->regenerate();
