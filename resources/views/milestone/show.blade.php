@@ -69,6 +69,11 @@
             </div>
         </div>
 
+        {{-- Blockers --}}
+        @if ($blockers->count())
+            <x-blocker-box :blockers="$blockers" title="Milestone Blockers" />
+        @endif
+
         {{-- Replaced list-group structure with B5 cards for better grouping --}}
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-body-secondary">
@@ -83,9 +88,6 @@
                 @endif
             </ul>
         </div>
-
-        {{-- Blockers --}}
-        <x-blocker-box :blockers="$blockers" title="Milestone Blockers" />
 
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-body-secondary">
