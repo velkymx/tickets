@@ -9,6 +9,7 @@
         "php": "^8.2",
         "guzzlehttp/guzzle": "^7.8",
         "laravel/framework": "^13",
+        "laravel/mcp": "^1.0",
         "laravel/socialite": "^5.10",
         "laravel/tinker": "^3.0",
         "mustache/mustache": "^3.2",
