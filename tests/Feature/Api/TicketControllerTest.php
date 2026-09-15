@@ -1291,4 +1291,32 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    #[Test]
+    public function reply_targets_the_requested_ticket_not_the_users_first_ticket(): void
+    {
+        // A ticket the user is assigned to with a LOWER id — the old ungrouped
+        // orWhere would resolve to this one regardless of the requested id.
+        Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+
+        $target = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $target->id,
+            'user_id' => $this->user->id,
+            'parent_id' => null,
+        ]);
+
+        $response = $this->postJson(
+            "/api/v1/tickets/{$target->id}/notes/{$note->id}/reply",
+            ['body' => 'Reply on the correct ticket'],
+            $this->apiHeaders(),
+        );
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $target->id,
+            'parent_id' => $note->id,
+            'body_markdown' => 'Reply on the correct ticket',
+        ]);
+    }
 }

@@ -405,7 +405,9 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Only thread author or ticket assignee can resolve
@@ -454,7 +456,9 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Author-only
@@ -499,7 +503,9 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
         $parent = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Reject nested replies
@@ -542,7 +548,9 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('user_id2', $user->id)->orWhere('user_id', $user->id)->findOrFail($id);
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         $existing = NoteReaction::where('note_id', $note->id)
