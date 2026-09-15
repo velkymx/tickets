@@ -195,7 +195,13 @@ class MilestoneController extends Controller
         $totalStoryPoints = $tickets->sum('storypoints');
         $completedStoryPoints = $tickets->whereIn('status_id', $closedStatusIds)->sum('storypoints');
         $remainingStoryPoints = $totalStoryPoints - $completedStoryPoints;
-        $completionPercentage = $totalStoryPoints > 0 ? round(($completedStoryPoints / $totalStoryPoints) * 100) : 0;
+        // Story points drive the percentage, but fall back to ticket counts
+        // when nothing has been estimated yet (total of 0 points).
+        if ($totalStoryPoints > 0) {
+            $completionPercentage = round(($completedStoryPoints / $totalStoryPoints) * 100);
+        } else {
+            $completionPercentage = $totalTickets > 0 ? round(($completedTickets / $totalTickets) * 100) : 0;
+        }
 
         $statusBreakdown = $tickets->groupBy('status_id')->map(function ($group) {
             return [

@@ -490,6 +490,31 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function report_falls_back_to_ticket_counts_when_no_story_points(): void
+    {
+        $user = User::factory()->create();
+        $openStatus = Status::factory()->create(['name' => 'Open']);
+        $closedStatus = Status::factory()->closed()->create();
+        $milestone = Milestone::factory()->create();
+
+        Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'status_id' => $closedStatus->id,
+            'storypoints' => 0,
+        ]);
+        Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'status_id' => $openStatus->id,
+            'storypoints' => 0,
+        ]);
+
+        $response = $this->actingAs($user)->get("/milestone/report/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $response->assertViewHas('completionPercentage', 50);
+    }
+
+    #[Test]
     public function report_builds_status_breakdown(): void
     {
         $user = User::factory()->create();
