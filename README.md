@@ -412,7 +412,7 @@ curl -X POST \
   https://your-domain.com/mcp/tickets
 ```
 
-Tools: `get-lookups`, `list-tickets`, `get-ticket`, `get-pulse`, `create-ticket`, `update-ticket`, `add-note`, `reply-to-note`, `edit-note`, `resolve-note`, `react-to-note`. See [docs/api.md](docs/api.md) for details. Local stdio handle: `tickets` (set `MCP_USER_ID`).
+Tools: `get-lookups-tool`, `list-tickets-tool`, `get-ticket-tool`, `get-pulse-tool`, `create-ticket-tool`, `update-ticket-tool`, `add-note-tool`, `reply-to-note-tool`, `edit-note-tool`, `resolve-note-tool`, `react-to-note-tool`. See [docs/api.md](docs/api.md) for details. Local stdio handle: `tickets` (set `MCP_USER_ID`).
 
 ## CSV Import
 
