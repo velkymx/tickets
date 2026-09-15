@@ -37,7 +37,7 @@
         </div>
     @endif
 
-    @if($ticket->assignee->name == 'Unassigned')
+    @if(! $ticket->assignee || $ticket->assignee->name == 'Unassigned')
         <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert"> 
             <span>This Ticket is currently unassigned.</span>
             <form action="/tickets/claim/{{ $ticket->id }}" method="POST">
@@ -221,7 +221,11 @@
                     </li>
                     <li class="list-group-item">
                         <strong>Assignee:</strong>
-                        <a href="/users/{{ $ticket->assignee->id }}" class="text-decoration-none">{{ $ticket->assignee->name }}</a>
+                        @if ($ticket->assignee)
+                            <a href="/users/{{ $ticket->assignee->id }}" class="text-decoration-none">{{ $ticket->assignee->name }}</a>
+                        @else
+                            <span class="text-muted fst-italic">Unassigned</span>
+                        @endif
                     </li>
                     <li class="list-group-item">
                         <strong>Owner:</strong>

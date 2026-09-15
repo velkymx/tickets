@@ -241,6 +241,31 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_renders_unassigned_tickets_without_error(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->unassigned()->create(['subject' => 'Orphan task']);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee('Orphan task');
+        $response->assertSee('Unassigned');
+    }
+
+    #[Test]
+    public function show_renders_an_unassigned_ticket_without_error(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->unassigned()->create();
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('currently unassigned');
+    }
+
+    #[Test]
     public function index_filters_by_assignee_me(): void
     {
         $user = User::factory()->create();

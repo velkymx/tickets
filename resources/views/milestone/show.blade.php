@@ -96,6 +96,7 @@
             <ul class="list-group list-group-flush">
                 @php $mem = []; @endphp
                 @foreach ($milestone->tickets as $tick)
+                    @continue (! $tick->assignee)
                     @if (!in_array($tick->assignee->name, $mem))
                         @php $mem[] = $tick->assignee->name; @endphp
                         <li class="list-group-item">

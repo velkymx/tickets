@@ -154,6 +154,18 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function get_show_renders_unassigned_tickets_without_error(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
+        Ticket::factory()->unassigned()->create(['milestone_id' => $milestone->id]);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+
+        $response->assertStatus(200);
+    }
+
+    #[Test]
     public function get_show_provides_open_blockers(): void
     {
         $user = User::factory()->create();
