@@ -144,4 +144,130 @@ class TicketsServerTest extends TestCase
         $this->assertTrue(Status::isClosed($ticket->fresh()->status_id));
     }
 
+    #[Test]
+    public function update_ticket_tool_updates_subject_and_status(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateTicketTool::class, [
+            'ticket_id' => $ticket->id,
+            'subject' => 'Renamed via MCP',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Renamed via MCP');
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'subject' => 'Renamed via MCP',
+        ]);
+    }
+
+    #[Test]
+    public function reply_tool_replies_to_top_level_note(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(ReplyToNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $note->id,
+            'body' => 'Reply via MCP',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $note->id,
+        ]);
+    }
+
+    #[Test]
+    public function edit_note_tool_updates_own_note(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(EditNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $note->id,
+            'body' => 'Edited via MCP',
+        ]);
+
+        $response->assertOk();
+        $this->assertNotNull($note->fresh()->edited_at);
+    }
+
+    #[Test]
+    public function resolve_note_tool_resolves_blocker(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'blocker',
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(ResolveNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $note->id,
+            'resolution_message' => 'Unblocked via MCP',
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue((bool) $note->fresh()->resolved);
+    }
+
+    #[Test]
+    public function react_tool_toggles_reaction(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(ReactToNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $note->id,
+            'emoji' => 'thumbsup',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('added');
+
+        $again = TicketsServer::actingAs($user)->tool(ReactToNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $note->id,
+            'emoji' => 'thumbsup',
+        ]);
+
+        $again->assertOk();
+        $again->assertSee('removed');
+    }
 }
