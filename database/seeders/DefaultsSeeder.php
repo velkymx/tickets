@@ -9,14 +9,19 @@ class DefaultsSeeder extends Seeder
 {
     public function run(): void
     {
+        $importances = [
+            1 => ['name' => 'trivial',  'class' => 'secondary', 'icon' => 'fa-solid fa-angle-down'],
+            2 => ['name' => 'minor',    'class' => 'info',      'icon' => 'fa-solid fa-angles-down'],
+            3 => ['name' => 'major',    'class' => 'warning',   'icon' => 'fa-solid fa-angle-up'],
+            4 => ['name' => 'critical', 'class' => 'danger',    'icon' => 'fa-solid fa-angles-up'],
+            5 => ['name' => 'blocker',  'class' => 'dark',      'icon' => 'fa-solid fa-fire'],
+        ];
+
+        foreach ($importances as $id => $attrs) {
+            DB::table('importances')->updateOrInsert(['id' => $id], $attrs);
+        }
+
         $data = [
-            'importances' => [
-                1 => 'trivial',
-                2 => 'minor',
-                3 => 'major',
-                4 => 'critical',
-                5 => 'blocker',
-            ],
             'statuses' => [
                 1 => 'new',
                 2 => 'active',
