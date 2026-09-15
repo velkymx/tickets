@@ -195,3 +195,12 @@ Route::prefix('api')->group(function () {
 
 // Authentication routes
 require __DIR__.'/auth.php';
+
+// MCP endpoint must speak JSON-RPC, not HTML, on GET.
+Route::get('/mcp/tickets', function () {
+    return response()->json([
+        'jsonrpc' => '2.0',
+        'id' => null,
+        'error' => ['code' => -32600, 'message' => 'Use POST with a JSON-RPC body.'],
+    ], 405, ['Allow' => 'POST']);
+})->name('mcp.tickets.info');

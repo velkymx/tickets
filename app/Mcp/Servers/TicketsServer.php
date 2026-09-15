@@ -59,4 +59,10 @@ class TicketsServer extends Server
     protected array $prompts = [
         //
     ];
+
+    protected function boot(): void
+    {
+        // Accept the MCP lifecycle ack instead of answering -32601.
+        $this->addMethod('notifications/initialized', \App\Mcp\ServerMethods\InitializedAck::class);
+    }
 }
