@@ -24,7 +24,7 @@ class Ticket extends Model
      */
     public function scopeFilter(Builder $query, array $params): Builder
     {
-        foreach (['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id'] as $field) {
+        foreach (['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'user_id2', 'importance_id'] as $field) {
             if (isset($params[$field]) && is_numeric($params[$field])) {
                 $query->where($field, $params[$field]);
             }
@@ -32,6 +32,10 @@ class Ticket extends Model
 
         if (($params['status_id'] ?? null) === 'none') {
             $query->whereNotIn('status_id', Status::closedStatusIds());
+        }
+
+        if (($params['status_id'] ?? null) === 'closed') {
+            $query->whereIn('status_id', Status::closedStatusIds());
         }
 
         if (! empty($params['q'])) {
