@@ -2,12 +2,11 @@
     $showCheckbox = $showCheckbox ?? false;
     $showType = $showType ?? false;
     $showEstimate = $showEstimate ?? false;
-    $showCreated = $showCreated ?? true;
     $showUpdated = $showUpdated ?? true;
     $small = $small ?? false;
     $emptyMessage = $emptyMessage ?? null;
-    
-    $colCount = 1 + ($showCheckbox ? 1 : 0) + ($showType ? 1 : 0) + 1 + 1 + 1 + 1 + ($showEstimate ? 1 : 0) + 1 + ($showCreated ? 1 : 0) + ($showUpdated ? 1 : 0);
+
+    $colCount = 1 + ($showCheckbox ? 1 : 0) + ($showType ? 1 : 0) + 1 + 1 + 1 + 1 + ($showEstimate ? 1 : 0) + 1 + ($showUpdated ? 1 : 0);
 @endphp
 
 <div class="table-responsive">
@@ -31,9 +30,6 @@
                     <th class="col-1">Est</th>
                 @endif
                 <th class="col-1">Notes</th>
-                @if($showCreated)
-                    <th class="col-2">Created</th>
-                @endif
                 @if($showUpdated)
                     <th class="col-2">Updated</th>
                 @endif
@@ -75,9 +71,6 @@
                             <span class="badge text-bg-info">{{ $noteCount }}</span>
                         @endif
                     </td>
-                    @if($showCreated)
-                        <td class="small text-muted">{{ $tick->created_at->format('M jS, Y g:ia') }}</td>
-                    @endif
                     @if($showUpdated)
                         <td class="small text-muted">{{ $tick->updated_at->format('M jS, Y g:ia') }}</td>
                     @endif

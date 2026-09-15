@@ -13,7 +13,7 @@
     {{-- Main Content --}}
     <div class="col-lg-8">
         {{-- Ticket Table --}}
-        <x-ticket-table :tickets="$tickets->sortByDesc('importance_id')" :show-checkbox="false" :show-type="false" :show-estimate="false" :show-created="true" :show-updated="true" />
+        <x-ticket-table :tickets="$tickets->sortByDesc('importance_id')" :show-checkbox="false" :show-type="false" :show-estimate="false" :show-updated="true" />
 
         {{-- Pagination Links --}}
         {!! $tickets->appends($queryfilter)->links('pagination::bootstrap-5') !!}

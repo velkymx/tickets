@@ -54,7 +54,7 @@ Dashboard
             <h2 class="h5 mb-3">My Tickets by Status</h2>
             @foreach ($alltickets as $label => $tickets)
                 <h3 class="h6 text-muted mb-2">{{ ucwords($label) }} ({{ $tickets->count() }})</h3>
-                <x-ticket-table :tickets="$tickets" :show-checkbox="false" :show-type="true" :show-estimate="false" :show-created="false" :show-updated="true" :small="true" />
+                <x-ticket-table :tickets="$tickets" :show-checkbox="false" :show-type="true" :show-estimate="false" :show-updated="true" :small="true" />
             @endforeach
         @else
             <div class="card">

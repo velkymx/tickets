@@ -38,7 +38,7 @@
 @foreach ($alltickets as $label => $tickets)
     @if ($tickets->isNotEmpty())
         <h3 class="mb-3 mt-4">{{ ucwords($label) }}</h3>
-        <x-ticket-table :tickets="$tickets" :show-checkbox="false" :show-type="true" :show-estimate="false" :show-created="true" :show-updated="true" :small="true" />
+        <x-ticket-table :tickets="$tickets" :show-checkbox="false" :show-type="true" :show-estimate="false" :show-updated="true" :small="true" />
     @endif
 @endforeach
 
