@@ -331,17 +331,17 @@ AI assistants can work with tickets through the built-in [Model Context Protocol
 
 | Tool | What it does |
 |------|--------------|
-| `get-lookups` | ID lookups for statuses, types, importance, projects, milestones, users. Call first. |
-| `list-tickets` | Tickets assigned to you. Optional `status_id`, `unassigned`, `include_pulse`, `per_page`. |
-| `get-ticket` | Full detail, notes, and pulse for one `ticket_id`. |
-| `get-pulse` | Standalone pulse health state for one `ticket_id`. |
-| `create-ticket` | Create a ticket (same required fields as `POST /tickets`). |
-| `update-ticket` | Update subject, description, or status on a ticket you own or hold. |
-| `add-note` | Note with hours, status change, claim, and full slash-command support (`/close`, `/blocker`, `/decision`, `/action @user`, ...). |
-| `reply-to-note` | Reply to a top-level note. |
-| `edit-note` | Edit your own note (decisions immutable). |
-| `resolve-note` | Resolve a blocker/action thread with a message. |
-| `react-to-note` | Toggle thumbsup/eyes reaction. |
+| `get-lookups-tool` | ID lookups for statuses, types, importance, projects, milestones, users. Call first. |
+| `list-tickets-tool` | Tickets assigned to you. Optional `status_id`, `unassigned`, `include_pulse`, `per_page`. |
+| `get-ticket-tool` | Full detail, notes, and pulse for one `ticket_id`. |
+| `get-pulse-tool` | Standalone pulse health state for one `ticket_id`. |
+| `create-ticket-tool` | Create a ticket (same required fields as `POST /tickets`). |
+| `update-ticket-tool` | Update subject, description, or status on a ticket you own or hold. |
+| `add-note-tool` | Note with hours, status change, claim, and full slash-command support (`/close`, `/blocker`, `/decision`, `/action @user`, ...). |
+| `reply-to-note-tool` | Reply to a top-level note. |
+| `edit-note-tool` | Edit your own note (decisions immutable). |
+| `resolve-note-tool` | Resolve a blocker/action thread with a message. |
+| `react-to-note-tool` | Toggle thumbsup/eyes reaction. |
 
 ---
 
