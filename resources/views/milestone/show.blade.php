@@ -81,10 +81,10 @@
             </div>
             <ul class="list-group list-group-flush">
                 @if ($milestone->owner)
-                    <li class="list-group-item"><strong>Product Owner:</strong> {{ $milestone->owner->name }}</li>
+                    <li class="list-group-item"><strong>Product Owner:</strong> <a href="/users/{{ $milestone->owner->id }}" class="text-decoration-none">{{ $milestone->owner->name }}</a></li>
                 @endif
                 @if ($milestone->scrummaster)
-                    <li class="list-group-item"><strong>Scrum Master:</strong> {{ $milestone->scrummaster->name }}</li>
+                    <li class="list-group-item"><strong>Scrum Master:</strong> <a href="/users/{{ $milestone->scrummaster->id }}" class="text-decoration-none">{{ $milestone->scrummaster->name }}</a></li>
                 @endif
             </ul>
         </div>

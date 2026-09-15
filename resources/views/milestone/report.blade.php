@@ -20,8 +20,8 @@
                     <p class="text-muted">{{ $milestone->description }}</p>
                 @endif
                 <p>
-                    <strong>Owner:</strong> {{ $milestone->owner->name ?? 'Unassigned' }}<br>
-                    <strong>Scrummaster:</strong> {{ $milestone->scrummaster->name ?? 'Unassigned' }}
+                    <strong>Owner:</strong> @if($milestone->owner)<a href="/users/{{ $milestone->owner->id }}" class="text-decoration-none">{{ $milestone->owner->name }}</a>@else Unassigned @endif<br>
+                    <strong>Scrummaster:</strong> @if($milestone->scrummaster)<a href="/users/{{ $milestone->scrummaster->id }}" class="text-decoration-none">{{ $milestone->scrummaster->name }}</a>@else Unassigned @endif
                 </p>
             </div>
             <div class="col-md-4 text-md-end">
@@ -201,7 +201,7 @@
                     <tbody>
                         @foreach($teamHours as $member)
                             <tr>
-                                <td>{{ $member['user_name'] }}</td>
+                                <td>@if(!empty($member['user_id']))<a href="/users/{{ $member['user_id'] }}" class="text-decoration-none">{{ $member['user_name'] }}</a>@else{{ $member['user_name'] }}@endif</td>
                                 <td class="text-end">{{ $member['ticket_count'] }}</td>
                                 <td class="text-end">{{ number_format($member['total_hours'], 1) }}</td>
                             </tr>
@@ -241,7 +241,7 @@
                                 <td>{{ $ticket['subject'] }}</td>
                                 <td>{{ $ticket['status'] }}</td>
                                 <td>{{ $ticket['type'] }}</td>
-                                <td>{{ $ticket['assignee'] }}</td>
+                                <td>@if(!empty($ticket['assignee_id']))<a href="/users/{{ $ticket['assignee_id'] }}" class="text-decoration-none">{{ $ticket['assignee'] }}</a>@else{{ $ticket['assignee'] }}@endif</td>
                                 <td class="text-end">{{ $ticket['storypoints'] }}</td>
                                 <td class="text-end">{{ number_format($ticket['logged_hours'], 1) }}</td>
                             </tr>

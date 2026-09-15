@@ -222,6 +222,7 @@ class MilestoneController extends Controller
             });
         })->groupBy('user_id')->map(function ($notes, $userId) {
             return [
+                'user_id' => $userId,
                 'user_name' => $notes->first()['user_name'],
                 'total_hours' => $notes->sum('hours'),
                 'ticket_count' => $notes->unique('ticket_id')->count(),
@@ -237,6 +238,7 @@ class MilestoneController extends Controller
                 'status' => $ticket->status->name ?? 'Unknown',
                 'type' => $ticket->type->name ?? 'Unknown',
                 'assignee' => $ticket->assignee->name ?? 'Unassigned',
+                'assignee_id' => $ticket->assignee->id ?? null,
                 'storypoints' => $ticket->storypoints ?? 0,
                 'logged_hours' => $loggedHours,
             ];
