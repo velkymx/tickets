@@ -59,7 +59,7 @@ Open [http://localhost](http://localhost) and log in with the default administra
 - Theme support: Light (Simplex), Dark (Darkly), or Auto (OS preference)
 - User profiles with contact info, local time, and contribution calendar
 - REST API with token authentication
-- MCP server (`POST /mcp/tickets`, 11 tools) for AI assistants — same Bearer token as the REST API
+- MCP server (`POST /mcp/tickets`, 16 tools for tickets and the knowledge base) for AI assistants — same Bearer token as the REST API; see [docs/mcp.md](docs/mcp.md)
 - AI agent integration via the API — see [docs/crewai.md](docs/crewai.md) for an example using CrewAI
 
 ## Screenshots
@@ -412,7 +412,7 @@ curl -X POST \
   https://your-domain.com/mcp/tickets
 ```
 
-Tools: `get-lookups-tool`, `list-tickets-tool`, `get-ticket-tool`, `get-pulse-tool`, `create-ticket-tool`, `update-ticket-tool`, `add-note-tool`, `reply-to-note-tool`, `edit-note-tool`, `resolve-note-tool`, `react-to-note-tool`. See [docs/api.md](docs/api.md) for details. Local stdio handle: `tickets` (set `MCP_USER_ID`).
+16 tools cover tickets (list/read/create/update, notes, pulse) and the knowledge base (search/read/create/update). Local stdio handle: `tickets` (set `MCP_USER_ID`). Full reference — setup, every tool with arguments, slash commands, pulse fields, error conventions — in **[docs/mcp.md](docs/mcp.md)**.
 
 ## CSV Import
 

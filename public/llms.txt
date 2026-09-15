@@ -21,6 +21,13 @@ Model Context Protocol endpoint: `POST /mcp/tickets` with `Authorization: Bearer
 | `edit-note-tool` | `ticket_id`, `note_id`, `body` (all required). Own notes only; decisions immutable. |
 | `resolve-note-tool` | `ticket_id`, `note_id`, `resolution_message` (all required). Author or assignee only. |
 | `react-to-note-tool` | `ticket_id`, `note_id`, `emoji` (thumbsup, eyes). Toggles. |
+| `get-kb-lookups-tool` | none — knowledge base categories and tags with IDs. Call first for KB writes. |
+| `kb-search-tool` | `query`, `category_id`, `status` (draft/verified/deprecated), `tag_id`, `per_page` (max 100). Keyword search over title/body/tags, scoped to what you can see. |
+| `get-kb-article-tool` | `slug` (or numeric id, required) — body, category, tags, status, version count. Visible articles only. |
+| `create-kb-article-tool` | `title`, `body_markdown`, `category_id`, `visibility` (public/internal/restricted), `commit_message`, `tags` (≥1) required; `status` optional. You become the owner. |
+| `update-kb-article-tool` | `id`, `title`, `body_markdown`, `category_id`, `visibility`, `commit_message`, `tags` (≥1) required; `status` optional. Owner or permitted editor; creates a new version. |
+
+Note: `tools/list` is paginated (15 per page) — follow `nextCursor` for the rest. Full reference: [docs/mcp.md](https://github.com/velkymx/tickets/blob/master/docs/mcp.md).
 
 ## Base URL
 

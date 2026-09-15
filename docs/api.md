@@ -319,29 +319,13 @@ All errors return JSON:
 
 ## MCP Server (AI Integration)
 
-AI assistants can work with tickets through the built-in [Model Context Protocol](https://modelcontextprotocol.io) server (official `laravel/mcp` package) instead of raw REST calls.
+AI assistants can work with tickets and the knowledge base through the built-in
+[Model Context Protocol](https://modelcontextprotocol.io) server (official
+`laravel/mcp` package) instead of raw REST calls — `POST /mcp/tickets` with the
+same Bearer token, or the local stdio handle `tickets`.
 
-**Remote (HTTP):** `POST /mcp/tickets` with the same Bearer API token:
-
-```json
-{ "jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {} }
-```
-
-**Local (stdio):** server handle `tickets` (`php artisan mcp:start tickets` or via `mcp:inspector`). No HTTP auth layer, so set `MCP_USER_ID` to the acting user id.
-
-| Tool | What it does |
-|------|--------------|
-| `get-lookups-tool` | ID lookups for statuses, types, importance, projects, milestones, users. Call first. |
-| `list-tickets-tool` | Tickets assigned to you. Optional `status_id`, `unassigned`, `include_pulse`, `per_page`. |
-| `get-ticket-tool` | Full detail, notes, and pulse for one `ticket_id`. |
-| `get-pulse-tool` | Standalone pulse health state for one `ticket_id`. |
-| `create-ticket-tool` | Create a ticket (same required fields as `POST /tickets`). |
-| `update-ticket-tool` | Update subject, description, or status on a ticket you own or hold. |
-| `add-note-tool` | Note with hours, status change, claim, and full slash-command support (`/close`, `/blocker`, `/decision`, `/action @user`, ...). |
-| `reply-to-note-tool` | Reply to a top-level note. |
-| `edit-note-tool` | Edit your own note (decisions immutable). |
-| `resolve-note-tool` | Resolve a blocker/action thread with a message. |
-| `react-to-note-tool` | Toggle thumbsup/eyes reaction. |
+The full MCP reference — connection, all 16 tools with arguments, slash
+commands, pulse fields, and error conventions — lives in **[mcp.md](mcp.md)**.
 
 ---
 
