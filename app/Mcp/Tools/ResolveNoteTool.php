@@ -29,16 +29,26 @@ class ResolveNoteTool extends TicketTool
             'resolution_message' => 'required|string|max:65535',
         ]);
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($validated['ticket_id']);
-        $note = Note::where('ticket_id', $ticket->id)->findOrFail($validated['note_id']);
+        $ticket = $this->findTicket($user, $validated['ticket_id']);
+
+        if (! $ticket) {
+            return $this->ticketNotFound();
+        }
+        $note = Note::where('ticket_id', $ticket->id)->find($validated['note_id']);
+
+        if (! $note) {
+            return $this->noteNotFound();
+        }
 
         $isAuthor = (int) $note->user_id === (int) $user->id;
         $isAssignee = (int) $ticket->user_id2 === (int) $user->id;
 
         if (! $isAuthor && ! $isAssignee) {
             return Response::error('Forbidden: only the thread author or ticket assignee can resolve.');
+        }
+
+        if ($note->resolved) {
+            return Response::error('Note is already resolved.');
         }
 
         $note->update([

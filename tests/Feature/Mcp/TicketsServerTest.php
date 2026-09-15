@@ -160,6 +160,109 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function server_acknowledges_initialized_lifecycle_method(): void
+    {
+        $server = new TicketsServer(new \Laravel\Mcp\Server\Transport\StdioTransport);
+
+        $boot = new \ReflectionMethod($server, 'boot');
+        $boot->setAccessible(true);
+        $boot->invoke($server);
+
+        $methods = new \ReflectionProperty($server, 'methods');
+        $methods->setAccessible(true);
+
+        $this->assertArrayHasKey('notifications/initialized', $methods->getValue($server));
+    }
+
+    #[Test]
+    public function write_to_foreign_ticket_returns_clean_not_found(): void
+    {
+        $alan = User::factory()->create(['name' => 'Alan']);
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $other->id,
+            'user_id2' => $other->id,
+        ]);
+
+        $response = TicketsServer::actingAs($alan)->tool(UpdateTicketTool::class, [
+            'ticket_id' => $ticket->id,
+            'subject' => 'Hijack attempt',
+        ]);
+
+        $response->assertHasErrors(['Ticket not found.']);
+        $this->assertDatabaseMissing('tickets', [
+            'id' => $ticket->id,
+            'subject' => 'Hijack attempt',
+        ]);
+    }
+
+    #[Test]
+    public function get_ticket_tool_includes_note_metadata(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(GetTicketTool::class, [
+            'ticket_id' => $ticket->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('reactions');
+        $response->assertSee('edited_at');
+        $response->assertSee('resolution_message');
+    }
+
+    #[Test]
+    public function add_note_tool_skips_empty_command_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/estimate 8',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('no note stored');
+        $this->assertDatabaseMissing('notes', ['ticket_id' => $ticket->id]);
+    }
+
+    #[Test]
+    public function resolve_tool_rejects_already_resolved_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'blocker',
+            'resolved' => true,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(ResolveNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $note->id,
+            'resolution_message' => 'Again',
+        ]);
+
+        $response->assertHasErrors(['already resolved']);
+    }
+
+    #[Test]
     public function update_ticket_tool_updates_subject_and_status(): void
     {
         $user = User::factory()->create();
@@ -205,6 +308,23 @@ class TicketsServerTest extends TestCase
             'ticket_id' => $ticket->id,
             'parent_id' => $note->id,
         ]);
+    }
+
+    #[Test]
+    public function reply_tool_returns_clean_error_for_a_note_on_another_ticket(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $otherTicket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $foreignNote = Note::factory()->create(['ticket_id' => $otherTicket->id, 'user_id' => $user->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(ReplyToNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $foreignNote->id,
+            'body' => 'Reply via MCP',
+        ]);
+
+        $response->assertHasErrors(['Note not found on this ticket.']);
     }
 
     #[Test]

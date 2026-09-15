@@ -35,7 +35,11 @@ class GetTicketTool extends TicketTool
                 ->whereNull('parent_id')
                 ->orderBy('created_at', 'asc')
                 ->with(['user', 'replies.user', 'reactions', 'attachments']),
-        ])->findOrFail($validated['ticket_id']);
+        ])->find($validated['ticket_id']);
+
+        if (! $ticket) {
+            return $this->ticketNotFound();
+        }
 
         $pulse = app(TicketPulseService::class)->getPulse($ticket)->toArray();
 
@@ -67,7 +71,13 @@ class GetTicketTool extends TicketTool
                 'body' => strip_tags($note->body ?? ''),
                 'hours' => $note->hours,
                 'resolved' => (bool) $note->resolved,
+                'resolved_by' => $note->resolved_by,
+                'resolution_message' => $note->resolution_message,
+                'edited_at' => $note->edited_at?->toISOString(),
                 'created_at' => $note->created_at->toDateTimeString(),
+                'reactions' => $note->reactions->groupBy('emoji')->map(fn ($group) => [
+                    'count' => $group->count(),
+                ]),
                 'replies' => $note->replies->map(fn ($reply) => [
                     'id' => $reply->id,
                     'user' => $reply->user->name ?? null,

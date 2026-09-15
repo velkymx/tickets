@@ -28,10 +28,16 @@ class ReactToNoteTool extends TicketTool
             'emoji' => 'required|string|in:'.implode(',', NoteReaction::ALLOWED_EMOJIS),
         ]);
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($validated['ticket_id']);
-        $note = Note::where('ticket_id', $ticket->id)->findOrFail($validated['note_id']);
+        $ticket = $this->findTicket($user, $validated['ticket_id']);
+
+        if (! $ticket) {
+            return $this->ticketNotFound();
+        }
+        $note = Note::where('ticket_id', $ticket->id)->find($validated['note_id']);
+
+        if (! $note) {
+            return $this->noteNotFound();
+        }
 
         $existing = NoteReaction::where('note_id', $note->id)
             ->where('user_id', $user->id)

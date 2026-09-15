@@ -27,7 +27,12 @@ class GetPulseTool extends TicketTool
             'ticket_id' => 'required|integer|exists:tickets,id',
         ]);
 
-        $ticket = Ticket::findOrFail($validated['ticket_id']);
+        $ticket = Ticket::find($validated['ticket_id']);
+
+        if (! $ticket) {
+            return $this->ticketNotFound();
+        }
+
         $pulse = app(TicketPulseService::class)->getPulse($ticket)->toArray();
 
         return Response::json(['data' => $pulse]);

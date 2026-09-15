@@ -30,10 +30,16 @@ class ReplyToNoteTool extends TicketTool
             'body' => 'required|string|max:65535',
         ]);
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($validated['ticket_id']);
-        $parent = Note::where('ticket_id', $ticket->id)->findOrFail($validated['note_id']);
+        $ticket = $this->findTicket($user, $validated['ticket_id']);
+
+        if (! $ticket) {
+            return $this->ticketNotFound();
+        }
+        $parent = Note::where('ticket_id', $ticket->id)->find($validated['note_id']);
+
+        if (! $parent) {
+            return $this->noteNotFound();
+        }
 
         if ($parent->parent_id !== null) {
             return Response::error('Cannot reply to a reply. Replies must be on top-level notes.');

@@ -28,9 +28,11 @@ class UpdateTicketTool extends TicketTool
             'status_id' => 'nullable|integer|exists:statuses,id',
         ]);
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($validated['ticket_id']);
+        $ticket = $this->findTicket($user, $validated['ticket_id']);
+
+        if (! $ticket) {
+            return $this->ticketNotFound();
+        }
 
         if (array_key_exists('subject', $validated) && $validated['subject'] !== null) {
             $ticket->subject = $validated['subject'];

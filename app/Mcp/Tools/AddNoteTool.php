@@ -34,9 +34,11 @@ class AddNoteTool extends TicketTool
             'claim' => 'nullable|boolean',
         ]);
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($validated['ticket_id']);
+        $ticket = $this->findTicket($user, $validated['ticket_id']);
+
+        if (! $ticket) {
+            return $this->ticketNotFound();
+        }
 
         if (! empty($validated['claim'])) {
             $ticket->user_id2 = $user->id;
@@ -76,26 +78,31 @@ class AddNoteTool extends TicketTool
             }
 
             $parsedBody = $commandResult['body'] ?? '';
+            $parsedHtml = $markdownService->parse($parsedBody);
+            $totalHours = ($validated['hours'] ?? 0) + ($commandResult['hours'] ?? 0);
 
-            $createdNote = Note::create([
-                'user_id' => $user->id,
-                'ticket_id' => $ticket->id,
-                'body' => $markdownService->parse($parsedBody),
-                'body_markdown' => $parsedBody,
-                'hours' => ($validated['hours'] ?? 0) + ($commandResult['hours'] ?? 0),
-                'notetype' => $commandResult['note_type'] ?? 'message',
-                'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
-            ]);
+            // Skip commands that leave no text behind (e.g. /estimate, /close).
+            if (trim(strip_tags($parsedHtml)) !== '' || $totalHours > 0) {
+                $createdNote = Note::create([
+                    'user_id' => $user->id,
+                    'ticket_id' => $ticket->id,
+                    'body' => $parsedHtml,
+                    'body_markdown' => $parsedBody,
+                    'hours' => $totalHours,
+                    'notetype' => $commandResult['note_type'] ?? 'message',
+                    'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
+                ]);
 
-            $mentionUsernames = $mentionService->parseMentions($parsedBody);
-            $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-            $mentionService->createMentions($createdNote, $mentionUserIds);
+                $mentionUsernames = $mentionService->parseMentions($parsedBody);
+                $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
+                $mentionService->createMentions($createdNote, $mentionUserIds);
+            }
         }
 
         $ticket->load(['status', 'assignee']);
 
         $result = [
-            'message' => 'Note added.',
+            'message' => $createdNote ? 'Note added.' : 'Command applied, no note stored.',
             'warnings' => $warnings,
             'ticket' => [
                 'id' => $ticket->id,
