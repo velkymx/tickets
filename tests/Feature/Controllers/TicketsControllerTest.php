@@ -1349,6 +1349,23 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function edit_fills_date_inputs_in_html_date_format(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'due_at' => '2026-09-20',
+            'closed_at' => '2026-09-21 14:30:00',
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/edit/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('value="2026-09-20"', false);
+        $response->assertSee('value="2026-09-21"', false);
+    }
+
+    #[Test]
     public function store_requires_authentication(): void
     {
         $response = $this->post('/tickets', [
