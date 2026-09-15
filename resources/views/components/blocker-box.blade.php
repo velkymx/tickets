@@ -3,10 +3,10 @@
     'title' => 'Blockers',
 ])
 
-<div class="card shadow-sm mb-4 border-dark">
-    <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center">
-        <strong><i class="fa-solid fa-fire text-dark me-1"></i>{{ $title }}</strong>
-        <span class="badge text-bg-dark">{{ $blockers->count() }}</span>
+<div class="card shadow-sm mb-4 border-danger">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+        <strong><i class="fa-solid fa-fire me-1"></i>{{ $title }}</strong>
+        <span class="badge text-bg-light">{{ $blockers->count() }}</span>
     </div>
     <ul class="list-group list-group-flush">
         @forelse ($blockers as $ticket)
