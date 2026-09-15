@@ -48,23 +48,19 @@ Dashboard
 </div>
 
 <div class="row g-4">
-    {{-- Tickets by Status --}}
+    {{-- My Tickets --}}
     <div class="col-lg-9">
-        @if (count($alltickets) > 0)
-            <h2 class="h5 mb-3">My Tickets by Status</h2>
-            @foreach ($alltickets as $label => $tickets)
-                <h3 class="h6 text-muted mb-2">{{ ucwords($label) }} ({{ $tickets->count() }})</h3>
-                <x-ticket-table :tickets="$tickets" :show-checkbox="false" :show-type="true" :show-estimate="false" :show-updated="true" :small="true" />
-            @endforeach
-        @else
-            <div class="card">
-                <div class="card-body text-center p-5">
-                    <i class="fas fa-inbox text-muted mb-3" style="font-size: 3rem;"></i>
-                    <p class="text-muted mb-3">No tickets assigned to you.</p>
-                    <a href="/tickets/create" class="btn btn-primary">Create Your First Ticket</a>
-                </div>
-            </div>
-        @endif
+        <h2 class="h5 mb-3">My Tickets</h2>
+        <x-ticket-filters :viewfilters="$viewfilters" :filter="$filter" :action="url('home')" />
+        <x-ticket-filter-tabs :counts="$tabCounts" />
+        <x-ticket-table
+            :tickets="$tickets"
+            :paginator="$tickets"
+            :sortable="true"
+            :show-type="true"
+            :show-updated="true"
+            :small="true"
+            empty-message="No tickets assigned to you." />
     </div>
 
     {{-- Sidebar: Recent Activity & Quick Links --}}

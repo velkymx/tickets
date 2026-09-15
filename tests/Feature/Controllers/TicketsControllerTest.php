@@ -98,6 +98,21 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function home_provides_sortable_paginated_list_of_my_tickets(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['user_id2' => $user->id, 'subject' => 'Zebra']);
+        Ticket::factory()->create(['user_id2' => $user->id, 'subject' => 'Alpha']);
+
+        $response = $this->actingAs($user)->get('/home?sort=subject&dir=asc');
+
+        $response->assertStatus(200);
+        $response->assertViewHas('tickets');
+        $response->assertViewHas('tabCounts');
+        $this->assertSame(['Alpha', 'Zebra'], $response->viewData('tickets')->pluck('subject')->all());
+    }
+
+    #[Test]
     public function home_returns_home_view(): void
     {
         $user = User::factory()->create();

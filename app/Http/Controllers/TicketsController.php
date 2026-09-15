@@ -32,28 +32,34 @@ class TicketsController extends Controller
         private TicketService $ticketService
     ) {}
 
-    public function home()
+    public function home(Request $request)
     {
         $user = Auth::user();
 
         $openStatusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
         $closedStatusIds = Status::closedStatusIds();
 
-        $tickets = Ticket::where('user_id2', $user->id)
-            ->whereIn('status_id', $openStatusIds)
+        // Home lists the current user's tickets via the canonical list component.
+        $myTickets = fn () => Ticket::where('user_id2', $user->id);
+
+        $queryfilter = $request->only(Ticket::FILTER_KEYS);
+        $queryfilter['status_id'] ??= 'none'; // default to active statuses
+
+        $tickets = $myTickets()
+            ->filter($queryfilter)
             ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
                 $q->where('hide', 0)->where('notetype', 'message');
             }])
-            ->get()
-            ->groupBy('status_id');
+            ->sortable(
+                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                ['importance_id', 'desc']
+            )
+            ->paginate(15)
+            ->withQueryString();
 
-        $alltickets = [];
-        foreach ($tickets as $statusId => $ticketGroup) {
-            $statusName = $ticketGroup->first()->status->name ?? null;
-            if ($statusName) {
-                $alltickets[$statusName] = $ticketGroup;
-            }
-        }
+        ['viewfilters' => $viewfilters, 'filter' => $filter] = $this->ticketService->listFilterData($request);
+
+        $tabCounts = Ticket::tabCounts($myTickets());
 
         $stats = [
             'assigned' => Ticket::where('user_id2', $user->id)->count(),
@@ -79,7 +85,7 @@ class TicketsController extends Controller
             ->get()
             ->filter(fn ($note) => $note->ticket !== null);
 
-        return View('home', compact('alltickets', 'stats', 'recentTickets', 'recentNotes'));
+        return View('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'viewfilters', 'filter', 'tabCounts'));
     }
 
     public function index(Request $request)
