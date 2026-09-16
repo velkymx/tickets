@@ -34,7 +34,6 @@ class UpdateTicketTool extends TicketTool
             'due_at' => 'nullable|date',
             'estimate' => 'nullable|numeric|min:0',
             'storypoints' => 'nullable|integer|min:0',
-            'actual' => 'nullable|numeric|min:0',
         ]);
 
         $ticket = $this->findTicket($user, $validated['ticket_id']);
@@ -68,7 +67,7 @@ class UpdateTicketTool extends TicketTool
 
         // Numeric/date fields use array_key_exists so a caller can clear a due
         // date (null) or set a zero estimate, which an empty() check would drop.
-        foreach (['due_at', 'estimate', 'storypoints', 'actual'] as $field) {
+        foreach (['due_at', 'estimate', 'storypoints'] as $field) {
             if (array_key_exists($field, $validated)) {
                 $ticket->{$field} = $validated[$field];
             }
@@ -106,7 +105,6 @@ class UpdateTicketTool extends TicketTool
             'due_at' => $schema->string()->description('Due date, YYYY-MM-DD. Pass null to clear.'),
             'estimate' => $schema->number()->description('Time estimate in hours.'),
             'storypoints' => $schema->integer()->description('Story points.'),
-            'actual' => $schema->number()->description('Actual hours spent.'),
         ];
     }
 }

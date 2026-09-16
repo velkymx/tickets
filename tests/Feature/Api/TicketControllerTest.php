@@ -1465,6 +1465,25 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_ignores_client_supplied_actual_hours(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+            'actual' => 5,
+        ]);
+
+        $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'subject' => 'Renamed',
+            'actual' => 999,
+        ], $this->apiHeaders())->assertStatus(200);
+
+        $ticket->refresh();
+        $this->assertEquals('Renamed', $ticket->subject);
+        $this->assertEquals(5, $ticket->actual);
+    }
+
+    #[Test]
     public function update_reopens_ticket_when_status_moves_to_open(): void
     {
         Cache::flush();

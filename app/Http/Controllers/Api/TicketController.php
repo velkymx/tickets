@@ -371,7 +371,6 @@ class TicketController extends Controller
             'due_at' => 'nullable|date',
             'estimate' => 'nullable|numeric|min:0',
             'storypoints' => 'nullable|integer|min:0',
-            'actual' => 'nullable|numeric|min:0',
         ]);
 
         $user = $request->attributes->get('api_user');
@@ -405,7 +404,7 @@ class TicketController extends Controller
 
         // Numeric/date fields use array_key_exists so a caller can clear a due
         // date (null) or set a zero estimate, which an empty() check would drop.
-        foreach (['due_at', 'estimate', 'storypoints', 'actual'] as $field) {
+        foreach (['due_at', 'estimate', 'storypoints'] as $field) {
             if (array_key_exists($field, $validated)) {
                 $ticket->{$field} = $validated[$field];
             }

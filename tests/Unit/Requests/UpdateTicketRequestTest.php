@@ -125,17 +125,6 @@ class UpdateTicketRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_validates_actual_is_numeric_min_zero(): void
-    {
-        $validator = $this->makeValidator(['actual' => -1]);
-        $this->assertTrue($validator->fails());
-        $this->assertArrayHasKey('actual', $validator->errors()->toArray());
-
-        $validator = $this->makeValidator(['actual' => 10.5]);
-        $this->assertFalse($validator->fails());
-    }
-
-    #[Test]
     public function it_limits_subject_to_255_characters(): void
     {
         $validator = $this->makeValidator(['subject' => str_repeat('a', 256)]);

@@ -25,7 +25,6 @@ class UpdateTicketRequest extends FormRequest
             'due_at' => 'nullable|date',
             'closed_at' => 'nullable|date',
             'estimate' => 'nullable|numeric|min:0',
-            'actual' => 'nullable|numeric|min:0',
             'storypoints' => 'nullable|integer|min:0',
         ];
     }
