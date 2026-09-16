@@ -16,6 +16,8 @@ class SendTicketDigestJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+
     public function __construct(
         public int $userId,
         public int $ticketId,
@@ -35,5 +37,18 @@ class SendTicketDigestJob implements ShouldQueue
 
         Cache::forget($batchKey);
         Cache::forget($scheduleKey);
+    }
+
+    /**
+     * Clear the batch cache after the final retry fails, so a broken mail
+     * driver does not leave stale keys blocking future digests for this
+     * user/ticket until their TTL expires.
+     */
+    public function failed(\Throwable $e): void
+    {
+        $batchService = app(NotificationBatchService::class);
+
+        Cache::forget($batchService->batchKey($this->userId, $this->ticketId));
+        Cache::forget($batchService->scheduleKey($this->userId, $this->ticketId));
     }
 }

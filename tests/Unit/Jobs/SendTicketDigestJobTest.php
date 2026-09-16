@@ -49,6 +49,24 @@ class SendTicketDigestJobTest extends TestCase
     }
 
     #[Test]
+    public function failed_clears_the_batch_cache(): void
+    {
+        Cache::flush();
+
+        $batchService = app(NotificationBatchService::class);
+        $batchKey = $batchService->batchKey(9, 142);
+        $scheduleKey = $batchService->scheduleKey(9, 142);
+
+        Cache::put($batchKey, [['type' => 'mention']], now()->addMinutes(10));
+        Cache::put($scheduleKey, true, now()->addMinutes(10));
+
+        (new SendTicketDigestJob(9, 142))->failed(new \RuntimeException('mail down'));
+
+        $this->assertNull(Cache::get($batchKey));
+        $this->assertNull(Cache::get($scheduleKey));
+    }
+
+    #[Test]
     public function it_handles_empty_entries_without_crashing(): void
     {
         $notification = new TicketDigestNotification(142, []);
