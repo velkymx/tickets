@@ -10,7 +10,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 
-#[Description('Create a ticket. Resolve type, importance, project, and milestone IDs with the lookups tool first. The ticket is assigned to the authenticated user.')]
+#[Description('Create a ticket. Resolve type, importance, project, and milestone IDs with the lookups tool first. Defaults to assigning the ticket to you; pass assignee_id to assign someone else, or assignee_id: null to leave it unassigned.')]
 class CreateTicketTool extends TicketTool
 {
     public function handle(Request $request): Response
@@ -29,10 +29,16 @@ class CreateTicketTool extends TicketTool
             'project_id' => 'required|integer|exists:projects,id',
             'milestone_id' => 'required|integer|exists:milestones,id',
             'status_id' => 'nullable|integer|exists:statuses,id',
+            'assignee_id' => 'nullable|integer|exists:users,id',
             'due_at' => 'nullable|date',
             'estimate' => 'nullable|numeric|min:0',
             'storypoints' => 'nullable|integer|min:0',
         ]);
+
+        // Present-but-null leaves the ticket unassigned; omitted defaults to self.
+        $assigneeId = array_key_exists('assignee_id', $validated)
+            ? $validated['assignee_id']
+            : $user->id;
 
         $ticket = Ticket::create([
             'subject' => $validated['subject'],
@@ -45,7 +51,7 @@ class CreateTicketTool extends TicketTool
             'estimate' => $validated['estimate'] ?? 0,
             'storypoints' => $validated['storypoints'] ?? 0,
             'user_id' => $user->id,
-            'user_id2' => $user->id,
+            'user_id2' => $assigneeId,
             'status_id' => $validated['status_id'] ?? Status::orderBy('id')->first()?->id,
         ]);
 
@@ -72,6 +78,7 @@ class CreateTicketTool extends TicketTool
             'project_id' => $schema->integer()->description('Project ID (see lookups).')->required(),
             'milestone_id' => $schema->integer()->description('Milestone ID (see lookups).')->required(),
             'status_id' => $schema->integer()->description('Status ID. Defaults to the first status.'),
+            'assignee_id' => $schema->integer()->description('User ID to assign the ticket to (see lookups). Omit to assign yourself, or pass null to leave unassigned.'),
             'due_at' => $schema->string()->description('Due date, YYYY-MM-DD.'),
             'estimate' => $schema->number()->description('Time estimate in hours.'),
             'storypoints' => $schema->integer()->description('Story points.'),

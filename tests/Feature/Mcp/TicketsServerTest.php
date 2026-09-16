@@ -105,6 +105,51 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function create_ticket_tool_creates_unassigned_ticket(): void
+    {
+        $user = User::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(CreateTicketTool::class, [
+            'subject' => 'Unassigned via MCP',
+            'type_id' => Type::factory()->create()->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+            'assignee_id' => null,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Unassigned via MCP',
+            'user_id' => $user->id,
+            'user_id2' => null,
+        ]);
+    }
+
+    #[Test]
+    public function create_ticket_tool_assigns_to_another_user(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(CreateTicketTool::class, [
+            'subject' => 'Assigned via MCP',
+            'type_id' => Type::factory()->create()->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+            'assignee_id' => $assignee->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Assigned via MCP',
+            'user_id' => $user->id,
+            'user_id2' => $assignee->id,
+        ]);
+    }
+
+    #[Test]
     public function add_note_tool_adds_note_with_hours(): void
     {
         $user = User::factory()->create();
