@@ -111,7 +111,7 @@ This makes it possible to build workflows where specialized AI agents share the 
 
 Use [CrewAI](docs/crewai.md) to build role-based agent crews, or connect other MCP-compatible clients and agent runtimes to Tickets.
 
-* 16 MCP tools for tickets and the knowledge base
+* 19 MCP tools for tickets and the knowledge base
 * REST API with token authentication
 * Ticket Pulse for execution state
 * Agent-accessible decisions, blockers, actions, and notes
