@@ -1,10 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Ticket Board')
+@section('title', 'Kanban Board')
 
 @section('content')
 
-    <h1 class="mb-4">Ticket Board</h1>
+    <h1 class="mb-4">Kanban Board</h1>
+
+    {{-- Same query bar as list view. Filters apply; columns stay, non-matches empty. --}}
+    <x-ticket-search :query="$searchQuery ?? ''" :tokens="$searchTokens ?? []" :action="url('tickets/board')" />
+
+    @if (! empty($searchQuery ?? ''))
+        <div class="d-flex align-items-center gap-2 mb-3 small text-muted">
+            <span>Showing {{ $tickets->count() }} filtered tickets.</span>
+            <a href="{{ url('tickets/board') }}" class="text-decoration-none">Clear filter</a>
+        </div>
+    @endif
+
+    @if ($tickets->isEmpty())
+        <div class="alert alert-info">No tickets match this filter. <a href="{{ url('tickets/board') }}" class="alert-link">Clear it</a> to see the full board.</div>
+    @endif
 
     {{-- Alert Container for AJAX updates (Vanilla JS will target this) --}}
     <div id="update-alert" class="alert alert-success alert-dismissible fade d-none" role="alert">
