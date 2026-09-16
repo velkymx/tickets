@@ -110,6 +110,7 @@ class TicketsController extends Controller
             Arr::except($request->only(Ticket::FILTER_KEYS), ['q']),
             $this->ticketQueryParser->parse($searchQuery),
         );
+        $filters['status_id'] ??= 'none'; // default to active statuses, like home
 
         $tickets = Ticket::query()
             ->filter($filters)
@@ -338,15 +339,34 @@ class TicketsController extends Controller
         return redirect('tickets')->with('info_message', $i.' ticket(s) updated');
     }
 
-    public function board()
+    public function board(Request $request)
     {
-        $perpage = 50;
-        $tickets = Ticket::with(['status', 'type', 'importance', 'project', 'assignee'])
-            ->paginate($perpage);
+        // Same query bar as list view. Status filters kept: non-matching
+        // columns render empty instead of disappearing.
+        $searchQuery = (string) $request->input('q', '');
+        $searchTokens = $this->ticketQueryParser->tokenize($searchQuery);
+
+        $filters = array_merge(
+            Arr::except($request->only(Ticket::FILTER_KEYS), ['q']),
+            $this->ticketQueryParser->parse($searchQuery),
+        );
+
+        // Kanban needs full grouping. Paginator broke columns (page 1 only).
+        $tickets = Ticket::query()
+            ->filter($filters)
+            ->with(['status', 'type', 'importance', 'project', 'assignee'])
+            ->withCount(['notes as open_notes_count' => fn ($q) => $q->where('hide', 0)])
+            ->orderBy('updated_at', 'desc')
+            ->limit(200)
+            ->get();
 
         $lookups = $this->ticketService->getLookups();
+        $closedStatusIds = Status::closedStatusIds();
 
-        return view('tickets.board', compact('tickets', 'lookups'));
+        // Soft WIP caps per status id, e.g. [2 => 8]. Empty = count only, no cap.
+        $wipLimits = [];
+
+        return view('tickets.board', compact('tickets', 'lookups', 'closedStatusIds', 'wipLimits', 'searchQuery', 'searchTokens'));
     }
 
     public function api(Request $request, $id)
@@ -360,7 +380,11 @@ class TicketsController extends Controller
         ]);
 
         if ((int) $request['status'] !== (int) $ticket->status_id) {
-            $ticket->update(['status_id' => $request['status']]);
+            $newStatusId = (int) $request['status'];
+            $ticket->update([
+                'status_id' => $newStatusId,
+                'closed_at' => Status::isClosed($newStatusId) ? now() : null,
+            ]);
 
             $this->ticketService->notate($ticket->id, '', ['Status Changed to '.$ticket->status->name]);
 

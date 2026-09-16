@@ -40,6 +40,43 @@ body {
     max-width: 280px;
 }
 
+/* Drop target must keep height when empty, else cross-column drops miss. */
+.ticket-column {
+    min-height: 120px;
+}
+
+.ticket-column li[data-ticket-id] {
+    cursor: grab;
+}
+
+.ticket-column li[data-ticket-id]:active {
+    cursor: grabbing;
+}
+
+.ticket-column .sortable-ghost {
+    opacity: 0.4;
+}
+
+.ticket-column .sortable-chosen {
+    box-shadow: 0 0 0 2px var(--bs-primary);
+}
+
+.ticket-column li[data-empty-placeholder] {
+    pointer-events: none;
+}
+
+/* Kanban card bits */
+.kanban-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.kanban-project {
+    max-width: 110px;
+}
+
 @media (max-width: 576px) {
     .kanban-column {
         width: 260px;
