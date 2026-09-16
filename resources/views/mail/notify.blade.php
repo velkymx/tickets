@@ -54,7 +54,7 @@
                                 <tr>
                                     <td style="padding: 12px 0; border-top: 1px solid #dee2e6;">
                                         <strong style="color: #6c757d; font-size: 12px; text-transform: uppercase;">Assignee</strong><br>
-                                        <span style="font-size: 14px; color: #212529;">{{ $ticket->assignee->name }}</span>
+                                        <span style="font-size: 14px; color: #212529;">{{ $ticket->assignee->name ?? 'Unassigned' }}</span>
                                     </td>
                                 </tr>
                                 <tr>

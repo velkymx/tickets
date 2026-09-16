@@ -109,7 +109,7 @@ class TicketController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'subject' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type_id' => 'required|integer|exists:types,id',
@@ -117,10 +117,16 @@ class TicketController extends Controller
             'project_id' => 'required|integer|exists:projects,id',
             'milestone_id' => 'required|integer|exists:milestones,id',
             'status_id' => 'nullable|integer|exists:statuses,id',
+            'assignee_id' => 'nullable|integer|exists:users,id',
             'due_at' => 'nullable|date',
             'estimate' => 'nullable|numeric|min:0',
             'storypoints' => 'nullable|integer|min:0',
         ]);
+
+        // Present-but-null leaves the ticket unassigned; omitted defaults to self.
+        $assigneeId = array_key_exists('assignee_id', $validated)
+            ? $validated['assignee_id']
+            : $user->id;
 
         $ticket = Ticket::create([
             'subject' => $request->subject,
@@ -133,7 +139,7 @@ class TicketController extends Controller
             'estimate' => $request->estimate ?? 0,
             'storypoints' => $request->storypoints ?? 0,
             'user_id' => $user->id,
-            'user_id2' => $user->id,
+            'user_id2' => $assigneeId,
             'status_id' => $request->status_id ?? Status::orderBy('id')->first()?->id,
         ]);
 

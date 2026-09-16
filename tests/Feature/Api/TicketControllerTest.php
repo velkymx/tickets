@@ -242,6 +242,48 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function store_creates_unassigned_ticket(): void
+    {
+        $response = $this->postJson('/api/v1/tickets', [
+            'subject' => 'Unassigned Ticket',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
+            'assignee_id' => null,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Unassigned Ticket',
+            'user_id' => $this->user->id,
+            'user_id2' => null,
+        ]);
+    }
+
+    #[Test]
+    public function store_assigns_to_another_user(): void
+    {
+        $assignee = User::factory()->create();
+
+        $response = $this->postJson('/api/v1/tickets', [
+            'subject' => 'Assigned Ticket',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
+            'assignee_id' => $assignee->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Assigned Ticket',
+            'user_id' => $this->user->id,
+            'user_id2' => $assignee->id,
+        ]);
+    }
+
+    #[Test]
     public function store_accepts_optional_fields(): void
     {
         $project = Project::factory()->create();
