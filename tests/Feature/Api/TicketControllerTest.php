@@ -242,6 +242,26 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function store_rejects_estimate_and_storypoints_over_the_cap(): void
+    {
+        $payload = [
+            'subject' => 'Over the cap',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
+        ];
+
+        $this->postJson('/api/v1/tickets', $payload + ['estimate' => 100000], $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('estimate');
+
+        $this->postJson('/api/v1/tickets', $payload + ['storypoints' => 100000], $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('storypoints');
+    }
+
+    #[Test]
     public function store_creates_unassigned_ticket(): void
     {
         $response = $this->postJson('/api/v1/tickets', [

@@ -31,8 +31,8 @@ class CreateTicketTool extends TicketTool
             'status_id' => 'nullable|integer|exists:statuses,id',
             'assignee_id' => 'nullable|integer|exists:users,id',
             'due_at' => 'nullable|date',
-            'estimate' => 'nullable|numeric|min:0',
-            'storypoints' => 'nullable|integer|min:0',
+            'estimate' => 'nullable|numeric|min:0|max:99999',
+            'storypoints' => 'nullable|integer|min:0|max:99999',
         ]);
 
         // Present-but-null leaves the ticket unassigned; omitted defaults to self.
