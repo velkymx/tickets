@@ -74,9 +74,5 @@ class TicketsServer extends Server
     {
         // Accept the MCP lifecycle ack instead of answering -32601.
         $this->addMethod('notifications/initialized', \App\Mcp\ServerMethods\InitializedAck::class);
-
-        // Return every registered tool in one tools/list page (framework
-        // default is 15) so no tool hides behind nextCursor. See config/mcp.php.
-        $this->defaultPaginationLength = config('mcp.pagination_length', $this->defaultPaginationLength);
     }
 }

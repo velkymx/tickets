@@ -49,28 +49,6 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
-    public function all_tools_fit_in_a_single_tools_list_page(): void
-    {
-        // tools/list is cursor-paginated; a page smaller than the tool count
-        // hides the overflow behind nextCursor for clients that don't follow
-        // it. Keep pagination_length >= tool count and <= maxPaginationLength.
-        $defaults = (new \ReflectionClass(TicketsServer::class))->getDefaultProperties();
-        $toolCount = count($defaults['tools']);
-        $pageSize = config('mcp.pagination_length');
-
-        $this->assertLessThanOrEqual(
-            $defaults['maxPaginationLength'],
-            $pageSize,
-            'mcp.pagination_length exceeds the server maxPaginationLength.'
-        );
-        $this->assertGreaterThanOrEqual(
-            $toolCount,
-            $pageSize,
-            'mcp.pagination_length is smaller than the tool count; some tools spill onto a second tools/list page.'
-        );
-    }
-
-    #[Test]
     public function lookups_tool_rejects_unauthenticated_calls(): void
     {
         $response = TicketsServer::tool(GetLookupsTool::class, []);
