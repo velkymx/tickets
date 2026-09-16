@@ -10,7 +10,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 
-#[Description('Update a ticket you own or are assigned to: subject, description, or status. Closing via a closed status sets closed_at.')]
+#[Description('Update a ticket you own or are assigned to: subject, description, status, or assignee. Closing via a closed status sets closed_at.')]
 class UpdateTicketTool extends TicketTool
 {
     public function handle(Request $request): Response
@@ -26,6 +26,7 @@ class UpdateTicketTool extends TicketTool
             'subject' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'status_id' => 'nullable|integer|exists:statuses,id',
+            'assignee_id' => 'nullable|integer|exists:users,id',
         ]);
 
         $ticket = $this->findTicket($user, $validated['ticket_id']);
@@ -45,6 +46,10 @@ class UpdateTicketTool extends TicketTool
         if (! empty($validated['status_id']) && $validated['status_id'] != $ticket->status_id) {
             $ticket->status_id = $validated['status_id'];
             $ticket->closed_at = Status::isClosed($validated['status_id']) ? now() : null;
+        }
+
+        if (! empty($validated['assignee_id'])) {
+            $ticket->user_id2 = $validated['assignee_id'];
         }
 
         $ticket->save();
@@ -71,6 +76,7 @@ class UpdateTicketTool extends TicketTool
             'subject' => $schema->string()->description('New title.'),
             'description' => $schema->string()->description('New description, plain text.'),
             'status_id' => $schema->integer()->description('Move the ticket to this status ID (see lookups).'),
+            'assignee_id' => $schema->integer()->description('Reassign the ticket to this user ID (see lookups).'),
         ];
     }
 }

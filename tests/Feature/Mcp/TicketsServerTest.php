@@ -321,6 +321,28 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function update_ticket_tool_reassigns_ticket(): void
+    {
+        $user = User::factory()->create();
+        $newAssignee = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateTicketTool::class, [
+            'ticket_id' => $ticket->id,
+            'assignee_id' => $newAssignee->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'user_id2' => $newAssignee->id,
+        ]);
+    }
+
+    #[Test]
     public function reply_tool_replies_to_top_level_note(): void
     {
         $user = User::factory()->create();
