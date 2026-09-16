@@ -201,109 +201,117 @@
             {{-- Ticket Pulse (Real-Time Decision Log) --}}
             <x-ticket-pulse :ticket="$ticket" :pulse="$pulse->toArray()" />
 
-            {{-- Ticket Details Card --}}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-body-secondary fw-bold">
+            {{-- Ticket Details --}}
+            <section class="mb-4">
+                <h6 class="text-uppercase text-body-secondary fw-semibold small mb-2 pb-1 border-bottom">
                     Ticket Details
-                </div>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        <strong>Status:</strong> <span class="badge text-bg-secondary">{{ $ticket->status->name }}</span>
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Importance:</strong>
-                        <span class="text-{{ $ticket->importance->class }}">
+                </h6>
+                <dl class="mb-0 small">
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Status</dt>
+                        <dd class="mb-0 text-end"><span class="badge text-bg-secondary">{{ $ticket->status->name }}</span></dd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Importance</dt>
+                        <dd class="mb-0 text-end text-{{ $ticket->importance->class }}">
                             <i class="{{ $ticket->importance->icon }}"></i> {{ $ticket->importance->name }}
-                        </span>
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Type:</strong> <i class="{{ $ticket->type->icon }}"></i> {{ $ticket->type->name }}
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Assignee:</strong>
-                        @if ($ticket->assignee)
-                            <a href="/users/{{ $ticket->assignee->id }}" class="text-decoration-none">{{ $ticket->assignee->name }}</a>
-                        @else
-                            <span class="text-muted fst-italic">Unassigned</span>
-                        @endif
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Owner:</strong>
-                        <a href="/users/{{ $ticket->user->id }}" class="text-decoration-none">{{ $ticket->user->name }}</a>
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Project:</strong>
-                        <a href="/projects/show/{{ $ticket->project->id }}" class="text-decoration-none">{{ $ticket->project->name }}</a>
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Milestone:</strong>
-                        <a href="/milestone/show/{{ $ticket->milestone->id }}" class="text-decoration-none">{{ $ticket->milestone->name }}</a>
-                    </li>
+                        </dd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Type</dt>
+                        <dd class="mb-0 text-end"><i class="{{ $ticket->type->icon }}"></i> {{ $ticket->type->name }}</dd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Assignee</dt>
+                        <dd class="mb-0 text-end">
+                            @if ($ticket->assignee)
+                                <a href="/users/{{ $ticket->assignee->id }}" class="text-decoration-none">{{ $ticket->assignee->name }}</a>
+                            @else
+                                <span class="text-body-secondary fst-italic">Unassigned</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Owner</dt>
+                        <dd class="mb-0 text-end"><a href="/users/{{ $ticket->user->id }}" class="text-decoration-none">{{ $ticket->user->name }}</a></dd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Project</dt>
+                        <dd class="mb-0 text-end"><a href="/projects/show/{{ $ticket->project->id }}" class="text-decoration-none">{{ $ticket->project->name }}</a></dd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Milestone</dt>
+                        <dd class="mb-0 text-end"><a href="/milestone/show/{{ $ticket->milestone->id }}" class="text-decoration-none">{{ $ticket->milestone->name }}</a></dd>
+                    </div>
                     @if ($ticket->due_at)
-                        <li class="list-group-item">
-                            <strong>Due:</strong> {{ date('M jS, Y', strtotime($ticket->due_at)) }}
-                        </li>
+                        <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                            <dt class="fw-normal text-body-secondary">Due</dt>
+                            <dd class="mb-0 text-end">{{ date('M jS, Y', strtotime($ticket->due_at)) }}</dd>
+                        </div>
                     @endif
-                    <li class="list-group-item text-muted small">
-                        Created {{ date('M jS, Y g:ia', strtotime($ticket->created_at)) }}
-                        &middot; Updated {{ date('M jS, Y g:ia', strtotime($ticket->updated_at)) }}
-                        @if($ticket->closed_at)
-                            &middot; Closed {{ date('M jS, Y g:ia', strtotime($ticket->closed_at)) }}
-                        @endif
-                    </li>
-                </ul>
-            </div>
+                </dl>
+                <p class="text-body-secondary mt-2 mb-0" style="font-size: .75rem;">
+                    Created {{ date('M jS, Y g:ia', strtotime($ticket->created_at)) }}
+                    &middot; Updated {{ date('M jS, Y g:ia', strtotime($ticket->updated_at)) }}
+                    @if($ticket->closed_at)
+                        &middot; Closed {{ date('M jS, Y g:ia', strtotime($ticket->closed_at)) }}
+                    @endif
+                </p>
+            </section>
 
-            {{-- Effort & Estimates Card --}}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center fw-bold">
-                    Effort & Estimates
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#estimateModal">
+            {{-- Effort & Estimates --}}
+            <section class="mb-4">
+                <h6 class="text-uppercase text-body-secondary fw-semibold small mb-2 pb-1 border-bottom d-flex justify-content-between align-items-center">
+                    <span>Effort &amp; Estimates</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="modal" data-bs-target="#estimateModal">
                         Estimate
                     </button>
-                </div>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        Story Points: <span class="badge text-bg-primary">{{ $ticket->storypoints }} Points</span>
-                    </li>
-                    @if($ticket->estimates->isNotEmpty())
-                        @foreach($ticket->estimates as $usp)
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ $usp->storypoints }} points
-                                <span class="badge text-bg-secondary"><a href="/users/{{ $usp->user->id }}" class="text-decoration-none text-reset">{{ $usp->user->name }}</a></span>
+                </h6>
+                <dl class="mb-0 small">
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Story Points</dt>
+                        <dd class="mb-0 text-end"><span class="badge text-bg-primary">{{ $ticket->storypoints }} Points</span></dd>
+                    </div>
+                    @foreach($ticket->estimates as $usp)
+                        <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                            <dt class="fw-normal text-body-secondary">
+                                <a href="/users/{{ $usp->user->id }}" class="text-decoration-none text-reset">{{ $usp->user->name }}</a>
+                            </dt>
+                            <dd class="mb-0 text-end">{{ $usp->storypoints }} points</dd>
+                        </div>
+                    @endforeach
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Time Estimate</dt>
+                        <dd class="mb-0 text-end"><span class="badge text-bg-primary">{{ $ticket->estimate }} Hrs</span></dd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                        <dt class="fw-normal text-body-secondary">Time Actual</dt>
+                        <dd class="mb-0 text-end"><span class="badge text-bg-info">{{ $ticket->notes->where('hide', 0)->sum('hours') }} Hrs</span></dd>
+                    </div>
+                </dl>
+            </section>
+
+            {{-- Watchers & Activity --}}
+            @if($ticket->watchers->isNotEmpty() || count($ticketViews) > 0)
+                <section>
+                    <h6 class="text-uppercase text-body-secondary fw-semibold small mb-2 pb-1 border-bottom">
+                        Watchers &amp; Activity
+                    </h6>
+                    <ul class="list-unstyled mb-0 small">
+                        @foreach ($ticket->watchers as $watcher)
+                            <li class="py-1">
+                                <i class="fas fa-eye text-body-secondary me-2"></i>
+                                <a href="/users/{{ $watcher->user->id }}" class="text-decoration-none">{{ $watcher->user->name }}</a>
                             </li>
                         @endforeach
-                    @endif
-                    <li class="list-group-item">
-                        Time Estimate: <span class="badge text-bg-primary">{{ $ticket->estimate }} Hrs</span>
-                    </li>
-                     <li class="list-group-item">
-                         Time Actual: <span class="badge text-bg-info">{{ $ticket->notes->where('hide', 0)->sum('hours') }} Hrs</span>
-                     </li>
-                </ul>
-            </div>
-
-            {{-- Watchers & Activity Card --}}
-            @if($ticket->watchers->isNotEmpty() || count($ticketViews) > 0)
-            <div class="card shadow-sm">
-                <div class="card-header bg-body-secondary fw-bold">
-                    Watchers & Activity
-                </div>
-                <ul class="list-group list-group-flush">
-                    @foreach ($ticket->watchers as $watcher)
-                        <li class="list-group-item">
-                            <i class="fas fa-eye me-2"></i>
-                            <a href="/users/{{ $watcher->user->id }}" class="text-decoration-none">{{ $watcher->user->name }}</a>
-                        </li>
-                    @endforeach
-                    @foreach ($ticketViews as $view)
-                        <li class="list-group-item text-muted small">
-                            <i class="fas fa-user me-2"></i>
-                            <a href="/users/{{ $view->user->id }}" class="text-decoration-none">{{ $view->user->name }}</a> - {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
+                        @foreach ($ticketViews as $view)
+                            <li class="py-1 text-body-secondary">
+                                <i class="fas fa-user me-2"></i>
+                                <a href="/users/{{ $view->user->id }}" class="text-decoration-none">{{ $view->user->name }}</a> &mdash; {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
             @endif
         </div>
     </div>
