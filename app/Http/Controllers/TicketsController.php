@@ -284,7 +284,9 @@ class TicketsController extends Controller
 
         $attachmentService->validateFileType($file);
 
-        $filename = time().'_'.Str::uuid().'.'.$file->getClientOriginalExtension();
+        // Derive the extension from the detected MIME type rather than the
+        // client-supplied filename, so a renamed upload cannot pick its own.
+        $filename = time().'_'.Str::uuid().'.'.$file->extension();
         $path = 'images/'.$folder.'/'.$filename;
 
         $file->move(public_path('images/'.$folder), $filename);
