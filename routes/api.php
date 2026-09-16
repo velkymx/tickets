@@ -1,11 +1,18 @@
 <?php
 
+use App\Http\Controllers\Api\KbController;
 use App\Http\Controllers\Api\TicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware(['api.token', 'throttle:api'])->group(function () {
     Route::get('/health', fn () => response()->json(['status' => 'ok']))->name('api.v1.health');
     Route::get('/lookups', [TicketController::class, 'lookups'])->name('api.v1.lookups');
+
+    Route::get('/kb/lookups', [KbController::class, 'lookups'])->name('api.v1.kb.lookups');
+    Route::get('/kb/articles', [KbController::class, 'index'])->name('api.v1.kb.index');
+    Route::post('/kb/articles', [KbController::class, 'store'])->name('api.v1.kb.store');
+    Route::get('/kb/articles/{idOrSlug}', [KbController::class, 'show'])->name('api.v1.kb.show');
+    Route::match(['put', 'patch'], '/kb/articles/{id}', [KbController::class, 'update'])->name('api.v1.kb.update');
     Route::get('/tickets', [TicketController::class, 'index'])->name('api.v1.tickets.index');
     Route::post('/tickets', [TicketController::class, 'store'])->name('api.v1.tickets.store');
     Route::get('/tickets/{id}', [TicketController::class, 'show'])->name('api.v1.tickets.show');
