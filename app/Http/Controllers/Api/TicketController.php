@@ -349,10 +349,19 @@ class TicketController extends Controller
 
     public function update(Request $request, $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'subject' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|nullable|string',
             'status_id' => 'sometimes|required|integer|exists:statuses,id',
+            'assignee_id' => 'nullable|integer|exists:users,id',
+            'type_id' => 'nullable|integer|exists:types,id',
+            'importance_id' => 'nullable|integer|exists:importances,id',
+            'project_id' => 'nullable|integer|exists:projects,id',
+            'milestone_id' => 'nullable|integer|exists:milestones,id',
+            'due_at' => 'nullable|date',
+            'estimate' => 'nullable|numeric|min:0',
+            'storypoints' => 'nullable|integer|min:0',
+            'actual' => 'nullable|numeric|min:0',
         ]);
 
         $user = $request->attributes->get('api_user');
@@ -372,6 +381,24 @@ class TicketController extends Controller
         if ($request->has('status_id') && $request->status_id != $ticket->status_id) {
             $ticket->status_id = $request->status_id;
             $ticket->closed_at = Status::isClosed($request->status_id) ? now() : null;
+        }
+
+        if (! empty($validated['assignee_id'])) {
+            $ticket->user_id2 = $validated['assignee_id'];
+        }
+
+        foreach (['type_id', 'importance_id', 'project_id', 'milestone_id'] as $fk) {
+            if (! empty($validated[$fk])) {
+                $ticket->{$fk} = $validated[$fk];
+            }
+        }
+
+        // Numeric/date fields use array_key_exists so a caller can clear a due
+        // date (null) or set a zero estimate, which an empty() check would drop.
+        foreach (['due_at', 'estimate', 'storypoints', 'actual'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $ticket->{$field} = $validated[$field];
+            }
         }
 
         $ticket->save();

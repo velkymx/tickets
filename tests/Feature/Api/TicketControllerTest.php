@@ -1244,6 +1244,44 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_changes_assignee_and_planning_fields(): void
+    {
+        Cache::flush();
+        $newAssignee = User::factory()->create();
+        $type = Type::factory()->create();
+        $importance = Importance::factory()->create();
+        $project = Project::factory()->create();
+        $milestone = Milestone::factory()->create();
+
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'assignee_id' => $newAssignee->id,
+            'type_id' => $type->id,
+            'importance_id' => $importance->id,
+            'project_id' => $project->id,
+            'milestone_id' => $milestone->id,
+            'due_at' => '2026-12-01',
+            'estimate' => 8,
+            'storypoints' => 5,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $ticket->refresh();
+        $this->assertEquals($newAssignee->id, $ticket->user_id2);
+        $this->assertEquals($type->id, $ticket->type_id);
+        $this->assertEquals($importance->id, $ticket->importance_id);
+        $this->assertEquals($project->id, $ticket->project_id);
+        $this->assertEquals($milestone->id, $ticket->milestone_id);
+        $this->assertEquals(5, $ticket->storypoints);
+        $this->assertEquals('8.00', $ticket->estimate);
+    }
+
+    #[Test]
     public function update_reopens_ticket_when_status_moves_to_open(): void
     {
         Cache::flush();
