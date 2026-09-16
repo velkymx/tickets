@@ -136,15 +136,21 @@
             const alertDiv = document.getElementById('update-alert');
             const alertMessage = document.getElementById('update-message');
             const closeAlertBtn = document.getElementById('close-alert-btn');
+            let suppressClick = false;
+
+            function showAlert(type, message) {
+                alertMessage.textContent = message;
+                alertDiv.classList.remove('d-none', 'alert-success', 'alert-danger');
+                alertDiv.classList.add('alert-' + type, 'show');
+            }
+
+            function hideAlert() {
+                alertDiv.classList.remove('show');
+                alertDiv.classList.add('d-none');
+            }
 
             // --- 1. AJAX Status Update Function (Vanilla JS Fetch) ---
-            function updateTicketStatus(ticketId, newStatusId) {
-                // Remove any old placeholder before sending
-                const placeholder = document.querySelector('[data-empty-placeholder]');
-                if (placeholder) {
-                    placeholder.remove();
-                }
-
+            function updateTicketStatus(ticketId, newStatusId, onSuccess, onFailure) {
                 const url = `/tickets/api/${ticketId}`;
 
                 fetch(url, {
@@ -152,46 +158,97 @@
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
                     },
-                    body: `status=${newStatusId}`,
+                    body: `status=${encodeURIComponent(newStatusId)}`,
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().catch(() => ({})).then(data => {
+                                throw new Error(data.message || data.error || `HTTP ${response.status}`);
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        alertMessage.textContent = `Ticket #${ticketId} updated.`;
-                        alertDiv.classList.remove('d-none', 'fade');
-                        alertDiv.classList.add('show');
+                        showAlert('success', `Ticket #${ticketId} updated.`);
+                        if (onSuccess) onSuccess(data);
                     })
                     .catch(error => {
-                        alertMessage.textContent = `Error updating ticket ${ticketId}. See console for details.`;
-                        alertDiv.classList.remove('alert-success', 'd-none');
-                        alertDiv.classList.add('alert-danger', 'show');
+                        showAlert('danger', `Error updating ticket ${ticketId}: ${error.message}. Change reverted.`);
                         console.error('API Update Error:', error);
+                        if (onFailure) onFailure(error);
                     });
             }
 
             // --- 2. Initialize SortableJS for each column ---
-            ticketColumns.forEach(column => {
-                const statusId = column.getAttribute('data-status-id');
+            // Suppress link navigation when a drag just ended (click vs drag fight).
+            document.addEventListener('click', function (e) {
+                if (suppressClick) {
+                    const link = e.target.closest('.ticket-column a');
+                    if (link) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }
+            }, true);
 
+            ticketColumns.forEach(column => {
                 new Sortable(column, {
                     group: 'tickets-board', // Name to allow dragging between lists
                     animation: 150,
-                    ghostClass: 'list-group-item-secondary', // Class for the ghost item
-                    
+                    draggable: 'li[data-ticket-id]',
+                    filter: '[data-empty-placeholder]',
+                    preventOnFilter: true,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    delay: 80,
+                    delayOnTouchOnly: true,
+                    scrollSensitivity: 30,
+                    scrollSpeed: 4,
+                    bubbleScroll: true,
+                    emptyInsertThreshold: 20,
+                    fallbackTolerance: 3,
+                    swapThreshold: 0.65,
+                    invertSwap: true,
+
+                    onStart: function () {
+                        suppressClick = true;
+                    },
+
                     // Event fired when an item is dropped into a new list
                     onEnd: function (evt) {
+                        setTimeout(() => { suppressClick = false; }, 250);
+
                         const ticketItem = evt.item;
                         const ticketId = ticketItem.getAttribute('data-ticket-id');
-                        
+
+                        // Placeholder is filtered out; ignore anything without an id.
+                        if (!ticketId) {
+                            return;
+                        }
+
                         // Check if the status actually changed
                         const oldList = evt.from;
                         const newList = evt.to;
+                        const oldIndex = evt.oldIndex;
 
-                        if (oldList !== newList) {
-                            const newStatusId = newList.getAttribute('data-status-id');
-                            updateTicketStatus(ticketId, newStatusId);
+                        // Same-column reorder: nothing to persist.
+                        if (oldList === newList) {
+                            return;
                         }
-                        
+
+                        const revertMove = function () {
+                            const ref = oldList.children[oldIndex] || null;
+                            oldList.insertBefore(ticketItem, ref);
+                            checkEmptyColumn(oldList);
+                            checkEmptyColumn(newList);
+                        };
+
+                        const newStatusId = newList.getAttribute('data-status-id');
+                        updateTicketStatus(ticketId, newStatusId, null, revertMove);
+
                         // Handle the empty state visually
                         checkEmptyColumn(oldList);
                         checkEmptyColumn(newList);
@@ -224,10 +281,7 @@
             
             // --- 4. Alert Close Button Handler (Vanilla JS) ---
             closeAlertBtn.addEventListener('click', function() {
-                alertDiv.classList.remove('show');
-                setTimeout(() => {
-                    alertDiv.classList.add('d-none');
-                }, 150);
+                hideAlert();
             });
             
             // Initial check for placeholders
