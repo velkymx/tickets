@@ -110,6 +110,7 @@ class TicketsController extends Controller
             Arr::except($request->only(Ticket::FILTER_KEYS), ['q']),
             $this->ticketQueryParser->parse($searchQuery),
         );
+        $filters['status_id'] ??= 'none'; // default to active statuses, like home
 
         $tickets = Ticket::query()
             ->filter($filters)
