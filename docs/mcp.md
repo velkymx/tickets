@@ -280,8 +280,8 @@ async with tickets:
 - **Call the lookup tools first.** `get-lookups-tool` resolves ticket
   status/type/importance/project/milestone/user names to IDs;
   `get-kb-lookups-tool` resolves KB category and tag IDs.
-- **`tools/list` is paginated** (15 per page). Follow `nextCursor` to read the
-  rest — all 16 tools span two pages.
+- **`tools/list` returns all 19 tools in one page** (server pagination length is
+  raised to 50 in `config/mcp.php`, so no `nextCursor` follow-up is needed).
 - **Errors** come back as `isError: true` with a plain message. Tickets/notes
   and articles you cannot see or edit return a clean "not found" / "cannot
   edit" message rather than leaking existence.
@@ -296,13 +296,16 @@ async with tickets:
 | `list-tickets-tool` | `status_id`, `unassigned` (bool), `include_pulse` (bool), `per_page` (max 100, default 20). Your assigned tickets, newest first. |
 | `get-ticket-tool` | `ticket_id` (required) — full detail, visible notes with replies, pulse state. |
 | `get-pulse-tool` | `ticket_id` (required) — execution state, blocker, next action, decisions, threads. |
-| `create-ticket-tool` | `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you. |
-| `update-ticket-tool` | `ticket_id` (required); `subject`, `description`, `status_id`. Own/assigned only. |
+| `create-ticket-tool` | `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `assignee_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you by default; pass `assignee_id` for someone else, or `assignee_id: null` to leave it unassigned. |
+| `update-ticket-tool` | `ticket_id` (required); any of `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`. Own/assigned only. |
 | `add-note-tool` | `ticket_id` (required); `body` (slash commands supported); `hours` (max 999); `status_id`; `claim` (bool, self-assign). Command-only bodies (e.g. `/close`) apply without storing a note. |
 | `reply-to-note-tool` | `ticket_id`, `note_id` (top-level only), `body` (all required). |
 | `edit-note-tool` | `ticket_id`, `note_id`, `body` (all required). Own notes only; decisions immutable. |
 | `resolve-note-tool` | `ticket_id`, `note_id`, `resolution_message` (all required). Author or assignee only. |
 | `react-to-note-tool` | `ticket_id`, `note_id`, `emoji` (`thumbsup`, `eyes`). Toggles. |
+| `moderate-note-tool` | `ticket_id`, `note_id`, `action` (`pin`/`unpin`/`hide`/`unhide`). Own/assigned ticket only. |
+| `promote-note-tool` | `ticket_id`, `note_id`, `type` (`decision`/`blocker`/`action`); `assignee` (username, for actions). Message notes only; decisions need 20+ characters, actions need exactly one @assignee. |
+| `watch-ticket-tool` | `ticket_id`, `action` (`watch`/`unwatch`/`mute`/`unmute`). Any viewable ticket, not just your own. |
 
 ### Slash commands (in `add-note-tool` body)
 
