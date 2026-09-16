@@ -64,6 +64,7 @@ class TicketPulseService
             ->whereNull('parent_id')
             ->where('resolved', false)
             ->filter(fn (Note $note) => $note->replies->isNotEmpty() || in_array($note->notetype, ['blocker', 'action'], true))
+            ->sortBy('id')
             ->map(fn (Note $note) => [
                 'id' => $note->id,
                 'notetype' => $note->notetype,
