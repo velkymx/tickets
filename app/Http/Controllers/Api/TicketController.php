@@ -462,6 +462,50 @@ class TicketController extends Controller
         ]);
     }
 
+    public function promoteNote(Request $request, $id, $noteId)
+    {
+        $validated = $request->validate([
+            'type' => 'required|in:decision,blocker,action',
+            'assignee' => 'nullable|string',
+        ]);
+
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
+        $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
+
+        if ($note->notetype !== 'message') {
+            return response()->json(['message' => 'Only message notes can be promoted'], 422);
+        }
+
+        $type = $validated['type'];
+        $body = strip_tags($note->body);
+        $hasMention = (bool) preg_match('/@\[([^\]]+)\]/u', $note->body);
+
+        if ($type === 'decision' && mb_strlen(trim($body)) < 20) {
+            return response()->json(['message' => 'Decision notes must be at least 20 characters'], 422);
+        }
+
+        if ($type === 'action' && ! $hasMention && empty($validated['assignee'])) {
+            return response()->json(['message' => 'Actions require exactly one @assignee'], 422);
+        }
+
+        // Append the assignee mention when supplied and not already present.
+        if ($type === 'action' && ! empty($validated['assignee']) && ! $hasMention) {
+            $assigneeName = ltrim((string) $validated['assignee'], '@');
+            $note->body = rtrim($note->body).' @['.$assigneeName.']';
+        }
+
+        $note->notetype = $type;
+        $note->save();
+
+        return response()->json([
+            'message' => 'Note promoted successfully',
+            'note' => ['id' => $note->id, 'notetype' => $note->notetype],
+        ]);
+    }
+
     public function watch(Request $request, $id)
     {
         $validated = $request->validate([

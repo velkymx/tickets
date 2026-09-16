@@ -1358,6 +1358,50 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function promote_note_promotes_a_message_to_a_decision(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
+            'body' => 'We will ship the new billing flow next sprint.',
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'decision'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.notetype', 'decision');
+    }
+
+    #[Test]
+    public function promote_note_requires_assignee_for_actions(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
+            'body' => 'Someone should look at this.',
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'action'], $this->apiHeaders())
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'action', 'assignee' => 'alan'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.notetype', 'action');
+    }
+
+    #[Test]
+    public function promote_note_rejects_non_message_notes(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'decision',
+            'body' => 'An already-decided decision that is plenty long.',
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'blocker'], $this->apiHeaders())
+            ->assertStatus(422);
+    }
+
+    #[Test]
     public function watch_watches_mutes_and_unwatches_any_ticket(): void
     {
         $other = User::factory()->create();

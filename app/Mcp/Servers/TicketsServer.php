@@ -18,6 +18,7 @@ use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
 use App\Mcp\Tools\UpdateKbArticleTool;
 use App\Mcp\Tools\ModerateNoteTool;
+use App\Mcp\Tools\PromoteNoteTool;
 use App\Mcp\Tools\UpdateTicketTool;
 use App\Mcp\Tools\WatchTicketTool;
 use Laravel\Mcp\Server;
@@ -48,6 +49,7 @@ class TicketsServer extends Server
         ResolveNoteTool::class,
         ReactToNoteTool::class,
         ModerateNoteTool::class,
+        PromoteNoteTool::class,
         WatchTicketTool::class,
         GetKbLookupsTool::class,
         KbSearchTool::class,

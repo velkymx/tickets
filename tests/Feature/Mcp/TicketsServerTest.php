@@ -14,6 +14,7 @@ use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
 use App\Mcp\Tools\ModerateNoteTool;
+use App\Mcp\Tools\PromoteNoteTool;
 use App\Mcp\Tools\UpdateTicketTool;
 use App\Mcp\Tools\WatchTicketTool;
 use App\Models\Importance;
@@ -462,6 +463,63 @@ class TicketsServerTest extends TestCase
         ]);
 
         $response->assertHasErrors(['Ticket not found.']);
+    }
+
+    #[Test]
+    public function promote_note_tool_promotes_a_message_to_a_decision(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'We will ship the new billing flow next sprint.',
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'decision',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'notetype' => 'decision']);
+    }
+
+    #[Test]
+    public function promote_note_tool_requires_assignee_for_actions(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'Someone should look at this.',
+        ]);
+
+        TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'action',
+        ])->assertHasErrors(['Actions require exactly one @assignee.']);
+
+        TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'action', 'assignee' => 'alan',
+        ])->assertOk();
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'notetype' => 'action']);
+    }
+
+    #[Test]
+    public function promote_note_tool_rejects_non_message_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'decision',
+            'body' => 'An already-decided decision that is plenty long.',
+        ]);
+
+        TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'blocker',
+        ])->assertHasErrors(['Only message notes can be promoted.']);
     }
 
     #[Test]
