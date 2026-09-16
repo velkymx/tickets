@@ -77,18 +77,6 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class, 'user_id');
     }
 
-    /** @deprecated Use assignedTickets() */
-    public function tickets(): HasMany
-    {
-        return $this->assignedTickets();
-    }
-
-    /** @deprecated Use createdTickets() */
-    public function owner(): HasMany
-    {
-        return $this->createdTickets();
-    }
-
     public function notes(): HasMany
     {
         return $this->hasMany(Note::class, 'user_id');

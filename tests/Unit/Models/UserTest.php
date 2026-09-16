@@ -68,8 +68,8 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
-        $this->assertTrue($user->tickets->contains($ticket));
-        $this->assertInstanceOf(Collection::class, $user->tickets);
+        $this->assertTrue($user->assignedTickets->contains($ticket));
+        $this->assertInstanceOf(Collection::class, $user->assignedTickets);
     }
 
     #[Test]
@@ -78,8 +78,8 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
-        $this->assertTrue($user->owner->contains($ticket));
-        $this->assertInstanceOf(Collection::class, $user->owner);
+        $this->assertTrue($user->createdTickets->contains($ticket));
+        $this->assertInstanceOf(Collection::class, $user->createdTickets);
     }
 
     #[Test]
