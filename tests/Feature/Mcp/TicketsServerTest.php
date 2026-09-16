@@ -364,6 +364,23 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function reply_tool_returns_the_same_error_for_a_nonexistent_note(): void
+    {
+        // A note id that exists nowhere must not be distinguishable (via a
+        // validation error) from one that belongs to another ticket.
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(ReplyToNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => 999999,
+            'body' => 'Reply via MCP',
+        ]);
+
+        $response->assertHasErrors(['Note not found on this ticket.']);
+    }
+
+    #[Test]
     public function edit_note_tool_updates_own_note(): void
     {
         $user = User::factory()->create();

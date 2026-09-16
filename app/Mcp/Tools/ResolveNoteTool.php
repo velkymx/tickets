@@ -25,7 +25,7 @@ class ResolveNoteTool extends TicketTool
 
         $validated = $request->validate([
             'ticket_id' => 'required|integer|exists:tickets,id',
-            'note_id' => 'required|integer|exists:notes,id',
+            'note_id' => 'required|integer',
             'resolution_message' => 'required|string|max:65535',
         ]);
 
