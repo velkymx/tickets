@@ -22,7 +22,11 @@ trait ResolvesApiUser
             return $user;
         }
 
-        if (app()->runningInConsole() && ($id = env('MCP_USER_ID'))) {
+        // MCP_USER_ID is a per-invocation value: each stdio client is started
+        // with the acting user's id in its environment. Read the live env so a
+        // cached config never freezes it; config('mcp.user_id') is the default
+        // and lets tests override it.
+        if (app()->runningInConsole() && ($id = config('mcp.user_id') ?: env('MCP_USER_ID'))) {
             return User::find($id);
         }
 
