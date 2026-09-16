@@ -17,8 +17,10 @@ use App\Services\MarkdownService;
 use App\Services\MentionService;
 use App\Services\SlashCommandService;
 use App\Services\TicketPulseService;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TicketController extends Controller
 {
@@ -255,85 +257,77 @@ class TicketController extends Controller
             $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
         })->findOrFail($id);
 
-        if ($request->boolean('claim')) {
-            $ticket->user_id2 = $user->id;
-            $ticket->save();
-        }
-
-        if ($request->has('status_id') && $request->status_id != $ticket->status_id) {
-            $ticket->status_id = $request->status_id;
-
-            if (Status::isClosed($request->status_id)) {
-                $ticket->closed_at = now();
-            } else {
-                $ticket->closed_at = null;
+        // All writes run in one transaction so a failed slash-command guard
+        // rolls back the claim/status changes too. Guard failures throw an
+        // HttpResponseException, which unwinds the transaction and renders the
+        // 422 directly.
+        [$createdNote, $warnings] = DB::transaction(function () use ($request, $user, $ticket) {
+            if ($request->boolean('claim')) {
+                $ticket->user_id2 = $user->id;
+                $ticket->save();
             }
 
-            $ticket->save();
-        }
+            if ($request->has('status_id') && $request->status_id != $ticket->status_id) {
+                $ticket->status_id = $request->status_id;
+                $ticket->closed_at = Status::isClosed($request->status_id) ? now() : null;
+                $ticket->save();
+            }
 
-        $createdNote = null;
-        $warnings = [];
+            $createdNote = null;
+            $warnings = [];
 
-        if ($request->has('body') || $request->has('hours')) {
-            $slashService = app(SlashCommandService::class);
-            $markdownService = app(MarkdownService::class);
-            $mentionService = app(MentionService::class);
+            if ($request->has('body') || $request->has('hours')) {
+                $slashService = app(SlashCommandService::class);
+                $markdownService = app(MarkdownService::class);
+                $mentionService = app(MentionService::class);
 
-            // Check for action constraint violations before running commands
-            $bodyText = $request->body ?? '';
-            if (preg_match('/^\/action\b/m', $bodyText)) {
-                $mentions = $this->extractMentionsFromText($bodyText);
-                if (count($mentions) !== 1) {
-                    return response()->json([
-                        'message' => 'Actions require exactly one @assignee',
-                    ], 422);
+                // Check for action constraint violations before running commands
+                $bodyText = $request->body ?? '';
+                if (preg_match('/^\/action\b/m', $bodyText)) {
+                    $mentions = $this->extractMentionsFromText($bodyText);
+                    if (count($mentions) !== 1) {
+                        $this->rejectNote('Actions require exactly one @assignee');
+                    }
+                }
+
+                $commandResult = $slashService->handle($ticket, $bodyText);
+                $warnings = $commandResult['warnings'] ?? [];
+
+                // Check for blocker/action constraints from the slash service
+                $noteType = $commandResult['note_type'] ?? 'message';
+                foreach ($commandResult['changes'] ?? [] as $change) {
+                    if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions')) {
+                        $this->rejectNote($change);
+                    }
+                }
+
+                $bodyText = $commandResult['body'] ?? '';
+                $bodyHtml = $markdownService->parse($bodyText);
+                $totalHours = ($request->hours ?? 0) + ($commandResult['hours'] ?? 0);
+
+                // Skip commands that leave no text behind (e.g. /estimate, /close).
+                if (trim(strip_tags($bodyHtml)) !== '' || $totalHours > 0) {
+                    $createdNote = Note::create([
+                        'user_id' => $user->id,
+                        'ticket_id' => $ticket->id,
+                        'body' => $bodyHtml,
+                        'body_markdown' => $bodyText,
+                        'hours' => $totalHours,
+                        'notetype' => $noteType,
+                        'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
+                    ]);
+
+                    // Create mention records
+                    $mentionUsernames = $mentionService->parseMentions($bodyText);
+                    $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
+                    $mentionService->createMentions($createdNote, $mentionUserIds);
+
+                    $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
                 }
             }
 
-            $commandResult = $slashService->handle($ticket, $bodyText);
-            $warnings = $commandResult['warnings'] ?? [];
-
-            // Check for blocker constraint from slash service
-            $noteType = $commandResult['note_type'] ?? 'message';
-            $changes = $commandResult['changes'] ?? [];
-            foreach ($changes as $change) {
-                if (str_contains($change, 'Resolve blocker before')) {
-                    return response()->json([
-                        'message' => $change,
-                    ], 422);
-                }
-                if (str_contains($change, 'Too many open actions')) {
-                    return response()->json([
-                        'message' => $change,
-                    ], 422);
-                }
-            }
-
-            $bodyText = $commandResult['body'] ?? '';
-            $bodyHtml = $markdownService->parse($bodyText);
-            $totalHours = ($request->hours ?? 0) + ($commandResult['hours'] ?? 0);
-
-            // Skip commands that leave no text behind (e.g. /estimate, /close).
-            if (trim(strip_tags($bodyHtml)) !== '' || $totalHours > 0) {
-                $createdNote = Note::create([
-                    'user_id' => $user->id,
-                    'ticket_id' => $ticket->id,
-                    'body' => $bodyHtml,
-                    'body_markdown' => $bodyText,
-                    'hours' => $totalHours,
-                    'notetype' => $noteType,
-                    'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
-                ]);
-
-                // Create mention records
-                $mentionUsernames = $mentionService->parseMentions($bodyText);
-                $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-                $mentionService->createMentions($createdNote, $mentionUserIds);
-
-                $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
-            }
-        }
+            return [$createdNote, $warnings];
+        });
 
         $ticket->load(['status', 'assignee']);
 
@@ -352,6 +346,15 @@ class TicketController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    /**
+     * Abort a note write with a 422, unwinding the surrounding transaction so
+     * any claim/status changes made alongside it are rolled back.
+     */
+    private function rejectNote(string $message): never
+    {
+        throw new HttpResponseException(response()->json(['message' => $message], 422));
     }
 
     public function update(Request $request, $id)

@@ -417,6 +417,30 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function note_rolls_back_claim_when_a_guard_rejects_the_note(): void
+    {
+        $other = User::factory()->create();
+        // Caller owns the ticket but it is assigned to someone else.
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $other->id,
+        ]);
+
+        // Two mentions trips the "exactly one @assignee" guard after the claim.
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'claim' => true,
+            'body' => '/action @alice @bob do the thing',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
+
+        // The claim must have rolled back — assignee unchanged, no note stored.
+        $ticket->refresh();
+        $this->assertEquals($other->id, $ticket->user_id2);
+        $this->assertDatabaseMissing('notes', ['ticket_id' => $ticket->id]);
+    }
+
+    #[Test]
     public function note_updates_status(): void
     {
         $openStatus = Status::factory()->create(['name' => 'Open']);
