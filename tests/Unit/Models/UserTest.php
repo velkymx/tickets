@@ -83,6 +83,18 @@ class UserTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_mass_assign_kb_role(): void
+    {
+        $user = User::factory()->create(['kb_role' => null]);
+
+        $user->update(['name' => 'Updated Name', 'kb_role' => 'admin']);
+
+        $fresh = $user->fresh();
+        $this->assertEquals('Updated Name', $fresh->name);
+        $this->assertNull($fresh->kb_role);
+    }
+
+    #[Test]
     public function it_generates_api_token(): void
     {
         $user = User::factory()->create();
