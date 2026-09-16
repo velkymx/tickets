@@ -1324,6 +1324,45 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function watch_watches_mutes_and_unwatches_any_ticket(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $other->id,
+            'user_id2' => $other->id,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('watching', true);
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => false,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", ['action' => 'mute'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('muted', true);
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => true,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", ['action' => 'unwatch'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('watching', false);
+        $this->assertDatabaseMissing('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id,
+        ]);
+    }
+
+    #[Test]
+    public function watch_requires_authentication(): void
+    {
+        $ticket = Ticket::factory()->create();
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [])->assertStatus(401);
+    }
+
+    #[Test]
     public function update_reopens_ticket_when_status_moves_to_open(): void
     {
         Cache::flush();

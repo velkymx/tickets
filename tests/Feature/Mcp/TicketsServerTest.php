@@ -14,6 +14,7 @@ use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
 use App\Mcp\Tools\UpdateTicketTool;
+use App\Mcp\Tools\WatchTicketTool;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -421,6 +422,39 @@ class TicketsServerTest extends TestCase
             'storypoints' => 5,
         ]);
         $this->assertEquals('8.00', $ticket->fresh()->estimate);
+    }
+
+    #[Test]
+    public function watch_tool_watches_unwatches_and_mutes_any_ticket(): void
+    {
+        $user = User::factory()->create();
+        // A ticket the user neither owns nor is assigned to.
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $other->id,
+            'user_id2' => $other->id,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(WatchTicketTool::class, [
+            'ticket_id' => $ticket->id,
+        ])->assertOk();
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $user->id, 'muted' => false,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(WatchTicketTool::class, [
+            'ticket_id' => $ticket->id, 'action' => 'mute',
+        ])->assertOk();
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $user->id, 'muted' => true,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(WatchTicketTool::class, [
+            'ticket_id' => $ticket->id, 'action' => 'unwatch',
+        ])->assertOk();
+        $this->assertDatabaseMissing('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $user->id,
+        ]);
     }
 
     #[Test]

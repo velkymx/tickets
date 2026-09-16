@@ -10,6 +10,7 @@ use App\Models\NoteReaction;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
+use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
 use App\Services\MarkdownService;
@@ -419,6 +420,52 @@ class TicketController extends Controller
                 'status' => $ticket->status->name ?? null,
                 'assignee' => $ticket->assignee->name ?? null,
             ],
+        ]);
+    }
+
+    public function watch(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'action' => 'nullable|in:watch,unwatch,mute,unmute',
+        ]);
+
+        // Any ticket is viewable, so watching is not limited to owned tickets.
+        $ticket = Ticket::findOrFail($id);
+        $user = $request->attributes->get('api_user');
+        $action = $validated['action'] ?? 'watch';
+
+        $watcher = TicketUserWatcher::where('ticket_id', $ticket->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        switch ($action) {
+            case 'unwatch':
+                $watcher?->delete();
+                $watching = false;
+                break;
+
+            case 'mute':
+            case 'unmute':
+                $watcher ??= new TicketUserWatcher(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+                $watcher->muted = $action === 'mute';
+                $watcher->save();
+                $watching = true;
+                break;
+
+            default:
+                if (! $watcher) {
+                    TicketUserWatcher::create([
+                        'ticket_id' => $ticket->id, 'user_id' => $user->id, 'muted' => false,
+                    ]);
+                }
+                $watching = true;
+        }
+
+        return response()->json([
+            'message' => 'Watch state updated',
+            'ticket_id' => $ticket->id,
+            'watching' => $watching,
+            'muted' => $action === 'mute',
         ]);
     }
 
