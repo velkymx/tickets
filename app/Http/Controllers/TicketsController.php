@@ -380,7 +380,11 @@ class TicketsController extends Controller
         ]);
 
         if ((int) $request['status'] !== (int) $ticket->status_id) {
-            $ticket->update(['status_id' => $request['status']]);
+            $newStatusId = (int) $request['status'];
+            $ticket->update([
+                'status_id' => $newStatusId,
+                'closed_at' => Status::isClosed($newStatusId) ? now() : null,
+            ]);
 
             $this->ticketService->notate($ticket->id, '', ['Status Changed to '.$ticket->status->name]);
 
