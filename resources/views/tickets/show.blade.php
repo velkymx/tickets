@@ -320,8 +320,13 @@
     @include('partials.composer-help')
 
     {{-- Modal for Story Points (Replaced old B3 modal structure) --}}
+    <style>
+        .estimate-card { transition: transform .12s ease, box-shadow .12s ease; }
+        .estimate-card:hover { transform: translateY(-3px); }
+        .btn-check:checked + .estimate-card { transform: translateY(-4px); box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15); }
+    </style>
     <div class="modal fade" id="estimateModal" tabindex="-1" aria-labelledby="estimateModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <form action="/tickets/estimate/{{ $ticket->id }}" method="post">
                     @csrf
@@ -332,24 +337,34 @@
                     <div class="modal-body">
                         @php
                             $estimates = [
-                              0 => "No Effort",
-                              1 => "XS (Extra Small), Dachshund, Kid Hot Chocolate, One",
-                              2 => "Somewhere between XS and S",
-                              3 => "S (Small), Terrier, Tall Late, Cookie",  
-                              5 => "M (Medium), Labrador, Grande Mocha, Cheeseburger",
-                              8 => "L (Large), Saint Bernard, Vente Iced Late, Cheeseburge with Fries and Soda",
-                              13 => "Somewhere between L and XL",
-                              21 => "XL (Extra Large), Great Dane, Trenta Mocha Frap, 5 Course Meal"
+                              0  => ['tag' => '0',    'name' => 'No Effort',      'fun' => '😴 Nothing to do'],
+                              1  => ['tag' => 'XS',   'name' => 'Extra Small',    'fun' => '🐕 Dachshund · kid hot chocolate'],
+                              2  => ['tag' => 'XS–S', 'name' => 'Between XS & S',  'fun' => '📏 A touch bigger than XS'],
+                              3  => ['tag' => 'S',    'name' => 'Small',          'fun' => '🐕 Terrier · tall latte · cookie'],
+                              5  => ['tag' => 'M',    'name' => 'Medium',         'fun' => '🐕 Labrador · grande mocha · cheeseburger'],
+                              8  => ['tag' => 'L',    'name' => 'Large',          'fun' => '🐕 Saint Bernard · venti iced latte · burger, fries & soda'],
+                              13 => ['tag' => 'L–XL', 'name' => 'Between L & XL',  'fun' => '📏 Bigger than a Large'],
+                              21 => ['tag' => 'XL',   'name' => 'Extra Large',    'fun' => '🐕 Great Dane · trenta frap · 5-course meal'],
                             ];
                         @endphp
-                        @foreach($estimates as $est => $label)
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="storypoints" id="storypoints_{{ $est }}" value="{{ $est }}" @if($est == 0) checked @endif>
-                                <label class="form-check-label" for="storypoints_{{ $est }}">
-                                    <strong>{{ $est }}</strong> - {{ $label }}
-                                </label>
-                            </div>
-                        @endforeach
+
+                        <p class="text-body-secondary small mb-3">Pick a card — how big is this one?</p>
+
+                        <div class="row row-cols-2 row-cols-sm-4 g-2">
+                            @foreach($estimates as $est => $meta)
+                                <div class="col">
+                                    <input type="radio" class="btn-check" name="storypoints"
+                                           id="storypoints_{{ $est }}" value="{{ $est }}" autocomplete="off"
+                                           @checked($est == $ticket->storypoints)>
+                                    <label class="btn btn-outline-primary w-100 h-100 estimate-card d-flex flex-column align-items-center justify-content-center text-center py-3"
+                                           for="storypoints_{{ $est }}" title="{{ $meta['fun'] }}">
+                                        <span class="display-6 fw-bold lh-1">{{ $est }}</span>
+                                        <span class="badge rounded-pill text-bg-light mt-2">{{ $meta['tag'] }}</span>
+                                        <span class="small text-body-secondary mt-1">{{ $meta['name'] }}</span>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
