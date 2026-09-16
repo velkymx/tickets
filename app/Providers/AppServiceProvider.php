@@ -10,7 +10,6 @@ use App\Models\Project;
 use App\Models\Release;
 use App\Models\Ticket;
 use App\Observers\NoteObserver;
-use App\Observers\TicketObserver;
 use App\Policies\KbArticlePolicy;
 use App\Policies\MilestonePolicy;
 use App\Policies\ProjectPolicy;
@@ -52,7 +51,6 @@ class AppServiceProvider extends ServiceProvider
         $this->registerSortableMacro();
 
         Note::observe(NoteObserver::class);
-        Ticket::observe(TicketObserver::class);
 
         Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(Milestone::class, MilestonePolicy::class);

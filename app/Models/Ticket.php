@@ -3,13 +3,16 @@
 namespace App\Models;
 
 use App\Notifications\WatcherNotification;
+use App\Observers\TicketObserver;
 use App\Services\NotificationBatchService;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(TicketObserver::class)]
 class Ticket extends Model
 {
     use HasFactory;
@@ -64,46 +67,6 @@ class Ticket extends Model
         return $query;
     }
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::updating(function ($ticket) {
-            if (! $ticket->isDirty('status_id')) {
-                return;
-            }
-
-            $wasClosed = Status::isClosed((int) $ticket->getOriginal('status_id'));
-            $isClosed = Status::isClosed((int) $ticket->status_id);
-
-            // Auto-manage closed_at on status transitions, unless explicitly set.
-            if ($isClosed && ! $wasClosed && ! $ticket->isDirty('closed_at')) {
-                $ticket->closed_at = now();
-            }
-
-            if ($wasClosed && ! $isClosed && ! $ticket->isDirty('closed_at')) {
-                $ticket->closed_at = null;
-            }
-        });
-
-        static::updated(function ($ticket) {
-            if ($ticket->wasChanged('status_id')) {
-                $wasClosed = Status::isClosed((int) $ticket->getOriginal('status_id'));
-                $isClosed = Status::isClosed((int) $ticket->status_id);
-
-                if ($wasClosed && ! $isClosed) {
-                    $ticket->recordReopenAuditNote();
-                }
-
-                app(\App\Services\TicketPulseService::class)->invalidatePulse($ticket->id);
-            }
-
-            if ($ticket->wasChanged(['subject', 'description', 'status_id', 'user_id2', 'milestone_id', 'project_id', 'importance_id', 'due_at', 'closed_at', 'estimate', 'storypoints', 'actual'])) {
-                $ticket->notifyWatchers('Ticket', auth()->id() ?? 0);
-            }
-        });
-    }
-
     /**
      * Leave a small changelog audit note when a closed ticket is reopened.
      */
@@ -129,7 +92,7 @@ class Ticket extends Model
         ]);
     }
 
-    private function notifyWatchers(string $type, ?int $exceptUserId = null): void
+    public function notifyWatchers(string $type, ?int $exceptUserId = null): void
     {
         $url = url("/tickets/{$this->id}");
         $message = "The {$type} '{$this->subject}' has been updated.";
