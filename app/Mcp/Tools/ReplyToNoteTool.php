@@ -26,7 +26,7 @@ class ReplyToNoteTool extends TicketTool
 
         $validated = $request->validate([
             'ticket_id' => 'required|integer|exists:tickets,id',
-            'note_id' => 'required|integer|exists:notes,id',
+            'note_id' => 'required|integer',
             'body' => 'required|string|max:65535',
         ]);
 

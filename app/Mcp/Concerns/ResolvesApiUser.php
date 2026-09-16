@@ -22,7 +22,10 @@ trait ResolvesApiUser
             return $user;
         }
 
-        if (app()->runningInConsole() && ($id = env('MCP_USER_ID'))) {
+        // Local (stdio) servers have no HTTP auth layer, so resolve the acting
+        // user from config (config/mcp.php reads MCP_USER_ID). Read via config()
+        // rather than env() directly so it works under config:cache.
+        if (app()->runningInConsole() && ($id = config('mcp.user_id'))) {
             return User::find($id);
         }
 
