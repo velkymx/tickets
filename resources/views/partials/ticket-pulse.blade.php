@@ -14,10 +14,10 @@
 
 <aside
     id="ticket-pulse-panel"
-    class="collapse d-lg-block card shadow-sm mb-4"
+    class="collapse d-lg-block mb-4"
     style="position: sticky; top: 1rem;"
 >
-    <div class="card-header fw-bold bg-body-secondary d-flex justify-content-between align-items-center">
+    <h6 class="text-uppercase text-body-secondary fw-semibold small mb-2 pb-1 border-bottom d-flex justify-content-between align-items-center">
         Ticket Pulse
         <span
             class="badge"
@@ -29,10 +29,10 @@
             }"
             x-text="pulse.execution_state"
         ></span>
-    </div>
-    <ul class="list-group list-group-flush">
+    </h6>
+    <ul class="list-unstyled mb-0 small">
         <template x-if="pulse.latest_blocker">
-            <li class="list-group-item">
+            <li class="py-2 border-top">
                 <strong>Blocker:</strong>
                 <span class="text-danger" x-html="pulse.latest_blocker.body"></span>
                 <div class="d-flex justify-content-between align-items-center mt-1">
@@ -57,7 +57,7 @@
         </template>
 
         <template x-if="pulse.next_action.id">
-            <li class="list-group-item">
+            <li class="py-2 border-top">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <strong>Next Action:</strong>
@@ -85,7 +85,7 @@
             </li>
         </template>
 
-        <li class="list-group-item">
+        <li class="py-2 border-top">
             <strong>Latest Decision:</strong>
             <template x-if="pulse.latest_decision">
                 <span>
@@ -103,7 +103,7 @@
             </template>
         </li>
 
-        <li class="list-group-item">
+        <li class="py-2 border-top">
             <strong>Open Threads:</strong>
             <template x-if="pulse.open_threads.length">
                 <div class="mt-1 d-flex flex-column gap-1">
