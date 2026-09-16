@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Exceptions\ToolException;
 use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
@@ -11,6 +12,7 @@ use App\Services\MentionService;
 use App\Services\SlashCommandService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type as JsonType;
+use Illuminate\Support\Facades\DB;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -40,63 +42,75 @@ class AddNoteTool extends TicketTool
             return $this->ticketNotFound();
         }
 
-        if (! empty($validated['claim'])) {
-            $ticket->user_id2 = $user->id;
-            $ticket->save();
-        }
-
-        if (! empty($validated['status_id']) && $validated['status_id'] != $ticket->status_id) {
-            $ticket->status_id = $validated['status_id'];
-            $ticket->closed_at = Status::isClosed($validated['status_id']) ? now() : null;
-            $ticket->save();
-        }
-
-        $createdNote = null;
-        $warnings = [];
         $bodyText = $validated['body'] ?? '';
 
-        if (array_key_exists('body', $validated) || array_key_exists('hours', $validated)) {
-            if (preg_match('/^\/action\b/m', $bodyText)) {
-                preg_match_all('/@([\w.\-]+)/', $bodyText, $matches);
-                $mentions = array_values(array_unique($matches[1] ?? []));
-                if (count($mentions) !== 1) {
-                    return Response::error('Actions require exactly one @assignee.');
+        // All writes run in one transaction so a failed slash-command guard
+        // rolls back the claim/status changes too. Business-rule failures are
+        // thrown as ToolException and caught below, never escaping the handler.
+        try {
+            [$createdNote, $warnings] = DB::transaction(function () use ($user, $ticket, $validated, $bodyText) {
+                $createdNote = null;
+                $warnings = [];
+
+                if (! empty($validated['claim'])) {
+                    $ticket->user_id2 = $user->id;
+                    $ticket->save();
                 }
-            }
 
-            $slashService = app(SlashCommandService::class);
-            $markdownService = app(MarkdownService::class);
-            $mentionService = app(MentionService::class);
-
-            $commandResult = $slashService->handle($ticket, $bodyText);
-            $warnings = $commandResult['warnings'] ?? [];
-
-            foreach ($commandResult['changes'] ?? [] as $change) {
-                if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions')) {
-                    return Response::error($change);
+                if (! empty($validated['status_id']) && $validated['status_id'] != $ticket->status_id) {
+                    $ticket->status_id = $validated['status_id'];
+                    $ticket->closed_at = Status::isClosed($validated['status_id']) ? now() : null;
+                    $ticket->save();
                 }
-            }
 
-            $parsedBody = $commandResult['body'] ?? '';
-            $parsedHtml = $markdownService->parse($parsedBody);
-            $totalHours = ($validated['hours'] ?? 0) + ($commandResult['hours'] ?? 0);
+                if (array_key_exists('body', $validated) || array_key_exists('hours', $validated)) {
+                    if (preg_match('/^\/action\b/m', $bodyText)) {
+                        preg_match_all('/@([\w.\-]+)/', $bodyText, $matches);
+                        $mentions = array_values(array_unique($matches[1] ?? []));
+                        if (count($mentions) !== 1) {
+                            throw new ToolException('Actions require exactly one @assignee.');
+                        }
+                    }
 
-            // Skip commands that leave no text behind (e.g. /estimate, /close).
-            if (trim(strip_tags($parsedHtml)) !== '' || $totalHours > 0) {
-                $createdNote = Note::create([
-                    'user_id' => $user->id,
-                    'ticket_id' => $ticket->id,
-                    'body' => $parsedHtml,
-                    'body_markdown' => $parsedBody,
-                    'hours' => $totalHours,
-                    'notetype' => $commandResult['note_type'] ?? 'message',
-                    'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
-                ]);
+                    $slashService = app(SlashCommandService::class);
+                    $markdownService = app(MarkdownService::class);
+                    $mentionService = app(MentionService::class);
 
-                $mentionUsernames = $mentionService->parseMentions($parsedBody);
-                $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-                $mentionService->createMentions($createdNote, $mentionUserIds);
-            }
+                    $commandResult = $slashService->handle($ticket, $bodyText);
+                    $warnings = $commandResult['warnings'] ?? [];
+
+                    foreach ($commandResult['changes'] ?? [] as $change) {
+                        if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions')) {
+                            throw new ToolException($change);
+                        }
+                    }
+
+                    $parsedBody = $commandResult['body'] ?? '';
+                    $parsedHtml = $markdownService->parse($parsedBody);
+                    $totalHours = ($validated['hours'] ?? 0) + ($commandResult['hours'] ?? 0);
+
+                    // Skip commands that leave no text behind (e.g. /estimate, /close).
+                    if (trim(strip_tags($parsedHtml)) !== '' || $totalHours > 0) {
+                        $createdNote = Note::create([
+                            'user_id' => $user->id,
+                            'ticket_id' => $ticket->id,
+                            'body' => $parsedHtml,
+                            'body_markdown' => $parsedBody,
+                            'hours' => $totalHours,
+                            'notetype' => $commandResult['note_type'] ?? 'message',
+                            'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
+                        ]);
+
+                        $mentionUsernames = $mentionService->parseMentions($parsedBody);
+                        $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
+                        $mentionService->createMentions($createdNote, $mentionUserIds);
+                    }
+                }
+
+                return [$createdNote, $warnings];
+            });
+        } catch (ToolException $e) {
+            return Response::error($e->getMessage());
         }
 
         $ticket->load(['status', 'assignee']);

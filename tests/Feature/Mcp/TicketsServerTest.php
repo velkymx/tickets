@@ -239,6 +239,42 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function add_note_tool_rolls_back_status_change_when_slash_guard_fails(): void
+    {
+        $user = User::factory()->create();
+        [$startStatus, $targetStatus] = Status::orderBy('id')->take(2)->get();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+            'status_id' => $startStatus->id,
+        ]);
+        // Active blocker makes /close fail its guard.
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'status_id' => $targetStatus->id,
+            'body' => '/close',
+        ]);
+
+        $response->assertHasErrors(['Resolve blocker']);
+        // The status_id write must have rolled back with the failed guard.
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'status_id' => $startStatus->id,
+        ]);
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'body_markdown' => '/close',
+        ]);
+    }
+
+    #[Test]
     public function resolve_tool_rejects_already_resolved_notes(): void
     {
         $user = User::factory()->create();
