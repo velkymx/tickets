@@ -271,7 +271,7 @@ class TicketsController extends Controller
 
         $insert = new Ticket($data);
         $insert->user_id = Auth::id();
-        $insert->user_id2 = Auth::id();
+        $insert->user_id2 = $data['user_id2'] ?? Auth::id();
         $insert->save();
 
         return redirect('tickets/'.$insert->id)->with('status', 'Task was created successfully!');

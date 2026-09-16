@@ -21,6 +21,7 @@ class StoreTicketRequest extends FormRequest
             'importance_id' => 'nullable|integer|exists:importances,id',
             'milestone_id' => 'nullable|integer|exists:milestones,id',
             'project_id' => 'nullable|integer|exists:projects,id',
+            'user_id2' => 'nullable|integer|exists:users,id',
             'due_at' => 'nullable|date',
             'estimate' => 'nullable|numeric|min:0|max:99999',
             'storypoints' => 'nullable|integer|min:0|max:99999',

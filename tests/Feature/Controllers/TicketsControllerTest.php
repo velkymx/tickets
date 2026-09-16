@@ -1469,6 +1469,28 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function store_assigns_to_the_chosen_user(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create();
+
+        $this->actingAs($user)->post('/tickets', [
+            'subject' => 'Assigned Ticket',
+            'description' => 'Test description',
+            'type_id' => Type::factory()->create()->id,
+            'status_id' => Status::factory()->create()->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+            'user_id2' => $assignee->id,
+        ]);
+
+        $ticket = Ticket::where('subject', 'Assigned Ticket')->first();
+        $this->assertEquals($user->id, $ticket->user_id);
+        $this->assertEquals($assignee->id, $ticket->user_id2);
+    }
+
+    #[Test]
     public function store_redirects_to_new_ticket(): void
     {
         $user = User::factory()->create();
