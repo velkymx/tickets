@@ -343,6 +343,42 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function update_ticket_tool_updates_planning_fields(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $type = Type::factory()->create();
+        $importance = Importance::factory()->create();
+        $project = Project::factory()->create();
+        $milestone = Milestone::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateTicketTool::class, [
+            'ticket_id' => $ticket->id,
+            'type_id' => $type->id,
+            'importance_id' => $importance->id,
+            'project_id' => $project->id,
+            'milestone_id' => $milestone->id,
+            'due_at' => '2026-12-01',
+            'estimate' => 8,
+            'storypoints' => 5,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'type_id' => $type->id,
+            'importance_id' => $importance->id,
+            'project_id' => $project->id,
+            'milestone_id' => $milestone->id,
+            'storypoints' => 5,
+        ]);
+        $this->assertEquals('8.00', $ticket->fresh()->estimate);
+    }
+
+    #[Test]
     public function reply_tool_replies_to_top_level_note(): void
     {
         $user = User::factory()->create();
