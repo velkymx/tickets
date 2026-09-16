@@ -22,6 +22,7 @@ Route::prefix('v1')->middleware(['api.token', 'throttle:api'])->group(function (
     Route::post('/tickets/{id}/notes/{noteId}/reply', [TicketController::class, 'reply'])->name('api.v1.tickets.notes.reply');
     Route::put('/tickets/{id}/notes/{noteId}', [TicketController::class, 'editNote'])->name('api.v1.tickets.notes.edit');
     Route::post('/tickets/{id}/notes/{noteId}/resolve', [TicketController::class, 'resolveNote'])->name('api.v1.tickets.notes.resolve');
+    Route::post('/tickets/{id}/notes/{noteId}/moderate', [TicketController::class, 'moderateNote'])->name('api.v1.tickets.notes.moderate');
     Route::post('/tickets/{id}/watch', [TicketController::class, 'watch'])->name('api.v1.tickets.watch');
     Route::get('/tickets/{id}/pulse', [TicketController::class, 'pulse'])->name('api.v1.tickets.pulse');
 });

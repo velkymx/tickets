@@ -1324,6 +1324,40 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function moderate_note_pins_and_hides(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'pin'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.pinned', true);
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'pinned' => true]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'hide'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.hidden', true);
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'hide' => true]);
+    }
+
+    #[Test]
+    public function moderate_note_rejects_a_foreign_ticket(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $other->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'pin'], $this->apiHeaders())
+            ->assertStatus(404);
+    }
+
+    #[Test]
     public function watch_watches_mutes_and_unwatches_any_ticket(): void
     {
         $other = User::factory()->create();

@@ -423,6 +423,45 @@ class TicketController extends Controller
         ]);
     }
 
+    public function moderateNote(Request $request, $id, $noteId)
+    {
+        $validated = $request->validate([
+            'action' => 'required|in:pin,unpin,hide,unhide',
+        ]);
+
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
+        })->firstOrFail();
+        $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
+
+        switch ($validated['action']) {
+            case 'pin':
+                $note->pinned = true;
+                break;
+            case 'unpin':
+                $note->pinned = false;
+                break;
+            case 'hide':
+                $note->hide = true;
+                break;
+            case 'unhide':
+                $note->hide = false;
+                break;
+        }
+
+        $note->save();
+
+        return response()->json([
+            'message' => 'Note updated successfully',
+            'note' => [
+                'id' => $note->id,
+                'pinned' => (bool) $note->pinned,
+                'hidden' => (bool) $note->hide,
+            ],
+        ]);
+    }
+
     public function watch(Request $request, $id)
     {
         $validated = $request->validate([

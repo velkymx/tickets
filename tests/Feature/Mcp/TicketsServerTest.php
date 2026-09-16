@@ -13,6 +13,7 @@ use App\Mcp\Tools\ListTicketsTool;
 use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
+use App\Mcp\Tools\ModerateNoteTool;
 use App\Mcp\Tools\UpdateTicketTool;
 use App\Mcp\Tools\WatchTicketTool;
 use App\Models\Importance;
@@ -422,6 +423,45 @@ class TicketsServerTest extends TestCase
             'storypoints' => 5,
         ]);
         $this->assertEquals('8.00', $ticket->fresh()->estimate);
+    }
+
+    #[Test]
+    public function moderate_note_tool_pins_and_hides(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(ModerateNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'action' => 'pin',
+        ])->assertOk();
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'pinned' => true]);
+
+        TicketsServer::actingAs($user)->tool(ModerateNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'action' => 'hide',
+        ])->assertOk();
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'hide' => true]);
+    }
+
+    #[Test]
+    public function moderate_note_tool_rejects_a_foreign_ticket(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $other->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(ModerateNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'action' => 'pin',
+        ]);
+
+        $response->assertHasErrors(['Ticket not found.']);
     }
 
     #[Test]
