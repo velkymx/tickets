@@ -10,7 +10,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 
-#[Description('Update a ticket you own or are assigned to: subject, description, status, assignee, type, importance, project, milestone, due date, estimate, story points, or actual hours. Closing via a closed status sets closed_at.')]
+#[Description('Update a ticket you own or are assigned to: subject, description, status, assignee, type, importance, project, milestone, due date, estimate, or story points. Closing via a closed status sets closed_at.')]
 class UpdateTicketTool extends TicketTool
 {
     public function handle(Request $request): Response
