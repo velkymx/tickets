@@ -4,7 +4,7 @@ ARG NODE_VERSION=24
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev \
+    git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev libicu-dev \
     libfreetype6-dev libjpeg62-turbo-dev libwebp-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
