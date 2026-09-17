@@ -198,10 +198,15 @@ The fastest way to try Tickets is Docker.
 ```bash
 git clone https://github.com/velkymx/tickets.git
 cd tickets
+cp .env.example .env
+# In .env set DB_USERNAME (non-root), DB_PASSWORD, and APP_KEY.
+# Generate a key without a local PHP install:
+docker compose run --rm --no-deps --entrypoint php app artisan key:generate --show
 docker compose up -d --build
 ```
 
-Then open `http://localhost` in your browser.
+Then open `http://localhost` in your browser (the app migrates and seeds itself on
+first boot). Log in as `administrator` / `password123` and change the password.
 
 For complete installation, configuration, Docker deployment, and production hosting instructions, see the [Installation Guide](docs/installation.md).
 

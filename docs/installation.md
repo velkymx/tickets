@@ -113,33 +113,54 @@ All tests should pass on a clean install.
 
 ## Docker Compose
 
-The Docker setup includes PHP, Nginx, MariaDB, and a queue worker. No local PHP or Node required.
+The Docker setup includes PHP, Nginx, MariaDB, Redis, and a queue worker. No local
+PHP or Node required — the image builds the Composer dependencies and front-end
+assets, and the app container runs migrations, seeding, and cache warming
+automatically on first boot.
 
-### 1. Copy environment file
+### 1. Create your environment file
 
 ```bash
 cp .env.example .env
 ```
 
-Leave all `DB_*` values as-is — Docker sets them automatically.
+In `.env`, set these before starting:
 
-### 2. Start the stack
+- `DB_USERNAME` — any **non-root** name, e.g. `tickets` (MariaDB refuses to create a
+  user called `root`).
+- `DB_PASSWORD` — a password of your choice. The database container and the app
+  both read it from here, so they always match.
+
+Leave `DB_HOST`, `DB_PORT`, `REDIS_HOST`, and the cache/session/queue drivers alone
+— Compose wires them to the Docker services automatically.
+
+### 2. Generate an application key
 
 ```bash
-docker compose up -d
+docker compose run --rm --no-deps --entrypoint php app artisan key:generate --show
 ```
 
-### 3. Run setup commands
+Copy the printed `base64:...` value into `APP_KEY=` in `.env`. (The app reads its
+config from `.env`, so the key must live there before you start the stack.)
+
+### 3. Build and start
 
 ```bash
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate
-docker compose exec app php artisan storage:link
-docker compose exec app php artisan db:seed --class=DefaultsSeeder
-docker compose exec app php artisan db:seed --class=UserSeeder
+docker compose up -d --build
 ```
 
-Open `http://localhost:8000`. Log in as `administrator` / `password123` and change the password immediately.
+On first boot the app container migrates the database, seeds the defaults, and
+caches config/routes/views. Follow along with `docker compose logs -f app`.
+
+### 4. Open the app
+
+Visit `http://localhost`. If port 80 is already in use, set `APP_PORT=8080` in
+`.env` and use `http://localhost:8080`. Log in as `administrator` / `password123`
+and change the password immediately.
+
+> **Rebuilding:** the containers serve the code baked into the image via a shared
+> volume, so after changing code and rebuilding you must recreate that volume:
+> `docker compose down -v && docker compose up -d --build`.
 
 ---
 
