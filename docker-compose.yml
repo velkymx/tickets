@@ -6,12 +6,14 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DB_HOST: "${DB_HOST:-db}"
-      DB_PORT: "${DB_PORT:-3306}"
-      REDIS_HOST: "${REDIS_HOST:-redis}"
-      QUEUE_CONNECTION: "${QUEUE_CONNECTION:-redis}"
-      SESSION_DRIVER: "${SESSION_DRIVER:-redis}"
-      CACHE_STORE: "${CACHE_STORE:-redis}"
+      # In-network service names — set literally so a developer's local .env
+      # (DB_HOST=127.0.0.1, QUEUE=sync, …) can't leak in via interpolation.
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      CACHE_STORE: redis
     volumes:
       # Serve the code that the image built (vendor + public/build), not the host.
       # app-code is seeded from the image on first up; run `docker compose down -v`
@@ -79,9 +81,11 @@ services:
     env_file: .env
     environment:
       CONTAINER_ROLE: queue
-      DB_HOST: "${DB_HOST:-db}"
-      DB_PORT: "${DB_PORT:-3306}"
-      REDIS_HOST: "${REDIS_HOST:-redis}"
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
     volumes:
       - app-code:/var/www/html
       - storage:/var/www/html/storage
