@@ -71,9 +71,13 @@
                         <td><span class="badge text-bg-secondary">{{ $tick->type->name }}</span></td>
                     @endif
                     <td>
-                        <span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}">
-                            <i class="{{ $tick->importance->icon }}" aria-hidden="true"></i>
-                        </span>
+                        @if($tick->importance)
+                            <span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}">
+                                <i class="{{ $tick->importance->icon }}" aria-hidden="true"></i>
+                            </span>
+                        @else
+                            <span class="text-muted" title="Priority: none">—</span>
+                        @endif
                     </td>
                     <td><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                     <td>{{ $tick->project->name }}</td>
