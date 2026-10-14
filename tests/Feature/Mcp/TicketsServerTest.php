@@ -4,17 +4,21 @@ namespace Tests\Feature\Mcp;
 
 use App\Mcp\Servers\TicketsServer;
 use App\Mcp\Tools\AddNoteTool;
+use App\Mcp\Tools\CreateMilestoneTool;
 use App\Mcp\Tools\CreateTicketTool;
 use App\Mcp\Tools\EditNoteTool;
 use App\Mcp\Tools\GetLookupsTool;
+use App\Mcp\Tools\GetMilestoneTool;
 use App\Mcp\Tools\GetPulseTool;
 use App\Mcp\Tools\GetTicketTool;
+use App\Mcp\Tools\ListMilestonesTool;
 use App\Mcp\Tools\ListTicketsTool;
+use App\Mcp\Tools\ModerateNoteTool;
+use App\Mcp\Tools\PromoteNoteTool;
 use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
-use App\Mcp\Tools\ModerateNoteTool;
-use App\Mcp\Tools\PromoteNoteTool;
+use App\Mcp\Tools\UpdateMilestoneTool;
 use App\Mcp\Tools\UpdateTicketTool;
 use App\Mcp\Tools\WatchTicketTool;
 use App\Models\Importance;
@@ -26,6 +30,7 @@ use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Mcp\Server\Transport\StdioTransport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -210,7 +215,7 @@ class TicketsServerTest extends TestCase
     #[Test]
     public function server_acknowledges_initialized_lifecycle_method(): void
     {
-        $server = new TicketsServer(new \Laravel\Mcp\Server\Transport\StdioTransport);
+        $server = new TicketsServer(new StdioTransport);
 
         $boot = new \ReflectionMethod($server, 'boot');
         $boot->setAccessible(true);
@@ -692,5 +697,101 @@ class TicketsServerTest extends TestCase
 
         $again->assertOk();
         $again->assertSee('removed');
+    }
+
+    #[Test]
+    public function list_milestones_tool_returns_milestones_with_progress(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['name' => 'Alpha Release']);
+        $closedIds = Status::closedStatusIds();
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'status_id' => reset($closedIds)]);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'status_id' => Status::whereNotIn('id', $closedIds)->first()->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(ListMilestonesTool::class, []);
+
+        $response->assertOk();
+        $response->assertSee('Alpha Release');
+        $response->assertSee('percent_complete');
+    }
+
+    #[Test]
+    public function list_milestones_tool_rejects_unauthenticated_calls(): void
+    {
+        $response = TicketsServer::tool(ListMilestonesTool::class, []);
+
+        $response->assertHasErrors(['Unauthenticated']);
+    }
+
+    #[Test]
+    public function get_milestone_tool_returns_detail_and_tickets(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['name' => 'Beta Release']);
+        $ticket = Ticket::factory()->create(['milestone_id' => $milestone->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(GetMilestoneTool::class, [
+            'milestone_id' => $milestone->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Beta Release');
+        $response->assertSee($ticket->subject);
+    }
+
+    #[Test]
+    public function create_milestone_tool_creates_milestone(): void
+    {
+        $user = User::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(CreateMilestoneTool::class, [
+            'name' => 'MCP created milestone',
+            'owner_user_id' => $user->id,
+            'start_at' => '2026-01-01',
+            'due_at' => '2026-02-01',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Milestone created.');
+        $this->assertDatabaseHas('milestones', [
+            'name' => 'MCP created milestone',
+            'owner_user_id' => $user->id,
+        ]);
+    }
+
+    #[Test]
+    public function update_milestone_tool_updates_owned_milestone(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['name' => 'Old Name', 'owner_user_id' => $user->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateMilestoneTool::class, [
+            'milestone_id' => $milestone->id,
+            'name' => 'New Name',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Milestone updated.');
+        $this->assertDatabaseHas('milestones', ['id' => $milestone->id, 'name' => 'New Name']);
+    }
+
+    #[Test]
+    public function update_milestone_tool_rejects_non_owner(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $milestone = Milestone::factory()->create([
+            'name' => 'Locked',
+            'owner_user_id' => $other->id,
+            'scrummaster_user_id' => $other->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateMilestoneTool::class, [
+            'milestone_id' => $milestone->id,
+            'name' => 'Hijacked',
+        ]);
+
+        $response->assertHasErrors();
+        $this->assertDatabaseHas('milestones', ['id' => $milestone->id, 'name' => 'Locked']);
     }
 }
