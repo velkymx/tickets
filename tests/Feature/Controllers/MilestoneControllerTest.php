@@ -351,6 +351,21 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function store_creates_new_milestone_without_id_in_body(): void
+    {
+        // The create form posts to /milestone/store/new and supplies id only
+        // as the route parameter, never as a form field.
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/milestone/store/new', [
+            'name' => 'Form Milestone',
+        ]);
+
+        $response->assertRedirect('/milestone');
+        $this->assertDatabaseHas('milestones', ['name' => 'Form Milestone']);
+    }
+
+    #[Test]
     public function store_sets_active_to_1_on_create(): void
     {
         $user = User::factory()->create();

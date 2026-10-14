@@ -20,14 +20,6 @@ class StoreMilestoneRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_requires_id_field(): void
-    {
-        $validator = $this->makeValidator([]);
-        $this->assertTrue($validator->fails());
-        $this->assertArrayHasKey('id', $validator->errors()->toArray());
-    }
-
-    #[Test]
     public function it_requires_name(): void
     {
         $validator = $this->makeValidator(['id' => 'new']);
