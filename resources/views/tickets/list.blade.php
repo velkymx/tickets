@@ -113,6 +113,21 @@
 
 @section('javascript')
 <script>
+    const selectAll = document.getElementById('selectAll');
+    const rowCheckboxes = document.querySelectorAll('input[name^="tickets["]');
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            rowCheckboxes.forEach(cb => { cb.checked = selectAll.checked; });
+        });
+
+        rowCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                selectAll.checked = Array.from(rowCheckboxes).every(c => c.checked);
+            });
+        });
+    }
+
     document.getElementById('checkAll').addEventListener('click', function() {
         // Select all checkboxes named 'tickets[]' within the form
         const checkboxes = document.querySelectorAll('input[name^="tickets["]');

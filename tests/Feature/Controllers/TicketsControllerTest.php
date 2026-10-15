@@ -159,6 +159,18 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_wires_the_header_select_all_checkbox(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create();
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee("getElementById('selectAll')", false);
+    }
+
+    #[Test]
     public function index_sorts_by_subject_ascending(): void
     {
         $user = User::factory()->create();
