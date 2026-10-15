@@ -1846,6 +1846,25 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function batch_updates_tickets_with_id_as_checkbox_value(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['user_id' => $user->id]);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $newStatus = Status::factory()->create();
+
+        $response = $this->actingAs($user)->post('/tickets/batch', [
+            'tickets' => [$ticket->id => (string) $ticket->id],
+            'status_id' => $newStatus->id,
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertSessionHasNoErrors();
+        $ticket->refresh();
+        $this->assertEquals($newStatus->id, $ticket->status_id);
+    }
+
+    #[Test]
     public function batch_filters_null_and_zero_update_fields(): void
     {
         $user = User::factory()->create();
