@@ -299,12 +299,14 @@
                     </h6>
                     <ul class="list-unstyled mb-0 small">
                         @foreach ($ticket->watchers as $watcher)
+                            @continue(! $watcher->user)
                             <li class="py-1">
                                 <i class="fas fa-eye text-body-secondary me-2"></i>
                                 <a href="/users/{{ $watcher->user->id }}" class="text-decoration-none">{{ $watcher->user->name }}</a>
                             </li>
                         @endforeach
                         @foreach ($ticketViews as $view)
+                            @continue(! $view->user)
                             <li class="py-1 text-body-secondary">
                                 <i class="fas fa-user me-2"></i>
                                 <a href="/users/{{ $view->user->id }}" class="text-decoration-none">{{ $view->user->name }}</a> &mdash; {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}

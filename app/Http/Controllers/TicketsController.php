@@ -159,7 +159,7 @@ class TicketsController extends Controller
     {
         $ticket = Ticket::with([
             'status', 'type', 'importance', 'project', 'assignee', 'user', 'milestone',
-            'watchers.user',
+            'watchers' => fn ($q) => $q->whereHas('user')->with('user'),
             'estimates.user',
             'notes' => function ($q) {
                 $q->where('hide', 0)->orderBy('created_at', 'asc');
@@ -187,6 +187,7 @@ class TicketsController extends Controller
 
         $ticketViews = TicketView::select('user_id', \DB::raw('max(created_at) as viewed_at'))
             ->where('ticket_id', $ticket->id)
+            ->whereHas('user')
             ->groupBy('user_id')
             ->with('user')
             ->get();
