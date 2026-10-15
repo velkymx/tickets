@@ -22,19 +22,10 @@
         @enderror
     </div>
 
-    {{-- Project Description Field (Quill.js Target) --}}
     <div class="mb-3">
-        <label for="editor-container" class="form-label">Describe Project</label>
-        <textarea
-            name="description"
-            id="description-input"
-            rows="8"
-            class="form-control @error('description') is-invalid @enderror mb-3"
-        >{{ old('description') }}</textarea>
-        {{-- Quill editor container --}}
-        <div id="editor-container" class="d-none">
-            {{-- Initial content for a new project is empty, but we can load old input if the form fails validation --}}
-        </div>
+        <label for="description" class="form-label">Describe Project</label>
+        <input type="hidden" name="description" id="description-input" value="{{ old('description') }}">
+        <div data-rich-text data-target="#description-input" data-placeholder="Enter the project description here..."></div>
         @error('description')
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
@@ -46,61 +37,4 @@
         <button type="submit" class="btn btn-success">Save Project</button>
     </div>
 </form>
-@endsection
-
-@section('javascript')
-<script>
-    document.addEventListener('DOMContentLoaded', async function() {
-        if (typeof window.loadQuill !== 'function') {
-            return;
-        }
-
-        const Quill = await window.loadQuill();
-        if (!Quill) {
-            return;
-        }
-        
-        // --- 1. Quill Initialization ---
-        const quillToolbarOptions = [
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }], 
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            [{ 'color': [] }, { 'background': [] }], 
-            ['link', 'image', 'video'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Enter the project description here...'
-        });
-        
-        // Load old input if available (e.g., if the form failed validation)
-        const initialContentInput = document.getElementById('description-input');
-        const editorContainer = document.getElementById('editor-container');
-
-        if (!initialContentInput || !editorContainer) {
-            return;
-        }
-
-        initialContentInput.classList.add('d-none');
-        editorContainer.classList.remove('d-none');
-        
-        if (initialContentInput && initialContentInput.value) {
-            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
-        }
-
-        // --- 2. Form Submission Handler (Quill Content) ---
-        const form = document.getElementById('project_create_form');
-        const hiddenInput = initialContentInput;
-
-        form.addEventListener('submit', function() {
-            // Get the HTML content from the editor and put it into the hidden input
-            hiddenInput.value = quill.root.innerHTML;
-        });
-    });
-</script>
 @endsection

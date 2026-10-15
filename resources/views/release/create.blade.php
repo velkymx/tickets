@@ -41,10 +41,9 @@ Create Release
         </div>    
     </div>
     <div class="mb-3">
-        <label for="editor-container" class="form-label">Describe Release</label>
-        <div id="editor-container">
-        </div>
+        <label for="body" class="form-label">Describe Release</label>
         <input type="hidden" name="body" id="description-input" value="{{ old('body') }}">
+        <div data-rich-text data-target="#description-input" data-placeholder="Describe the release contents and goals here..."></div>
         @error('body')
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
@@ -55,40 +54,4 @@ Create Release
     <button type="submit" class="btn btn-success">Save Release</button>
 </div>
 </form>
-@endsection
-@section('javascript')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        
-        const quillToolbarOptions = [
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }], 
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            [{ 'color': [] }, { 'background': [] }], 
-            ['link', 'image', 'video'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Describe the release contents and goals here...'
-        });
-        
-        const initialContentInput = document.getElementById('description-input');
-        
-        if (initialContentInput && initialContentInput.value) {
-            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
-        }
-
-        const form = document.getElementById('formRelease');
-        const hiddenInput = initialContentInput;
-
-        form.addEventListener('submit', function() {
-            hiddenInput.value = quill.root.innerHTML;
-        });
-    });
-</script>
 @endsection

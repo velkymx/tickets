@@ -233,18 +233,18 @@ class ProjectsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('name="description"', false);
-        $response->assertSee('<textarea', false);
     }
 
     #[Test]
-    public function create_view_uses_the_lazy_quill_loader(): void
+    public function create_view_mounts_the_rich_text_editor(): void
     {
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/projects/create');
 
         $response->assertStatus(200);
-        $response->assertSee('window.loadQuill()', false);
+        $response->assertSee('data-rich-text', false);
+        $response->assertSee('data-target="#description-input"', false);
     }
 
     #[Test]

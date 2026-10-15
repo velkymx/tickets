@@ -45,15 +45,10 @@
         @enderror
     </div>
 
-    {{-- Milestone Description Field (Quill.js Target) --}}
     <div class="mb-3">
-        <label for="editor-container" class="form-label">Describe Milestone</label>
-        {{-- Quill editor container --}}
-        <div id="editor-container">
-            {{-- Initial content will be loaded by Quill.js script below --}}
-        </div>
-        {{-- Hidden input to hold the HTML content submitted by Quill. ID: 'description-input' --}}
+        <label for="description" class="form-label">Describe Milestone</label>
         <input type="hidden" name="description" id="description-input" value="{{ old('description', $milestone->description) }}">
+        <div data-rich-text data-target="#description-input" data-placeholder="Enter milestone details here..."></div>
         @error('description')
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
@@ -108,40 +103,4 @@
         <button type="submit" class="btn btn-success">Save Milestone</button>
     </div>
 </form>
-@endsection
-
-@section('javascript')
-<script type="module">
-    document.addEventListener('DOMContentLoaded', async function() {
-        const Quill = await window.loadQuill();
-        
-        const quillToolbarOptions = [
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            ['link', 'image'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Enter milestone details here...'
-        });
-        
-        const initialContentInput = document.getElementById('description-input');
-        
-        if (initialContentInput && initialContentInput.value) {
-            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
-        }
-
-        const form = document.getElementById('milestone_form');
-        const hiddenInput = initialContentInput;
-
-        form.addEventListener('submit', function() {
-            hiddenInput.value = quill.root.innerHTML;
-        });
-    });
-</script>
 @endsection

@@ -23,10 +23,9 @@
     </div>
 
     <div class="mb-3">
-        <label for="editor-container" class="form-label">Bio</label>
-        <div id="editor-container">
-        </div>
+        <label for="bio" class="form-label">Bio</label>
         <input type="hidden" name="bio" id="bio-input" value="{{ old('bio', $user->bio) }}">
+        <div data-rich-text data-target="#bio-input" data-placeholder="Write a short bio about yourself here..."></div>
         @error('bio')
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
@@ -110,42 +109,4 @@
         <button type="submit" class="btn btn-primary">Generate API Token</button>
     </form>
 @endif
-@endsection
-
-@section('javascript')
-<script type="module">
-    document.addEventListener('DOMContentLoaded', async function() {
-        const Quill = await window.loadQuill();
-        
-        const quillToolbarOptions = [
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }], 
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            [{ 'color': [] }, { 'background': [] }], 
-            ['link', 'image', 'video'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Write a short bio about yourself here...'
-        });
-        
-        const initialContentInput = document.getElementById('bio-input');
-        
-        if (initialContentInput && initialContentInput.value) {
-            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
-        }
-
-        const form = document.getElementById('user_form');
-        const hiddenInput = initialContentInput;
-
-        form.addEventListener('submit', function() {
-            hiddenInput.value = quill.root.innerHTML;
-        });
-    });
-</script>
 @endsection
