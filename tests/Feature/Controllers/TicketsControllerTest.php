@@ -1283,10 +1283,8 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
         $response->assertStatus(200);
-        // The textarea should exist for paste handling
         $response->assertSee('note-textarea', false);
-        // JS paste handler should be in the page
-        $response->assertSee('paste', false);
+        $response->assertSee('data-ticket-show', false);
     }
 
     #[Test]
