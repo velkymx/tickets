@@ -3,8 +3,7 @@ import './bootstrap';
 import Quill from 'quill';
 window.Quill = Quill;
 
-import EasyMDE from 'easymde';
-window.EasyMDE = EasyMDE;
+import './components/markdown-editor';
 
 import Alpine from 'alpinejs';
 
