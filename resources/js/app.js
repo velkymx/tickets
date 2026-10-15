@@ -13,3 +13,5 @@ window.Alpine = Alpine;
 Alpine.start();
 
 import './components/BurndownChart';
+
+import './features/ticket-show';
