@@ -137,6 +137,7 @@ function initEditor(element) {
         }
 
         const button = buildButton(spec);
+        button.addEventListener('mousedown', (event) => event.preventDefault());
         button.addEventListener('click', () => runButton(editor, spec));
         toolbar.appendChild(button);
         controls.push({ button, spec });
