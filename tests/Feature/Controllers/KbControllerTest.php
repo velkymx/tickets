@@ -91,6 +91,36 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_view_mounts_the_markdown_editor(): void
+    {
+        $author = User::factory()->create(['kb_role' => 'author']);
+
+        $response = $this->actingAs($author)->get('/kb/create');
+
+        $response->assertOk();
+        $response->assertSee('data-markdown-editor', false);
+        $response->assertSee('data-autosave-id="kb-create"', false);
+    }
+
+    #[Test]
+    public function edit_view_mounts_the_markdown_editor(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        $response = $this->actingAs($owner)->get("/kb/{$article->slug}/edit");
+
+        $response->assertOk();
+        $response->assertSee('data-markdown-editor', false);
+        $response->assertSee('data-autosave-id="kb-edit-'.$article->slug.'"', false);
+    }
+
+    #[Test]
     public function store_creates_article_and_redirects(): void
     {
         $author = User::factory()->create(['kb_role' => 'author']);
