@@ -356,4 +356,22 @@ class ProjectsControllerTest extends TestCase
 
         $response->assertRedirect('/projects');
     }
+
+    #[Test]
+    public function show_renders_ticket_list_when_ticket_has_no_importance(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        // A ticket with no matching importance row (created without a priority).
+        Ticket::factory()->create([
+            'project_id' => $project->id,
+            'importance_id' => 0,
+            'subject' => 'Priorityless ticket',
+        ]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertOk();
+        $response->assertSee('Priorityless ticket');
+    }
 }
