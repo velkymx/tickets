@@ -1,26 +1,4 @@
-<div x-data="{
-    actions: @json($actionsJson ?? []),
-
-    addAction() {
-        this.actions.push({
-            type: 'call_webhook',
-            config: {
-                url: '',
-                method: 'POST',
-                headers: {},
-                payload: {}
-            }
-        });
-    },
-
-    removeAction(index) {
-        this.actions.splice(index, 1);
-    },
-
-    serialize() {
-        return JSON.stringify(this.actions);
-    }
-}" x-init="$nextTick(() => $refs.actionsInput.value = serialize()); $watch('actions', () => $refs.actionsInput.value = serialize())">
+<div x-data="actionBuilder" data-initial='@json($actionsJson ?? [])'>
 
     <input type="hidden" name="actions_json" x-ref="actionsInput" :value="serialize()">
 

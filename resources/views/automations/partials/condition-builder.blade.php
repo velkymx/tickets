@@ -1,47 +1,4 @@
-<div x-data="{
-    root: @json($conditionsJson ?? ['all' => []]),
-
-    isGroup(item) {
-        return item.all !== undefined || item.any !== undefined;
-    },
-
-    getChildren(item) {
-        return item.all !== undefined ? item.all : item.any;
-    },
-
-    getType(item) {
-        return item.all !== undefined ? 'all' : 'any';
-    },
-
-    toggleType(item) {
-        if (item.all !== undefined) {
-            item.any = item.all;
-            delete item.all;
-        } else {
-            item.all = item.any;
-            delete item.any;
-        }
-    },
-
-    addLeaf(parent) {
-        const arr = parent.all !== undefined ? parent.all : parent.any;
-        arr.push({ field: '', operator: 'equals', value: '' });
-    },
-
-    addGroup(parent) {
-        const arr = parent.all !== undefined ? parent.all : parent.any;
-        arr.push({ any: [] });
-    },
-
-    removeItem(parent, index) {
-        const arr = parent.all !== undefined ? parent.all : parent.any;
-        arr.splice(index, 1);
-    },
-
-    serialize() {
-        return JSON.stringify(this.root);
-    }
-}" x-init="$nextTick(() => $refs.conditionsInput.value = serialize()); $watch('root', () => $refs.conditionsInput.value = serialize())" class="conditions-builder">
+<div x-data="conditionBuilder" data-initial='@json($conditionsJson ?? ['all' => []])' class="conditions-builder">
 
     <input type="hidden" name="conditions_json" x-ref="conditionsInput" :value="serialize()">
 
