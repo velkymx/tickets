@@ -17,17 +17,10 @@
                    placeholder="Ticket Subject" value="{{ old('subject', $ticket->subject) }}" required>
         </div>
 
-        {{-- Ticket Details (Quill.js Integration) --}}
         <div class="mb-3">
             <label for="description" class="form-label">Ticket Details</label>
-            
-            {{-- Hidden input to hold Quill content before submission --}}
-            <input type="hidden" name="description" id="description_hidden" 
-                   value="{{ old('description', $ticket->description) }}">
-            
-            {{-- Quill Editor Container. Initial content is loaded by the JS from the hidden input. --}}
-            <div id="editor-container" class="editor-xl">
-            </div>
+            <input type="hidden" name="description" id="description_hidden" value="{{ old('description', $ticket->description) }}">
+            <div data-rich-text data-target="#description_hidden" data-placeholder="Enter ticket details here..." class="editor-xl"></div>
         </div>
 
         {{-- Use a Bootstrap 5 grid for cleaner layout --}}
@@ -128,38 +121,3 @@
         
     </form>
 @stop
-
-@section('javascript')
-<script type="module">
-    document.addEventListener('DOMContentLoaded', async function() {
-        const Quill = await window.loadQuill();
-        
-        const quillToolbarOptions = [
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            ['link', 'image'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Enter ticket details here...'
-        });
-        
-        const initialContent = document.getElementById('description_hidden').value;
-        if (initialContent) {
-            quill.clipboard.dangerouslyPasteHTML(initialContent);
-        }
-
-        const form = document.getElementById('ticket-form');
-        const hiddenInput = document.getElementById('description_hidden');
-
-        form.addEventListener('submit', function() {
-            hiddenInput.value = quill.root.innerHTML;
-        });
-    });
-</script>
-@endsection
