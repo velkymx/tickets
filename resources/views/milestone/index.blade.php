@@ -9,103 +9,82 @@
     </div>
 
     <div class="table-responsive">
-    <table class="table table-striped table-hover align-middle">
-        <thead>
+        <table class="table table-striped table-hover align-middle">
+            <thead>
                 <tr>
                     <th>Name</th>
                     <th class="text-center">Tickets</th>
                     <th>Start</th>
                     <th>Due</th>
-                    <th>Released</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @if($milestones->isEmpty())
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <p class="text-muted mb-0">No milestones found.</p>
-                        </td>
-                    </tr>
-                @endif
-                {{-- Active Milestones --}}
-                @foreach ($milestones->where('end_at','') as $milestone)
+                @forelse ($active as $milestone)
                     <tr>
                         <td>{{ $milestone->name }}</td>
                         <td class="text-center">
-                            {{-- Replaced old badge class with B5 badge class --}}
-                            <span class="badge text-bg-info">
-                                {{ $milestone->tickets()->whereNotIn('status_id',\App\Models\Status::closedStatusIds())->count() }} / {{ $milestone->tickets()->count() }}
-                            </span>
+                            <span class="badge text-bg-info">{{ $milestone->tickets_open }} / {{ $milestone->tickets_total }}</span>
                         </td>
-                        
-                        @if ($milestone->start_at)
-                            <td>{{ $milestone->start_at->format('M jS, Y') }}</td>
-                        @else
-                            <td></td>
-                        @endif
-
-                        @if ($milestone->due_at)
-                            <td>{{ $milestone->due_at->format('M jS, Y') }}</td>
-                        @else
-                            <td></td>
-                        @endif
-
-                        <td></td> {{-- Empty column for 'Released' since they are active --}}
-                        
+                        <td>{{ $milestone->start_at ? $milestone->start_at->format('M jS, Y') : '' }}</td>
+                        <td>{{ $milestone->due_at ? $milestone->due_at->format('M jS, Y') : '' }}</td>
                         <td class="text-end text-nowrap">
-                            {{-- Updated button classes for B5 --}}
-                            <a href="/milestone/show/{{ $milestone->id }}" class="btn btn-sm btn-success">View</a> 
-                            <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a> 
+                            <a href="/milestone/show/{{ $milestone->id }}" class="btn btn-sm btn-success">View</a>
+                            <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a>
                             <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-sm btn-primary">Edit</a>
                         </td>
                     </tr>
-                @endforeach
-                
-                {{-- Separator for Released Milestones --}}
-                <tr class="table-active">
-                    <td colspan="6" class="py-2">
-                        <strong class="text-success"><i class="bi bi-check-circle-fill me-2"></i> Released Milestones</strong>
-                    </td>
-                </tr>
-                
-                {{-- Released Milestones (end_at > 0) --}}
-                @foreach ($milestones->where('end_at','>','0') as $milestone)
-                    <tr class="text-muted">
-                        <td>{{ $milestone->name }}</td>
-                        <td class="text-center">
-                            {{-- Replaced old badge class with B5 badge class --}}
-                            <span class="badge text-bg-secondary">
-                                {{ $milestone->tickets()->whereNotIn('status_id',\App\Models\Status::closedStatusIds())->count() }} / {{ $milestone->tickets()->count() }}
-                            </span>
-                        </td>
-
-                        @if ($milestone->start_at)
-                            <td>{{ $milestone->start_at->format('M jS, Y') }}</td>
-                        @else
-                            <td></td>
-                        @endif
-
-                        @if ($milestone->due_at)
-                            <td>{{ $milestone->due_at->format('M jS, Y') }}</td>
-                        @else
-                            <td></td>
-                        @endif
-
-                        @if ($milestone->end_at)
-                            <td>{{ $milestone->end_at->format('M jS, Y') }}</td>
-                        @else
-                            <td></td>
-                        @endif
-                        
-                        <td class="text-end text-nowrap">
-                            <a href="/milestone/show/{{ $milestone->id }}" class="btn btn-sm btn-success">View</a> 
-                            <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a> 
-                            <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-sm btn-primary">Edit</a>
+                @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <p class="text-muted mb-0">No active milestones.</p>
                         </td>
                     </tr>
-                @endforeach
+                @endforelse
             </tbody>
         </table>
     </div>
+
+    {{ $active->links('pagination::bootstrap-5') }}
+
+    @if ($released->isNotEmpty())
+        <div class="mt-4 mb-2">
+            <strong class="text-success"><i class="bi bi-check-circle-fill me-2"></i> Released Milestones</strong>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th class="text-center">Tickets</th>
+                        <th>Start</th>
+                        <th>Due</th>
+                        <th>Released</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($released as $milestone)
+                        <tr class="text-muted">
+                            <td>{{ $milestone->name }}</td>
+                            <td class="text-center">
+                                <span class="badge text-bg-secondary">{{ $milestone->tickets_open }} / {{ $milestone->tickets_total }}</span>
+                            </td>
+                            <td>{{ $milestone->start_at ? $milestone->start_at->format('M jS, Y') : '' }}</td>
+                            <td>{{ $milestone->due_at ? $milestone->due_at->format('M jS, Y') : '' }}</td>
+                            <td>{{ $milestone->end_at ? $milestone->end_at->format('M jS, Y') : '' }}</td>
+                            <td class="text-end text-nowrap">
+                                <a href="/milestone/show/{{ $milestone->id }}" class="btn btn-sm btn-success">View</a>
+                                <a href="/milestone/print/{{ $milestone->id }}" class="btn btn-sm btn-secondary">Print</a>
+                                <a href="/milestone/edit/{{ $milestone->id }}" class="btn btn-sm btn-primary">Edit</a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{ $released->links('pagination::bootstrap-5') }}
+    @endif
 @endsection

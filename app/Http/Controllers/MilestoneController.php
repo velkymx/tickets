@@ -14,21 +14,33 @@ use App\Services\TicketQueryParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class MilestoneController extends Controller
 {
-    public function __construct(private TicketQueryParser $ticketQueryParser)
-    {
-    }
+    public function __construct(private TicketQueryParser $ticketQueryParser) {}
 
     public function index()
     {
+        $closedStatusIds = Status::closedStatusIds();
 
-        $milestones = Milestone::orderBy('name')->paginate(20);
+        $counts = [
+            'tickets as tickets_total',
+            'tickets as tickets_open' => fn ($q) => $q->whereNotIn('status_id', $closedStatusIds),
+        ];
 
-        return view('milestone.index', compact('milestones'));
+        $active = Milestone::withCount($counts)
+            ->whereNull('end_at')
+            ->orderBy('name')
+            ->paginate(20, ['*'], 'active_page')
+            ->withQueryString();
 
+        $released = Milestone::withCount($counts)
+            ->whereNotNull('end_at')
+            ->orderByDesc('end_at')
+            ->paginate(20, ['*'], 'released_page')
+            ->withQueryString();
+
+        return view('milestone.index', compact('active', 'released'));
     }
 
     public function print($id)
