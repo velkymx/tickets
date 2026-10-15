@@ -167,7 +167,8 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/tickets');
 
         $response->assertStatus(200);
-        $response->assertSee("getElementById('selectAll')", false);
+        $response->assertSee('data-bulk-select', false);
+        $response->assertSee('id="selectAll"', false);
     }
 
     #[Test]
