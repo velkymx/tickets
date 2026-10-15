@@ -13,3 +13,5 @@ Alpine.start();
 import './components/BurndownChart';
 
 import './features/ticket-show';
+
+import './features/bulk-select';

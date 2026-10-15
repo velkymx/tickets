@@ -12,7 +12,7 @@
     <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('tickets')" />
 
     {{-- Batch Update Form (Starts here, closes at the end of the section) --}}
-    <form method="POST" action="{{ url('tickets/batch') }}">
+    <form method="POST" action="{{ url('tickets/batch') }}" data-bulk-select>
         @csrf {{-- Add CSRF token for POST request --}}
         
         <x-ticket-table
@@ -109,45 +109,4 @@
     </form>
     {{-- End Batch Update Form --}}
 
-@endsection
-
-@section('javascript')
-<script>
-    const selectAll = document.getElementById('selectAll');
-    const rowCheckboxes = document.querySelectorAll('input[name^="tickets["]');
-
-    if (selectAll) {
-        selectAll.addEventListener('change', function() {
-            rowCheckboxes.forEach(cb => { cb.checked = selectAll.checked; });
-        });
-
-        rowCheckboxes.forEach(cb => {
-            cb.addEventListener('change', function() {
-                selectAll.checked = Array.from(rowCheckboxes).every(c => c.checked);
-            });
-        });
-    }
-
-    document.getElementById('checkAll').addEventListener('click', function() {
-        // Select all checkboxes named 'tickets[]' within the form
-        const checkboxes = document.querySelectorAll('input[name^="tickets["]');
-        
-        // Determine if we should check or uncheck them all
-        // Check if ANY checkbox is currently NOT checked. If so, we want to check all.
-        let shouldCheck = false;
-        checkboxes.forEach(cb => {
-            if (!cb.checked) {
-                shouldCheck = true;
-            }
-        });
-
-        // Set the checked state for all checkboxes
-        checkboxes.forEach(cb => {
-            cb.checked = shouldCheck;
-        });
-
-        // Optional: Update button text based on action
-        this.textContent = shouldCheck ? 'Uncheck All' : 'Check All';
-    });
-</script>
 @endsection
