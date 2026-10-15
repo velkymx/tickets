@@ -15,7 +15,6 @@ class StoreMilestoneRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['required', 'string'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'scrummaster_user_id' => ['nullable', 'integer', 'exists:users,id'],
