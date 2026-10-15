@@ -11,10 +11,14 @@
     },
     "dependencies": {
         "@fortawesome/fontawesome-free": "^7.2.0",
+        "@tiptap/core": "^3.32.0",
+        "@tiptap/extension-image": "^3.32.0",
+        "@tiptap/extension-placeholder": "^3.32.0",
+        "@tiptap/pm": "^3.32.0",
+        "@tiptap/starter-kit": "^3.32.0",
         "bootstrap": "^5.3.3",
         "bootswatch": "^5.3.8",
         "chart.js": "^4.4.1",
-        "easymde": "^2.20.0",
-        "quill": "^2.0.3"
+        "easymde": "^2.20.0"
     }
 }
