@@ -16,9 +16,9 @@ class StoreTicketRequest extends FormRequest
         return [
             'subject' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type_id' => 'nullable|integer|exists:types,id',
-            'status_id' => 'nullable|integer|exists:statuses,id',
-            'importance_id' => 'nullable|integer|exists:importances,id',
+            'type_id' => 'required|integer|exists:types,id',
+            'status_id' => 'required|integer|exists:statuses,id',
+            'importance_id' => 'required|integer|exists:importances,id',
             'milestone_id' => 'nullable|integer|exists:milestones,id',
             'project_id' => 'nullable|integer|exists:projects,id',
             'user_id2' => 'nullable|integer|exists:users,id',
