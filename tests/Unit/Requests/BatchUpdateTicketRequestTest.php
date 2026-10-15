@@ -39,8 +39,14 @@ class BatchUpdateTicketRequestTest extends TestCase
     #[Test]
     public function it_validates_each_ticket_exists(): void
     {
-        $validator = $this->makeValidator(['tickets' => [999, 998]]);
+        $request = new BatchUpdateTicketRequest;
+        $request->replace(['tickets' => [999 => '999', 998 => '998']]);
+
+        $validator = Validator::make($request->all(), $request->rules());
+        $request->withValidator($validator);
+
         $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('tickets', $validator->errors()->toArray());
     }
 
     #[Test]
