@@ -2,8 +2,7 @@ import './bootstrap';
 
 import './components/rich-text';
 
-import EasyMDE from 'easymde';
-window.EasyMDE = EasyMDE;
+import './components/markdown-editor';
 
 import Alpine from 'alpinejs';
 

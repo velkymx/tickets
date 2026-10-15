@@ -37,10 +37,9 @@
                 @enderror
             </div>
 
-            {{-- Body Markdown (EasyMDE) --}}
             <div class="mb-3">
                 <label for="body_markdown" class="form-label">Content (Markdown)</label>
-                <textarea name="body_markdown" id="body_markdown">{{ old('body_markdown') }}</textarea>
+                <textarea name="body_markdown" id="body_markdown" data-markdown-editor data-autosave-id="kb-create" data-placeholder="Write your article content in Markdown...">{{ old('body_markdown') }}</textarea>
                 @error('body_markdown')
                     <div class="text-danger small mt-1">{{ $message }}</div>
                 @enderror
@@ -231,25 +230,3 @@
     </div>
 </form>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    new EasyMDE({
-        element: document.getElementById('body_markdown'),
-        spellChecker: false,
-        autosave: { enabled: true, uniqueId: 'kb-create', delay: 5000 },
-        minHeight: '350px',
-        placeholder: 'Write your article content in Markdown...',
-        toolbar: [
-            'bold', 'italic', 'heading', '|',
-            'quote', 'unordered-list', 'ordered-list', 'checklist', '|',
-            'link', 'image', 'code', 'table', '|',
-            'preview', 'side-by-side', 'fullscreen', '|',
-            'guide'
-        ],
-        status: ['lines', 'words'],
-    });
-});
-</script>
-@endpush
