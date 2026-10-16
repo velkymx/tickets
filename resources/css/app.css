@@ -114,7 +114,15 @@ body {
     pointer-events: none;
 }
 
-/* Kanban card bits */
+/* Ticket table: truncated cells (no sticky header: the table sits in
+   .table-responsive, an unconstrained scroll container, so sticky has
+   nothing to stick to) */
+.ticket-cell-truncate {
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .kanban-avatar {
     width: 24px;
     height: 24px;
