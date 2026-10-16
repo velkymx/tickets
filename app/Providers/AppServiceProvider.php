@@ -61,6 +61,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(KbArticle::class, KbArticlePolicy::class);
         Gate::policy(SavedView::class, SavedViewPolicy::class);
 
+        Event::listen(
+            \SocialiteProviders\Manager\SocialiteWasCalled::class,
+            \SocialiteProviders\Azure\AzureExtendSocialite::class.'@handle'
+        );
+
         View::composer('layouts.app', NotificationComposer::class);
 
         RateLimiter::for('api', function ($request) {

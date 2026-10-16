@@ -72,12 +72,28 @@ Revoking immediately invalidates the existing token.
 
 ## Password
 
-Users change their own password on the **Edit Profile** page. There is no admin password-reset UI — use `php artisan tinker` if a user is locked out:
+Users change their own password on the **Edit Profile** page. Locked-out users
+reset it themselves from the login page ("Forgot your password?"): the link
+request never reveals whether an email exists, tokens expire after 60 minutes
+and are single-use. If mail is not configured, use `php artisan tinker`:
 
 ```php
 App\Models\User::where('email', 'user@example.com')
     ->update(['password' => bcrypt('new-password')]);
 ```
+
+## Single sign-on
+
+Google, GitHub, GitLab (including self-hosted via `GITLAB_HOST`), and
+Microsoft Entra logins are available when their credentials are set in
+`config/services.php` (`*_CLIENT_ID`, `*_CLIENT_SECRET`, `*_REDIRECT_URI`).
+Unconfigured providers stay off the login page entirely. First-time SSO users
+are created only when an allow-list permits it (`SSO_ALLOWED_DOMAINS`,
+`AZURE_TENANT_ID`, `GITHUB_ALLOWED_ORG`, `GITLAB_ALLOWED_GROUP`); otherwise the
+callback refuses with no account created. Email linking requires a verified
+provider email. Deactivated users are blocked on every path. Set
+`PASSWORD_LOGIN_ENABLED=false` or `REGISTRATION_ENABLED=false` for SSO-only
+installs.
 
 ## The `unassigned` system account
 
