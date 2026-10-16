@@ -110,6 +110,29 @@ class NotificationPrefsTest extends TestCase
     }
 
     #[Test]
+    public function typeless_notification_fails_at_dispatch_not_in_digest(): void
+    {
+        $user = User::factory()->create();
+
+        $typeless = new class extends \Illuminate\Notifications\Notification
+        {
+            public function via(object $notifiable): array
+            {
+                return ['database'];
+            }
+
+            public function toArray(object $notifiable): array
+            {
+                return ['message' => 'No type key here'];
+            }
+        };
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(NotificationBatchService::class)->dispatch($user, $typeless, 142);
+    }
+
+    #[Test]
     public function direct_watcher_path_honours_the_pref(): void
     {
         Notification::fake();

@@ -52,8 +52,14 @@ class NotificationBatchService
     {
         $data = method_exists($notification, 'toArray') ? $notification->toArray($user) : [];
 
+        // Fail at write time, not in the digest job against stale cache:
+        // every batched notification must declare its preference type.
+        $type = $data['type'] ?? throw new \InvalidArgumentException(
+            $notification::class.'::toArray() must include a "type" key.'
+        );
+
         return [
-            'type' => $data['type'] ?? 'activity',
+            'type' => $type,
             'subject' => $this->subjectFor($data),
             'excerpt' => $data['excerpt'] ?? $data['message'] ?? '',
             'url' => $data['url'] ?? '',
