@@ -8,7 +8,6 @@
             'all' => 'All',
             'mentions' => 'Mentions',
             'watching' => 'Watching',
-            'assigned' => 'Assigned',
             'replies' => 'Replies',
         ];
     @endphp
@@ -17,7 +16,7 @@
         <div>
             <p class="text-uppercase small text-muted fw-semibold mb-2">Inbox</p>
             <h1 class="h2 mb-1">Activity Center</h1>
-            <p class="text-muted mb-0">Recent mentions, watcher updates, replies, and assignment changes.</p>
+            <p class="text-muted mb-0">Recent mentions, watcher updates, and replies.</p>
         </div>
 
         <form method="POST" action="/activity/read-all">
@@ -59,7 +58,6 @@
                 };
                 $title = match ($type) {
                     'watching' => 'Ticket update',
-                    'assigned' => 'Assignment update',
                     default => 'Activity update',
                 };
             @endphp
