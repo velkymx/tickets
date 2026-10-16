@@ -61,7 +61,34 @@ class User extends Authenticatable
             'password' => 'hashed',
             'admin' => 'boolean',
             'active' => 'boolean',
+            'notify_mentions' => 'boolean',
+            'notify_replies' => 'boolean',
+            'notify_watching' => 'boolean',
         ];
+    }
+
+    public function wantsNotification(string $type): bool
+    {
+        return match ($type) {
+            'mention' => $this->notify_mentions ?? true,
+            'reply' => $this->notify_replies ?? true,
+            'watching' => $this->notify_watching ?? true,
+            default => $this->unknownNotificationType($type),
+        };
+    }
+
+    /**
+     * Unknown types fail loud outside production so a new notification
+     * without a mapped preference cannot silently bypass every opt-out.
+     * Production still delivers rather than dropping user-visible mail.
+     */
+    private function unknownNotificationType(string $type): bool
+    {
+        if (! app()->isProduction()) {
+            throw new \InvalidArgumentException("Unknown notification type [{$type}]: map it to a preference in wantsNotification().");
+        }
+
+        return true;
     }
 
     public function isAdmin(): bool

@@ -11,6 +11,12 @@ class NotificationBatchService
 {
     public function dispatch(User $user, Notification $notification, int $ticketId): void
     {
+        $entry = $this->normalize($user, $notification);
+
+        if (! $user->wantsNotification($entry['type'])) {
+            return;
+        }
+
         $user->notifyNow($notification, ['database']);
 
         $batchKey = $this->batchKey($user->id, $ticketId);
@@ -21,7 +27,7 @@ class NotificationBatchService
         try {
             $lock->block(2);
             $entries = Cache::get($batchKey, []);
-            $entries[] = $this->normalize($user, $notification);
+            $entries[] = $entry;
             Cache::put($batchKey, $entries, now()->addMinutes(10));
         } finally {
             $lock->release();
