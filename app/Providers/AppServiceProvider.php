@@ -2,24 +2,26 @@
 
 namespace App\Providers;
 
+use App\Automations\ContextBuilders\TicketCreatedContextBuilder;
+use App\Automations\ContextBuilders\TicketUpdatedContextBuilder;
+use App\Automations\Services\AutomationEngine;
 use App\Contracts\SearchableRepository;
+use App\Events\TicketCreated;
+use App\Events\TicketUpdated;
 use App\Models\KbArticle;
 use App\Models\Milestone;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\Release;
+use App\Models\SavedView;
 use App\Models\Ticket;
 use App\Observers\NoteObserver;
 use App\Policies\KbArticlePolicy;
 use App\Policies\MilestonePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ReleasePolicy;
+use App\Policies\SavedViewPolicy;
 use App\Policies\TicketPolicy;
-use App\Automations\ContextBuilders\TicketCreatedContextBuilder;
-use App\Automations\ContextBuilders\TicketUpdatedContextBuilder;
-use App\Automations\Services\AutomationEngine;
-use App\Events\TicketCreated;
-use App\Events\TicketUpdated;
 use App\Services\KbSearchService;
 use App\ViewComposers\NotificationComposer;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -57,6 +59,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Release::class, ReleasePolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(KbArticle::class, KbArticlePolicy::class);
+        Gate::policy(SavedView::class, SavedViewPolicy::class);
 
         View::composer('layouts.app', NotificationComposer::class);
 
@@ -75,12 +78,12 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(TicketCreated::class, function (TicketCreated $event) {
-            $context = (new TicketCreatedContextBuilder())->build($event);
+            $context = (new TicketCreatedContextBuilder)->build($event);
             app(AutomationEngine::class)->process('ticket.created', $context);
         });
 
         Event::listen(TicketUpdated::class, function (TicketUpdated $event) {
-            $context = (new TicketUpdatedContextBuilder())->build($event);
+            $context = (new TicketUpdatedContextBuilder)->build($event);
             app(AutomationEngine::class)->process('ticket.updated', $context);
         });
     }

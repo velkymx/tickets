@@ -10,6 +10,7 @@
 
     {{-- Query Search --}}
     <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('tickets')" />
+    @include('partials.saved-views')
 
     {{-- Batch Update Form (Starts here, closes at the end of the section) --}}
     <form method="POST" action="{{ url('tickets/batch') }}" data-bulk-select>
