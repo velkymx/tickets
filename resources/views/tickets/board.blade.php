@@ -26,8 +26,9 @@
         <button type="button" class="btn-close" aria-label="Close" id="close-alert-btn"></button>
     </div>
 
-    {{-- The container for the board. We need horizontal scrolling. --}}
-    <div class="d-flex overflow-auto pb-3"> 
+    {{-- The container for the board. Bounded to the viewport so the
+        horizontal scrollbar stays visible; columns scroll vertically. --}}
+    <div class="d-flex kanban-board pb-3">
         
         {{-- Iterate over all available statuses to create columns --}}
         @foreach ($lookups['statuses'] as $status_id => $status_name)
