@@ -2,6 +2,9 @@
 
 namespace App\Mcp\Servers;
 
+use App\Mcp\Prompts\CloseOutTicketPrompt;
+use App\Mcp\Prompts\StandupDigestPrompt;
+use App\Mcp\Prompts\TriageTicketPrompt;
 use App\Mcp\ServerMethods\InitializedAck;
 use App\Mcp\Tools\AddNoteTool;
 use App\Mcp\Tools\CreateKbArticleTool;
@@ -84,7 +87,9 @@ class TicketsServer extends Server
      * @var array<int, class-string<Prompt>>
      */
     protected array $prompts = [
-        //
+        TriageTicketPrompt::class,
+        StandupDigestPrompt::class,
+        CloseOutTicketPrompt::class,
     ];
 
     protected function boot(): void
