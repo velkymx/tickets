@@ -63,10 +63,10 @@ class EditNoteTool extends TicketTool
         $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
         $mentionService->createMentions($note, $mentionUserIds);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Note updated.',
             'note' => ['id' => $note->id],
-        ]);
+        ], 'Note updated. Call get-ticket-tool to verify the rendered result.');
     }
 
     /**

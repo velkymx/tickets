@@ -2,12 +2,14 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Concerns\HasGuidance;
 use App\Mcp\Concerns\ResolvesApiUser;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
 
 abstract class MilestoneTool extends Tool
 {
+    use HasGuidance;
     use ResolvesApiUser;
 
     protected function milestoneNotFound(): Response

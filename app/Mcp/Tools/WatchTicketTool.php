@@ -36,12 +36,12 @@ class WatchTicketTool extends TicketTool
         $action = $validated['action'] ?? 'watch';
         $watching = $this->applyWatch($ticket->id, $user->id, $action);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Watch state updated.',
             'ticket_id' => $ticket->id,
             'watching' => $watching,
             'muted' => $action === 'mute',
-        ]);
+        ], 'Watch state updated. Call get-ticket-tool to confirm watcher status.');
     }
 
     /**

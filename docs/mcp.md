@@ -343,3 +343,11 @@ needs unblocking, not another status update.
 
 Wire names are the kebab-case class name including the `-tool` suffix
 (`Str::kebab(class_basename)`), e.g. `get-lookups-tool`, `create-kb-article-tool`.
+
+## Response guidance
+
+Mutating tools, search tools, and pulse return an additive `guidance` key
+alongside data: one or two follow-up calls that usually come next. Data keys
+stay stable; guidance never replaces them. New tools follow the convention
+through `HasGuidance::respond()` on the `TicketTool`, `KbTool`, and
+`MilestoneTool` bases.

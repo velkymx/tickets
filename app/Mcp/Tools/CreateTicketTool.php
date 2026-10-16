@@ -55,14 +55,14 @@ class CreateTicketTool extends TicketTool
             'status_id' => $validated['status_id'] ?? Status::orderBy('id')->first()?->id,
         ]);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Ticket created.',
             'ticket' => [
                 'id' => $ticket->id,
                 'subject' => $ticket->subject,
                 'link' => "/tickets/{$ticket->id}",
             ],
-        ]);
+        ], 'Ticket created. Call get-ticket-tool for full detail, or add-note-tool with /decision to frame open questions.');
     }
 
     /**

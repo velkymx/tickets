@@ -48,7 +48,7 @@ class SearchTicketsTool extends TicketTool
             'assignee' => $ticket->assignee->name ?? null,
         ]);
 
-        return Response::json([
+        return $this->respond([
             'data' => $data,
             'meta' => [
                 'current_page' => $tickets->currentPage(),
@@ -56,7 +56,7 @@ class SearchTicketsTool extends TicketTool
                 'per_page' => $tickets->perPage(),
                 'total' => $tickets->total(),
             ],
-        ]);
+        ], 'Results are tickets you own or hold. Call get-ticket-tool for detail, get-pulse-tool for execution state.');
     }
 
     /**

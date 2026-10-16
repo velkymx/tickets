@@ -68,10 +68,10 @@ class ResolveNoteTool extends TicketTool
 
         app(TicketPulseService::class)->invalidatePulse($ticket->id);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Note resolved.',
             'note' => ['id' => $note->id, 'resolved' => true],
-        ]);
+        ], 'Thread resolved. Call get-pulse-tool to confirm no threads remain open.');
     }
 
     /**

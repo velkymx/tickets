@@ -46,10 +46,10 @@ class UpdateKbArticleTool extends KbTool
 
         $article = app(KbArticleService::class)->update($article, $validated, $user, $validated['commit_message']);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Article updated.',
             'article' => ['id' => $article->id, 'slug' => $article->slug, 'title' => $article->title],
-        ]);
+        ], 'Article updated. Call get-kb-article-tool to verify the new version.');
     }
 
     /**

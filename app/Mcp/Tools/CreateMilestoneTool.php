@@ -39,14 +39,14 @@ class CreateMilestoneTool extends MilestoneTool
             'end_at' => $this->toDate($validated['end_at'] ?? null),
         ]);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Milestone created.',
             'milestone' => [
                 'id' => $milestone->id,
                 'name' => $milestone->name,
                 'link' => "/milestone/show/{$milestone->id}",
             ],
-        ]);
+        ], 'Milestone created. Call get-milestone-tool for its tickets.');
     }
 
     private function toDate(?string $value): ?string

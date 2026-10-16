@@ -44,9 +44,9 @@ class ListMilestonesTool extends MilestoneTool
                     : 0,
             ]);
 
-        return Response::json([
+        return $this->respond([
             'milestones' => $milestones,
-        ]);
+        ], 'Milestones newest first. Call get-milestone-tool for tickets.');
     }
 
     /**

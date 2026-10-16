@@ -76,7 +76,7 @@ class UpdateTicketTool extends TicketTool
         $ticket->save();
         $ticket->load(['status', 'assignee']);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Ticket updated.',
             'ticket' => [
                 'id' => $ticket->id,
@@ -84,7 +84,7 @@ class UpdateTicketTool extends TicketTool
                 'status' => $ticket->status->name ?? null,
                 'assignee' => $ticket->assignee->name ?? null,
             ],
-        ]);
+        ], 'Ticket updated. Call get-pulse-tool to confirm the change surfaced.');
     }
 
     /**
