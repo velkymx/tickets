@@ -468,4 +468,39 @@ class ImporterTest extends TestCase
 
         $this->importer->call($milestone->id, $this->tempFile, false, $user->id);
     }
+
+    #[Test]
+    public function it_imports_fields_with_embedded_newlines_as_single_rows(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Bug']);
+        Importance::factory()->create(['name' => 'High']);
+        Status::factory()->create(['name' => 'Open']);
+        Project::factory()->create(['name' => 'Test Project', 'active' => true]);
+
+        Auth::login($user);
+
+        $this->writeCsv([
+            ['Bug', 'Multiline Ticket', "Line one\nLine two", 'High', 'Open', 'Test Project', 'Assignee'],
+        ]);
+
+        $this->importer->call($milestone->id, $this->tempFile, false);
+
+        $this->assertEquals(1, Ticket::count());
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Multiline Ticket',
+            'description' => "Line one\nLine two",
+        ]);
+    }
+
+    #[Test]
+    public function it_streams_rows_without_raw_file_handles(): void
+    {
+        $importer = file_get_contents(app_path('Services/Importer.php'));
+
+        $this->assertStringNotContainsString('fopen(', $importer);
+        $this->assertStringNotContainsString('fclose(', $importer);
+        $this->assertStringContainsString('LazyCollection', $importer);
+    }
 }
