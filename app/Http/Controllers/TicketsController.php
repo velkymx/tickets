@@ -39,7 +39,6 @@ class TicketsController extends Controller
     {
         $user = Auth::user();
 
-        $openStatusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
         $closedStatusIds = Status::closedStatusIds();
 
         // Home lists the current user's tickets via the canonical list component.
@@ -63,8 +62,8 @@ class TicketsController extends Controller
 
         $stats = [
             'assigned' => Ticket::where('user_id2', $user->id)->count(),
-            'open' => Ticket::where('user_id2', $user->id)->whereIn('status_id', $openStatusIds)->count(),
-            'closed' => Ticket::where('user_id2', $user->id)->whereIn('status_id', $closedStatusIds)->count(),
+            'open' => Ticket::where('user_id2', $user->id)->open()->count(),
+            'closed' => Ticket::where('user_id2', $user->id)->closed()->count(),
             'watching' => Ticket::whereHas('watchers', fn ($q) => $q->where('user_id', $user->id))->count(),
         ];
 
