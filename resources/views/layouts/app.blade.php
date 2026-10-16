@@ -151,5 +151,6 @@
 
     @yield('javascript')
     @stack('scripts')
+    @include('partials.command-palette')
 </body>
 </html>

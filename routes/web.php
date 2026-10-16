@@ -10,6 +10,7 @@ use App\Http\Controllers\Kb\KbController;
 use App\Http\Controllers\Kb\KbVersionController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\NotesController;
+use App\Http\Controllers\PaletteController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ReleaseController;
@@ -41,6 +42,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::get('/activity', [ActivityController::class, 'index'])->name('activity.index');
     Route::post('/activity/read/{id}', [ActivityController::class, 'read'])->name('activity.read');
     Route::post('/activity/read-all', [ActivityController::class, 'readAll'])->name('activity.read-all');
+    Route::get('/palette/search', PaletteController::class)->name('palette.search');
 
     // --- Tickets Routes (CRITICAL: Static routes must come before dynamic routes) ---
 
