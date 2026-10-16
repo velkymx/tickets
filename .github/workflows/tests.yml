@@ -18,7 +18,13 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: sqlite, pdo_sqlite
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
       - run: composer install --no-interaction --prefer-dist
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
       - run: php artisan test
 
   mysql:
