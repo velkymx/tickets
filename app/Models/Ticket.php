@@ -48,6 +48,11 @@ class Ticket extends Model
      * Apply the shared ticket-list filters from a request-parameter array.
      * Used by every paginated ticket list (/tickets, projects, milestones) so
      * the filtering rules live in one place.
+     *
+     * Spike #121 verdict: free-text search stays on this LIKE path. Scout
+     * with the database driver adds a dependency plus index sync for a
+     * single-column subject match, with no ranking gain and extra wiring to
+     * compose with these filters, so the parser stays the filter boundary.
      */
     public function scopeFilter(Builder $query, array $params): Builder
     {
@@ -66,8 +71,12 @@ class Ticket extends Model
         }
 
         if (! empty($params['q'])) {
-            $search = str_replace(['%', '_'], ['\\%', '\\_'], $params['q']);
-            $query->where('subject', 'like', '%'.$search.'%');
+            // Escape char is deliberately !, not backslash: backslash breaks
+            // MySQL/MariaDB string literals, while ! is inert on all drivers.
+            // Keep escape-first ordering in str_replace. Retest on MySQL
+            // before changing this.
+            $search = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $params['q']);
+            $query->whereRaw("subject like ? escape '!'", ['%'.$search.'%']);
         }
 
         if (($params['assignee'] ?? null) === 'me' && auth()->check()) {
