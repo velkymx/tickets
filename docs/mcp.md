@@ -280,13 +280,21 @@ async with tickets:
 - **Call the lookup tools first.** `get-lookups-tool` resolves ticket
   status/type/importance/project/milestone/user names to IDs;
   `get-kb-lookups-tool` resolves KB category and tag IDs.
-- **`tools/list` returns all 19 tools in one page** (server pagination length is
+- **`tools/list` returns all 23 tools in one page** (server pagination length is
   raised to 50 in `config/mcp.php`, so no `nextCursor` follow-up is needed).
 - **Errors** come back as `isError: true` with a plain message. Tickets/notes
   and articles you cannot see or edit return a clean "not found" / "cannot
   edit" message rather than leaking existence.
 - Reads are visibility-scoped; writes are limited to tickets you own or are
   assigned to, and to KB articles you own or may edit.
+
+## Workflow prompts
+
+The server also exposes prompts (`prompts/list`): `triage-ticket-prompt`
+(`ticket_id`), `standup-digest-prompt` (`milestone_id`), and
+`close-out-ticket-prompt` (`ticket_id`). Each returns the ordered tool-call
+playbook for that flow. To run several specialists through one server, see
+[Coordinating Specialist Agents](multi-agent.md).
 
 ## Ticket tools
 
