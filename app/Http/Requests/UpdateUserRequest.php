@@ -21,7 +21,6 @@ class UpdateUserRequest extends FormRequest
             'timezone' => 'nullable|string|timezone|max:100',
             'theme' => 'nullable|string|in:auto,simplex,darkly',
             'bio' => 'nullable|string|max:2000',
-            'avatar' => 'nullable|image|max:2048',
         ];
     }
 }
