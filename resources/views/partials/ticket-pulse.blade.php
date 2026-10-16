@@ -8,7 +8,12 @@
         aria-controls="ticket-pulse-panel"
     >
         <span class="fw-bold">Ticket Pulse</span>
-        <span class="badge text-bg-dark" x-text="pulse.execution_state"></span>
+        <span>
+            <template x-if="pulse.open_threads.length">
+                <span class="badge text-bg-warning me-1" x-text="pulse.open_threads.length"></span>
+            </template>
+            <span class="badge text-bg-dark" x-text="pulse.execution_state"></span>
+        </span>
     </button>
 </div>
 
@@ -31,6 +36,15 @@
         ></span>
     </h6>
     <ul class="list-unstyled mb-0 small">
+        <template x-if="pulse.open_threads.length">
+            <li class="py-2 border-top">
+                {{-- Badge on the mobile toggle is the small-screen affordance; this banner lives inside the collapse, so no expand handler here. --}}
+                <a href="#pulse-threads" class="alert alert-warning d-flex justify-content-between align-items-center py-2 px-2 mb-0 text-decoration-none">
+                    <span><strong>Needs your decision</strong> <span class="text-muted" x-text="`(${pulse.open_threads.length} open)`"></span></span>
+                    <i class="fa-solid fa-arrow-down small"></i>
+                </a>
+            </li>
+        </template>
         <template x-if="pulse.latest_blocker">
             <li class="py-2 border-top">
                 <strong>Blocker:</strong>
@@ -103,7 +117,7 @@
             </template>
         </li>
 
-        <li class="py-2 border-top">
+        <li class="py-2 border-top" id="pulse-threads">
             <strong>Open Threads:</strong>
             <template x-if="pulse.open_threads.length">
                 <div class="mt-1 d-flex flex-column gap-1">
