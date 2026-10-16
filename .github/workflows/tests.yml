@@ -25,6 +25,7 @@ jobs:
       - run: composer install --no-interaction --prefer-dist
       - run: npm ci --no-audit --no-fund
       - run: npm run build
+      - run: npm run test:js
       - run: php artisan test
 
   mysql:
