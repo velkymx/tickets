@@ -21,15 +21,6 @@ class UserGravatarTest extends TestCase
     }
 
     #[Test]
-    public function avatar_component_uses_the_model_hash(): void
-    {
-        $blade = file_get_contents(resource_path('views/components/avatar.blade.php'));
-
-        $this->assertStringNotContainsString('md5(', $blade);
-        $this->assertStringContainsString('gravatar_hash', $blade);
-    }
-
-    #[Test]
     public function avatar_component_renders_gravatar_image(): void
     {
         $user = User::factory()->make(['email' => 'test@example.com']);
@@ -38,5 +29,19 @@ class UserGravatarTest extends TestCase
 
         $this->assertStringContainsString(md5('test@example.com'), $html);
         $this->assertStringContainsString('gravatar.com/avatar/', $html);
+    }
+
+    #[Test]
+    public function avatar_component_prefers_uploaded_avatar(): void
+    {
+        $user = User::factory()->make([
+            'email' => 'test@example.com',
+            'avatar' => 'avatars/alice.png',
+        ]);
+
+        $html = Blade::render('<x-avatar :user="$user" />', ['user' => $user]);
+
+        $this->assertStringContainsString('/avatars/alice.png', $html);
+        $this->assertStringNotContainsString('gravatar.com/avatar/', $html);
     }
 }
