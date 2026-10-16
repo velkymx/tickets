@@ -31,7 +31,17 @@ class Ticket extends Model
     {
         return $query
             ->where('importance_id', self::IMPORTANCE_BLOCKER)
-            ->whereNotIn('status_id', Status::closedStatusIds());
+            ->open();
+    }
+
+    public function scopeOpen(Builder $query): Builder
+    {
+        return $query->whereNotIn('status_id', Status::closedStatusIds());
+    }
+
+    public function scopeClosed(Builder $query): Builder
+    {
+        return $query->whereIn('status_id', Status::closedStatusIds());
     }
 
     /**
@@ -48,11 +58,11 @@ class Ticket extends Model
         }
 
         if (($params['status_id'] ?? null) === 'none') {
-            $query->whereNotIn('status_id', Status::closedStatusIds());
+            $query->open();
         }
 
         if (($params['status_id'] ?? null) === 'closed') {
-            $query->whereIn('status_id', Status::closedStatusIds());
+            $query->closed();
         }
 
         if (! empty($params['q'])) {

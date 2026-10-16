@@ -21,11 +21,9 @@ class MilestoneController extends Controller
 
     public function index()
     {
-        $closedStatusIds = Status::closedStatusIds();
-
         $counts = [
             'tickets as tickets_total',
-            'tickets as tickets_open' => fn ($q) => $q->whereNotIn('status_id', $closedStatusIds),
+            'tickets as tickets_open' => fn ($q) => $q->open(),
         ];
 
         $active = Milestone::withCount($counts)
@@ -93,7 +91,7 @@ class MilestoneController extends Controller
             ->paginate($perpage)
             ->withQueryString();
 
-        $completed = $milestone->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
+        $completed = $milestone->tickets()->closed()->count();
         $total = $milestone->tickets()->count();
         $percent = $total > 0 ? min(100, (int) round($completed / $total * 100)) : 0;
 

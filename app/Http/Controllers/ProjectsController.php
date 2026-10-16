@@ -65,7 +65,7 @@ class ProjectsController extends Controller
         $percent = 0;
 
         $total = $project->tickets()->count();
-        $completed = $project->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
+        $completed = $project->tickets()->closed()->count();
 
         if ($total !== 0) {
             $percent = round($completed / $total, 2) * 100;
@@ -73,7 +73,7 @@ class ProjectsController extends Controller
 
         $openTickets = Ticket::query()
             ->where('project_id', $project->id)
-            ->whereNotIn('status_id', Status::closedStatusIds())
+            ->open()
             ->with('importance')
             ->get();
 

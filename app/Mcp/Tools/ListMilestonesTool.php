@@ -3,7 +3,6 @@
 namespace App\Mcp\Tools;
 
 use App\Models\Milestone;
-use App\Models\Status;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type as JsonType;
 use Laravel\Mcp\Request;
@@ -23,12 +22,10 @@ class ListMilestonesTool extends MilestoneTool
             return $this->unauthenticated();
         }
 
-        $closedStatusIds = Status::closedStatusIds();
-
         $milestones = Milestone::with(['owner', 'scrummaster'])
             ->withCount([
                 'tickets as total_tickets',
-                'tickets as completed_tickets' => fn ($q) => $q->whereIn('status_id', $closedStatusIds),
+                'tickets as completed_tickets' => fn ($q) => $q->closed(),
             ])
             ->orderBy('name')
             ->get()
