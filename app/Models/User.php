@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -31,9 +32,12 @@ class User extends Authenticatable
             return Storage::url($this->avatar);
         }
 
-        $hash = md5(strtolower(trim($this->email)));
+        return "https://www.gravatar.com/avatar/{$this->gravatar_hash}?s={$size}&d=mp";
+    }
 
-        return "https://www.gravatar.com/avatar/{$hash}?s={$size}&d=mp";
+    protected function gravatarHash(): Attribute
+    {
+        return Attribute::get(fn () => md5(strtolower(trim($this->email ?? ''))));
     }
 
     public function mentions(): HasMany
