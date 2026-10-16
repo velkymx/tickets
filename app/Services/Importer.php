@@ -12,6 +12,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\LazyCollection;
 
 class Importer
 {
@@ -26,41 +27,36 @@ class Importer
         $this->userId = $userId;
         $this->milestone = Milestone::findOrFail($milestoneId);
 
-        $file = fopen($filePath, 'r');
-        if ($file === false) {
+        if (! is_readable($filePath)) {
             throw new Exception("Unable to open file: {$filePath}");
         }
 
-        try {
-            $i = 0;
-            $chunk = [];
+        $offset = $hasHeader ? 1 : 0;
 
-            while ($row = fgetcsv($file)) {
-                if ($i === 0 && $hasHeader) {
-                    $i++;
+        $rows = [];
+        $csv = new \SplFileObject($filePath, 'r');
+        $csv->setFlags(\SplFileObject::READ_CSV);
 
-                    continue;
-                }
-
-                if (count($row) < 7) {
-                    throw new Exception('CSV row must have at least 7 columns. Row '.($i + 1).' has '.count($row).' columns.');
-                }
-
-                $chunk[] = ['row' => $row, 'index' => $i + 1];
-                $i++;
-
-                if (count($chunk) >= 100) {
-                    $this->importChunk($chunk);
-                    $chunk = [];
-                }
-            }
-
-            if (count($chunk) > 0) {
-                $this->importChunk($chunk);
-            }
-        } finally {
-            fclose($file);
+        foreach ($csv as $row) {
+            $rows[] = is_array($row) ? $row : [null];
         }
+
+        // SplFileObject yields a trailing [null] for the final newline
+        // where fgetcsv stops at EOF, so drop that artifact only.
+        if (end($rows) === [null]) {
+            array_pop($rows);
+        }
+
+        LazyCollection::make($rows)
+            ->skip($offset)
+            ->map(fn ($row, $index) => ['row' => $row, 'index' => $index + 1 + $offset])
+            ->each(function ($item) {
+                if (count($item['row']) < 7) {
+                    throw new Exception('CSV row must have at least 7 columns. Row '.$item['index'].' has '.count($item['row']).' columns.');
+                }
+            })
+            ->chunk(100)
+            ->each(fn ($chunk) => $this->importChunk($chunk->all()));
     }
 
     private function importChunk(array $chunk): void
