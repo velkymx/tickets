@@ -6,10 +6,32 @@ This guide covers installing Tickets on a fresh server or local machine. For Doc
 
 | Dependency | Minimum version |
 |------------|----------------|
-| PHP | 8.2 |
+| PHP | 8.4 |
 | Composer | 2.x |
 | Node.js | 24 |
 | MariaDB | 11.8 (or MySQL 8.0 / PostgreSQL 12 / SQLite 3.35) |
+
+## Quick setup
+
+If you have PHP, Composer, and a database available, one command walks
+through the whole checklist (environment, app key, database, migrations,
+seeds, assets):
+
+```bash
+composer install
+php artisan app:install
+```
+
+Answer the prompts, or pass `--yes` to accept every default. `--no-seed`
+skips seeding and `--no-build` skips the frontend build.
+
+After seeding, the installer offers to set the admin name, email, and
+password (skipped automatically on re-runs once the default password is
+changed). For unattended runs, `ADMIN_NAME`, `ADMIN_EMAIL`, and
+`ADMIN_PASSWORD` env vars feed that step under `--yes`. `ADMIN_PASSWORD`
+is required when seeding unattended: without it the installer refuses to
+leave the default password in place. The email is validated the same way
+as the interactive prompt.
 
 ## Manual Installation
 
