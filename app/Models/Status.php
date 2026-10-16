@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -48,5 +49,10 @@ class Status extends Model
     public static function isClosed(int $statusId): bool
     {
         return in_array($statusId, self::closedStatusIds(), true);
+    }
+
+    public function scopeByName(Builder $query, string $name): Builder
+    {
+        return $query->whereRaw('LOWER(name) = ?', [mb_strtolower($name)]);
     }
 }
