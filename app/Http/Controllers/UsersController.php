@@ -64,9 +64,7 @@ class UsersController extends Controller
         $contributionMax = $contributions ? max($contributions) : 0;
 
         $timezone = $user->timezone ?? config('app.timezone');
-        $time = new \DateTime('now', new \DateTimeZone($timezone));
-
-        // Always show both 24-hour and 12-hour forms.
+        $time = now($timezone);
         $currenttime = $time->format('H:i').' ('.$time->format('g:i a').')';
 
         return view('users.show', compact('user', 'alltickets', 'currenttime', 'isOwnProfile', 'contributions', 'contributionTotal', 'contributionMax'));
@@ -144,7 +142,7 @@ class UsersController extends Controller
             $zones = \DateTimeZone::listIdentifiers($mask);
             foreach ($zones as $timezone) {
                 // Get current time in this timezone
-                $time = new \DateTime('now', new \DateTimeZone($timezone));
+                $time = now($timezone);
 
                 // Format timezone name with current time
                 $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$time->format('H:i').' ('.$time->format('g:i a').')';
