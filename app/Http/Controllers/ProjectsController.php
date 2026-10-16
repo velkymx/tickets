@@ -17,8 +17,7 @@ class ProjectsController extends Controller
         private PriorityMatrixService $priorityMatrix,
         private TicketService $ticketService,
         private TicketQueryParser $ticketQueryParser,
-    ) {
-    }
+    ) {}
 
     public function index()
     {
@@ -50,11 +49,9 @@ class ProjectsController extends Controller
         $tickets = Ticket::query()
             ->where('project_id', $project->id)
             ->filter($this->ticketQueryParser->parse($searchQuery))
-            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
-                $q->where('hide', 0)->where('notetype', 'message');
-            }])
+            ->withListRelations()
             ->sortable(
-                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                Ticket::LIST_SORTABLE,
                 ['importance_id', 'desc']
             )
             ->paginate($perpage)

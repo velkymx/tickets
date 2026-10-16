@@ -20,6 +20,21 @@ class Ticket extends Model
     /** Request keys accepted by the filter scope (also used to repopulate the filter UI). */
     public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q', 'assignee'];
 
+    /** Sortable column whitelist shared by every paginated ticket list. */
+    public const LIST_SORTABLE = ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'];
+
+    /**
+     * Eager loads shared by every paginated ticket list, including the
+     * visible-notes filter. Single source for the list relations.
+     */
+    public function scopeWithListRelations(Builder $query): Builder
+    {
+        return $query->with([
+            'status', 'type', 'importance', 'project', 'assignee',
+            'notes' => fn ($q) => $q->where('hide', 0)->where('notetype', 'message'),
+        ]);
+    }
+
     /** Importance level id for "blocker" (seeded by DefaultsSeeder). */
     public const IMPORTANCE_BLOCKER = 5;
 

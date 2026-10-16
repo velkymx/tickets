@@ -105,6 +105,8 @@ Backlog → In Progress → Review → Done (closed)
 
 Status names are configurable — the above is the default seeded data. Closed statuses are determined by the `closed_at` timestamp set when a ticket moves to a status marked as closed.
 
+The four paginated ticket lists (dashboard home, ticket index, project show, milestone show) share one eager-load scope plus one sortable whitelist (`Ticket::withListRelations()`, `Ticket::LIST_SORTABLE`). The Kanban board is deliberately excluded: it needs every matching ticket rather than a page, and it counts notes (`withCount`) instead of hydrating them. The dashboard recent-tickets strip likewise uses its own lighter relation set with no notes.
+
 ---
 
 ## See also
