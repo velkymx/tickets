@@ -66,7 +66,7 @@ class UpdateMilestoneTool extends MilestoneTool
         $milestone->save();
         $milestone->load(['owner', 'scrummaster']);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Milestone updated.',
             'milestone' => [
                 'id' => $milestone->id,
@@ -74,7 +74,7 @@ class UpdateMilestoneTool extends MilestoneTool
                 'owner' => $milestone->owner->name ?? null,
                 'scrummaster' => $milestone->scrummaster->name ?? null,
             ],
-        ]);
+        ], 'Milestone updated. Call get-milestone-tool to confirm.');
     }
 
     /**

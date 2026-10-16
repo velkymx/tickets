@@ -55,14 +55,14 @@ class ModerateNoteTool extends TicketTool
 
         $note->save();
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Note updated.',
             'note' => [
                 'id' => $note->id,
                 'pinned' => (bool) $note->pinned,
                 'hidden' => (bool) $note->hide,
             ],
-        ]);
+        ], 'Note moderated. Call get-ticket-tool to verify visibility.');
     }
 
     /**

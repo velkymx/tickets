@@ -133,7 +133,7 @@ class AddNoteTool extends TicketTool
             ];
         }
 
-        return Response::json($result);
+        return $this->respond($result, 'Note recorded. Call get-pulse-tool to see the updated execution state.');
     }
 
     /**

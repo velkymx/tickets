@@ -64,10 +64,10 @@ class PromoteNoteTool extends TicketTool
         $note->notetype = $type;
         $note->save();
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Note promoted.',
             'note' => ['id' => $note->id, 'notetype' => $note->notetype],
-        ]);
+        ], 'Note promoted. Call get-ticket-tool to verify placement.');
     }
 
     /**

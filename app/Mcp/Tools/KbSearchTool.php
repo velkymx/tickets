@@ -43,7 +43,7 @@ class KbSearchTool extends KbTool
             ], fn ($v) => $v !== null),
         );
 
-        return Response::json([
+        return $this->respond([
             'data' => $results->getCollection()->map(fn ($a) => [
                 'id' => $a->id,
                 'title' => $a->title,
@@ -61,7 +61,7 @@ class KbSearchTool extends KbTool
                 'per_page' => $results->perPage(),
                 'total' => $results->total(),
             ],
-        ]);
+        ], 'Results scoped to what you can see. Call get-kb-article-tool for full body.');
     }
 
     /**

@@ -35,7 +35,7 @@ class GetPulseTool extends TicketTool
 
         $pulse = app(TicketPulseService::class)->getPulse($ticket)->toArray();
 
-        return Response::json(['data' => $pulse]);
+        return $this->respond(['data' => $pulse], 'Pulse is advisory, not an action log. Resolve open threads with resolve-note-tool, or record decisions with add-note-tool and /decision.');
     }
 
     /**

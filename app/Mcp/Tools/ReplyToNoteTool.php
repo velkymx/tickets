@@ -61,10 +61,10 @@ class ReplyToNoteTool extends TicketTool
         $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
         $mentionService->createMentions($reply, $mentionUserIds);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Reply added.',
             'note' => ['id' => $reply->id, 'parent_id' => $parent->id],
-        ]);
+        ], 'Reply added. Call get-ticket-tool to read the thread in context.');
     }
 
     /**
