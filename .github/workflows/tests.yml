@@ -9,11 +9,14 @@ on:
 jobs:
   sqlite:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.4', '8.5']
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: ${{ matrix.php }}
           extensions: sqlite, pdo_sqlite
       - run: composer install --no-interaction --prefer-dist
       - run: php artisan test
