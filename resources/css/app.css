@@ -5,6 +5,10 @@
 @import 'easymde/dist/easymde.min.css';
 
 /* Custom styles */
+[x-cloak] {
+    display: none !important;
+}
+
 body {
     font-family: 'Inter', sans-serif;
 }

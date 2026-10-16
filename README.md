@@ -44,6 +44,7 @@ Manage the work your team needs to get done.
 * CSV import for bulk ticket creation
 * Query-based filtering such as `status:completed assignee:me importance:blocker`
 * Search across tickets, projects, milestones, and related data
+* Command palette (`Cmd+K` / `Ctrl+K`) to jump to tickets, pages, and actions
 
 ### Real-Time Collaboration
 
