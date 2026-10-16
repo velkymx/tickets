@@ -32,6 +32,15 @@ class SendTicketDigestJob implements ShouldQueue
         $user = User::query()->find($this->userId);
 
         if ($user && $entries !== []) {
+            // Entries were gated when appended, but prefs may have changed
+            // while the job waited. Re-check per entry at send time.
+            $entries = array_values(array_filter(
+                $entries,
+                fn ($entry) => $user->wantsNotification($entry['type'] ?? 'activity')
+            ));
+        }
+
+        if ($user && $entries !== []) {
             $user->notifyNow(new TicketDigestNotification($this->ticketId, $entries), ['mail']);
         }
 

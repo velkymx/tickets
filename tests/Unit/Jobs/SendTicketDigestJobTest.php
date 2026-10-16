@@ -75,4 +75,29 @@ class SendTicketDigestJobTest extends TestCase
 
         $this->assertNotNull($mail);
     }
+
+    #[Test]
+    public function it_skips_entries_opted_out_after_scheduling(): void
+    {
+        Notification::fake();
+        Cache::flush();
+
+        $user = User::factory()->create(['notify_mentions' => false]);
+        $key = "ticket-notification-batch:{$user->id}:142";
+
+        Cache::put($key, [
+            [
+                'type' => 'mention',
+                'subject' => 'Sarah mentioned you in Ticket #142',
+                'excerpt' => 'Can you check the deploy?',
+                'url' => 'http://example.com/tickets/142',
+                'created_at' => now()->toIso8601String(),
+            ],
+        ], now()->addMinutes(10));
+
+        (new SendTicketDigestJob($user->id, 142))->handle(app(NotificationBatchService::class));
+
+        Notification::assertNotSentTo($user, TicketDigestNotification::class);
+        $this->assertNull(Cache::get($key));
+    }
 }

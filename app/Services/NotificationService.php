@@ -35,6 +35,10 @@ class NotificationService
                 continue;
             }
 
+            if (! $user->wantsNotification('watching')) {
+                continue;
+            }
+
             $notifiedUserIds[] = $user->id;
 
             $message = "New activity on Ticket #{$ticket->id}: {$ticket->subject}";
