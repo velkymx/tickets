@@ -41,7 +41,7 @@ Generate a token from the user profile page (`/user/api-token`). All API request
 
 `POST /mcp/tickets` (same Bearer token) or stdio handle `tickets`. Tools:
 
-- `get-lookups-tool`, `list-tickets-tool`, `get-ticket-tool`, `get-pulse-tool`, `create-ticket-tool`, `update-ticket-tool`
+- `get-lookups-tool`, `list-tickets-tool`, `search-tickets-tool`, `get-ticket-tool`, `get-pulse-tool`, `create-ticket-tool`, `update-ticket-tool`
 - `list-milestones-tool`, `get-milestone-tool`, `create-milestone-tool`, `update-milestone-tool`
 - `add-note-tool`, `reply-to-note-tool`, `edit-note-tool`, `resolve-note-tool`, `react-to-note-tool`, `moderate-note-tool`, `promote-note-tool`, `watch-ticket-tool`
 - `get-kb-lookups-tool`, `kb-search-tool`, `get-kb-article-tool`, `create-kb-article-tool`, `update-kb-article-tool`
