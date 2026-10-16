@@ -48,7 +48,7 @@ Users manage their own profiles. Navigate to **Profile → Edit Profile** (top-r
 
 ## Notification preferences
 
-**Profile → Edit Profile** ends with three toggles, all on by default: Mentions, Replies, and Watched tickets. Unchecking one suppresses that type everywhere: the immediate notification, the batched digest entries, and the direct watcher path. The digest job re-checks preferences at send time, so opting out after a digest is scheduled still excludes those entries. Omitted fields never reset an explicit opt-out.
+**Profile → Edit Profile** ends with notification controls, all on by default: per-category toggles (Mentions, Replies, Watched tickets), an Email master switch, and Email timing (Digest or Immediately). Turning a category off keeps it in-app only; turning Email off keeps everything in-app only. Immediately sends mail at once, Digest keeps the batched summary. Preferences live in one JSON column with defaults merged on read, so untouched users see no change. The digest job re-checks preferences at send time, so opting out after a digest is scheduled still excludes those entries. Omitted fields never reset an explicit opt-out. A muted ticket never emails.
 
 ## Avatar
 
