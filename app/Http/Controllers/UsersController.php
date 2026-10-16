@@ -64,13 +64,8 @@ class UsersController extends Controller
         $contributionMax = $contributions ? max($contributions) : 0;
 
         $timezone = $user->timezone ?? config('app.timezone');
-        $time = new \DateTime(null, new \DateTimeZone($timezone));
-
-        // Add 12-hour format time for display
-        $ampm = $time->format('H') >= 12 ? ' ('.$time->format('g:i a').')' : '';
-
-        // Add sample time for current timezone
-        $currenttime = $time->format('H:i').$ampm;
+        $time = now($timezone);
+        $currenttime = $time->format('H:i').' ('.$time->format('g:i a').')';
 
         return view('users.show', compact('user', 'alltickets', 'currenttime', 'isOwnProfile', 'contributions', 'contributionTotal', 'contributionMax'));
 
@@ -147,13 +142,10 @@ class UsersController extends Controller
             $zones = \DateTimeZone::listIdentifiers($mask);
             foreach ($zones as $timezone) {
                 // Get current time in this timezone
-                $time = new \DateTime(null, new \DateTimeZone($timezone));
-
-                // Add 12-hour format for display
-                $ampm = $time->format('H') >= 12 ? ' ('.$time->format('g:i a').')' : '';
+                $time = now($timezone);
 
                 // Format timezone name with current time
-                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$time->format('H:i').$ampm;
+                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$time->format('H:i').' ('.$time->format('g:i a').')';
             }
         }
 
