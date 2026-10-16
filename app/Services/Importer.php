@@ -33,27 +33,34 @@ class Importer
 
         $offset = $hasHeader ? 1 : 0;
 
-        $rows = [];
-        $csv = new \SplFileObject($filePath, 'r');
-        $csv->setFlags(\SplFileObject::READ_CSV);
+        LazyCollection::make(function () use ($filePath) {
+            $csv = new \SplFileObject($filePath, 'r');
+            $csv->setFlags(\SplFileObject::READ_CSV);
 
-        foreach ($csv as $row) {
-            $rows[] = is_array($row) ? $row : [null];
-        }
+            $pending = null;
+            $waiting = false;
 
-        // SplFileObject yields a trailing [null] for the final newline
-        // where fgetcsv stops at EOF, so drop that artifact only.
-        if (end($rows) === [null]) {
-            array_pop($rows);
-        }
-
-        LazyCollection::make($rows)
-            ->skip($offset)
-            ->map(fn ($row, $index) => ['row' => $row, 'index' => $index + 1 + $offset])
-            ->each(function ($item) {
-                if (count($item['row']) < 7) {
-                    throw new Exception('CSV row must have at least 7 columns. Row '.$item['index'].' has '.count($item['row']).' columns.');
+            foreach ($csv as $row) {
+                if ($waiting) {
+                    yield $pending;
                 }
+
+                $pending = is_array($row) ? $row : [null];
+                $waiting = true;
+            }
+
+            if ($waiting && $pending !== [null]) {
+                yield $pending;
+            }
+        })
+            ->skip($offset)
+            ->values()
+            ->map(function ($row, $index) use ($offset) {
+                if (count($row) < 7) {
+                    throw new Exception('CSV row must have at least 7 columns. Row '.($index + 1 + $offset).' has '.count($row).' columns.');
+                }
+
+                return ['row' => $row, 'index' => $index + 1 + $offset];
             })
             ->chunk(100)
             ->each(fn ($chunk) => $this->importChunk($chunk->all()));

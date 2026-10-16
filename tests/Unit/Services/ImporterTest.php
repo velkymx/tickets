@@ -495,12 +495,56 @@ class ImporterTest extends TestCase
     }
 
     #[Test]
-    public function it_streams_rows_without_raw_file_handles(): void
+    public function it_reports_file_line_numbers_when_a_header_is_present(): void
     {
-        $importer = file_get_contents(app_path('Services/Importer.php'));
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Bug']);
+        Importance::factory()->create(['name' => 'High']);
+        Status::factory()->create(['name' => 'Open']);
+        Project::factory()->create(['name' => 'Test Project', 'active' => true]);
 
-        $this->assertStringNotContainsString('fopen(', $importer);
-        $this->assertStringNotContainsString('fclose(', $importer);
-        $this->assertStringContainsString('LazyCollection', $importer);
+        Auth::login($user);
+
+        $this->writeCsv([
+            ['Type', 'Subject', 'Description', 'Importance', 'Status', 'Project', 'Assignee'],
+            ['Bug', 'Short Row'],
+        ]);
+
+        try {
+            $this->importer->call($milestone->id, $this->tempFile, true);
+            $this->fail('Expected an exception for the short row.');
+        } catch (Exception $e) {
+            $this->assertSame('CSV row must have at least 7 columns. Row 2 has 2 columns.', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function it_keeps_committed_chunks_when_a_later_row_fails(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Bug']);
+        Importance::factory()->create(['name' => 'High']);
+        Status::factory()->create(['name' => 'Open']);
+        Project::factory()->create(['name' => 'Test Project', 'active' => true]);
+
+        Auth::login($user);
+
+        $rows = [];
+        for ($i = 1; $i <= 100; $i++) {
+            $rows[] = ['Bug', "Ticket $i", 'Desc', 'High', 'Open', 'Test Project', 'Assignee'];
+        }
+        $rows[] = ['Bug', 'Short Row'];
+
+        $this->writeCsv($rows);
+
+        try {
+            $this->importer->call($milestone->id, $this->tempFile, false);
+            $this->fail('Expected an exception for the short row.');
+        } catch (Exception $e) {
+        }
+
+        $this->assertEquals(100, Ticket::where('milestone_id', $milestone->id)->count());
     }
 }
