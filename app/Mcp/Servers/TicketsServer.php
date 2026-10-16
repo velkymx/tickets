@@ -25,6 +25,7 @@ use App\Mcp\Tools\PromoteNoteTool;
 use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
+use App\Mcp\Tools\SearchTicketsTool;
 use App\Mcp\Tools\UpdateKbArticleTool;
 use App\Mcp\Tools\UpdateMilestoneTool;
 use App\Mcp\Tools\UpdateTicketTool;
@@ -49,6 +50,7 @@ class TicketsServer extends Server
     protected array $tools = [
         GetLookupsTool::class,
         ListTicketsTool::class,
+        SearchTicketsTool::class,
         GetTicketTool::class,
         GetPulseTool::class,
         CreateTicketTool::class,

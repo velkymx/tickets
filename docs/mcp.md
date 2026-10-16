@@ -280,7 +280,7 @@ async with tickets:
 - **Call the lookup tools first.** `get-lookups-tool` resolves ticket
   status/type/importance/project/milestone/user names to IDs;
   `get-kb-lookups-tool` resolves KB category and tag IDs.
-- **`tools/list` returns all 23 tools in one page** (server pagination length is
+- **`tools/list` returns all 24 tools in one page** (server pagination length is
   raised to 50 in `config/mcp.php`, so no `nextCursor` follow-up is needed).
 - **Errors** come back as `isError: true` with a plain message. Tickets/notes
   and articles you cannot see or edit return a clean "not found" / "cannot
@@ -302,6 +302,7 @@ playbook for that flow. To run several specialists through one server, see
 |------|-----------|
 | `get-lookups-tool` | none — statuses, types, importance, active projects, milestones, users with IDs. Call first. |
 | `list-tickets-tool` | `status_id`, `unassigned` (bool), `include_pulse` (bool), `per_page` (max 100, default 20). Your assigned tickets, newest first. |
+| `search-tickets-tool` | `query` (required, GitLab-style `key:value` plus free text, same grammar and active-status default as web lists), `per_page` (max 100, default 20). Tickets you own or are assigned to, newest activity first. |
 | `get-ticket-tool` | `ticket_id` (required) — full detail, visible notes with replies, pulse state. |
 | `get-pulse-tool` | `ticket_id` (required) — execution state, blocker, next action, decisions, threads. |
 | `create-ticket-tool` | `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `assignee_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you by default; pass `assignee_id` for someone else, or `assignee_id: null` to leave it unassigned. |
