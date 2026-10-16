@@ -91,7 +91,7 @@ class TicketsController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return View('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers'));
+        return view('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers'));
     }
 
     public function index(Request $request)
