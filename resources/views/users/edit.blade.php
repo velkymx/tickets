@@ -73,6 +73,18 @@
         @enderror
     </div>
 
+    <div class="mb-3">
+        <span class="form-label">Notify me about</span>
+        @foreach (['notify_mentions' => 'Mentions', 'notify_replies' => 'Replies', 'notify_watching' => 'Watched tickets'] as $field => $label)
+            <div class="form-check">
+                {{-- Hidden 0 first: PHP keeps the last value per key, so checked yields 1 and unchecked yields 0. --}}
+                <input type="hidden" name="{{ $field }}" value="0">
+                <input type="checkbox" name="{{ $field }}" id="{{ $field }}" value="1" class="form-check-input" @checked(old($field, $user->{$field} ?? true))>
+                <label for="{{ $field }}" class="form-check-label">{{ $label }}</label>
+            </div>
+        @endforeach
+    </div>
+
     <div class="d-flex justify-content-start mt-4">
         <button type="submit" class="btn btn-success">Save Profile</button>
     </div>

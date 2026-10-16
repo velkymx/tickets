@@ -46,6 +46,10 @@ Users manage their own profiles. Navigate to **Profile → Edit Profile** (top-r
 | Theme | `Automatic` (OS), `Default` (light), `Darkly` (dark) |
 | Avatar | Uploaded image; falls back to Gravatar if not set |
 
+## Notification preferences
+
+**Profile → Edit Profile** ends with three toggles, all on by default: Mentions, Replies, and Watched tickets. Unchecking one suppresses that type everywhere: the immediate notification, the batched digest entries, and the direct watcher path. The digest job re-checks preferences at send time, so opting out after a digest is scheduled still excludes those entries. Omitted fields never reset an explicit opt-out.
+
 ## Avatar
 
 Avatars are uploaded from the **Edit Profile** page. Supported formats: JPEG, PNG, GIF, WebP. Stored in `storage/app/public/images/avatars/`. Falls back to the user's Gravatar (based on email) if no avatar is uploaded.

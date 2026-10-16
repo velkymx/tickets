@@ -99,6 +99,11 @@ class UsersController extends Controller
         $user->theme = $validated['theme'] ?? null;
         $user->title = $validated['title'] ?? null;
         $user->bio = $validated['bio'] ?? null;
+        foreach (['notify_mentions', 'notify_replies', 'notify_watching'] as $pref) {
+            if (array_key_exists($pref, $validated)) {
+                $user->{$pref} = $validated[$pref];
+            }
+        }
 
         $user->save();
 
