@@ -53,9 +53,7 @@
                 <div class="d-flex gap-2">
                     <select name="category_id" id="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
                         <option value="">Select category...</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>
-                        @endforeach
+                        @include('kb.partials.category-options', ['parentId' => null, 'depth' => 0, 'selectedId' => old('category_id')])
                     </select>
                     <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" @click="adding = !adding">
                         <i class="fas fa-plus"></i>

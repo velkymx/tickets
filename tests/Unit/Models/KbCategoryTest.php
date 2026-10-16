@@ -16,7 +16,7 @@ class KbCategoryTest extends TestCase
     public function it_has_the_expected_fillable_fields(): void
     {
         $category = new KbCategory;
-        $this->assertSame(['name', 'slug', 'description', 'sort_order'], $category->getFillable());
+        $this->assertSame(['name', 'slug', 'description', 'sort_order', 'parent_id'], $category->getFillable());
     }
 
     #[Test]
