@@ -80,11 +80,7 @@
                                         @endif
                                     </div>
                                     <div class="d-flex flex-wrap gap-1 mt-2">
-                                        @if ($ticket->importance)
-                                            <span class="badge text-bg-{{ $ticket->importance->class ?? 'secondary' }}" title="Importance: {{ $ticket->importance->name }}">
-                                                @if (! empty($ticket->importance->icon))<i class="{{ $ticket->importance->icon }}"></i> @endif{{ $ticket->importance->name }}
-                                            </span>
-                                        @endif
+                                        <x-importance-badge :importance="$ticket->importance" show-label />
                                         @if ($ticket->type)
                                             <span class="badge text-bg-light border" title="Type">{{ $ticket->type->name }}</span>
                                         @endif

@@ -120,10 +120,11 @@ Dashboard
                         @foreach($recentTickets as $ticket)
                             <a href="/tickets/{{ $ticket->id }}" class="list-group-item list-group-item-action py-2">
                                 <div class="d-flex gap-2 align-items-start">
-                                    <i class="{{ $ticket->type->icon }} text-{{ $ticket->importance->class }} mt-1 flex-shrink-0"></i>
+                                    <i class="{{ $ticket->type->icon }} mt-1 flex-shrink-0"></i>
+                                    <x-importance-badge :importance="$ticket->importance" />
                                     <div class="flex-grow-1" style="min-width:0;">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
-                                            <span class="badge text-bg-{{ $ticket->importance->class }}">{{ $ticket->importance->name }}</span>
+                                            <x-importance-badge :importance="$ticket->importance" show-label />
                                             <small class="text-muted text-nowrap flex-shrink-0">{{ $ticket->updated_at->diffForHumans(['short' => true]) }}</small>
                                         </div>
                                         <p class="mb-0 mt-1 small text-truncate">#{{ $ticket->id }} {{ $ticket->subject }}</p>

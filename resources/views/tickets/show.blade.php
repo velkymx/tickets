@@ -213,9 +213,7 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center gap-3 py-1">
                         <dt class="fw-normal text-body-secondary">Importance</dt>
-                        <dd class="mb-0 text-end text-{{ $ticket->importance->class }}">
-                            <i class="{{ $ticket->importance->icon }}"></i> {{ $ticket->importance->name }}
-                        </dd>
+                        <dd class="mb-0 text-end"><x-importance-badge :importance="$ticket->importance" show-label /></dd>
                     </div>
                     <div class="d-flex justify-content-between align-items-center gap-3 py-1">
                         <dt class="fw-normal text-body-secondary">Type</dt>

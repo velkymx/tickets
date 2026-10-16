@@ -13,9 +13,7 @@
             <a href="/tickets/{{ $ticket->id }}" class="list-group-item list-group-item-action py-2">
                 <div class="d-flex justify-content-between align-items-start gap-2">
                     <span class="text-truncate">
-                        <span class="text-{{ $ticket->importance->class }}" title="{{ $ticket->importance->name }}">
-                            <i class="{{ $ticket->importance->icon }}"></i>
-                        </span>
+                        <x-importance-badge :importance="$ticket->importance" />
                         #{{ $ticket->id }} {{ $ticket->subject }}
                     </span>
                     <span class="badge text-bg-secondary flex-shrink-0">{{ $ticket->status->name }}</span>
