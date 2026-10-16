@@ -7,7 +7,6 @@ use App\Http\Requests\EstimateTicketRequest;
 use App\Http\Requests\NoteTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
-use App\Http\Requests\UploadTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\ReleaseTicket;
 use App\Models\Status;
@@ -16,7 +15,6 @@ use App\Models\TicketEstimate;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\User;
-use App\Services\AttachmentService;
 use App\Services\TicketPulseService;
 use App\Services\TicketQueryParser;
 use App\Services\TicketService;
@@ -26,7 +24,6 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 
 class TicketsController extends Controller
 {
@@ -276,23 +273,6 @@ class TicketsController extends Controller
         $insert->save();
 
         return redirect('tickets/'.$insert->id)->with('status', 'Task was created successfully!');
-    }
-
-    public function upload(UploadTicketRequest $request, AttachmentService $attachmentService)
-    {
-        $file = $request->file('file');
-        $folder = preg_replace('/[^a-zA-Z0-9_-]/', '', $request->input('folder'));
-
-        $attachmentService->validateFileType($file);
-
-        // Derive the extension from the detected MIME type rather than the
-        // client-supplied filename, so a renamed upload cannot pick its own.
-        $filename = time().'_'.Str::uuid().'.'.$file->extension();
-        $path = 'images/'.$folder.'/'.$filename;
-
-        $file->move(public_path('images/'.$folder), $filename);
-
-        return '/'.$path;
     }
 
     public function batch(BatchUpdateTicketRequest $request)

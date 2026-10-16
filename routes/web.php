@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\Api\ApiDocsController;
+use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\Kb\KbAdminController;
 use App\Http\Controllers\Kb\KbController;
@@ -118,7 +118,6 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::post('/tickets/batch', [TicketsController::class, 'batch'])->name('tickets.batch')->middleware('throttle:uploads');
     Route::post('/tickets/import', [ImportController::class, 'create'])->name('tickets.storeimport')->middleware('throttle:uploads');
     Route::put('/tickets/update/{id}', [TicketsController::class, 'update'])->name('tickets.update');
-    Route::post('/tickets/upload', [TicketsController::class, 'upload'])->name('tickets.upload')->middleware('throttle:uploads');
 
     // Milestone
     Route::post('/milestone/store/{id}', [MilestoneController::class, 'store'])->name('milestone.store');

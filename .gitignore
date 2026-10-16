@@ -17,6 +17,13 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-*.md
+/PRD-AGILE.md
+/PRD-REBUILD.md
+/changelog.md
+/tests.md
+/docs/superpowers/
 public/build/manifest.json
 todo.md
+/public/images/avatars/
+/public/images/uploads/
+/public/images/myavatars*/
