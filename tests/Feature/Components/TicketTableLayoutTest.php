@@ -46,7 +46,7 @@ class TicketTableLayoutTest extends TestCase
         $response = $this->actingAs($user)->get('/tickets');
 
         $response->assertOk();
-        $response->assertSee('ticket-cell-truncate', false);
+        $response->assertSee('text-truncate', false);
     }
 
     #[Test]
