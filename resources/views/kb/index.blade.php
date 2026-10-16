@@ -5,9 +5,16 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="mb-0">Knowledge Base</h1>
-    @can('create', \App\Models\KbArticle::class)
-        <a href="{{ route('kb.create') }}" class="btn btn-sm btn-primary">Create Article</a>
-    @endcan
+    <div class="d-flex gap-2">
+        @auth
+            @if(auth()->user()->isKbAdmin())
+                <a href="{{ route('kb.admin.categories') }}" class="btn btn-sm btn-outline-secondary">Manage categories</a>
+            @endif
+        @endauth
+        @can('create', \App\Models\KbArticle::class)
+            <a href="{{ route('kb.create') }}" class="btn btn-sm btn-primary">Create Article</a>
+        @endcan
+    </div>
 </div>
 
 {{-- Search Bar --}}
@@ -25,12 +32,7 @@
     <a href="{{ route('kb.index') }}" class="btn btn-sm {{ !request('category_id') && !request()->routeIs('kb.category') ? 'btn-primary' : 'btn-outline-secondary' }} me-1 mb-1">
         All Articles
     </a>
-    @foreach($categories as $cat)
-        <a href="{{ route('kb.category', $cat->slug) }}"
-           class="btn btn-sm {{ (isset($category) && $category->id === $cat->id) || request('category_id') == $cat->id ? 'btn-primary' : 'btn-outline-secondary' }} me-1 mb-1">
-            {{ $cat->name }} <span class="badge bg-secondary rounded-pill ms-1">{{ $cat->articles_count }}</span>
-        </a>
-    @endforeach
+    @include('kb.partials.category-pills', ['parentId' => null, 'depth' => 0])
     @auth
         <span class="mx-1 text-muted">|</span>
         <a href="{{ route('kb.index', ['status' => 'draft']) }}" class="btn btn-sm {{ request('status') === 'draft' ? 'btn-warning' : 'btn-outline-secondary' }} me-1 mb-1">
