@@ -94,6 +94,11 @@ class User extends Authenticatable
         return $this->hasMany(Note::class, 'user_id');
     }
 
+    public function savedViews(): HasMany
+    {
+        return $this->hasMany(SavedView::class)->orderBy('name');
+    }
+
     public function generateApiToken(): string
     {
         $plain = Str::random(60);

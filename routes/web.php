@@ -14,6 +14,7 @@ use App\Http\Controllers\PaletteController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ReleaseController;
+use App\Http\Controllers\SavedViewController;
 use App\Http\Controllers\TicketPulseController;
 use App\Http\Controllers\TicketsController;
 use App\Http\Controllers\UsersController;
@@ -43,6 +44,8 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::post('/activity/read/{id}', [ActivityController::class, 'read'])->name('activity.read');
     Route::post('/activity/read-all', [ActivityController::class, 'readAll'])->name('activity.read-all');
     Route::get('/palette/search', PaletteController::class)->name('palette.search');
+    Route::post('/saved-views', [SavedViewController::class, 'store'])->name('saved-views.store');
+    Route::delete('/saved-views/{savedView}', [SavedViewController::class, 'destroy'])->name('saved-views.destroy');
 
     // --- Tickets Routes (CRITICAL: Static routes must come before dynamic routes) ---
 
