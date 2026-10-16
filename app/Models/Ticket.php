@@ -34,13 +34,11 @@ class Ticket extends Model
             ->open();
     }
 
-    /** Tickets whose status is not closed. */
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereNotIn('status_id', Status::closedStatusIds());
     }
 
-    /** Tickets whose status is closed. */
     public function scopeClosed(Builder $query): Builder
     {
         return $query->whereIn('status_id', Status::closedStatusIds());
