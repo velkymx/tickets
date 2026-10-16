@@ -13,6 +13,14 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            TicketView::where('user_id', $user->id)->delete();
+            TicketUserWatcher::where('user_id', $user->id)->delete();
+        });
+    }
+
     protected $fillable = [
         'name', 'email', 'avatar', 'password', 'phone', 'timezone', 'theme', 'title', 'bio',
     ];
