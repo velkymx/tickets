@@ -24,7 +24,7 @@ class UsersController extends Controller
         // Closed and New tickets are excluded: the profile shows active work only.
         $alltickets = [];
         if ($isOwnProfile) {
-            $newStatusIds = Status::whereRaw('LOWER(name) = ?', ['new'])->pluck('id')->toArray();
+            $newStatusIds = Status::byName('new')->pluck('id')->toArray();
 
             $tickets = Ticket::where('user_id2', $id)
                 ->whereNotIn('status_id', array_merge(Status::closedStatusIds(), $newStatusIds))
