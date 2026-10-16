@@ -26,6 +26,7 @@ The KB is a standalone module within the Laravel app. It has its own models, con
 | name | string | |
 | slug | string, unique | |
 | description | text, nullable | |
+| parent_id | bigint FK nullable, nullOnDelete | Self-reference for nested folders; null means top level |
 | sort_order | integer, default 0 | |
 | timestamps | | |
 
