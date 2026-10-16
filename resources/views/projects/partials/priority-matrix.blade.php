@@ -27,13 +27,7 @@
                 @forelse ($matrix[$key] as $tick)
                     <div class="d-flex justify-content-between align-items-center border-bottom py-1">
                         <span class="text-truncate me-2">
-                            @if($tick->importance)
-                                <span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}">
-                                    <i class="{{ $tick->importance->icon }}"></i>
-                                </span>
-                            @else
-                                <span class="text-muted" title="Priority: none">—</span>
-                            @endif
+                            <x-importance-badge :importance="$tick->importance" />
                             <a href="/tickets/{{ $tick->id }}" class="text-decoration-none">#{{ $tick->id }} {{ $tick->subject }}</a>
                         </span>
                         <span class="badge text-bg-light text-nowrap">
