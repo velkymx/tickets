@@ -80,7 +80,9 @@
                                         @endif
                                     </div>
                                     <div class="d-flex flex-wrap gap-1 mt-2">
-                                        <x-importance-badge :importance="$ticket->importance" show-label />
+                                        @if ($ticket->importance)
+                                            <x-importance-badge :importance="$ticket->importance" pill />
+                                        @endif
                                         @if ($ticket->type)
                                             <span class="badge text-bg-light border" title="Type">{{ $ticket->type->name }}</span>
                                         @endif

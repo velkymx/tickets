@@ -3,7 +3,11 @@
 namespace Tests\Feature\Components;
 
 use App\Models\Importance;
+use App\Models\Status;
+use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -40,12 +44,33 @@ class ImportanceBadgeTest extends TestCase
     }
 
     #[Test]
-    public function ticket_show_uses_badge_component_for_importance(): void
+    public function ticket_show_renders_badge_markup_for_importance(): void
     {
-        $show = file_get_contents(resource_path('views/tickets/show.blade.php'));
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
 
-        $this->assertStringContainsString('x-importance-badge', $show);
-        $this->assertStringNotContainsString('$ticket->importance->class', $show);
-        $this->assertStringNotContainsString('$ticket->importance->icon', $show);
+        $response = $this->actingAs($user)->get(route('tickets.show', $ticket));
+
+        $response->assertStatus(200);
+        $response->assertSee('title="Priority: '.$ticket->importance->name.'"', false);
+    }
+
+    #[Test]
+    public function home_renders_ticket_with_missing_importance(): void
+    {
+        $user = User::factory()->create();
+        $open = Status::factory()->create(['name' => 'Open Badge']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $user->id,
+            'status_id' => $open->id,
+        ]);
+
+        DB::statement('PRAGMA foreign_keys=OFF');
+        DB::table('importances')->where('id', $ticket->importance_id)->delete();
+
+        $response = $this->actingAs($user)->get('/home');
+
+        $response->assertStatus(200);
+        $response->assertSee('Priority: none', false);
     }
 }
