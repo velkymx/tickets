@@ -68,9 +68,10 @@ class TicketsController extends Controller
             'watching' => Ticket::whereHas('watchers', fn ($q) => $q->where('user_id', $user->id))->count(),
         ];
 
-        $recentTickets = Ticket::where('user_id2', $user->id)
-            ->whereNotIn('status_id', $closedStatusIds)
-            ->orWhere('user_id', $user->id)
+        $recentTickets = Ticket::where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)
+                ->orWhere('user_id', $user->id);
+        })
             ->whereNotIn('status_id', $closedStatusIds)
             ->with(['status', 'type', 'importance', 'project', 'assignee'])
             ->orderBy('updated_at', 'desc')
