@@ -8,6 +8,7 @@
 
     {{-- Same query bar as list view. Filters apply; columns stay, non-matches empty. --}}
     <x-ticket-search :query="$searchQuery ?? ''" :tokens="$searchTokens ?? []" :action="url('tickets/board')" />
+    @include('partials.saved-views')
 
     @if (! empty($searchQuery ?? ''))
         <div class="d-flex align-items-center gap-2 mb-3 small text-muted">

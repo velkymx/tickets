@@ -62,6 +62,10 @@ Open a ticket and add a note. Use slash commands to update fields without leavin
 
 See [Note Signals](note-signals.md) for the full slash command reference.
 
+### Saved views
+
+Type any query in a ticket list, then name and save it from the chip row. Saved views appear as chips on ticket lists, the board, and project and milestone pages; clicking one re-applies its query. Names are unique per user. Delete a view from its chip at any time.
+
 ### Tracking blockers
 
 When a ticket is blocked, add a `/blocker` note explaining what's blocking it. The ticket's [Pulse](pulse.md) immediately shows `BLOCKED` and surfaces the blocker to anyone viewing the ticket or scanning via API.
