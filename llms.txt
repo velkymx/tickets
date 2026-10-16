@@ -46,6 +46,8 @@ Generate a token from the user profile page (`/user/api-token`). All API request
 - `add-note-tool`, `reply-to-note-tool`, `edit-note-tool`, `resolve-note-tool`, `react-to-note-tool`, `moderate-note-tool`, `promote-note-tool`, `watch-ticket-tool`
 - `get-kb-lookups-tool`, `kb-search-tool`, `get-kb-article-tool`, `create-kb-article-tool`, `update-kb-article-tool`
 
+Prompts: `triage-ticket-prompt`, `standup-digest-prompt`, `close-out-ticket-prompt`.
+
 ## Key Concepts
 
 - **lookups-first**: Always call `/lookups` (or `get-lookups-tool`) to get valid IDs before creating/updating tickets
@@ -67,6 +69,7 @@ Generate a token from the user profile page (`/user/api-token`). All API request
 
 - [Full API Docs](README.md#api)
 - [MCP guide](docs/mcp.md)
+- [Multi-agent coordination](docs/multi-agent.md)
 - [Repository](https://github.com/velkymx/tickets)
 - [Contributing Guide](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
