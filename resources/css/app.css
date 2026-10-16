@@ -89,6 +89,32 @@ body {
     max-width: 280px;
 }
 
+/* Board stays within the viewport so the horizontal scrollbar never
+   drops below the fold; each column scrolls vertically on its own. */
+.kanban-board {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: calc(100vh - 14rem);
+    min-height: min(320px, 40vh);
+}
+
+.kanban-board .kanban-column {
+    display: flex;
+}
+
+.kanban-board .kanban-column .card {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    width: 100%;
+}
+
+.kanban-board .kanban-column .card > .card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 /* Drop target must keep height when empty, else cross-column drops miss. */
 .ticket-column {
     min-height: 120px;
