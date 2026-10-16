@@ -10,6 +10,18 @@
                     <h2 class="h4 mb-0">Log In</h2>
                 </div>
                 <div class="card-body p-4">
+                    @php($ssoProviders = \App\Http\Controllers\Auth\SsoController::enabledProviders())
+                    @if(count($ssoProviders) > 0)
+                        <div class="d-grid gap-2 mb-3">
+                            @foreach($ssoProviders as $provider)
+                                <a href="{{ route('sso.redirect', $provider) }}" class="btn btn-outline-secondary">
+                                    Continue with {{ ucfirst($provider === 'azure' ? 'Microsoft' : $provider) }}
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if(config('auth.password_login_enabled'))
                     
                     {{-- Session Status Display --}}
                     @if (session('status'))
@@ -57,12 +69,14 @@
                         </div>
 
                         {{-- Actions --}}
-                        <div class="d-flex justify-content-end align-items-center">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{{ route('password.request') }}" class="small">Forgot your password?</a>
                             <button type="submit" class="btn btn-primary">
                                 {{ __('Log in') }}
                             </button>
                         </div>
                     </form>
+                    @endif
                 </div>
             </div>
         </div>
