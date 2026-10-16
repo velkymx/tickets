@@ -64,8 +64,7 @@ class UsersController extends Controller
         $contributionMax = $contributions ? max($contributions) : 0;
 
         $timezone = $user->timezone ?? config('app.timezone');
-        $time = now($timezone);
-        $currenttime = $time->format('H:i').' ('.$time->format('g:i a').')';
+        $currenttime = $this->currentTimeFor($timezone);
 
         return view('users.show', compact('user', 'alltickets', 'currenttime', 'isOwnProfile', 'contributions', 'contributionTotal', 'contributionMax'));
 
@@ -141,14 +140,18 @@ class UsersController extends Controller
         foreach ($regions as $name => $mask) {
             $zones = \DateTimeZone::listIdentifiers($mask);
             foreach ($zones as $timezone) {
-                // Get current time in this timezone
-                $time = now($timezone);
-
                 // Format timezone name with current time
-                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$time->format('H:i').' ('.$time->format('g:i a').')';
+                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$this->currentTimeFor($timezone);
             }
         }
 
         return $timezones;
+    }
+
+    private function currentTimeFor(string $timezone): string
+    {
+        $time = now($timezone);
+
+        return $time->format('H:i').' ('.$time->format('g:i a').')';
     }
 }
