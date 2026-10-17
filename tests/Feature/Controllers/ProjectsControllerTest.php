@@ -314,12 +314,15 @@ class ProjectsControllerTest extends TestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->post('/projects/store/new', [
+        $before = Project::count();
+
+        $this->post('/projects/store/new', [
             'id' => 'new',
             'name' => 'Test',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($before, Project::count());
     }
 
     #[Test]

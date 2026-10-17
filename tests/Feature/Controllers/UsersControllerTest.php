@@ -239,12 +239,15 @@ class UsersControllerTest extends TestCase
     #[Test]
     public function update_requires_authentication(): void
     {
-        $response = $this->post('/user/update', [
+        $user = User::factory()->create(['name' => 'Original Name']);
+
+        $this->post('/user/update', [
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame('Original Name', $user->fresh()->name);
     }
 
     #[Test]

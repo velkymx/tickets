@@ -18,8 +18,14 @@ class SavedViewsTest extends TestCase
     #[Test]
     public function guests_cannot_manage_views(): void
     {
+        $before = SavedView::count();
+
         $this->post('/saved-views', ['name' => 'Mine', 'query' => 'is:open'])->assertRedirect('/login');
         $this->delete('/saved-views/1')->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertSame($before, SavedView::count());
+        $this->assertDatabaseMissing('saved_views', ['name' => 'Mine']);
     }
 
     #[Test]

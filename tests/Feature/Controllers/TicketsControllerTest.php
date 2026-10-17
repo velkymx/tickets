@@ -1415,11 +1415,13 @@ class TicketsControllerTest extends TestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->post('/tickets', [
-            'subject' => 'Test Ticket',
-        ]);
+        $before = Ticket::count();
 
-        $response->assertRedirect('/login');
+        $this->post('/tickets', ['subject' => 'Test Ticket'])->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertSame($before, Ticket::count());
+        $this->assertDatabaseMissing('tickets', ['subject' => 'Test Ticket']);
     }
 
     #[Test]
@@ -1553,11 +1555,12 @@ class TicketsControllerTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
 
-        $response = $this->put("/tickets/update/{$ticket->id}", [
+        $this->put("/tickets/update/{$ticket->id}", [
             'subject' => 'Updated Subject',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($ticket->subject, $ticket->fresh()->subject);
     }
 
     #[Test]
@@ -1780,9 +1783,10 @@ class TicketsControllerTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
 
-        $response = $this->post("/tickets/claim/{$ticket->id}");
+        $this->post("/tickets/claim/{$ticket->id}")->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($ticket->user_id2, $ticket->fresh()->user_id2);
     }
 
     #[Test]
@@ -1825,11 +1829,17 @@ class TicketsControllerTest extends TestCase
     #[Test]
     public function batch_requires_authentication(): void
     {
-        $response = $this->post('/tickets/batch', [
-            'tickets' => [1 => []],
-        ]);
+        $ticket = Ticket::factory()->create();
+        $before = Ticket::count();
 
-        $response->assertRedirect('/login');
+        $this->post('/tickets/batch', [
+            'tickets' => [$ticket->id => 'on'],
+            'subject' => 'Guest Edit',
+        ])->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertSame($before, Ticket::count());
+        $this->assertSame($ticket->subject, $ticket->fresh()->subject);
     }
 
     #[Test]
@@ -1938,11 +1948,12 @@ class TicketsControllerTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
 
-        $response = $this->post("/tickets/api/{$ticket->id}", [
+        $this->post("/tickets/api/{$ticket->id}", [
             'status' => Status::factory()->create()->id,
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($ticket->status_id, $ticket->fresh()->status_id);
     }
 
     #[Test]
@@ -2033,12 +2044,15 @@ class TicketsControllerTest extends TestCase
     #[Test]
     public function note_requires_authentication(): void
     {
-        $response = $this->post('/notes', [
+        $before = Note::count();
+
+        $this->post('/notes', [
             'ticket_id' => 1,
             'status_id' => 1,
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($before, Note::count());
     }
 
     #[Test]
@@ -2221,11 +2235,12 @@ class TicketsControllerTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
 
-        $response = $this->post("/tickets/estimate/{$ticket->id}", [
+        $this->post("/tickets/estimate/{$ticket->id}", [
             'storypoints' => 5,
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertDatabaseMissing('ticket_estimates', ['ticket_id' => $ticket->id]);
     }
 
     #[Test]
@@ -2499,9 +2514,10 @@ class TicketsControllerTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
 
-        $response = $this->post("/tickets/watch/{$ticket->id}");
+        $this->post("/tickets/watch/{$ticket->id}")->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertDatabaseMissing('ticket_user_watchers', ['ticket_id' => $ticket->id]);
     }
 
     #[Test]

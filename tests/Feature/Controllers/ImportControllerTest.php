@@ -6,6 +6,7 @@ use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\Status;
+use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -66,12 +67,15 @@ class ImportControllerTest extends TestCase
     {
         $file = UploadedFile::fake()->createWithContent('import.csv', 'data');
 
-        $response = $this->post('/tickets/import', [
+        $before = Ticket::count();
+
+        $this->post('/tickets/import', [
             'milestone_id' => 1,
             'csv' => $file,
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($before, Ticket::count());
     }
 
     #[Test]

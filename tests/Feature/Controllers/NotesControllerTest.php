@@ -19,9 +19,12 @@ class NotesControllerTest extends TestCase
     #[Test]
     public function it_requires_authentication(): void
     {
-        $response = $this->post('/notes/hide/1');
+        $note = Note::factory()->create(['hide' => false]);
 
-        $response->assertRedirect('/login');
+        $this->post("/notes/hide/{$note->id}")->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertFalse((bool) $note->fresh()->hide);
     }
 
     #[Test]
@@ -91,11 +94,14 @@ class NotesControllerTest extends TestCase
     #[Test]
     public function it_requires_authentication_to_promote_a_note(): void
     {
-        $response = $this->post('/notes/1/promote', [
-            'type' => 'decision',
-        ]);
+        $note = Note::factory()->create(['notetype' => 'message']);
 
-        $response->assertRedirect('/login');
+        $this->post("/notes/{$note->id}/promote", [
+            'type' => 'decision',
+        ])->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertSame('message', $note->fresh()->notetype);
     }
 
     #[Test]
@@ -507,11 +513,14 @@ class NotesControllerTest extends TestCase
     #[Test]
     public function it_requires_authentication_to_toggle_a_reaction(): void
     {
-        $response = $this->post('/notes/1/react', [
-            'emoji' => 'thumbsup',
-        ]);
+        $note = Note::factory()->create();
 
-        $response->assertRedirect('/login');
+        $this->post("/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ])->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('note_reactions', ['note_id' => $note->id]);
     }
 
     #[Test]
