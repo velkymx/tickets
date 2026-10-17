@@ -142,10 +142,26 @@
     </main>
     
     <footer class="container text-center py-3 border-top">
-        <p class="text-muted mb-0">
-            Tickets is the open source ticket tracker powered by <a href="https://laravel.com" target="_blank">Laravel</a>.
-            <a href="https://github.com/velkymx/tickets" target="_blank">Check us out on Github.</a> Provided "as is" under the
-            <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+        <div class="d-flex flex-wrap justify-content-center align-items-center gap-2 mb-2">
+            <a href="https://github.com/velkymx/tickets/actions/workflows/tests.yml?query=branch%3Amaster" target="_blank" rel="noopener noreferrer">
+                <img src="https://github.com/velkymx/tickets/actions/workflows/tests.yml/badge.svg?branch=master" alt="CI status" height="20">
+            </a>
+            <a href="https://github.com/velkymx/tickets/releases" target="_blank" rel="noopener noreferrer">
+                <img src="https://img.shields.io/github/v/release/velkymx/tickets" alt="Latest release" height="20">
+            </a>
+            <a href="https://github.com/velkymx/tickets/blob/master/LICENSE.md" target="_blank" rel="noopener noreferrer">
+                <img src="https://img.shields.io/github/license/velkymx/tickets" alt="License: MIT" height="20">
+            </a>
+            <a href="https://www.php.net/releases/" target="_blank" rel="noopener noreferrer">
+                <img src="https://img.shields.io/badge/php-%5E8.4-777BB4" alt="PHP 8.4+" height="20">
+            </a>
+            <a href="https://laravel.com/docs/13.x" target="_blank" rel="noopener noreferrer">
+                <img src="https://img.shields.io/badge/laravel-13-FF2D20" alt="Laravel 13" height="20">
+            </a>
+        </div>
+        <p class="text-muted small mb-0">
+            &copy; {{ date('Y') }} Techno Sorcery Corporation. Tickets is released under the
+            <a href="https://github.com/velkymx/tickets/blob/master/LICENSE.md" target="_blank" rel="noopener noreferrer">MIT License</a>.
         </p>
     </footer>
 
