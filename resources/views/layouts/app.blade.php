@@ -162,6 +162,7 @@
         <p class="text-muted small mb-0">
             &copy; {{ date('Y') }} Techno Sorcery Corporation. Tickets is released under the
             <a href="https://github.com/velkymx/tickets/blob/master/LICENSE.md" target="_blank" rel="noopener noreferrer">MIT License</a>.
+            <span class="text-nowrap">Running {{ config('app.version') }}.</span>
         </p>
     </footer>
 
