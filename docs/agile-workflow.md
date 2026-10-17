@@ -8,9 +8,9 @@ Tickets is designed around a three-level hierarchy that maps directly to agile p
 Project → Milestone → Ticket
 ```
 
-- **Project** — a team, product area, or initiative. Tickets belong to one project.
-- **Milestone** — a time-boxed milestone or delivery goal. Has a start date, due date, owner, and scrum master.
-- **Ticket** — a single unit of work. Has type, status, importance, story points, estimate, assignee, and due date.
+- **Project** - a team, product area, or initiative. Tickets belong to one project.
+- **Milestone** - a time-boxed milestone or delivery goal. Has a start date, due date, owner, and scrum master.
+- **Ticket** - a single unit of work. Has type, status, importance, story points, estimate, assignee, and due date.
 
 ## Milestone setup
 
@@ -25,18 +25,18 @@ Navigate to **Milestones → New Milestone**. Fill in:
 | Field | Notes |
 |-------|-------|
 | Name | e.g. `Milestone 14` or `Q2 Launch` |
-| Start Date | Milestone start — required for burndown chart |
-| Due Date | Milestone end — required for burndown chart |
+| Start Date | Milestone start - required for burndown chart |
+| Due Date | Milestone end - required for burndown chart |
 | Owner | Accountable team member |
 | Scrum Master | Optional |
 
 ### 3. Add tickets to the milestone
 
-**Option A — Create individually:** Navigate to **Tickets → New Ticket**. Select the milestone in the form.
+**Option A - Create individually:** Navigate to **Tickets → New Ticket**. Select the milestone in the form.
 
-**Option B — Bulk import:** Use [CSV Import](csv-import.md) to create many tickets at once into a milestone.
+**Option B - Bulk import:** Use [CSV Import](csv-import.md) to create many tickets at once into a milestone.
 
-**Option C — Via API:** `POST /api/v1/tickets` with `milestone_id` set.
+**Option C - Via API:** `POST /api/v1/tickets` with `milestone_id` set.
 
 ### 4. Set story points
 
@@ -70,7 +70,7 @@ Type any query in a ticket list, then name and save it from the chip row. Saved 
 
 When a ticket is blocked, add a `/blocker` note explaining what's blocking it. The ticket's [Pulse](pulse.md) immediately shows `BLOCKED` and surfaces the blocker to anyone viewing the ticket or scanning via API.
 
-Resolve the blocker note when the impediment is cleared — the Pulse recalculates automatically.
+Resolve the blocker note when the impediment is cleared - the Pulse recalculates automatically.
 
 ### Logging decisions
 
@@ -107,7 +107,7 @@ The burndown chart requires both **Start Date** and **Due Date** to be set on th
 Backlog → In Progress → Review → Done (closed)
 ```
 
-Status names are configurable — the above is the default seeded data. Closed statuses are determined by the `closed_at` timestamp set when a ticket moves to a status marked as closed.
+Status names are configurable - the above is the default seeded data. Closed statuses are determined by the `closed_at` timestamp set when a ticket moves to a status marked as closed.
 
 The four paginated ticket lists (dashboard home, ticket index, project show, milestone show) share one eager-load scope plus one sortable whitelist (`Ticket::withListRelations()`, `Ticket::LIST_SORTABLE`). The Kanban board is deliberately excluded: it needs every matching ticket rather than a page, and it counts notes (`withCount`) instead of hydrating them. The dashboard recent-tickets strip likewise uses its own lighter relation set with no notes.
 
@@ -115,7 +115,7 @@ The four paginated ticket lists (dashboard home, ticket index, project show, mil
 
 ## See also
 
-- [Projects, Milestones & Releases](projects.md) — creating and managing the containers
-- [Note Signals](note-signals.md) — slash commands, decisions, blockers, actions
-- [Pulse](pulse.md) — automated ticket health signal
-- [CSV Import](csv-import.md) — bulk ticket creation for milestone planning
+- [Projects, Milestones & Releases](projects.md) - creating and managing the containers
+- [Note Signals](note-signals.md) - slash commands, decisions, blockers, actions
+- [Pulse](pulse.md) - automated ticket health signal
+- [CSV Import](csv-import.md) - bulk ticket creation for milestone planning

@@ -40,20 +40,20 @@
                     <a class="dropdown-item d-flex justify-content-between align-items-center gap-3"
                        href="{{ request()->fullUrlWithQuery(['q' => $preset['query'] ?: null, 'page' => null]) }}">
                         <span>{{ $preset['label'] }}</span>
-                        <code class="small text-muted">{{ $preset['query'] ?: '—' }}</code>
+                        <code class="small text-muted">{{ $preset['query'] ?: '-' }}</code>
                     </a>
                 </li>
             @endforeach
         </ul>
 
         <input type="text" name="q" class="form-control" value="{{ $query }}"
-               placeholder="Search — e.g. status:active importance:blocker assignee:me login">
+               placeholder="Search - e.g. status:active importance:blocker assignee:me login">
 
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
     </div>
 
     <div class="form-text">
-        Filter with <code>key:value</code> — status, importance, type, project, milestone, assignee (<code>assignee:me</code>). Plain words search the subject.
+        Filter with <code>key:value</code> - status, importance, type, project, milestone, assignee (<code>assignee:me</code>). Plain words search the subject.
     </div>
 </form>
 

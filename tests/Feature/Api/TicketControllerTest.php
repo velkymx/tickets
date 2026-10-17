@@ -454,7 +454,7 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(422);
 
-        // The claim must have rolled back — assignee unchanged, no note stored.
+        // The claim must have rolled back - assignee unchanged, no note stored.
         $ticket->refresh();
         $this->assertEquals($other->id, $ticket->user_id2);
         $this->assertDatabaseMissing('notes', ['ticket_id' => $ticket->id]);
@@ -1085,11 +1085,11 @@ class TicketControllerTest extends TestCase
         $queriesFor5 = count(DB::getQueryLog());
         DB::disableQueryLog();
 
-        // Should not have 5× note queries — eager loading keeps it constant
+        // Should not have 5× note queries - eager loading keeps it constant
         // Without fix: ~5 note queries (one per ticket) + base queries
         // With fix: 1 bulk note query + base queries
         // We assert queries < 5 * per-ticket-cost
-        $this->assertLessThan(20, $queriesFor5, "Too many queries ($queriesFor5) — likely N+1 on pulse notes");
+        $this->assertLessThan(20, $queriesFor5, "Too many queries ($queriesFor5) - likely N+1 on pulse notes");
     }
 
     #[Test]
@@ -1555,7 +1555,7 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function reply_targets_the_requested_ticket_not_the_users_first_ticket(): void
     {
-        // A ticket the user is assigned to with a LOWER id — the old ungrouped
+        // A ticket the user is assigned to with a LOWER id - the old ungrouped
         // orWhere would resolve to this one regardless of the requested id.
         Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
 

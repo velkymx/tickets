@@ -25,7 +25,7 @@ class NotificationService
                 continue;
             }
 
-            // Skip mentioned users — they already receive a MentionNotification
+            // Skip mentioned users - they already receive a MentionNotification
             if (in_array($user->id, $mentionedUserIds)) {
                 continue;
             }

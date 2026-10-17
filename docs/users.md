@@ -7,7 +7,7 @@
 | Standard user | `admin = false` | Tickets, KB (based on KB role), own profile |
 | Administrator | `admin = true` | Everything, including Admin menu and Automations |
 
-The `admin` flag is set directly in the database — there is no UI to promote users to admin after seeding. Use a database client or `php artisan tinker`:
+The `admin` flag is set directly in the database - there is no UI to promote users to admin after seeding. Use a database client or `php artisan tinker`:
 
 ```php
 App\Models\User::where('email', 'user@example.com')->update(['admin' => true]);
@@ -62,7 +62,7 @@ Each user has at most one API token at a time.
 1. Navigate to **Profile → Edit Profile**.
 2. Scroll to **API Token**.
 3. Click **Generate Token**.
-4. Copy the token — it is shown only once.
+4. Copy the token - it is shown only once.
 
 **Revoke:**
 1. Navigate to **Profile → Edit Profile → API Token**.
@@ -103,5 +103,5 @@ The `UserSeeder` creates an `unassigned` account (no password) used as a placeho
 
 ## See also
 
-- [KB Admin](kb-admin.md) — managing KB categories, tags, and article visibility
-- [API](api.md) — token generation and revocation
+- [KB Admin](kb-admin.md) - managing KB categories, tags, and article visibility
+- [API](api.md) - token generation and revocation

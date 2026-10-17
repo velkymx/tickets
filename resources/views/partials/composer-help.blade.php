@@ -53,10 +53,10 @@
 
                 <h6>Signal Types</h6>
                 <ul class="small">
-                    <li><strong class="text-success">Decision</strong> — Immutable record. Cannot be edited after creation. Use <code>/decision</code> to create.</li>
-                    <li><strong class="text-danger">Blocker</strong> — Flags an issue blocking progress. Surfaces in Ticket Pulse. Use <code>/blocker</code>.</li>
-                    <li><strong class="text-warning">Action</strong> — Assigns a task to someone. Must include an @mention. Use <code>/action @user task</code>.</li>
-                    <li><strong class="text-info">Update</strong> — General status update. Use <code>/update</code>.</li>
+                    <li><strong class="text-success">Decision</strong> - Immutable record. Cannot be edited after creation. Use <code>/decision</code> to create.</li>
+                    <li><strong class="text-danger">Blocker</strong> - Flags an issue blocking progress. Surfaces in Ticket Pulse. Use <code>/blocker</code>.</li>
+                    <li><strong class="text-warning">Action</strong> - Assigns a task to someone. Must include an @mention. Use <code>/action @user task</code>.</li>
+                    <li><strong class="text-info">Update</strong> - General status update. Use <code>/update</code>.</li>
                 </ul>
             </div>
             <div class="modal-footer">
