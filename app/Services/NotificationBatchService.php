@@ -13,11 +13,18 @@ class NotificationBatchService
     {
         $entry = $this->normalize($user, $notification);
 
-        if (! $user->wantsNotification($entry['type'])) {
+        // In-app delivery is never gated; only mail is.
+        $user->notifyNow($notification, ['database']);
+
+        if (! $user->mailsFor($this->prefKey($entry['type']))) {
             return;
         }
 
-        $user->notifyNow($notification, ['database']);
+        if ($user->notificationPrefs()['email_mode'] === 'immediate') {
+            $user->notifyNow($notification, ['mail']);
+
+            return;
+        }
 
         $batchKey = $this->batchKey($user->id, $ticketId);
         $scheduleKey = $this->scheduleKey($user->id, $ticketId);
@@ -46,6 +53,16 @@ class NotificationBatchService
     public function scheduleKey(int $userId, int $ticketId): string
     {
         return "ticket-notification-batch-scheduled:{$userId}:{$ticketId}";
+    }
+
+    private function prefKey(string $type): string
+    {
+        return match ($type) {
+            'mention' => 'mentions',
+            'reply' => 'replies',
+            'watching' => 'watching',
+            default => throw new \InvalidArgumentException("Unknown notification type [{$type}]."),
+        };
     }
 
     private function normalize(User $user, Notification $notification): array

@@ -24,6 +24,8 @@ class UpdateUserRequest extends FormRequest
             'notify_mentions' => 'sometimes|boolean',
             'notify_replies' => 'sometimes|boolean',
             'notify_watching' => 'sometimes|boolean',
+            'email_enabled' => 'sometimes|boolean',
+            'email_mode' => 'sometimes|in:digest,immediate',
         ];
     }
 }

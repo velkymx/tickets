@@ -35,10 +35,9 @@ class NotificationService
                 continue;
             }
 
-            if (! $user->wantsNotification('watching')) {
-                continue;
-            }
-
+            // In-app delivery is never gated; WatcherNotification::via()
+            // drops the mail channel when the category or master switch
+            // is off. Muted still forces database-only below.
             $notifiedUserIds[] = $user->id;
 
             $message = "New activity on Ticket #{$ticket->id}: {$ticket->subject}";

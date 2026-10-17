@@ -61,20 +61,58 @@ class User extends Authenticatable
             'password' => 'hashed',
             'admin' => 'boolean',
             'active' => 'boolean',
-            'notify_mentions' => 'boolean',
-            'notify_replies' => 'boolean',
-            'notify_watching' => 'boolean',
+            'notification_preferences' => 'array',
         ];
     }
 
+    public const NOTIFICATION_PREF_DEFAULTS = [
+        'email_enabled' => true,
+        'email_mode' => 'digest',
+        'mentions' => true,
+        'replies' => true,
+        'watching' => true,
+    ];
+
+    /**
+     * Preferences with defaults merged on read, so existing users get
+     * today's behavior without a backfill.
+     *
+     * @return array{email_enabled: bool, email_mode: string, mentions: bool, replies: bool, watching: bool}
+     */
+    public function notificationPrefs(): array
+    {
+        return array_merge(self::NOTIFICATION_PREF_DEFAULTS, $this->notification_preferences ?? []);
+    }
+
+    public function setNotificationPrefs(array $prefs): void
+    {
+        $this->forceFill([
+            'notification_preferences' => array_merge($this->notificationPrefs(), $prefs),
+        ])->save();
+    }
+
+    /**
+     * Whether the category reaches the user at all. Database delivery is
+     * never gated here; mail gating lives in each via().
+     */
     public function wantsNotification(string $type): bool
     {
         return match ($type) {
-            'mention' => $this->notify_mentions ?? true,
-            'reply' => $this->notify_replies ?? true,
-            'watching' => $this->notify_watching ?? true,
+            'mention' => (bool) $this->notificationPrefs()['mentions'],
+            'reply' => (bool) $this->notificationPrefs()['replies'],
+            'watching' => (bool) $this->notificationPrefs()['watching'],
             default => $this->unknownNotificationType($type),
         };
+    }
+
+    /**
+     * Whether mail may go out for a category: master switch plus category.
+     */
+    public function mailsFor(string $category): bool
+    {
+        $prefs = $this->notificationPrefs();
+
+        return (bool) $prefs['email_enabled'] && (bool) ($prefs[$category] ?? true);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -23,7 +24,15 @@ class MentionNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = [];
+
+        if ($notifiable instanceof User && $notifiable->mailsFor('mentions')) {
+            $channels[] = 'mail';
+        }
+
+        $channels[] = 'database';
+
+        return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage

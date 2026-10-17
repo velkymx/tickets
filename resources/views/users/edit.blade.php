@@ -75,14 +75,27 @@
 
     <div class="mb-3">
         <span class="form-label">Notify me about</span>
-        @foreach (['notify_mentions' => 'Mentions', 'notify_replies' => 'Replies', 'notify_watching' => 'Watched tickets'] as $field => $label)
+        @php($prefs = $user->notificationPrefs())
+        @foreach (['notify_mentions' => ['mentions', 'Mentions'], 'notify_replies' => ['replies', 'Replies'], 'notify_watching' => ['watching', 'Watched tickets']] as $field => [$key, $label])
             <div class="form-check">
                 {{-- Hidden 0 first: PHP keeps the last value per key, so checked yields 1 and unchecked yields 0. --}}
                 <input type="hidden" name="{{ $field }}" value="0">
-                <input type="checkbox" name="{{ $field }}" id="{{ $field }}" value="1" class="form-check-input" @checked(old($field, $user->{$field} ?? true))>
+                <input type="checkbox" name="{{ $field }}" id="{{ $field }}" value="1" class="form-check-input" @checked(old($field, $prefs[$key] ?? true))>
                 <label for="{{ $field }}" class="form-check-label">{{ $label }}</label>
             </div>
         @endforeach
+        <div class="form-check mt-2">
+            <input type="hidden" name="email_enabled" value="0">
+            <input type="checkbox" name="email_enabled" id="email_enabled" value="1" class="form-check-input" @checked(old('email_enabled', $prefs['email_enabled'] ?? true))>
+            <label for="email_enabled" class="form-check-label">Email notifications</label>
+        </div>
+        <div class="mt-2" style="max-width: 220px;">
+            <label for="email_mode" class="form-label small">Email timing</label>
+            <select name="email_mode" id="email_mode" class="form-select form-select-sm">
+                <option value="digest" @selected(old('email_mode', $prefs['email_mode'] ?? 'digest') === 'digest')>Digest</option>
+                <option value="immediate" @selected(old('email_mode', $prefs['email_mode'] ?? 'digest') === 'immediate')>Immediately</option>
+            </select>
+        </div>
     </div>
 
     <div class="d-flex justify-content-start mt-4">
