@@ -95,7 +95,7 @@ Default accounts created:
 | Email | Password | Notes |
 |-------|----------|-------|
 | administrator | password123 | **Change this immediately after first login** |
-| unassigned | *(none)* | System account — do not log in as this user |
+| unassigned | *(none)* | System account - do not log in as this user |
 
 > **Security:** The default administrator password is public knowledge. Change it before exposing the app to any network. Navigate to **Profile → Edit Profile** after logging in.
 
@@ -136,7 +136,7 @@ All tests should pass on a clean install.
 ## Docker Compose
 
 The Docker setup includes PHP, Nginx, MariaDB, Redis, and a queue worker. No local
-PHP or Node required — the image builds the Composer dependencies and front-end
+PHP or Node required - the image builds the Composer dependencies and front-end
 assets, and the app container runs migrations, seeding, and cache warming
 automatically on first boot.
 
@@ -148,13 +148,13 @@ cp .env.example .env
 
 In `.env`, set these before starting:
 
-- `DB_USERNAME` — any **non-root** name, e.g. `tickets` (MariaDB refuses to create a
+- `DB_USERNAME` - any **non-root** name, e.g. `tickets` (MariaDB refuses to create a
   user called `root`).
-- `DB_PASSWORD` — a password of your choice. The database container and the app
+- `DB_PASSWORD` - a password of your choice. The database container and the app
   both read it from here, so they always match.
 
 Leave `DB_HOST`, `DB_PORT`, `REDIS_HOST`, and the cache/session/queue drivers alone
-— Compose wires them to the Docker services automatically.
+- Compose wires them to the Docker services automatically.
 
 ### 2. Generate an application key
 
@@ -188,5 +188,5 @@ and change the password immediately.
 
 ## See also
 
-- [API](api.md) — REST API reference and token setup
-- [CSV Import](csv-import.md) — bulk ticket creation
+- [API](api.md) - REST API reference and token setup
+- [CSV Import](csv-import.md) - bulk ticket creation

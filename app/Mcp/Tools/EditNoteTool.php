@@ -13,7 +13,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 
-#[Description('Edit your own note. Decisions are immutable and cannot be edited — create a new decision instead.')]
+#[Description('Edit your own note. Decisions are immutable and cannot be edited - create a new decision instead.')]
 class EditNoteTool extends TicketTool
 {
     public function handle(Request $request): Response

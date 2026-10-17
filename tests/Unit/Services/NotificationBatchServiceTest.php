@@ -69,7 +69,7 @@ class NotificationBatchServiceTest extends TestCase
         // Dispatch once to exercise the lock path
         $service->dispatch($user, $notification, 142);
 
-        // Lock should be released — verify we can acquire it immediately
+        // Lock should be released - verify we can acquire it immediately
         $lock = Cache::lock($lockKey, 5);
         $this->assertTrue($lock->get(), 'Lock should be released after dispatch completes');
         $lock->release();

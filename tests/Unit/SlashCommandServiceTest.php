@@ -233,7 +233,7 @@ class SlashCommandServiceTest extends TestCase
 
         $result = $this->service->handle($ticket, "/statsu testing\nMessage body");
 
-        $this->assertContains('Unknown command: /statsu — will be treated as text', $result['warnings']);
+        $this->assertContains('Unknown command: /statsu - will be treated as text', $result['warnings']);
         $this->assertStringContainsString('/statsu testing', $result['body']);
         $this->assertStringContainsString('Message body', $result['body']);
     }

@@ -51,7 +51,7 @@
                             </span>
                         </div>
                         @if ($overWip)
-                            <div class="small text-danger mt-1">Over WIP limit — finish work before pulling more.</div>
+                            <div class="small text-danger mt-1">Over WIP limit - finish work before pulling more.</div>
                         @endif
                     </div>
 

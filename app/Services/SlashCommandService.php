@@ -230,7 +230,7 @@ class SlashCommandService
                 break;
 
             default:
-                $result['warnings'][] = "Unknown command: /{$command} — will be treated as text";
+                $result['warnings'][] = "Unknown command: /{$command} - will be treated as text";
                 $result['body_lines'][] = $rawLine;
                 break;
         }

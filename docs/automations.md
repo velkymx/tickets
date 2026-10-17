@@ -6,23 +6,23 @@ Automations run actions automatically when events occur in the system. Each auto
 
 ## Concepts
 
-- **Trigger** — the event that starts the automation (e.g. ticket created)
-- **Conditions** — optional filters that must match for the automation to fire
-- **Actions** — what happens when conditions pass (e.g. send a webhook)
-- **Rule** — the combination of conditions + actions for a trigger
-- **Stop after match** — when enabled, no further automations run for the same event once this one matches
+- **Trigger** - the event that starts the automation (e.g. ticket created)
+- **Conditions** - optional filters that must match for the automation to fire
+- **Actions** - what happens when conditions pass (e.g. send a webhook)
+- **Rule** - the combination of conditions + actions for a trigger
+- **Stop after match** - when enabled, no further automations run for the same event once this one matches
 
 ## Creating an automation
 
 1. Navigate to **Admin → Automations**.
 2. Click **New Automation**.
 3. Fill in:
-   - **Name** — descriptive label (required)
-   - **Description** — optional notes
-   - **Trigger** — select from the available triggers
-   - **Enabled** — toggle to activate/deactivate without deleting
-   - **Stop after match** — prevents later automations from running once this one fires
-4. Build conditions (optional — see [Conditions](#conditions)).
+   - **Name** - descriptive label (required)
+   - **Description** - optional notes
+   - **Trigger** - select from the available triggers
+   - **Enabled** - toggle to activate/deactivate without deleting
+   - **Stop after match** - prevents later automations from running once this one fires
+4. Build conditions (optional - see [Conditions](#conditions)).
 5. Add actions (see [Actions](#actions)).
 6. Click **Save**.
 
@@ -38,8 +38,8 @@ Automations run actions automatically when events occur in the system. Each auto
 Conditions filter which events actually trigger actions. Leave conditions empty to match all events.
 
 Conditions use **AND** / **OR** groups:
-- **All** — every condition in the group must match
-- **Any** — at least one condition must match
+- **All** - every condition in the group must match
+- **Any** - at least one condition must match
 
 Groups can be nested for complex logic.
 
@@ -93,7 +93,7 @@ Posts a JSON payload to an external URL.
 | Field | Description |
 |-------|-------------|
 | URL | The endpoint to POST to (must be HTTPS or an internal host; CGNAT ranges are blocked) |
-| Payload | Mustache template — use `{{ticket.subject}}`, `{{ticket.id}}`, `{{actor.email}}`, etc. |
+| Payload | Mustache template - use `{{ticket.subject}}`, `{{ticket.id}}`, `{{actor.email}}`, etc. |
 
 **Example payload template:**
 
@@ -131,4 +131,4 @@ Open the automation and click **Delete**. Run history is deleted with it.
 
 ## See also
 
-- [API](api.md) — `call_api` action targets the REST API
+- [API](api.md) - `call_api` action targets the REST API

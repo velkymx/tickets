@@ -11,7 +11,7 @@ An interactive version of this reference is available at `/api/docs` (Swagger UI
 1. Log in and navigate to **Profile → Edit Profile** (top-right user menu).
 2. Scroll to **API Token**.
 3. Click **Generate Token**.
-4. Copy the token — it is shown only once.
+4. Copy the token - it is shown only once.
 
 ### Use the token
 
@@ -380,7 +380,7 @@ curl -H "Authorization: Bearer <token>" \
 
 ## Knowledge Base
 
-All KB endpoints use the same Bearer token and enforce article visibility — you only see and edit what you are allowed to.
+All KB endpoints use the same Bearer token and enforce article visibility - you only see and edit what you are allowed to.
 
 ### KB Lookups
 
@@ -466,15 +466,15 @@ All errors return JSON:
 
 AI assistants can work with tickets and the knowledge base through the built-in
 [Model Context Protocol](https://modelcontextprotocol.io) server (official
-`laravel/mcp` package) instead of raw REST calls — `POST /mcp/tickets` with the
+`laravel/mcp` package) instead of raw REST calls - `POST /mcp/tickets` with the
 same Bearer token, or the local stdio handle `tickets`.
 
-The full MCP reference — connection, all 16 tools with arguments, slash
-commands, pulse fields, and error conventions — lives in **[mcp.md](mcp.md)**.
+The full MCP reference - connection, all 16 tools with arguments, slash
+commands, pulse fields, and error conventions - lives in **[mcp.md](mcp.md)**.
 
 ---
 
 ## See also
 
-- [Installation](installation.md) — how to generate your first token
+- [Installation](installation.md) - how to generate your first token
 - Interactive docs: `/api/docs` (Swagger UI)

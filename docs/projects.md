@@ -37,11 +37,11 @@ Milestones represent time-boxed work periods. Tickets are assigned to a mileston
 
 1. Navigate to **Milestones → New Milestone**.
 2. Fill in:
-   - **Name** — e.g. `Milestone 14`
-   - **Start Date** — milestone start (used for burndown chart)
-   - **Due Date** — milestone end (used for burndown chart)
-   - **Owner** — accountable team member
-   - **Scrum Master** — optional
+   - **Name** - e.g. `Milestone 14`
+   - **Start Date** - milestone start (used for burndown chart)
+   - **Due Date** - milestone end (used for burndown chart)
+   - **Owner** - accountable team member
+   - **Scrum Master** - optional
 3. Click **Save**.
 
 ### Milestone view
@@ -63,7 +63,7 @@ The report shows:
 - Type breakdown (chart)
 - Team hours by user
 - Per-ticket detail: subject, status, type, assignee, story points, logged hours
-- **Burndown chart** — ideal vs actual story point burndown over the milestone. Requires both Start Date and Due Date to be set on the milestone.
+- **Burndown chart** - ideal vs actual story point burndown over the milestone. Requires both Start Date and Due Date to be set on the milestone.
 
 ### Print view
 
@@ -87,10 +87,10 @@ Releases track deployed versions. Tickets can be associated with a release to do
 
 1. Navigate to **Releases → New Release**.
 2. Fill in:
-   - **Title** — version or release name (e.g. `v2.1.0`)
-   - **Body** — release notes (Markdown supported)
-   - **Started** — optional release start date
-   - **Completed** — optional release date
+   - **Title** - version or release name (e.g. `v2.1.0`)
+   - **Body** - release notes (Markdown supported)
+   - **Started** - optional release start date
+   - **Completed** - optional release date
 3. Click **Save**.
 
 ### Edit a release
@@ -111,5 +111,5 @@ Tickets are associated with a release from the ticket detail page. Open a ticket
 
 ## See also
 
-- [CSV Import](csv-import.md) — bulk importing tickets into a milestone
-- [Users](users.md) — setting up project owners and assignees
+- [CSV Import](csv-import.md) - bulk importing tickets into a milestone
+- [Users](users.md) - setting up project owners and assignees

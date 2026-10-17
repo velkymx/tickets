@@ -339,16 +339,16 @@
                             $estimates = [
                               0  => ['tag' => '0',    'name' => 'No Effort',      'fun' => '😴 Nothing to do'],
                               1  => ['tag' => 'XS',   'name' => 'Extra Small',    'fun' => '🐕 Dachshund · kid hot chocolate'],
-                              2  => ['tag' => 'XS–S', 'name' => 'Between XS & S',  'fun' => '📏 A touch bigger than XS'],
+                              2  => ['tag' => 'XS-S', 'name' => 'Between XS & S',  'fun' => '📏 A touch bigger than XS'],
                               3  => ['tag' => 'S',    'name' => 'Small',          'fun' => '🐕 Terrier · tall latte · cookie'],
                               5  => ['tag' => 'M',    'name' => 'Medium',         'fun' => '🐕 Labrador · grande mocha · cheeseburger'],
                               8  => ['tag' => 'L',    'name' => 'Large',          'fun' => '🐕 Saint Bernard · venti iced latte · burger, fries & soda'],
-                              13 => ['tag' => 'L–XL', 'name' => 'Between L & XL',  'fun' => '📏 Bigger than a Large'],
+                              13 => ['tag' => 'L-XL', 'name' => 'Between L & XL',  'fun' => '📏 Bigger than a Large'],
                               21 => ['tag' => 'XL',   'name' => 'Extra Large',    'fun' => '🐕 Great Dane · trenta frap · 5-course meal'],
                             ];
                         @endphp
 
-                        <p class="text-body-secondary small mb-3">Pick a card — how big is this one?</p>
+                        <p class="text-body-secondary small mb-3">Pick a card - how big is this one?</p>
 
                         <div class="row row-cols-2 row-cols-sm-4 g-2">
                             @foreach($estimates as $est => $meta)
