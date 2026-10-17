@@ -333,6 +333,24 @@ class UsersControllerTest extends TestCase
     }
 
     #[Test]
+    public function profile_update_cannot_grant_admin(): void
+    {
+        $user = User::factory()->create(['admin' => false, 'kb_role' => null, 'timezone' => 'UTC', 'theme' => 'simplex']);
+
+        $this->actingAs($user)->post('/user/update', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'timezone' => 'UTC',
+            'theme' => 'simplex',
+            'admin' => 1,
+            'kb_role' => 'admin',
+        ]);
+
+        $this->assertFalse($user->fresh()->admin);
+        $this->assertNull($user->fresh()->kb_role);
+    }
+
+    #[Test]
     public function update_allows_keeping_own_email(): void
     {
         $user = User::factory()->create([
