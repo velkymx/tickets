@@ -215,7 +215,7 @@ class SlashCommandService
                 }
 
                 $assigneeName = $mentions[0];
-                $assignee = User::where('name', $assigneeName)->first();
+                $assignee = $this->findByName(User::class, $assigneeName);
 
                 if ($assignee && ! $ticket->assignee) {
                     $ticket->user_id2 = $assignee->id;
@@ -262,19 +262,14 @@ class SlashCommandService
     {
         $trimmed = trim($value);
 
-        if ($class === Status::class) {
-            return $class::query()
-                ->where('name', $trimmed)
-                ->first()
-                ?? $class::byName($trimmed)->first();
-        }
+        // LOWER() match is portable, but MySQL collations compare
+        // case-insensitively, so an exact-case row must win in PHP.
+        // Otherwise 'Testing' resolves to seeded 'testing' on MySQL.
+        $candidates = $class::query()
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
+            ->get();
 
-        return $class::query()
-            ->where('name', $trimmed)
-            ->first()
-            ?? $class::query()
-                ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
-                ->first();
+        return $candidates->firstWhere('name', $trimmed) ?? $candidates->first();
     }
 
     protected function parseMentionOrBareName(string $args): string

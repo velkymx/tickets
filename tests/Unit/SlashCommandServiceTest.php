@@ -9,7 +9,6 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SlashCommandService;
-use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -213,6 +212,19 @@ class SlashCommandServiceTest extends TestCase
 
         $this->assertEquals($assignee->id, $ticket->fresh()->user_id2);
         $this->assertContains(['action' => 'assigned', 'to' => 'sarah'], $result['actions']);
+    }
+
+    #[Test]
+    public function it_prefers_exact_case_for_action_assignees(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        User::factory()->create(['name' => 'john']);
+        $exact = User::factory()->create(['name' => 'John']);
+
+        $result = $this->service->handle($ticket, '/action Verify fix @[John]');
+
+        $this->assertEquals($exact->id, $ticket->fresh()->user_id2);
+        $this->assertContains(['action' => 'assigned', 'to' => 'John'], $result['actions']);
     }
 
     #[Test]
