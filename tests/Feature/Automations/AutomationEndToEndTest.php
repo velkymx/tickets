@@ -90,5 +90,10 @@ class AutomationEndToEndTest extends TestCase
             'status' => 'success',
             'response_code' => 200,
         ]);
+
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => $request->url() === 'https://hooks.example.com/test'
+            && $request->method() === 'POST'
+            && $request['ticket_id'] == $ticket->id);
     }
 }
