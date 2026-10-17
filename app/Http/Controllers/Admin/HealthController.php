@@ -4,11 +4,24 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\HealthPingJob;
+use App\SystemHealth\SystemHealth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class HealthController extends Controller
 {
+    public function show(SystemHealth $health)
+    {
+        $report = $health->report();
+
+        return view('admin.health', [
+            'report' => $report,
+            'summary' => $health->summary($report),
+            'sharedCache' => config('cache.default') !== 'array',
+            'queueConnection' => (string) config('queue.default'),
+        ]);
+    }
+
     public function ping()
     {
         $lock = Cache::lock('health-ping-lock', 30);
