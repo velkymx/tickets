@@ -8,6 +8,7 @@ use App\Models\KbTag;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -19,10 +20,12 @@ class KbControllerTest extends TestCase
     #[Test]
     public function index_is_accessible_without_auth(): void
     {
-        KbArticle::factory()->verified()->public()->create();
+        $article = KbArticle::factory()->verified()->public()->create(['title' => 'Public Runbook']);
 
-        $response = $this->get('/kb');
-        $response->assertOk();
+        $this->get('/kb')
+            ->assertOk()
+            ->assertSee('Public Runbook')
+            ->assertSee(route('kb.show', $article->slug), false);
     }
 
     #[Test]
@@ -79,15 +82,25 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
-    public function create_requires_authentication(): void
+    public function guest_is_redirected_from_create(): void
     {
         $this->get('/kb/create')->assertRedirect('/login');
+    }
 
-        $reader = User::factory()->create(['kb_role' => null]);
-        $this->actingAs($reader)->get('/kb/create')->assertOk();
+    public static function kbRolesThatCanCreate(): array
+    {
+        return ['reader' => [null], 'author' => ['author']];
+    }
 
-        $author = User::factory()->create(['kb_role' => 'author']);
-        $this->actingAs($author)->get('/kb/create')->assertOk();
+    #[Test]
+    #[DataProvider('kbRolesThatCanCreate')]
+    public function signed_in_user_can_open_create(?string $role): void
+    {
+        $user = User::factory()->create(['kb_role' => $role]);
+
+        $this->actingAs($user)->get('/kb/create')
+            ->assertOk()
+            ->assertSee('data-markdown-editor', false);
     }
 
     #[Test]
@@ -162,6 +175,8 @@ class KbControllerTest extends TestCase
             'commit_message' => 'Evil edit',
             'tags' => [$tag->id],
         ])->assertForbidden();
+
+        $this->assertDatabaseHas('kb_articles', ['id' => $article->id, 'title' => $article->title]);
     }
 
     #[Test]
@@ -171,6 +186,8 @@ class KbControllerTest extends TestCase
         $article = KbArticle::factory()->create(['owner_id' => $author->id]);
 
         $this->actingAs($author)->delete("/kb/{$article->slug}")->assertForbidden();
+
+        $this->assertNotSoftDeleted($article);
     }
 
     #[Test]

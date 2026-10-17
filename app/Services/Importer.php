@@ -106,7 +106,8 @@ class Importer
             return $this->models[$key]->id;
         }
 
-        $model = $class::where('name', $value)->first();
+        $candidates = $class::whereRaw('LOWER(name) = ?', [mb_strtolower(trim($value))])->get();
+        $model = $candidates->firstWhere('name', trim($value));
 
         if (! $model) {
             throw new Exception(class_basename($class)." $value does not exist.");

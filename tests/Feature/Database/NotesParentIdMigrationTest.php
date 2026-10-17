@@ -5,7 +5,6 @@ namespace Tests\Feature\Database;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -20,10 +19,10 @@ class NotesParentIdMigrationTest extends TestCase
     {
         $this->assertTrue(Schema::hasColumn('notes', 'parent_id'));
 
-        $indexes = collect(DB::select('PRAGMA index_list(notes)'));
+        $indexes = collect(Schema::getIndexes('notes'))->pluck('name');
 
         $this->assertTrue(
-            $indexes->contains(fn (object $index) => $index->name === 'notes_parent_id_index'),
+            $indexes->contains('notes_parent_id_index'),
             'Failed asserting that the notes.parent_id index exists.'
         );
     }

@@ -65,7 +65,6 @@ class ImportanceBadgeTest extends TestCase
             'status_id' => $open->id,
         ]);
 
-        DB::statement('PRAGMA foreign_keys=OFF');
         DB::table('importances')->where('id', $ticket->importance_id)->delete();
 
         $response = $this->actingAs($user)->get('/home');

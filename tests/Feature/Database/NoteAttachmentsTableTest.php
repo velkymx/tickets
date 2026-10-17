@@ -6,7 +6,6 @@ use App\Models\Note;
 use App\Models\NoteAttachment;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -32,16 +31,16 @@ class NoteAttachmentsTableTest extends TestCase
             'updated_at',
         ]));
 
-        $columns = collect(DB::select('PRAGMA table_info(note_attachments)'))->keyBy('name');
-        $indexes = collect(DB::select('PRAGMA index_list(note_attachments)'));
+        $columns = collect(Schema::getColumns('note_attachments'))->keyBy('name');
+        $indexes = collect(Schema::getIndexes('note_attachments'))->pluck('name');
 
-        $this->assertSame(1, $columns['note_id']->notnull);
+        $this->assertFalse($columns['note_id']['nullable']);
         $this->assertTrue(
-            $indexes->contains(fn (object $index) => $index->name === 'note_attachments_note_id_index'),
+            $indexes->contains('note_attachments_note_id_index'),
             'Failed asserting that the note_attachments.note_id index exists.'
         );
         $this->assertTrue(
-            $indexes->contains(fn (object $index) => $index->name === 'note_attachments_ticket_id_index'),
+            $indexes->contains('note_attachments_ticket_id_index'),
             'Failed asserting that the note_attachments.ticket_id index exists.'
         );
     }

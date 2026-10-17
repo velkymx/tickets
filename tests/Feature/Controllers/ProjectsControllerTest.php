@@ -7,6 +7,7 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\PriorityMatrixService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -47,7 +48,7 @@ class ProjectsControllerTest extends TestCase
         $response->assertStatus(200);
         $projects = $response->viewData('projects');
         $this->assertLessThanOrEqual(25, $projects->count());
-        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $projects);
+        $this->assertInstanceOf(LengthAwarePaginator::class, $projects);
     }
 
     #[Test]
@@ -314,12 +315,15 @@ class ProjectsControllerTest extends TestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->post('/projects/store/new', [
+        $before = Project::count();
+
+        $this->post('/projects/store/new', [
             'id' => 'new',
             'name' => 'Test',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($before, Project::count());
     }
 
     #[Test]

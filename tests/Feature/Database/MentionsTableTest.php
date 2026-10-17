@@ -7,7 +7,6 @@ use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -28,14 +27,14 @@ class MentionsTableTest extends TestCase
             'updated_at',
         ]));
 
-        $indexes = collect(DB::select('PRAGMA index_list(mentions)'));
+        $indexes = collect(Schema::getIndexes('mentions'))->pluck('name');
 
         $this->assertTrue(
-            $indexes->contains(fn (object $index) => $index->name === 'mentions_note_id_user_id_unique'),
+            $indexes->contains('mentions_note_id_user_id_unique'),
             'Failed asserting that the mentions unique index exists.'
         );
         $this->assertTrue(
-            $indexes->contains(fn (object $index) => $index->name === 'mentions_user_id_index'),
+            $indexes->contains('mentions_user_id_index'),
             'Failed asserting that the mentions.user_id index exists.'
         );
     }
