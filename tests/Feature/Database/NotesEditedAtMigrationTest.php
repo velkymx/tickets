@@ -3,7 +3,6 @@
 namespace Tests\Feature\Database;
 
 use App\Models\Note;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -18,12 +17,12 @@ class NotesEditedAtMigrationTest extends TestCase
     {
         $this->assertTrue(Schema::hasColumn('notes', 'edited_at'));
 
-        $columns = collect(DB::select('PRAGMA table_info(notes)'));
+        $columns = collect(Schema::getColumns('notes'));
         $editedAt = $columns->firstWhere('name', 'edited_at');
 
         $this->assertNotNull($editedAt);
-        $this->assertSame(0, $editedAt->notnull);
-        $this->assertNull($editedAt->dflt_value);
+        $this->assertTrue($editedAt['nullable']);
+        $this->assertTrue($editedAt['default'] === null || strtoupper((string) $editedAt['default']) === 'NULL');
     }
 
     #[Test]

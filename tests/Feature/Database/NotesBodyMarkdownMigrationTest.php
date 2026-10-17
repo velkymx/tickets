@@ -3,7 +3,6 @@
 namespace Tests\Feature\Database;
 
 use App\Models\Note;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -18,12 +17,12 @@ class NotesBodyMarkdownMigrationTest extends TestCase
     {
         $this->assertTrue(Schema::hasColumn('notes', 'body_markdown'));
 
-        $columns = collect(DB::select('PRAGMA table_info(notes)'));
+        $columns = collect(Schema::getColumns('notes'));
         $bodyMarkdown = $columns->firstWhere('name', 'body_markdown');
 
         $this->assertNotNull($bodyMarkdown);
-        $this->assertSame(0, $bodyMarkdown->notnull);
-        $this->assertNull($bodyMarkdown->dflt_value);
+        $this->assertTrue($bodyMarkdown['nullable']);
+        $this->assertTrue($bodyMarkdown['default'] === null || strtoupper((string) $bodyMarkdown['default']) === 'NULL');
     }
 
     #[Test]
