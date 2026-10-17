@@ -215,7 +215,7 @@ class SlashCommandService
                 }
 
                 $assigneeName = $mentions[0];
-                $assignee = User::where('name', $assigneeName)->first();
+                $assignee = $this->findByName(User::class, $assigneeName);
 
                 if ($assignee && ! $ticket->assignee) {
                     $ticket->user_id2 = $assignee->id;

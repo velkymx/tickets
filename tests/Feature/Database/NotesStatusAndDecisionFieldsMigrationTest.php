@@ -31,7 +31,10 @@ class NotesStatusAndDecisionFieldsMigrationTest extends TestCase
         $this->assertSame('0', trim((string) $columns['resolved']['default'], "'"));
         foreach (['resolved_by', 'supersedes_id', 'resolution_message'] as $column) {
             $default = $columns[$column]['default'];
-            $this->assertTrue($default === null || strtoupper((string) $default) === 'NULL');
+            $this->assertTrue(
+                $default === null || strtoupper((string) $default) === 'NULL',
+                "notes.{$column} should default to NULL, got ".var_export($default, true)
+            );
         }
     }
 
