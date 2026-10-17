@@ -1328,6 +1328,18 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_form_accepts_story_points_beside_hours(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/ticket/create');
+
+        $response->assertStatus(200);
+        $response->assertSee('name="storypoints"', false);
+        $response->assertSee('name="estimate"', false);
+    }
+
+    #[Test]
     public function clone_requires_authentication(): void
     {
         $ticket = Ticket::factory()->create();
