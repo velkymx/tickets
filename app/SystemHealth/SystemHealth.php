@@ -10,6 +10,7 @@ class SystemHealth
     private array $checks = [
         Checks\SystemInfoCheck::class,
         Checks\RequirementsCheck::class,
+        Checks\FeaturesCheck::class,
     ];
 
     /**
