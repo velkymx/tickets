@@ -59,7 +59,7 @@
                             <input type="checkbox" name="tickets[{{ $tick->id }}]" value="{{ $tick->id }}" class="form-check-input">
                         </td>
                     @endif
-                    <td class="ticket-cell-truncate">
+                    <td class="text-truncate" style="max-width: 280px;">
                         @if(!$showType)
                             <i class="{{ $tick->type->icon }} me-1" title="{{ $tick->type->name }}" aria-hidden="true"></i>
                         @endif
@@ -74,8 +74,8 @@
                         <x-importance-badge :importance="$tick->importance" />
                     </td>
                     <td class="text-nowrap"><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
-                    <td class="ticket-cell-truncate d-none d-lg-table-cell">{{ $tick->project->name }}</td>
-                    <td class="ticket-cell-truncate">
+                    <td class="text-truncate d-none d-lg-table-cell" style="max-width: 280px;">{{ $tick->project->name }}</td>
+                    <td class="text-truncate" style="max-width: 280px;">
                         @if ($tick->assignee)
                             <a href="/users/{{ $tick->assignee->id }}" class="text-decoration-none text-body">{{ $tick->assignee->name }}</a>
                         @else

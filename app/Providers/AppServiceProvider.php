@@ -18,6 +18,7 @@ use App\Models\Ticket;
 use App\Observers\NoteObserver;
 use App\Policies\KbArticlePolicy;
 use App\Policies\MilestonePolicy;
+use App\Policies\NotePolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ReleasePolicy;
 use App\Policies\SavedViewPolicy;
@@ -56,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(Milestone::class, MilestonePolicy::class);
+        Gate::policy(Note::class, NotePolicy::class);
         Gate::policy(Release::class, ReleasePolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(KbArticle::class, KbArticlePolicy::class);

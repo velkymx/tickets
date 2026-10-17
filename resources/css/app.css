@@ -140,24 +140,15 @@ body {
     pointer-events: none;
 }
 
-/* Ticket table: truncated cells (no sticky header: the table sits in
+/* Ticket table cells truncate through Bootstrap .text-truncate plus an
+   inline max-width (no sticky header: the table sits in
    .table-responsive, an unconstrained scroll container, so sticky has
    nothing to stick to) */
-.ticket-cell-truncate {
-    max-width: 280px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 .kanban-avatar {
     width: 24px;
     height: 24px;
     font-size: 11px;
     font-weight: 600;
-}
-
-.kanban-project {
-    max-width: 110px;
 }
 
 @media (max-width: 576px) {

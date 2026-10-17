@@ -11,7 +11,6 @@ use App\Services\MarkdownService;
 use App\Services\MentionService;
 use App\Services\TicketService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -23,13 +22,7 @@ class NotesController extends Controller
 
         $note = Note::with('ticket')->findOrFail($id);
 
-        $canHide = $note->user_id === Auth::id()
-            || $note->ticket->user_id === Auth::id()
-            || $note->ticket->user_id2 === Auth::id();
-
-        if (! $canHide) {
-            abort(Response::HTTP_FORBIDDEN, 'You cannot hide this note');
-        }
+        $this->authorize('hide', $note);
 
         $note->hide = true;
         $note->save();
@@ -41,13 +34,7 @@ class NotesController extends Controller
     {
         $note = Note::with('ticket')->findOrFail($id);
 
-        $canPromote = $note->user_id === Auth::id()
-            || $note->ticket->user_id === Auth::id()
-            || $note->ticket->user_id2 === Auth::id();
-
-        if (! $canPromote) {
-            abort(Response::HTTP_FORBIDDEN, 'You cannot promote this note');
-        }
+        $this->authorize('promote', $note);
 
         $validator = Validator::make(request()->all(), [
             'type' => 'required|in:decision,blocker,action',
@@ -160,9 +147,7 @@ class NotesController extends Controller
     {
         $note = Note::findOrFail($id);
 
-        if ((int) $note->user_id !== (int) Auth::id()) {
-            abort(Response::HTTP_FORBIDDEN, 'Only the author can edit this note.');
-        }
+        $this->authorize('update', $note);
 
         if ($note->notetype === 'decision') {
             return response()->json([
@@ -197,13 +182,7 @@ class NotesController extends Controller
     {
         $note = Note::with('ticket')->findOrFail($id);
 
-        $canAttach = $note->user_id === Auth::id()
-            || $note->ticket->user_id === Auth::id()
-            || $note->ticket->user_id2 === Auth::id();
-
-        if (! $canAttach) {
-            abort(Response::HTTP_FORBIDDEN, 'You cannot attach files to this note');
-        }
+        $this->authorize('attach', $note);
 
         $validated = $request->validate([
             'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,zip,txt,log,csv,md',
@@ -231,13 +210,7 @@ class NotesController extends Controller
     {
         $note = Note::with('ticket')->findOrFail($id);
 
-        $canPin = $note->user_id === Auth::id()
-            || $note->ticket->user_id === Auth::id()
-            || $note->ticket->user_id2 === Auth::id();
-
-        if (! $canPin) {
-            abort(Response::HTTP_FORBIDDEN, 'You cannot pin this note');
-        }
+        $this->authorize('pin', $note);
 
         $note->update(['pinned' => ! $note->pinned]);
 
@@ -248,13 +221,7 @@ class NotesController extends Controller
     {
         $note = Note::with('ticket')->findOrFail($id);
 
-        $canResolve = (int) $note->user_id === (int) Auth::id()
-            || (int) $note->ticket->user_id2 === (int) Auth::id()
-            || (int) $note->ticket->user_id === (int) Auth::id();
-
-        if (! $canResolve) {
-            abort(Response::HTTP_FORBIDDEN, 'Only the thread author, ticket creator, or assignee can resolve.');
-        }
+        $this->authorize('resolve', $note);
 
         $validated = $request->validate([
             'resolution_message' => 'required|string|min:1',
