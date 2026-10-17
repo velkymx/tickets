@@ -6,8 +6,6 @@
 [![Laravel](https://img.shields.io/badge/laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/docs/13.x)
 [![Node](https://img.shields.io/badge/node-%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/github/license/velkymx/tickets)](LICENSE.md)
-[![Last Commit](https://img.shields.io/github/last-commit/velkymx/tickets/master)](https://github.com/velkymx/tickets/commits/master)
-[![Open Issues](https://img.shields.io/github/issues/velkymx/tickets)](https://github.com/velkymx/tickets/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/velkymx/tickets)](https://github.com/velkymx/tickets/stargazers)
 
 A self-hosted, open-source issue and sprint tracker for small teams. Tickets combines project management, backlogs, Kanban boards, real-time collaboration, automations, a knowledge base, and a REST API without the complexity of Jira or the cost of Linear.
