@@ -55,7 +55,9 @@ class KbVersionControllerTest extends TestCase
         $user = User::factory()->create(['kb_role' => 'author']);
         $article = $this->createArticleWithVersions($user);
 
-        $this->actingAs($user)->get("/kb/{$article->slug}/history")->assertOk();
+        $this->actingAs($user)->get("/kb/{$article->slug}/history")
+            ->assertOk()
+            ->assertSeeInOrder(['v2', 'Updated section', 'v1', 'Initial']);
     }
 
     #[Test]
@@ -64,7 +66,11 @@ class KbVersionControllerTest extends TestCase
         $user = User::factory()->create(['kb_role' => 'author']);
         $article = $this->createArticleWithVersions($user);
 
-        $this->actingAs($user)->get("/kb/{$article->slug}/history/1")->assertOk();
+        $this->actingAs($user)->get("/kb/{$article->slug}/history/1")
+            ->assertOk()
+            ->assertSee('Version 1: Version 1')
+            ->assertSee('First content')
+            ->assertDontSee('Updated content');
     }
 
     #[Test]
@@ -73,7 +79,10 @@ class KbVersionControllerTest extends TestCase
         $user = User::factory()->create(['kb_role' => 'author']);
         $article = $this->createArticleWithVersions($user);
 
-        $this->actingAs($user)->get("/kb/{$article->slug}/diff/1/2")->assertOk();
+        $this->actingAs($user)->get("/kb/{$article->slug}/diff/1/2")
+            ->assertOk()
+            ->assertSee('First content')
+            ->assertSee('Updated content');
     }
 
     #[Test]
@@ -82,10 +91,22 @@ class KbVersionControllerTest extends TestCase
         $user = User::factory()->create(['kb_role' => 'author']);
         $article = $this->createArticleWithVersions($user);
 
-        $this->actingAs($user)->post("/kb/{$article->slug}/restore/1")->assertRedirect();
+        $this->actingAs($user)->post("/kb/{$article->slug}/restore/1")
+            ->assertRedirect("/kb/{$article->slug}");
 
         $article->refresh();
-        $this->assertCount(3, $article->versions); // original 2 + restore creates version 3
+        $this->assertSame('Version 1', $article->title);
+        $this->assertSame('First content', $article->body_markdown);
+        $this->assertDatabaseHas('kb_article_versions', ['article_id' => $article->id, 'version_number' => 3]);
+    }
+
+    #[Test]
+    public function it_returns_404_for_missing_version(): void
+    {
+        $user = User::factory()->create(['kb_role' => 'author']);
+        $article = $this->createArticleWithVersions($user);
+
+        $this->actingAs($user)->get("/kb/{$article->slug}/history/99")->assertNotFound();
     }
 
     #[Test]
