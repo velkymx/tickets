@@ -20,17 +20,11 @@ class ImportControllerTest extends TestCase
 {
     use SeedsDatabase;
 
-    protected User $user;
-
-    protected Milestone $milestone;
-
     protected function setUp(): void
     {
         parent::setUp();
         Cache::flush();
         Storage::fake('local');
-        $this->user = User::factory()->create(['name' => 'Test User']);
-        $this->milestone = Milestone::factory()->create(['name' => 'Sprint 1']);
     }
 
     #[Test]
@@ -44,7 +38,9 @@ class ImportControllerTest extends TestCase
     #[Test]
     public function index_returns_import_view(): void
     {
-        $response = $this->actingAs($this->user)->get('/tickets/import');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/tickets/import');
 
         $response->assertStatus(200);
         $response->assertViewIs('import.index');
@@ -53,9 +49,11 @@ class ImportControllerTest extends TestCase
     #[Test]
     public function index_passes_open_milestones_to_view(): void
     {
+        $user = User::factory()->create();
+        Milestone::factory()->create(['name' => 'Sprint 1']);
         Milestone::factory()->create(['name' => 'Closed Milestone', 'end_at' => now()]);
 
-        $response = $this->actingAs($this->user)->get('/tickets/import');
+        $response = $this->actingAs($user)->get('/tickets/import');
 
         $response->assertStatus(200);
         $milestones = $response->viewData('milestones');
@@ -81,6 +79,8 @@ class ImportControllerTest extends TestCase
     #[Test]
     public function create_imports_csv_and_creates_tickets(): void
     {
+        $user = User::factory()->create(['name' => 'Test User']);
+        $milestone = Milestone::factory()->create(['name' => 'Sprint 1']);
         Type::factory()->create(['name' => 'Bug']);
         Importance::factory()->create(['name' => 'High']);
         Status::factory()->create(['name' => 'Open']);
@@ -89,28 +89,30 @@ class ImportControllerTest extends TestCase
         $csv = 'Bug,Test Ticket,Description,High,Open,Test Project,Test User';
         $file = UploadedFile::fake()->createWithContent('import.csv', $csv);
 
-        $response = $this->actingAs($this->user)->post('/tickets/import', [
-            'milestone_id' => $this->milestone->id,
+        $response = $this->actingAs($user)->post('/tickets/import', [
+            'milestone_id' => $milestone->id,
             'csv' => $file,
             'hasHeader' => false,
         ]);
 
-        $response->assertRedirect("/milestone/show/{$this->milestone->id}");
+        $response->assertRedirect("/milestone/show/{$milestone->id}");
         $response->assertSessionHas('info_message', 'Tickets Successfully Imported');
         $this->assertDatabaseHas('tickets', [
             'subject' => 'Test Ticket',
-            'milestone_id' => $this->milestone->id,
+            'milestone_id' => $milestone->id,
         ]);
     }
 
     #[Test]
     public function create_rolls_back_on_import_failure(): void
     {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
         $csv = 'NonexistentType,Bad Ticket,Description,High,Open,Test Project,Test User';
         $file = UploadedFile::fake()->createWithContent('import.csv', $csv);
 
-        $this->actingAs($this->user)->post('/tickets/import', [
-            'milestone_id' => $this->milestone->id,
+        $this->actingAs($user)->post('/tickets/import', [
+            'milestone_id' => $milestone->id,
             'csv' => $file,
             'hasHeader' => false,
         ]);
@@ -121,11 +123,13 @@ class ImportControllerTest extends TestCase
     #[Test]
     public function create_shows_error_on_failure(): void
     {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
         $csv = 'NonexistentType,Bad Ticket,Description,High,Open,Test Project,Test User';
         $file = UploadedFile::fake()->createWithContent('import.csv', $csv);
 
-        $response = $this->actingAs($this->user)->post('/tickets/import', [
-            'milestone_id' => $this->milestone->id,
+        $response = $this->actingAs($user)->post('/tickets/import', [
+            'milestone_id' => $milestone->id,
             'csv' => $file,
             'hasHeader' => false,
         ]);
@@ -137,8 +141,11 @@ class ImportControllerTest extends TestCase
     #[Test]
     public function create_requires_csv_file(): void
     {
-        $response = $this->actingAs($this->user)->post('/tickets/import', [
-            'milestone_id' => $this->milestone->id,
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
+
+        $response = $this->actingAs($user)->post('/tickets/import', [
+            'milestone_id' => $milestone->id,
         ]);
 
         $response->assertSessionHasErrors('csv');
@@ -147,9 +154,10 @@ class ImportControllerTest extends TestCase
     #[Test]
     public function create_rejects_invalid_milestone(): void
     {
+        $user = User::factory()->create();
         $file = UploadedFile::fake()->createWithContent('import.csv', 'data');
 
-        $response = $this->actingAs($this->user)->post('/tickets/import', [
+        $response = $this->actingAs($user)->post('/tickets/import', [
             'milestone_id' => 99999,
             'csv' => $file,
         ]);

@@ -2,14 +2,10 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\Importance;
-use App\Models\Milestone;
 use App\Models\Note;
-use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
-use App\Models\Type;
 use App\Models\User;
 use App\Notifications\WatcherNotification;
 use Illuminate\Support\Facades\Notification;
@@ -20,30 +16,6 @@ use Tests\Traits\SeedsDatabase;
 class TicketTest extends TestCase
 {
     use SeedsDatabase;
-
-    protected Status $openStatus;
-
-    protected Status $closedStatus;
-
-    protected Type $type;
-
-    protected Importance $importance;
-
-    protected Project $project;
-
-    protected Milestone $milestone;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->openStatus = Status::factory()->create(['name' => 'New']);
-        $this->closedStatus = Status::factory()->closed()->create();
-        $this->type = Type::factory()->create(['name' => 'Bug']);
-        $this->importance = Importance::factory()->create(['name' => 'Critical']);
-        $this->project = Project::factory()->create(['name' => 'Test Project']);
-        $this->milestone = Milestone::factory()->create(['name' => 'Sprint 1']);
-    }
 
     #[Test]
     public function it_computes_actual_hours_from_notes_sum(): void
@@ -172,14 +144,15 @@ class TicketTest extends TestCase
     public function it_sets_closed_at_when_moved_to_completed(): void
     {
         $user = User::factory()->create();
+        $closed = Status::factory()->closed()->create();
         $ticket = Ticket::factory()->create([
             'user_id' => $user->id,
             'user_id2' => $user->id,
-            'status_id' => $this->openStatus->id,
+            'status_id' => Status::factory()->create()->id,
             'closed_at' => null,
         ]);
 
-        $ticket->status_id = $this->closedStatus->id;
+        $ticket->status_id = $closed->id;
         $ticket->save();
 
         $this->assertNotNull($ticket->fresh()->closed_at);
@@ -193,11 +166,11 @@ class TicketTest extends TestCase
         $ticket = Ticket::factory()->create([
             'user_id' => $user->id,
             'user_id2' => $user->id,
-            'status_id' => $this->closedStatus->id,
+            'status_id' => Status::factory()->closed()->create()->id,
             'closed_at' => now(),
         ]);
 
-        $ticket->status_id = $this->openStatus->id;
+        $ticket->status_id = Status::factory()->create()->id;
         $ticket->save();
 
         $this->assertNull($ticket->fresh()->closed_at);
@@ -219,11 +192,11 @@ class TicketTest extends TestCase
         $ticket = Ticket::factory()->create([
             'user_id' => $user->id,
             'user_id2' => $user->id,
-            'status_id' => $this->openStatus->id,
+            'status_id' => Status::factory()->create()->id,
             'closed_at' => null,
         ]);
 
-        $ticket->status_id = $this->closedStatus->id;
+        $ticket->status_id = Status::factory()->closed()->create()->id;
         $ticket->closed_at = '2026-01-15 10:00:00';
         $ticket->save();
 
