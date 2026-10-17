@@ -35,13 +35,20 @@
         <form method="POST" action="{{ route('kb.admin.categories.store') }}">
             @csrf
             <div class="row g-3 align-items-end">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="name" class="form-label">Name</label>
                     <input type="text" name="name" id="name" class="form-control" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="description" class="form-label">Description</label>
                     <input type="text" name="description" id="description" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label for="parent_id" class="form-label">Parent</label>
+                    <select name="parent_id" id="parent_id" class="form-select">
+                        <option value="">Top level</option>
+                        @include('kb.partials.category-options', ['parentId' => null, 'depth' => 0])
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <label for="sort_order" class="form-label">Sort Order</label>
@@ -62,6 +69,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Parent</th>
                     <th>Description</th>
                     <th>Sort Order</th>
                     <th>Articles</th>
@@ -73,6 +81,9 @@
                     <tr x-data="{ editing: false }">
                         <td>
                             <span x-show="!editing">{{ $category->name }}</span>
+                        </td>
+                        <td>
+                            <span x-show="!editing">{{ $category->parent?->name ?? '-' }}</span>
                         </td>
                         <td>
                             <span x-show="!editing">{{ $category->description }}</span>
@@ -101,6 +112,10 @@
                                 @method('PUT')
                                 <input type="text" name="name" value="{{ $category->name }}" class="form-control form-control-sm" style="width: 120px;">
                                 <input type="text" name="description" value="{{ $category->description }}" class="form-control form-control-sm" style="width: 150px;">
+                                <select name="parent_id" class="form-select form-select-sm" style="width: 130px;">
+                                    <option value="">Top level</option>
+                                    @include('kb.partials.category-options', ['parentId' => null, 'depth' => 0, 'selectedId' => $category->parent_id, 'excludeId' => $category->id])
+                                </select>
                                 <input type="number" name="sort_order" value="{{ $category->sort_order }}" class="form-control form-control-sm" style="width: 70px;">
                                 <button type="submit" class="btn btn-sm btn-success">Save</button>
                                 <button type="button" class="btn btn-sm btn-secondary" @click="editing = false">Cancel</button>

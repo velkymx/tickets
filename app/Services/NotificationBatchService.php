@@ -11,7 +11,20 @@ class NotificationBatchService
 {
     public function dispatch(User $user, Notification $notification, int $ticketId): void
     {
+        $entry = $this->normalize($user, $notification);
+
+        // In-app delivery is never gated; only mail is.
         $user->notifyNow($notification, ['database']);
+
+        if (! $user->mailsFor($this->prefKey($entry['type']))) {
+            return;
+        }
+
+        if ($user->notificationPrefs()['email_mode'] === 'immediate') {
+            $user->notifyNow($notification, ['mail']);
+
+            return;
+        }
 
         $batchKey = $this->batchKey($user->id, $ticketId);
         $scheduleKey = $this->scheduleKey($user->id, $ticketId);
@@ -21,7 +34,7 @@ class NotificationBatchService
         try {
             $lock->block(2);
             $entries = Cache::get($batchKey, []);
-            $entries[] = $this->normalize($user, $notification);
+            $entries[] = $entry;
             Cache::put($batchKey, $entries, now()->addMinutes(10));
         } finally {
             $lock->release();
@@ -42,12 +55,28 @@ class NotificationBatchService
         return "ticket-notification-batch-scheduled:{$userId}:{$ticketId}";
     }
 
+    private function prefKey(string $type): string
+    {
+        return match ($type) {
+            'mention' => 'mentions',
+            'reply' => 'replies',
+            'watching' => 'watching',
+            default => throw new \InvalidArgumentException("Unknown notification type [{$type}]."),
+        };
+    }
+
     private function normalize(User $user, Notification $notification): array
     {
         $data = method_exists($notification, 'toArray') ? $notification->toArray($user) : [];
 
+        // Fail at write time, not in the digest job against stale cache:
+        // every batched notification must declare its preference type.
+        $type = $data['type'] ?? throw new \InvalidArgumentException(
+            $notification::class.'::toArray() must include a "type" key.'
+        );
+
         return [
-            'type' => $data['type'] ?? 'activity',
+            'type' => $type,
             'subject' => $this->subjectFor($data),
             'excerpt' => $data['excerpt'] ?? $data['message'] ?? '',
             'url' => $data['url'] ?? '',

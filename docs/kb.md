@@ -1,14 +1,14 @@
-# Knowledge Base — MVP Design Spec
+# Knowledge Base - MVP Design Spec
 
 **Date:** 2026-03-23
-**Approach:** Hybrid — Standalone module with shared components
+**Approach:** Hybrid - Standalone module with shared components
 **Status:** Approved
 
 ---
 
 ## Overview
 
-A Knowledge Base module for the ticket management system that serves as the single source of truth for all project documentation — architectural schemas, module dependencies, code style guides, cheat sheets, and ideas.
+A Knowledge Base module for the ticket management system that serves as the single source of truth for all project documentation - architectural schemas, module dependencies, code style guides, cheat sheets, and ideas.
 
 The KB is a standalone module within the Laravel app. It has its own models, controllers, services, and views, but shares key infrastructure with the ticket system: the MarkdownService, a new shared AttachmentService, a new CrossReferenceService for cross-linking between KB articles and tickets, and a SearchService abstraction designed for future Scout integration.
 
@@ -26,6 +26,7 @@ The KB is a standalone module within the Laravel app. It has its own models, con
 | name | string | |
 | slug | string, unique | |
 | description | text, nullable | |
+| parent_id | bigint FK nullable, nullOnDelete | Self-reference for nested folders; null means top level |
 | sort_order | integer, default 0 | |
 | timestamps | | |
 
@@ -57,7 +58,7 @@ The KB is a standalone module within the Laravel app. It has its own models, con
 | timestamps | | |
 | soft deletes | | |
 
-**Foreign key cascade policy:** All KB foreign keys use `onDelete('cascade')`. When an article is force-deleted, its versions, permissions, attachments, and tag pivots are cascaded. Soft deletes are the default — force-delete is an admin-only database operation, not exposed in the UI.
+**Foreign key cascade policy:** All KB foreign keys use `onDelete('cascade')`. When an article is force-deleted, its versions, permissions, attachments, and tag pivots are cascaded. Soft deletes are the default - force-delete is an admin-only database operation, not exposed in the UI.
 
 ### kb_article_tag (pivot)
 
@@ -136,9 +137,9 @@ A dedicated service for resolving cross-references at render time. Integrated in
 
 - In KB article body: `#123` becomes a link to ticket 123
 - In ticket notes: `kb:some-slug` becomes a link to the KB article
-- No foreign keys — purely URL resolution during Markdown-to-HTML rendering
+- No foreign keys - purely URL resolution during Markdown-to-HTML rendering
 - `MarkdownService` calls `CrossReferenceService::resolve($html)` as a post-processing step
-- Matching patterns: ticket refs use `\b#(\d+)\b`, KB refs use `\bkb:([a-z0-9-]+)\b` — both patterns avoid matching inside URLs and code blocks
+- Matching patterns: ticket refs use `\b#(\d+)\b`, KB refs use `\bkb:([a-z0-9-]+)\b` - both patterns avoid matching inside URLs and code blocks
 
 ### SearchService (new abstraction)
 
@@ -149,7 +150,7 @@ interface SearchableRepository
 }
 ```
 
-`KbSearchService` implements this using database full-text queries. When Scout is added later, a `ScoutKbSearchService` replaces it — same interface, no controller changes.
+`KbSearchService` implements this using database full-text queries. When Scout is added later, a `ScoutKbSearchService` replaces it - same interface, no controller changes.
 
 **Refactoring scope:** Two new services (AttachmentService, CrossReferenceService), one new interface (SearchableRepository), one minor MarkdownService update (call CrossReferenceService in render pipeline).
 
@@ -164,7 +165,7 @@ interface SearchableRepository
 **Route ordering:** Static routes (`create`, `search`, `category/*`, `tag/*`) MUST be registered before the wildcard `{slug}` route. A route constraint on `{slug}` excludes reserved words: `create`, `category`, `tag`, `search`, `admin`, `trashed`.
 
 **Middleware groups:**
-- **Public group** (index, show, search, category, tag): `web` only — no `auth` middleware. Auth is optional; the controller/policy checks `auth()->user()` to determine access.
+- **Public group** (index, show, search, category, tag): `web` only - no `auth` middleware. Auth is optional; the controller/policy checks `auth()->user()` to determine access.
 - **Author group** (create, store, edit, update, attachments): `web`, `auth`
 - **Admin group** (`/kb/admin/*`): `web`, `auth`, plus policy check for admin role
 
@@ -204,15 +205,15 @@ interface SearchableRepository
 | `GET /kb/admin/trashed` | `KbAdminController@trashed` | Admin |
 | `POST /kb/admin/trashed/{id}/restore` | `KbAdminController@restoreArticle` | Admin |
 
-API routes (`/api/v1/kb`) mirror the web routes — added in a later iteration, not MVP.
+API routes (`/api/v1/kb`) mirror the web routes - added in a later iteration, not MVP.
 
 ### Authorization (KbArticlePolicy)
 
-- **view** — Public articles: anyone (policy uses `?User $user` nullable parameter). Internal: authenticated users. Restricted: owner, permitted users, admins. The policy's `before()` method returns `true` for public articles when `$user` is null.
-- **create** — Users with Author or Admin KB role.
-- **update** — Owner, permitted authors, admins.
-- **delete** — Admins only.
-- **restore** — Same as update.
+- **view** - Public articles: anyone (policy uses `?User $user` nullable parameter). Internal: authenticated users. Restricted: owner, permitted users, admins. The policy's `before()` method returns `true` for public articles when `$user` is null.
+- **create** - Users with Author or Admin KB role.
+- **update** - Owner, permitted authors, admins.
+- **delete** - Admins only.
+- **restore** - Same as update.
 
 ### Roles
 
@@ -224,7 +225,7 @@ Add `kb_role` column to `users` table (nullable enum: `author`, `admin`). Null m
 
 ### Layout
 
-KB gets its own sub-layout extending `layouts/app.blade.php` — adds a sidebar for navigation while keeping the existing navbar.
+KB gets its own sub-layout extending `layouts/app.blade.php` - adds a sidebar for navigation while keeping the existing navbar.
 
 ### Sidebar
 
@@ -250,7 +251,7 @@ KB gets its own sub-layout extending `layouts/app.blade.php` — adds a sidebar 
 ### Editor (`/kb/create`, `/kb/{slug}/edit`)
 
 - Title field
-- Markdown editor — reuse existing textarea + preview pattern
+- Markdown editor - reuse existing textarea + preview pattern
 - Metadata panel: category dropdown, tag multi-select, status, visibility, owner
 - Per-article permissions: user selector (shown when visibility = restricted)
 - Save modal: requires a commit message before saving (git commit dialog style)
@@ -292,29 +293,29 @@ KB gets its own sub-layout extending `layouts/app.blade.php` — adds a sidebar 
 
 ### Article Lifecycle
 
-- **Draft** — Default on creation. Only visible to the author and admins. Not shown in public/internal listings. On the index page, authenticated users see their own drafts in a separate "My Drafts" section; unauthenticated users never see drafts.
-- **Verified** — Published and reviewed. Visible per its visibility setting. Author manually sets `reviewed_at` when marking as verified.
-- **Deprecated** — Still accessible via direct link and search, but displayed with a visual warning banner. Excluded from sidebar navigation by default.
+- **Draft** - Default on creation. Only visible to the author and admins. Not shown in public/internal listings. On the index page, authenticated users see their own drafts in a separate "My Drafts" section; unauthenticated users never see drafts.
+- **Verified** - Published and reviewed. Visible per its visibility setting. Author manually sets `reviewed_at` when marking as verified.
+- **Deprecated** - Still accessible via direct link and search, but displayed with a visual warning banner. Excluded from sidebar navigation by default.
 
 **Index listing logic:** Unauthenticated users see only verified public articles. Authenticated users see verified articles matching their access level, plus their own drafts. Admins see all articles regardless of status/visibility.
 
 ### Visibility Tiers
 
-- **Public** — No authentication required. Unauthenticated visitors see a minimal public layout (`layouts/kb-public.blade.php`, no app chrome). Authenticated users see the normal app layout.
-- **Internal** — Any authenticated user can view.
-- **Restricted** — Only the owner, explicitly permitted users (via `kb_article_permissions`), and admins.
+- **Public** - No authentication required. Unauthenticated visitors see a minimal public layout (`layouts/kb-public.blade.php`, no app chrome). Authenticated users see the normal app layout.
+- **Internal** - Any authenticated user can view.
+- **Restricted** - Only the owner, explicitly permitted users (via `kb_article_permissions`), and admins.
 
 ### Role Hierarchy
 
-- **Reader** (default, `kb_role = null`) — View articles per visibility rules. Search and filter.
-- **Author** (`kb_role = 'author'`) — Create articles, edit own articles, manage own article permissions.
-- **Admin** (`kb_role = 'admin'` or existing `admin = true`) — Full control. Edit/delete any article, change ownership, manage categories and tags, view/restore trashed articles.
+- **Reader** (default, `kb_role = null`) - View articles per visibility rules. Search and filter.
+- **Author** (`kb_role = 'author'`) - Create articles, edit own articles, manage own article permissions.
+- **Admin** (`kb_role = 'admin'` or existing `admin = true`) - Full control. Edit/delete any article, change ownership, manage categories and tags, view/restore trashed articles.
 
 ### Ownership
 
 - Every article has an `owner_id`. Defaults to the creator.
 - Ownership can be transferred by the current owner or an admin.
-- No automated review reminders in the MVP — owners track review dates manually.
+- No automated review reminders in the MVP - owners track review dates manually.
 
 ### Required Metadata on Save
 
@@ -402,7 +403,7 @@ routes/
 │   # KB routes added to web.php (grouped under /kb prefix)
 ```
 
-### KbArticleService — Key Methods
+### KbArticleService - Key Methods
 
 ```php
 class KbArticleService
@@ -416,9 +417,9 @@ class KbArticleService
 }
 ```
 
-The `update()` method calls `createVersion()` internally — every update produces a version record. The `createVersion()` method wraps the version_number increment in a `DB::transaction()` with `lockForUpdate()`.
+The `update()` method calls `createVersion()` internally - every update produces a version record. The `createVersion()` method wraps the version_number increment in a `DB::transaction()` with `lockForUpdate()`.
 
-**Note:** The KB is intentionally project-agnostic. Articles are not scoped to a project — the KB serves as a cross-project source of truth. Project-specific context can be conveyed via categories or tags (e.g., a "Project X" category).
+**Note:** The KB is intentionally project-agnostic. Articles are not scoped to a project - the KB serves as a cross-project source of truth. Project-specific context can be conveyed via categories or tags (e.g., a "Project X" category).
 
 ### Refactoring Touchpoints
 

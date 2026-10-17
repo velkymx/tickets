@@ -18,7 +18,7 @@ class PasswordResetTest extends TestCase
         $configTable = config('auth.passwords.users.table');
         $user = User::factory()->create();
 
-        // Insert a token into the configured table — will throw if table doesn't exist
+        // Insert a token into the configured table - will throw if table doesn't exist
         DB::table($configTable)->insert([
             'email' => $user->email,
             'token' => 'test-token',

@@ -17,8 +17,7 @@ class ProjectsController extends Controller
         private PriorityMatrixService $priorityMatrix,
         private TicketService $ticketService,
         private TicketQueryParser $ticketQueryParser,
-    ) {
-    }
+    ) {}
 
     public function index()
     {
@@ -50,11 +49,9 @@ class ProjectsController extends Controller
         $tickets = Ticket::query()
             ->where('project_id', $project->id)
             ->filter($this->ticketQueryParser->parse($searchQuery))
-            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
-                $q->where('hide', 0)->where('notetype', 'message');
-            }])
+            ->withListRelations()
             ->sortable(
-                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                Ticket::LIST_SORTABLE,
                 ['importance_id', 'desc']
             )
             ->paginate($perpage)
@@ -65,7 +62,7 @@ class ProjectsController extends Controller
         $percent = 0;
 
         $total = $project->tickets()->count();
-        $completed = $project->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
+        $completed = $project->tickets()->closed()->count();
 
         if ($total !== 0) {
             $percent = round($completed / $total, 2) * 100;
@@ -73,7 +70,7 @@ class ProjectsController extends Controller
 
         $openTickets = Ticket::query()
             ->where('project_id', $project->id)
-            ->whereNotIn('status_id', Status::closedStatusIds())
+            ->open()
             ->with('importance')
             ->get();
 

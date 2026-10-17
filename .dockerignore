@@ -1,0 +1,34 @@
+# Keep the build context small and let the image build produce vendor/ and
+# public/build itself. Never bake host-only or secret files into the image.
+
+.git
+.gitignore
+.github
+
+# Secrets / local env — provided at runtime via compose env_file, never baked in
+.env
+.env.*
+!.env.example
+
+# Regenerated inside the image by composer install / npm run build
+vendor
+node_modules
+public/build
+public/hot
+
+# Runtime state (persisted via named volumes, not the image)
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/*.sqlite
+storage/framework/.seeded
+
+# Not needed at build/runtime
+tests
+.phpunit.result.cache
+*.md
+screenshots
+.DS_Store
+.idea
+.vscode

@@ -26,11 +26,11 @@
  
         {{-- Ticket List (shared canonical component) --}}
         <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('milestone/show/'.$milestone->id)" />
+        @include('partials.saved-views')
         <x-ticket-table
             :tickets="$tickets"
             :paginator="$tickets"
             :sortable="true"
-            :show-estimate="true"
             :show-updated="true" />
     </div>
     

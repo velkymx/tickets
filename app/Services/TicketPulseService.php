@@ -52,10 +52,14 @@ class TicketPulseService
             ->sortByDesc('id')
             ->first();
 
+        // Ids that some other note supersedes, as an O(1) lookup so the
+        // decision filter below is linear instead of scanning all notes per note.
+        $supersededIds = $notes->pluck('supersedes_id')->filter()->flip();
+
         $latestDecision = $notes
             ->where('notetype', 'decision')
             ->where('hide', false)
-            ->filter(fn (Note $note) => ! $notes->contains(fn (Note $candidate) => $candidate->supersedes_id === $note->id))
+            ->reject(fn (Note $note) => $supersededIds->has($note->id))
             ->sortByDesc(fn (Note $note) => $note->created_at?->timestamp ?? 0)
             ->sortByDesc('id')
             ->first();
@@ -64,6 +68,7 @@ class TicketPulseService
             ->whereNull('parent_id')
             ->where('resolved', false)
             ->filter(fn (Note $note) => $note->replies->isNotEmpty() || in_array($note->notetype, ['blocker', 'action'], true))
+            ->sortBy('id')
             ->map(fn (Note $note) => [
                 'id' => $note->id,
                 'notetype' => $note->notetype,

@@ -3,6 +3,9 @@
 namespace Tests\Unit\Requests;
 
 use App\Http\Requests\StoreTicketRequest;
+use App\Models\Importance;
+use App\Models\Status;
+use App\Models\Type;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -17,6 +20,22 @@ class StoreTicketRequestTest extends TestCase
         $request = new StoreTicketRequest;
 
         return Validator::make($data, $request->rules());
+    }
+
+    /**
+     * A minimal payload that satisfies every required field, so a test can
+     * override one field and assert on it in isolation.
+     *
+     * @return array<string, mixed>
+     */
+    protected function validBase(array $overrides = []): array
+    {
+        return array_merge([
+            'subject' => 'Test',
+            'type_id' => Type::first()->id,
+            'status_id' => Status::first()->id,
+            'importance_id' => Importance::first()->id,
+        ], $overrides);
     }
 
     #[Test]
@@ -34,8 +53,19 @@ class StoreTicketRequestTest extends TestCase
         $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('subject', $validator->errors()->toArray());
 
-        $validator = $this->makeValidator(['subject' => str_repeat('a', 255)]);
+        $validator = $this->makeValidator($this->validBase(['subject' => str_repeat('a', 255)]));
         $this->assertFalse($validator->fails());
+    }
+
+    #[Test]
+    public function it_requires_type_status_and_importance(): void
+    {
+        $validator = $this->makeValidator(['subject' => 'Test']);
+        $this->assertTrue($validator->fails());
+        $errors = $validator->errors()->toArray();
+        $this->assertArrayHasKey('type_id', $errors);
+        $this->assertArrayHasKey('status_id', $errors);
+        $this->assertArrayHasKey('importance_id', $errors);
     }
 
     #[Test]
@@ -81,21 +111,21 @@ class StoreTicketRequestTest extends TestCase
     #[Test]
     public function it_allows_nullable_description(): void
     {
-        $validator = $this->makeValidator(['subject' => 'Test', 'description' => null]);
+        $validator = $this->makeValidator($this->validBase(['description' => null]));
         $this->assertFalse($validator->fails());
     }
 
     #[Test]
     public function it_allows_nullable_user_id2(): void
     {
-        $validator = $this->makeValidator(['subject' => 'Test']);
+        $validator = $this->makeValidator($this->validBase());
         $this->assertFalse($validator->fails());
     }
 
     #[Test]
     public function it_allows_nullable_due_at_as_date(): void
     {
-        $validator = $this->makeValidator(['subject' => 'Test', 'due_at' => '2024-01-15']);
+        $validator = $this->makeValidator($this->validBase(['due_at' => '2024-01-15']));
         $this->assertFalse($validator->fails());
     }
 
@@ -110,10 +140,10 @@ class StoreTicketRequestTest extends TestCase
     #[Test]
     public function it_allows_nullable_estimate_with_min_zero(): void
     {
-        $validator = $this->makeValidator(['subject' => 'Test', 'estimate' => 0]);
+        $validator = $this->makeValidator($this->validBase(['estimate' => 0]));
         $this->assertFalse($validator->fails());
 
-        $validator = $this->makeValidator(['subject' => 'Test', 'estimate' => 5.5]);
+        $validator = $this->makeValidator($this->validBase(['estimate' => 5.5]));
         $this->assertFalse($validator->fails());
     }
 

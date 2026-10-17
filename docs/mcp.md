@@ -11,11 +11,11 @@ row that matches your tool, then use the matching snippet further down.
 
 | Transport | Endpoint / handle | Auth | Who it's for |
 |-----------|-------------------|------|--------------|
-| **Streamable HTTP** (remote) | `POST /mcp/tickets` | `Authorization: Bearer <api_token>` per request — each user's own token | Any remote/cloud MCP client; multi-user |
-| **stdio** (local) | handle `tickets` (`php artisan mcp:start tickets`) | none — set `MCP_USER_ID` to the acting user's id | One on-machine assistant; single user |
+| **Streamable HTTP** (remote) | `POST /mcp/tickets` | `Authorization: Bearer <api_token>` per request - each user's own token | Any remote/cloud MCP client; multi-user |
+| **stdio** (local) | handle `tickets` (`php artisan mcp:start tickets`) | none - set `MCP_USER_ID` to the acting user's id | One on-machine assistant; single user |
 
 Generate a token at *Profile → Edit Profile → API Token*. The HTTP transport is
-Streamable HTTP (MCP spec) — send `Accept: application/json, text/event-stream`.
+Streamable HTTP (MCP spec) - send `Accept: application/json, text/event-stream`.
 A `GET /mcp/tickets` returns a JSON-RPC 405 pointing clients at POST.
 
 Smoke test:
@@ -32,7 +32,7 @@ curl -X POST https://your-domain.com/mcp/tickets \
 > API token (`api.token` middleware), not OAuth. Clients that let you set a
 > request header (Claude Code, Cursor, Hermes, raw clients) connect directly.
 > Clients whose connector UI only offers OAuth (the Claude.ai web/Team/Enterprise
-> "custom connector" flow) cannot attach this endpoint as-is — see that section.
+> "custom connector" flow) cannot attach this endpoint as-is - see that section.
 
 ## Connecting from agent tools
 
@@ -81,9 +81,9 @@ Bearer endpoint through the `mcp-remote` bridge:
 }
 ```
 
-### Claude.ai — Team / Enterprise / Work (custom connector)
+### Claude.ai - Team / Enterprise / Work (custom connector)
 
-The web connector flow is **OAuth-only** — there is no static-token field, and
+The web connector flow is **OAuth-only** - there is no static-token field, and
 Claude connects from Anthropic's cloud, so the URL must be public HTTPS (no
 localhost) ([docs](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp)).
 Steps: an Owner opens *Organization settings → Connectors → Add → Custom → Web*,
@@ -136,13 +136,13 @@ secret store, not a literal):
 If it accepts a Streamable-HTTP URL plus custom headers, point it at
 `https://your-domain.com/mcp/tickets` with `Authorization: Bearer <token>`. If it
 only speaks stdio, wrap that same URL with `npx -y mcp-remote … --header` as
-above. Vendor config keys drift — confirm against each tool's own current docs;
+above. Vendor config keys drift - confirm against each tool's own current docs;
 the links here were checked September 2026.
 
 ## Connecting from agent frameworks (SDKs)
 
 All of these speak native Streamable HTTP, so they take our `url` plus an
-`Authorization: Bearer` header directly — no bridge needed. Replace the URL and
+`Authorization: Bearer` header directly - no bridge needed. Replace the URL and
 token; keep the token in an env var, not a literal. Call the lookup tools first
 (see below) and consider filtering to the handful of tools an agent needs.
 
@@ -169,7 +169,7 @@ agent = create_react_agent("anthropic:claude-sonnet-5", tools)
 ### CrewAI (`crewai-tools`)
 
 `transport` is `streamable-http` (hyphen); `MCPServerAdapter` is a context
-manager. [docs](https://docs.crewai.com/en/mcp/overview) — see also
+manager. [docs](https://docs.crewai.com/en/mcp/overview) - see also
 [`docs/crewai.md`](crewai.md).
 
 ```python
@@ -280,29 +280,41 @@ async with tickets:
 - **Call the lookup tools first.** `get-lookups-tool` resolves ticket
   status/type/importance/project/milestone/user names to IDs;
   `get-kb-lookups-tool` resolves KB category and tag IDs.
-- **`tools/list` is paginated** (15 per page). Follow `nextCursor` to read the
-  rest — all 16 tools span two pages.
+- **`tools/list` returns all 24 tools in one page** (server pagination length is
+  raised to 50 in `config/mcp.php`, so no `nextCursor` follow-up is needed).
 - **Errors** come back as `isError: true` with a plain message. Tickets/notes
   and articles you cannot see or edit return a clean "not found" / "cannot
   edit" message rather than leaking existence.
 - Reads are visibility-scoped; writes are limited to tickets you own or are
   assigned to, and to KB articles you own or may edit.
 
+## Workflow prompts
+
+The server also exposes prompts (`prompts/list`): `triage-ticket-prompt`
+(`ticket_id`), `standup-digest-prompt` (`milestone_id`), and
+`close-out-ticket-prompt` (`ticket_id`). Each returns the ordered tool-call
+playbook for that flow. To run several specialists through one server, see
+[Coordinating Specialist Agents](multi-agent.md).
+
 ## Ticket tools
 
 | Tool | Arguments |
 |------|-----------|
-| `get-lookups-tool` | none — statuses, types, importance, active projects, milestones, users with IDs. Call first. |
+| `get-lookups-tool` | none - statuses, types, importance, active projects, milestones, users with IDs. Call first. |
 | `list-tickets-tool` | `status_id`, `unassigned` (bool), `include_pulse` (bool), `per_page` (max 100, default 20). Your assigned tickets, newest first. |
-| `get-ticket-tool` | `ticket_id` (required) — full detail, visible notes with replies, pulse state. |
-| `get-pulse-tool` | `ticket_id` (required) — execution state, blocker, next action, decisions, threads. |
-| `create-ticket-tool` | `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you. |
-| `update-ticket-tool` | `ticket_id` (required); `subject`, `description`, `status_id`. Own/assigned only. |
+| `search-tickets-tool` | `query` (required, GitLab-style `key:value` plus free text, same grammar and active-status default as web lists), `per_page` (max 100, default 20). Tickets you own or are assigned to, newest activity first. |
+| `get-ticket-tool` | `ticket_id` (required) - full detail, visible notes with replies, pulse state. |
+| `get-pulse-tool` | `ticket_id` (required) - execution state, blocker, next action, decisions, threads. |
+| `create-ticket-tool` | `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `assignee_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you by default; pass `assignee_id` for someone else, or `assignee_id: null` to leave it unassigned. |
+| `update-ticket-tool` | `ticket_id` (required); any of `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`. Own/assigned only. |
 | `add-note-tool` | `ticket_id` (required); `body` (slash commands supported); `hours` (max 999); `status_id`; `claim` (bool, self-assign). Command-only bodies (e.g. `/close`) apply without storing a note. |
 | `reply-to-note-tool` | `ticket_id`, `note_id` (top-level only), `body` (all required). |
 | `edit-note-tool` | `ticket_id`, `note_id`, `body` (all required). Own notes only; decisions immutable. |
 | `resolve-note-tool` | `ticket_id`, `note_id`, `resolution_message` (all required). Author or assignee only. |
 | `react-to-note-tool` | `ticket_id`, `note_id`, `emoji` (`thumbsup`, `eyes`). Toggles. |
+| `moderate-note-tool` | `ticket_id`, `note_id`, `action` (`pin`/`unpin`/`hide`/`unhide`). Own/assigned ticket only. |
+| `promote-note-tool` | `ticket_id`, `note_id`, `type` (`decision`/`blocker`/`action`); `assignee` (username, for actions). Message notes only; decisions need 20+ characters, actions need exactly one @assignee. |
+| `watch-ticket-tool` | `ticket_id`, `action` (`watch`/`unwatch`/`mute`/`unmute`). Any viewable ticket, not just your own. |
 
 ### Slash commands (in `add-note-tool` body)
 
@@ -314,16 +326,16 @@ exactly one `@assignee`), `/assign @user`.
 
 `execution_state` (ON TRACK, AT RISK, BLOCKED, IDLE), `is_blocked`,
 `blocker_reason`, `next_action`, `latest_decision`, `open_threads`,
-`last_activity_at`, `is_stale`. Check pulse before acting — a BLOCKED ticket
+`last_activity_at`, `is_stale`. Check pulse before acting - a BLOCKED ticket
 needs unblocking, not another status update.
 
 ## Knowledge base tools
 
 | Tool | Arguments |
 |------|-----------|
-| `get-kb-lookups-tool` | none — KB categories and tags with IDs. Call first. |
+| `get-kb-lookups-tool` | none - KB categories and tags with IDs. Call first. |
 | `kb-search-tool` | `query`, `category_id`, `status` (`draft`/`verified`/`deprecated`), `tag_id`, `per_page` (max 100). Keyword search over title/body/tags, scoped to what you can see. |
-| `get-kb-article-tool` | `slug` (or numeric id, required) — body, category, tags, status, version count. Only articles visible to you. |
+| `get-kb-article-tool` | `slug` (or numeric id, required) - body, category, tags, status, version count. Only articles visible to you. |
 | `create-kb-article-tool` | `title`, `body_markdown`, `category_id`, `visibility` (`public`/`internal`/`restricted`), `commit_message`, `tags` (≥1) required; `status` optional. You become the owner. |
 | `update-kb-article-tool` | `id`, `title`, `body_markdown`, `category_id`, `visibility`, `commit_message`, `tags` (≥1) required; `status` optional. Owner or permitted editor; creates a new version. |
 
@@ -331,3 +343,11 @@ needs unblocking, not another status update.
 
 Wire names are the kebab-case class name including the `-tool` suffix
 (`Str::kebab(class_basename)`), e.g. `get-lookups-tool`, `create-kb-article-tool`.
+
+## Response guidance
+
+Mutating tools, search tools, and pulse return an additive `guidance` key
+alongside data: one or two follow-up calls that usually come next. Data keys
+stay stable; guidance never replaces them. New tools follow the convention
+through `HasGuidance::respond()` on the `TicketTool`, `KbTool`, and
+`MilestoneTool` bases.

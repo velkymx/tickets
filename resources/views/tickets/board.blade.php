@@ -8,6 +8,7 @@
 
     {{-- Same query bar as list view. Filters apply; columns stay, non-matches empty. --}}
     <x-ticket-search :query="$searchQuery ?? ''" :tokens="$searchTokens ?? []" :action="url('tickets/board')" />
+    @include('partials.saved-views')
 
     @if (! empty($searchQuery ?? ''))
         <div class="d-flex align-items-center gap-2 mb-3 small text-muted">
@@ -26,8 +27,9 @@
         <button type="button" class="btn-close" aria-label="Close" id="close-alert-btn"></button>
     </div>
 
-    {{-- The container for the board. We need horizontal scrolling. --}}
-    <div class="d-flex overflow-auto pb-3"> 
+    {{-- The container for the board. Bounded to the viewport so the
+        horizontal scrollbar stays visible; columns scroll vertically. --}}
+    <div class="d-flex kanban-board pb-3">
         
         {{-- Iterate over all available statuses to create columns --}}
         @foreach ($lookups['statuses'] as $status_id => $status_name)
@@ -49,7 +51,7 @@
                             </span>
                         </div>
                         @if ($overWip)
-                            <div class="small text-danger mt-1">Over WIP limit — finish work before pulling more.</div>
+                            <div class="small text-danger mt-1">Over WIP limit - finish work before pulling more.</div>
                         @endif
                     </div>
 
@@ -81,9 +83,7 @@
                                     </div>
                                     <div class="d-flex flex-wrap gap-1 mt-2">
                                         @if ($ticket->importance)
-                                            <span class="badge text-bg-{{ $ticket->importance->class ?? 'secondary' }}" title="Importance: {{ $ticket->importance->name }}">
-                                                @if (! empty($ticket->importance->icon))<i class="{{ $ticket->importance->icon }}"></i> @endif{{ $ticket->importance->name }}
-                                            </span>
+                                            <x-importance-badge :importance="$ticket->importance" pill />
                                         @endif
                                         @if ($ticket->type)
                                             <span class="badge text-bg-light border" title="Type">{{ $ticket->type->name }}</span>
@@ -103,7 +103,7 @@
                                     <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
                                         <span class="d-inline-flex align-items-center gap-2">
                                             @if ($ticket->project)
-                                                <span class="text-truncate kanban-project" title="{{ $ticket->project->name }}">{{ $ticket->project->name }}</span>
+                                                <span class="text-truncate" style="max-width: 110px;" title="{{ $ticket->project->name }}">{{ $ticket->project->name }}</span>
                                             @endif
                                             <span title="{{ $ticket->open_notes_count }} visible notes"><i class="fa-regular fa-comment"></i> {{ $ticket->open_notes_count }}</span>
                                         </span>

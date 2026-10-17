@@ -1,33 +1,33 @@
 # Note Signals
 
-Notes on a ticket are more than comments — they carry structured signals that drive the ticket's [Pulse](pulse.md), decision log, and action tracking. Choosing the right signal type keeps the ticket's history meaningful and machine-readable.
+Notes on a ticket are more than comments - they carry structured signals that drive the ticket's [Pulse](pulse.md), decision log, and action tracking. Choosing the right signal type keeps the ticket's history meaningful and machine-readable.
 
 ## Signal types
 
 | Type | Slash command | Purpose |
 |------|--------------|---------|
 | `message` | *(default, no command)* | General discussion, updates, context |
-| `decision` | `/decision` | Records a resolved choice — immutable once saved |
-| `blocker` | `/blocker` | Flags an impediment — drives `BLOCKED` Pulse state |
-| `action` | `/action @user description` | Assigns a next step — drives `ON TRACK` Pulse state |
+| `decision` | `/decision` | Records a resolved choice - immutable once saved |
+| `blocker` | `/blocker` | Flags an impediment - drives `BLOCKED` Pulse state |
+| `action` | `/action @user description` | Assigns a next step - drives `ON TRACK` Pulse state |
 | `update` | `/update` | Marks the note as a status update |
-| `changelog` | *(auto-generated)* | Created automatically when ticket fields change — not user-authored |
+| `changelog` | *(auto-generated)* | Created automatically when ticket fields change - not user-authored |
 
 ## When to use each type
 
-**message** — Default. Use for discussion, questions, and context that doesn't fit another category.
+**message** - Default. Use for discussion, questions, and context that doesn't fit another category.
 
-**decision** — Use when a meaningful choice has been made that the team should be able to look back on. Decisions cannot be edited after saving. To supersede a decision, create a new `/decision` — the old one is marked as superseded in the history.
+**decision** - Use when a meaningful choice has been made that the team should be able to look back on. Decisions cannot be edited after saving. To supersede a decision, create a new `/decision` - the old one is marked as superseded in the history.
 
-**blocker** — Use when something external is preventing progress. This immediately sets the ticket Pulse to `BLOCKED` and surfaces the blocker text to anyone viewing the ticket. Resolve the blocker note when the impediment clears.
+**blocker** - Use when something external is preventing progress. This immediately sets the ticket Pulse to `BLOCKED` and surfaces the blocker text to anyone viewing the ticket. Resolve the blocker note when the impediment clears.
 
-**action** — Use to assign a concrete next step. Requires `@mention` of the responsible person. Keeps the Pulse at `ON TRACK` as long as the action is unresolved and activity is recent. Resolve the action when the step is complete.
+**action** - Use to assign a concrete next step. Requires `@mention` of the responsible person. Keeps the Pulse at `ON TRACK` as long as the action is unresolved and activity is recent. Resolve the action when the step is complete.
 
-**update** — Use for a formal status update that's more than a comment but less than a decision. Useful for end-of-day summaries or stakeholder updates.
+**update** - Use for a formal status update that's more than a comment but less than a decision. Useful for end-of-day summaries or stakeholder updates.
 
 ## Slash commands
 
-Type a slash command at the start of any line in the note body. Commands can be combined — put each on its own line.
+Type a slash command at the start of any line in the note body. Commands can be combined - put each on its own line.
 
 ### Field commands
 
@@ -71,7 +71,7 @@ Blocker and action notes should be resolved when their purpose is complete.
 3. Enter a resolution message (required).
 4. The note is marked resolved and a reply is created with the message.
 
-Resolving a blocker immediately recalculates the Pulse — the ticket exits `BLOCKED` state.
+Resolving a blocker immediately recalculates the Pulse - the ticket exits `BLOCKED` state.
 
 ## Pinning notes
 
@@ -94,15 +94,15 @@ Type `@` in the note body to trigger autocomplete. Select a user to insert `@[Na
 ## Smart paste
 
 Paste content into the note editor and it auto-formats:
-- **Stack traces** — wrapped in a code block
-- **JSON** — wrapped in a code block with JSON syntax hint
-- **URLs** — converted to Markdown links
+- **Stack traces** - wrapped in a code block
+- **JSON** - wrapped in a code block with JSON syntax hint
+- **URLs** - converted to Markdown links
 
 ---
 
 ## See also
 
-- [Pulse](pulse.md) — how signal types drive Pulse state
-- [Notifications](notifications.md) — how @mentions and watcher notifications work
-- [Agile Workflow](agile-workflow.md) — using signals during milestones
-- [API](api.md) — `POST /tickets/{id}/note`, resolve, react endpoints
+- [Pulse](pulse.md) - how signal types drive Pulse state
+- [Notifications](notifications.md) - how @mentions and watcher notifications work
+- [Agile Workflow](agile-workflow.md) - using signals during milestones
+- [API](api.md) - `POST /tickets/{id}/note`, resolve, react endpoints

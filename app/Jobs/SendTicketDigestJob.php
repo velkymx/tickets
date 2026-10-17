@@ -16,6 +16,8 @@ class SendTicketDigestJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+
     public function __construct(
         public int $userId,
         public int $ticketId,
@@ -30,10 +32,32 @@ class SendTicketDigestJob implements ShouldQueue
         $user = User::query()->find($this->userId);
 
         if ($user && $entries !== []) {
+            // Entries were gated when appended, but prefs may have changed
+            // while the job waited. Re-check per entry at send time.
+            $entries = array_values(array_filter(
+                $entries,
+                fn ($entry) => $user->wantsNotification($entry['type'] ?? 'activity')
+            ));
+        }
+
+        if ($user && $entries !== []) {
             $user->notifyNow(new TicketDigestNotification($this->ticketId, $entries), ['mail']);
         }
 
         Cache::forget($batchKey);
         Cache::forget($scheduleKey);
+    }
+
+    /**
+     * Clear the batch cache after the final retry fails, so a broken mail
+     * driver does not leave stale keys blocking future digests for this
+     * user/ticket until their TTL expires.
+     */
+    public function failed(\Throwable $e): void
+    {
+        $batchService = app(NotificationBatchService::class);
+
+        Cache::forget($batchService->batchKey($this->userId, $this->ticketId));
+        Cache::forget($batchService->scheduleKey($this->userId, $this->ticketId));
     }
 }

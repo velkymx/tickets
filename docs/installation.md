@@ -6,10 +6,32 @@ This guide covers installing Tickets on a fresh server or local machine. For Doc
 
 | Dependency | Minimum version |
 |------------|----------------|
-| PHP | 8.2 |
+| PHP | 8.4 |
 | Composer | 2.x |
 | Node.js | 24 |
 | MariaDB | 11.8 (or MySQL 8.0 / PostgreSQL 12 / SQLite 3.35) |
+
+## Quick setup
+
+If you have PHP, Composer, and a database available, one command walks
+through the whole checklist (environment, app key, database, migrations,
+seeds, assets):
+
+```bash
+composer install
+php artisan app:install
+```
+
+Answer the prompts, or pass `--yes` to accept every default. `--no-seed`
+skips seeding and `--no-build` skips the frontend build.
+
+After seeding, the installer offers to set the admin name, email, and
+password (skipped automatically on re-runs once the default password is
+changed). For unattended runs, `ADMIN_NAME`, `ADMIN_EMAIL`, and
+`ADMIN_PASSWORD` env vars feed that step under `--yes`. `ADMIN_PASSWORD`
+is required when seeding unattended: without it the installer refuses to
+leave the default password in place. The email is validated the same way
+as the interactive prompt.
 
 ## Manual Installation
 
@@ -73,7 +95,7 @@ Default accounts created:
 | Email | Password | Notes |
 |-------|----------|-------|
 | administrator | password123 | **Change this immediately after first login** |
-| unassigned | *(none)* | System account — do not log in as this user |
+| unassigned | *(none)* | System account - do not log in as this user |
 
 > **Security:** The default administrator password is public knowledge. Change it before exposing the app to any network. Navigate to **Profile → Edit Profile** after logging in.
 
@@ -113,37 +135,58 @@ All tests should pass on a clean install.
 
 ## Docker Compose
 
-The Docker setup includes PHP, Nginx, MariaDB, and a queue worker. No local PHP or Node required.
+The Docker setup includes PHP, Nginx, MariaDB, Redis, and a queue worker. No local
+PHP or Node required - the image builds the Composer dependencies and front-end
+assets, and the app container runs migrations, seeding, and cache warming
+automatically on first boot.
 
-### 1. Copy environment file
+### 1. Create your environment file
 
 ```bash
 cp .env.example .env
 ```
 
-Leave all `DB_*` values as-is — Docker sets them automatically.
+In `.env`, set these before starting:
 
-### 2. Start the stack
+- `DB_USERNAME` - any **non-root** name, e.g. `tickets` (MariaDB refuses to create a
+  user called `root`).
+- `DB_PASSWORD` - a password of your choice. The database container and the app
+  both read it from here, so they always match.
+
+Leave `DB_HOST`, `DB_PORT`, `REDIS_HOST`, and the cache/session/queue drivers alone
+- Compose wires them to the Docker services automatically.
+
+### 2. Generate an application key
 
 ```bash
-docker compose up -d
+docker compose run --rm --no-deps --entrypoint php app artisan key:generate --show
 ```
 
-### 3. Run setup commands
+Copy the printed `base64:...` value into `APP_KEY=` in `.env`. (The app reads its
+config from `.env`, so the key must live there before you start the stack.)
+
+### 3. Build and start
 
 ```bash
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate
-docker compose exec app php artisan storage:link
-docker compose exec app php artisan db:seed --class=DefaultsSeeder
-docker compose exec app php artisan db:seed --class=UserSeeder
+docker compose up -d --build
 ```
 
-Open `http://localhost:8000`. Log in as `administrator` / `password123` and change the password immediately.
+On first boot the app container migrates the database, seeds the defaults, and
+caches config/routes/views. Follow along with `docker compose logs -f app`.
+
+### 4. Open the app
+
+Visit `http://localhost`. If port 80 is already in use, set `APP_PORT=8080` in
+`.env` and use `http://localhost:8080`. Log in as `administrator` / `password123`
+and change the password immediately.
+
+> **Rebuilding:** the containers serve the code baked into the image via a shared
+> volume, so after changing code and rebuilding you must recreate that volume:
+> `docker compose down -v && docker compose up -d --build`.
 
 ---
 
 ## See also
 
-- [API](api.md) — REST API reference and token setup
-- [CSV Import](csv-import.md) — bulk ticket creation
+- [API](api.md) - REST API reference and token setup
+- [CSV Import](csv-import.md) - bulk ticket creation

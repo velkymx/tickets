@@ -15,7 +15,6 @@ use App\Models\TicketView;
 use App\Models\Type;
 use App\Models\User;
 use App\ValueObjects\TicketPulse;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -156,6 +155,19 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('tickets');
+    }
+
+    #[Test]
+    public function index_wires_the_header_select_all_checkbox(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create();
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee('data-bulk-select', false);
+        $response->assertSee('id="selectAll"', false);
     }
 
     #[Test]
@@ -1271,10 +1283,8 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
         $response->assertStatus(200);
-        // The textarea should exist for paste handling
         $response->assertSee('note-textarea', false);
-        // JS paste handler should be in the page
-        $response->assertSee('paste', false);
+        $response->assertSee('data-ticket-show', false);
     }
 
     #[Test]
@@ -1315,6 +1325,18 @@ class TicketsControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('tickets.create');
         $response->assertViewHas('lookups');
+    }
+
+    #[Test]
+    public function create_form_accepts_story_points_beside_hours(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/ticket/create');
+
+        $response->assertStatus(200);
+        $response->assertSee('name="storypoints"', false);
+        $response->assertSee('name="estimate"', false);
     }
 
     #[Test]
@@ -1466,6 +1488,28 @@ class TicketsControllerTest extends TestCase
 
         $ticket = Ticket::where('subject', 'Test Ticket')->first();
         $this->assertEquals($user->id, $ticket->user_id2);
+    }
+
+    #[Test]
+    public function store_assigns_to_the_chosen_user(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create();
+
+        $this->actingAs($user)->post('/tickets', [
+            'subject' => 'Assigned Ticket',
+            'description' => 'Test description',
+            'type_id' => Type::factory()->create()->id,
+            'status_id' => Status::factory()->create()->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+            'user_id2' => $assignee->id,
+        ]);
+
+        $ticket = Ticket::where('subject', 'Assigned Ticket')->first();
+        $this->assertEquals($user->id, $ticket->user_id);
+        $this->assertEquals($assignee->id, $ticket->user_id2);
     }
 
     #[Test]
@@ -1821,6 +1865,25 @@ class TicketsControllerTest extends TestCase
         $ticket2->refresh();
         $this->assertEquals($newStatus->id, $ticket1->status_id);
         $this->assertEquals($newStatus->id, $ticket2->status_id);
+    }
+
+    #[Test]
+    public function batch_updates_tickets_with_id_as_checkbox_value(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['user_id' => $user->id]);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $newStatus = Status::factory()->create();
+
+        $response = $this->actingAs($user)->post('/tickets/batch', [
+            'tickets' => [$ticket->id => (string) $ticket->id],
+            'status_id' => $newStatus->id,
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertSessionHasNoErrors();
+        $ticket->refresh();
+        $this->assertEquals($newStatus->id, $ticket->status_id);
     }
 
     #[Test]
@@ -2498,134 +2561,6 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->post("/tickets/watch/{$ticket->id}");
 
         $response->assertRedirect();
-    }
-
-    #[Test]
-    public function upload_requires_authentication(): void
-    {
-        $file = UploadedFile::fake()->image('test.jpg');
-
-        $response = $this->post('/tickets/upload', [
-            'file' => $file,
-            'folder' => 'avatars',
-        ]);
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
-    public function upload_accepts_valid_image(): void
-    {
-        $user = User::factory()->create();
-
-        foreach (['jpg', 'png', 'gif'] as $ext) {
-            $file = UploadedFile::fake()->image("test.{$ext}");
-
-            $response = $this->actingAs($user)->post('/tickets/upload', [
-                'file' => $file,
-                'folder' => 'avatars',
-            ]);
-
-            $response->assertStatus(200);
-            $this->assertStringContainsString('/images/avatars/', $response->getContent());
-        }
-    }
-
-    #[Test]
-    public function upload_rejects_non_image_files(): void
-    {
-        $user = User::factory()->create();
-
-        foreach (['pdf', 'php'] as $ext) {
-            $file = UploadedFile::fake()->create("test.{$ext}", 100);
-
-            $response = $this->actingAs($user)->post('/tickets/upload', [
-                'file' => $file,
-                'folder' => 'uploads',
-            ]);
-
-            $response->assertSessionHasErrors('file');
-        }
-    }
-
-    #[Test]
-    public function upload_rejects_files_over_5mb(): void
-    {
-        $user = User::factory()->create();
-        $file = UploadedFile::fake()->image('big.jpg')->size(6000);
-
-        $response = $this->actingAs($user)->post('/tickets/upload', [
-            'file' => $file,
-            'folder' => 'avatars',
-        ]);
-
-        $response->assertSessionHasErrors('file');
-    }
-
-    #[Test]
-    public function upload_requires_folder_parameter(): void
-    {
-        $user = User::factory()->create();
-        $file = UploadedFile::fake()->image('test.jpg');
-
-        $response = $this->actingAs($user)->post('/tickets/upload', [
-            'file' => $file,
-            'folder' => '',
-        ]);
-
-        $response->assertSessionHasErrors('folder');
-    }
-
-    #[Test]
-    public function upload_sanitizes_folder_name(): void
-    {
-        $user = User::factory()->create();
-        $file = UploadedFile::fake()->image('test.jpg');
-
-        $response = $this->actingAs($user)->post('/tickets/upload', [
-            'file' => $file,
-            'folder' => 'myavatars123',
-        ]);
-
-        $response->assertStatus(200);
-        $path = $response->getContent();
-        $this->assertStringContainsString('/images/myavatars123/', $path);
-    }
-
-    #[Test]
-    public function upload_generates_unique_filename(): void
-    {
-        $user = User::factory()->create();
-        $file = UploadedFile::fake()->image('test.jpg');
-
-        $response1 = $this->actingAs($user)->post('/tickets/upload', [
-            'file' => $file,
-            'folder' => 'uploads',
-        ]);
-
-        $response2 = $this->actingAs($user)->post('/tickets/upload', [
-            'file' => $file,
-            'folder' => 'uploads',
-        ]);
-
-        $this->assertNotEquals($response1->getContent(), $response2->getContent());
-    }
-
-    #[Test]
-    public function upload_returns_image_path(): void
-    {
-        $user = User::factory()->create();
-        $file = UploadedFile::fake()->image('test.jpg');
-
-        $response = $this->actingAs($user)->post('/tickets/upload', [
-            'file' => $file,
-            'folder' => 'avatars',
-        ]);
-
-        $response->assertStatus(200);
-        $path = $response->getContent();
-        $this->assertStringStartsWith('/images/avatars/', $path);
-        $this->assertStringEndsWith('.jpg', $path);
     }
 
     #[Test]

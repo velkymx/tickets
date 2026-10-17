@@ -13,7 +13,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 
-#[Description('Edit your own note. Decisions are immutable and cannot be edited — create a new decision instead.')]
+#[Description('Edit your own note. Decisions are immutable and cannot be edited - create a new decision instead.')]
 class EditNoteTool extends TicketTool
 {
     public function handle(Request $request): Response
@@ -63,10 +63,10 @@ class EditNoteTool extends TicketTool
         $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
         $mentionService->createMentions($note, $mentionUserIds);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Note updated.',
             'note' => ['id' => $note->id],
-        ]);
+        ], 'Note updated. Call get-ticket-tool to verify the rendered result.');
     }
 
     /**

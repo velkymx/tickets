@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Concerns\HasGuidance;
 use App\Mcp\Concerns\ResolvesApiUser;
 use App\Models\KbArticle;
 use App\Models\User;
@@ -10,6 +11,7 @@ use Laravel\Mcp\Server\Tool;
 
 abstract class KbTool extends Tool
 {
+    use HasGuidance;
     use ResolvesApiUser;
 
     /**

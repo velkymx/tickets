@@ -14,21 +14,31 @@ use App\Services\TicketQueryParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class MilestoneController extends Controller
 {
-    public function __construct(private TicketQueryParser $ticketQueryParser)
-    {
-    }
+    public function __construct(private TicketQueryParser $ticketQueryParser) {}
 
     public function index()
     {
+        $counts = [
+            'tickets as tickets_total',
+            'tickets as tickets_open' => fn ($q) => $q->open(),
+        ];
 
-        $milestones = Milestone::orderBy('name')->paginate(20);
+        $active = Milestone::withCount($counts)
+            ->whereNull('end_at')
+            ->orderBy('name')
+            ->paginate(20, ['*'], 'active_page')
+            ->withQueryString();
 
-        return view('milestone.index', compact('milestones'));
+        $released = Milestone::withCount($counts)
+            ->whereNotNull('end_at')
+            ->orderByDesc('end_at')
+            ->paginate(20, ['*'], 'released_page')
+            ->withQueryString();
 
+        return view('milestone.index', compact('active', 'released'));
     }
 
     public function print($id)
@@ -71,17 +81,15 @@ class MilestoneController extends Controller
         $tickets = Ticket::query()
             ->where('milestone_id', $milestone->id)
             ->filter($this->ticketQueryParser->parse($searchQuery))
-            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
-                $q->where('hide', 0)->where('notetype', 'message');
-            }])
+            ->withListRelations()
             ->sortable(
-                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                Ticket::LIST_SORTABLE,
                 ['importance_id', 'desc']
             )
             ->paginate($perpage)
             ->withQueryString();
 
-        $completed = $milestone->tickets()->whereIn('status_id', Status::closedStatusIds())->count();
+        $completed = $milestone->tickets()->closed()->count();
         $total = $milestone->tickets()->count();
         $percent = $total > 0 ? min(100, (int) round($completed / $total * 100)) : 0;
 

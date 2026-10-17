@@ -83,7 +83,7 @@ class ListTicketsTool extends TicketTool
             return $item;
         });
 
-        return Response::json([
+        return $this->respond([
             'data' => $data,
             'meta' => [
                 'current_page' => $tickets->currentPage(),
@@ -91,7 +91,7 @@ class ListTicketsTool extends TicketTool
                 'per_page' => $tickets->perPage(),
                 'total' => $tickets->total(),
             ],
-        ]);
+        ], 'Assigned tickets, newest first. Call get-ticket-tool for detail, get-pulse-tool for execution state.');
     }
 
     /**

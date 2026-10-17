@@ -10,7 +10,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 
-#[Description('Update a ticket you own or are assigned to: subject, description, or status. Closing via a closed status sets closed_at.')]
+#[Description('Update a ticket you own or are assigned to: subject, description, status, assignee, type, importance, project, milestone, due date, estimate, or story points. Closing via a closed status sets closed_at.')]
 class UpdateTicketTool extends TicketTool
 {
     public function handle(Request $request): Response
@@ -26,6 +26,14 @@ class UpdateTicketTool extends TicketTool
             'subject' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'status_id' => 'nullable|integer|exists:statuses,id',
+            'assignee_id' => 'nullable|integer|exists:users,id',
+            'type_id' => 'nullable|integer|exists:types,id',
+            'importance_id' => 'nullable|integer|exists:importances,id',
+            'project_id' => 'nullable|integer|exists:projects,id',
+            'milestone_id' => 'nullable|integer|exists:milestones,id',
+            'due_at' => 'nullable|date',
+            'estimate' => 'nullable|numeric|min:0|max:99999',
+            'storypoints' => 'nullable|integer|min:0|max:99999',
         ]);
 
         $ticket = $this->findTicket($user, $validated['ticket_id']);
@@ -47,10 +55,28 @@ class UpdateTicketTool extends TicketTool
             $ticket->closed_at = Status::isClosed($validated['status_id']) ? now() : null;
         }
 
+        if (! empty($validated['assignee_id'])) {
+            $ticket->user_id2 = $validated['assignee_id'];
+        }
+
+        foreach (['type_id', 'importance_id', 'project_id', 'milestone_id'] as $fk) {
+            if (! empty($validated[$fk])) {
+                $ticket->{$fk} = $validated[$fk];
+            }
+        }
+
+        // Numeric/date fields use array_key_exists so a caller can clear a due
+        // date (null) or set a zero estimate, which an empty() check would drop.
+        foreach (['due_at', 'estimate', 'storypoints'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $ticket->{$field} = $validated[$field];
+            }
+        }
+
         $ticket->save();
         $ticket->load(['status', 'assignee']);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Ticket updated.',
             'ticket' => [
                 'id' => $ticket->id,
@@ -58,7 +84,7 @@ class UpdateTicketTool extends TicketTool
                 'status' => $ticket->status->name ?? null,
                 'assignee' => $ticket->assignee->name ?? null,
             ],
-        ]);
+        ], 'Ticket updated. Call get-pulse-tool to confirm the change surfaced.');
     }
 
     /**
@@ -71,6 +97,14 @@ class UpdateTicketTool extends TicketTool
             'subject' => $schema->string()->description('New title.'),
             'description' => $schema->string()->description('New description, plain text.'),
             'status_id' => $schema->integer()->description('Move the ticket to this status ID (see lookups).'),
+            'assignee_id' => $schema->integer()->description('Reassign the ticket to this user ID (see lookups).'),
+            'type_id' => $schema->integer()->description('Change the ticket type ID (see lookups).'),
+            'importance_id' => $schema->integer()->description('Change the importance/priority ID (see lookups).'),
+            'project_id' => $schema->integer()->description('Move the ticket to this project ID (see lookups).'),
+            'milestone_id' => $schema->integer()->description('Move the ticket to this milestone ID (see lookups).'),
+            'due_at' => $schema->string()->description('Due date, YYYY-MM-DD. Pass null to clear.'),
+            'estimate' => $schema->number()->description('Time estimate in hours.'),
+            'storypoints' => $schema->integer()->description('Story points.'),
         ];
     }
 }

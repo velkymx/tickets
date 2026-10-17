@@ -2,11 +2,11 @@
 
 > Open-source agile ticket tracker built with Laravel. Includes a Kanban board, knowledge base, real-time collaboration, and a REST API.
 
-AI agents can interact with Tickets entirely through its REST API using Bearer token authentication.
+AI agents can interact with Tickets through its REST API or its MCP server, both using Bearer token authentication.
 
 ## Base URL
 
-`/api/v1` — All endpoints require `Authorization: Bearer YOUR_TOKEN`
+`/api/v1`: All endpoints require `Authorization: Bearer YOUR_TOKEN`
 
 ## Authentication
 
@@ -16,33 +16,60 @@ Generate a token from the user profile page (`/user/api-token`). All API request
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/health` | Health check — returns `{"status": "ok"}` |
-| GET | `/lookups` | Returns statuses, types, importance levels, projects, milestones, releases, and users with IDs |
-| GET | `/tickets` | List tickets — supports `status`, `unassigned`, `pulse` query params |
-| POST | `/tickets` | Create ticket — requires `subject`; optional `description`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints` |
-| GET | `/tickets/{id}` | Get ticket detail with notes, reactions, replies, attachments |
-| POST | `/tickets/{id}/note` | Add note — supports `body`, `status_id`, `hours`, `claim`. Body supports slash commands: `/decision`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen` |
-| POST | `/tickets/{id}/notes/{noteId}/reply` | Reply to a note |
-| PUT | `/tickets/{id}/notes/{noteId}` | Edit a note |
-| POST | `/tickets/{id}/notes/{noteId}/react` | Toggle emoji reaction on a note — pass `emoji` param |
-| POST | `/tickets/{id}/notes/{noteId}/resolve` | Resolve a thread — requires `resolution_message` |
-| GET | `/tickets/{id}/pulse` | Returns execution state (ON TRACK, AT RISK, BLOCKED, IDLE), latest blocker, next action, latest decision, open threads |
+| GET | `/api/v1/health` | Health check: returns `{"status": "ok"}` |
+| GET | `/api/v1/lookups` | Returns statuses, types, importance levels, projects, milestones, releases, and users with IDs |
+| GET | `/api/v1/kb/lookups` | Returns KB categories and tags with IDs |
+| GET | `/api/v1/kb/articles` | List KB articles: supports `query`, `category_id`, `status`, `tag_id` |
+| POST | `/api/v1/kb/articles` | Create KB article: requires `title`, `body_markdown`, `category_id`, `tags` |
+| GET | `/api/v1/kb/articles/{id}` | Get KB article by id or slug |
+| PUT/PATCH | `/api/v1/kb/articles/{id}` | Update KB article |
+| GET | `/api/v1/tickets` | List tickets: supports `status`, `unassigned`, `pulse` query params |
+| POST | `/api/v1/tickets` | Create ticket: requires `subject`; optional `description`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints` |
+| GET | `/api/v1/tickets/{id}` | Get ticket detail with notes, reactions, replies, attachments |
+| PUT/PATCH | `/api/v1/tickets/{id}` | Update ticket |
+| POST | `/api/v1/tickets/{id}/note` | Add note: supports `body`, `status_id`, `hours`, `claim`. Body supports slash commands: `/decision`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen` |
+| POST | `/api/v1/tickets/{id}/notes/{id}/react` | Toggle emoji reaction on a note: pass `emoji` param |
+| POST | `/api/v1/tickets/{id}/notes/{id}/reply` | Reply to a note |
+| PUT | `/api/v1/tickets/{id}/notes/{id}` | Edit a note |
+| POST | `/api/v1/tickets/{id}/notes/{id}/resolve` | Resolve a thread: requires `resolution_message` |
+| POST | `/api/v1/tickets/{id}/notes/{id}/moderate` | Moderate a note |
+| POST | `/api/v1/tickets/{id}/notes/{id}/promote` | Promote a note |
+| POST | `/api/v1/tickets/{id}/watch` | Watch a ticket |
+| GET | `/api/v1/tickets/{id}/pulse` | Returns execution state (ON TRACK, AT RISK, BLOCKED, IDLE), latest blocker, next action, latest decision, open threads |
+
+## MCP server
+
+`POST /mcp/tickets` (same Bearer token) or stdio handle `tickets`. Tools:
+
+- `get-lookups-tool`, `list-tickets-tool`, `search-tickets-tool`, `get-ticket-tool`, `get-pulse-tool`, `create-ticket-tool`, `update-ticket-tool`
+- `list-milestones-tool`, `get-milestone-tool`, `create-milestone-tool`, `update-milestone-tool`
+- `add-note-tool`, `reply-to-note-tool`, `edit-note-tool`, `resolve-note-tool`, `react-to-note-tool`, `moderate-note-tool`, `promote-note-tool`, `watch-ticket-tool`
+- `get-kb-lookups-tool`, `kb-search-tool`, `get-kb-article-tool`, `create-kb-article-tool`, `update-kb-article-tool`
+
+Prompts: `triage-ticket-prompt`, `standup-digest-prompt`, `close-out-ticket-prompt`.
 
 ## Key Concepts
 
-- **Lookups first**: Always call `/lookups` to get valid IDs before creating/updating tickets
-- **Ticket Pulse**: Real-time execution state. Check pulse before acting — a BLOCKED ticket needs unblocking, not more status updates
+- **lookups-first**: Always call `/lookups` (or `get-lookups-tool`) to get valid IDs before creating/updating tickets
+- **pulse-before-act**: Check pulse before acting: a BLOCKED ticket needs unblocking, not more status updates
 - **Slash commands**: Use `/blocker`, `/decision`, `/action` in note body to add structured signals that surface in pulse data
+- **rate limit**: API and MCP share a 60 requests per minute throttle; back off and retry on 429
+
+## Sandbox
+
+`php artisan db:seed --class=DemoSeeder` builds a Demo Sandbox project with tickets, notes, and a milestone. Mutate it freely; never touch real user data while exploring. The demo login seeds on local and testing environments only.
 
 ## Web Features (Non-API)
 
-- CSV import: Navigate to `/tickets/import` in the UI — requires existing projects
+- CSV import: Navigate to `/tickets/import` in the UI (requires existing projects).
 - Kanban board: `/tickets/board`
 - Knowledge base: `/kb`
 
 ## Links
 
 - [Full API Docs](README.md#api)
+- [MCP guide](docs/mcp.md)
+- [Multi-agent coordination](docs/multi-agent.md)
 - [Repository](https://github.com/velkymx/tickets)
 - [Contributing Guide](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)

@@ -38,10 +38,10 @@ class CreateKbArticleTool extends KbTool
 
         $article = app(KbArticleService::class)->create($validated, $user);
 
-        return Response::json([
+        return $this->respond([
             'message' => 'Article created.',
             'article' => ['id' => $article->id, 'slug' => $article->slug, 'title' => $article->title],
-        ]);
+        ], 'Article created. Call get-kb-article-tool to read it back.');
     }
 
     /**

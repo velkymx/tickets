@@ -5,6 +5,10 @@ namespace App\Services;
 /**
  * Parses a GitLab/Sentry-style query string into Ticket::scopeFilter params.
  *
+ * Spike #121 verdict: this parser stays the single filter boundary. Scout
+ * was evaluated for the free-text path and rejected: single-column subject
+ * LIKE composes with filters and pagination with no extra dependency.
+ *
  * Grammar: space-separated key:value tokens (values may be "quoted") plus free
  * text. Recognised keys: status/is, importance, type, project, milestone,
  * assignee. Unknown keys or unresolved values are ignored (play dumb); leftover
@@ -12,9 +16,7 @@ namespace App\Services;
  */
 class TicketQueryParser
 {
-    public function __construct(private TicketService $ticketService)
-    {
-    }
+    public function __construct(private TicketService $ticketService) {}
 
     /**
      * @return array<string, int|string> scopeFilter params
@@ -29,6 +31,7 @@ class TicketQueryParser
                 if ($this->applyToken($filters, strtolower($m[1]), $this->unquote($m[2]))) {
                     continue;
                 }
+
                 // Unknown key or unresolved value: ignore it entirely.
                 continue;
             }

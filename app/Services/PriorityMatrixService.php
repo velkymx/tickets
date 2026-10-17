@@ -9,9 +9,11 @@ use Illuminate\Support\Collection;
  * Classifies tickets into an Action Priority (Impact-Effort) Matrix.
  *
  * Impact  = ticket importance. High impact is critical/blocker (importance_id >= 4).
- * Effort  = ticket estimate (hours) rounded up to the nearest Fibonacci band.
- *           Low effort is band <= 5 (estimate <= 5h); high effort is band >= 8.
- * Tickets with no estimate are grouped separately so they can be estimated.
+ * Effort  = story points rounded up to the nearest Fibonacci band,
+ *           falling back to the hour estimate when no points exist, since
+ *           points are the primary estimate on a ticket. Low effort is
+ *           band <= 5; high effort is band >= 8. Tickets with neither
+ *           estimate are grouped separately so they can be estimated.
  */
 class PriorityMatrixService
 {
@@ -53,7 +55,7 @@ class PriorityMatrixService
             $buckets[$key] = $bucket
                 ->sortBy([
                     ['importance_id', 'desc'],
-                    ['estimate', 'desc'],
+                    [fn ($ticket) => $this->effortValue($ticket), 'desc'],
                 ])
                 ->values();
         }
@@ -62,11 +64,25 @@ class PriorityMatrixService
     }
 
     /**
+     * Effective effort figure: story points first, hour estimate as fallback.
+     */
+    public function effortValue(Ticket $ticket): float
+    {
+        $points = (float) ($ticket->storypoints ?? 0);
+
+        if ($points > 0) {
+            return $points;
+        }
+
+        return (float) $ticket->estimate;
+    }
+
+    /**
      * Determine which matrix bucket a single ticket belongs to.
      */
     public function quadrantFor(Ticket $ticket): string
     {
-        $estimate = (float) $ticket->estimate;
+        $estimate = $this->effortValue($ticket);
 
         if ($estimate <= 0) {
             return self::UNESTIMATED;

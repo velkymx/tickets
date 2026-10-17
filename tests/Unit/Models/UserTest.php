@@ -68,8 +68,8 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
-        $this->assertTrue($user->tickets->contains($ticket));
-        $this->assertInstanceOf(Collection::class, $user->tickets);
+        $this->assertTrue($user->assignedTickets->contains($ticket));
+        $this->assertInstanceOf(Collection::class, $user->assignedTickets);
     }
 
     #[Test]
@@ -78,8 +78,20 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
-        $this->assertTrue($user->owner->contains($ticket));
-        $this->assertInstanceOf(Collection::class, $user->owner);
+        $this->assertTrue($user->createdTickets->contains($ticket));
+        $this->assertInstanceOf(Collection::class, $user->createdTickets);
+    }
+
+    #[Test]
+    public function it_does_not_mass_assign_kb_role(): void
+    {
+        $user = User::factory()->create(['kb_role' => null]);
+
+        $user->update(['name' => 'Updated Name', 'kb_role' => 'admin']);
+
+        $fresh = $user->fresh();
+        $this->assertEquals('Updated Name', $fresh->name);
+        $this->assertNull($fresh->kb_role);
     }
 
     #[Test]

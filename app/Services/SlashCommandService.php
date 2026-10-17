@@ -125,7 +125,7 @@ class SlashCommandService
                     break;
                 }
 
-                $closedStatusId = Status::whereRaw('LOWER(name) = ?', ['closed'])->value('id')
+                $closedStatusId = Status::byName('closed')->value('id')
                     ?? Status::closedStatusIds()[0] ?? null;
 
                 if (! $closedStatusId) {
@@ -230,7 +230,7 @@ class SlashCommandService
                 break;
 
             default:
-                $result['warnings'][] = "Unknown command: /{$command} — will be treated as text";
+                $result['warnings'][] = "Unknown command: /{$command} - will be treated as text";
                 $result['body_lines'][] = $rawLine;
                 break;
         }
@@ -261,6 +261,13 @@ class SlashCommandService
     protected function findByName(string $class, string $value): mixed
     {
         $trimmed = trim($value);
+
+        if ($class === Status::class) {
+            return $class::query()
+                ->where('name', $trimmed)
+                ->first()
+                ?? $class::byName($trimmed)->first();
+        }
 
         return $class::query()
             ->where('name', $trimmed)

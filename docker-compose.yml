@@ -6,14 +6,20 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DB_HOST: "${DB_HOST:-db}"
-      DB_PORT: "${DB_PORT:-3306}"
-      REDIS_HOST: "${REDIS_HOST:-redis}"
-      QUEUE_CONNECTION: "${QUEUE_CONNECTION:-redis}"
-      SESSION_DRIVER: "${SESSION_DRIVER:-redis}"
-      CACHE_STORE: "${CACHE_STORE:-redis}"
+      # In-network service names — set literally so a developer's local .env
+      # (DB_HOST=127.0.0.1, QUEUE=sync, …) can't leak in via interpolation.
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      CACHE_STORE: redis
     volumes:
-      - .:/var/www/html
+      # Serve the code that the image built (vendor + public/build), not the host.
+      # app-code is seeded from the image on first up; run `docker compose down -v`
+      # after a rebuild to pick up new code.
+      - app-code:/var/www/html
+      - storage:/var/www/html/storage
     depends_on:
       db:
         condition: service_healthy
@@ -28,8 +34,9 @@ services:
     ports:
       - "${APP_PORT:-80}:80"
     volumes:
-      - .:/var/www/html
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - app-code:/var/www/html:ro
+      - storage:/var/www/html/storage:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
     networks:
@@ -74,11 +81,14 @@ services:
     env_file: .env
     environment:
       CONTAINER_ROLE: queue
-      DB_HOST: "${DB_HOST:-db}"
-      DB_PORT: "${DB_PORT:-3306}"
-      REDIS_HOST: "${REDIS_HOST:-redis}"
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
     volumes:
-      - .:/var/www/html
+      - app-code:/var/www/html
+      - storage:/var/www/html/storage
     depends_on:
       db:
         condition: service_healthy
@@ -92,6 +102,10 @@ networks:
     driver: bridge
 
 volumes:
+  app-code:
+    driver: local
+  storage:
+    driver: local
   mariadb:
     driver: local
   redis:

@@ -14,20 +14,23 @@ Model Context Protocol endpoint: `POST /mcp/tickets` with `Authorization: Bearer
 | `list-tickets-tool` | `status_id`, `unassigned` (bool), `include_pulse` (bool), `per_page` (max 100, default 20). Lists your assigned tickets, newest first. |
 | `get-ticket-tool` | `ticket_id` (required) — full detail, visible notes with replies, pulse state. |
 | `get-pulse-tool` | `ticket_id` (required) — standalone execution state, blocker, next action, decisions, threads. |
-| `create-ticket-tool` | `subject` (required), `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you. |
-| `update-ticket-tool` | `ticket_id` (required); `subject`, `description`, `status_id`. Own/assigned only. |
+| `create-ticket-tool` | `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `assignee_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you by default; pass `assignee_id` for someone else, or `assignee_id: null` to leave it unassigned. |
+| `update-ticket-tool` | `ticket_id` (required); any of `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`. Own/assigned only. |
 | `add-note-tool` | `ticket_id` (required, must own or be assigned); `body` (slash commands work: `/close`, `/status`, `/hours`, `/blocker`, `/decision`, `/action @user`, `/estimate`); `hours` (max 999); `status_id`; `claim` (bool, self-assign). `/action` requires exactly one @assignee. |
 | `reply-to-note-tool` | `ticket_id`, `note_id` (top-level only), `body` (all required). |
 | `edit-note-tool` | `ticket_id`, `note_id`, `body` (all required). Own notes only; decisions immutable. |
 | `resolve-note-tool` | `ticket_id`, `note_id`, `resolution_message` (all required). Author or assignee only. |
 | `react-to-note-tool` | `ticket_id`, `note_id`, `emoji` (thumbsup, eyes). Toggles. |
+| `moderate-note-tool` | `ticket_id`, `note_id`, `action` (`pin`/`unpin`/`hide`/`unhide`). Own/assigned ticket only. |
+| `promote-note-tool` | `ticket_id`, `note_id`, `type` (`decision`/`blocker`/`action`); `assignee` (username, for actions). Message notes only; decisions need 20+ chars, actions need one @assignee. |
+| `watch-ticket-tool` | `ticket_id`, `action` (`watch`/`unwatch`/`mute`/`unmute`). Any viewable ticket. |
 | `get-kb-lookups-tool` | none — knowledge base categories and tags with IDs. Call first for KB writes. |
 | `kb-search-tool` | `query`, `category_id`, `status` (draft/verified/deprecated), `tag_id`, `per_page` (max 100). Keyword search over title/body/tags, scoped to what you can see. |
 | `get-kb-article-tool` | `slug` (or numeric id, required) — body, category, tags, status, version count. Visible articles only. |
 | `create-kb-article-tool` | `title`, `body_markdown`, `category_id`, `visibility` (public/internal/restricted), `commit_message`, `tags` (≥1) required; `status` optional. You become the owner. |
 | `update-kb-article-tool` | `id`, `title`, `body_markdown`, `category_id`, `visibility`, `commit_message`, `tags` (≥1) required; `status` optional. Owner or permitted editor; creates a new version. |
 
-Note: `tools/list` is paginated (15 per page) — follow `nextCursor` for the rest. Full reference: [docs/mcp.md](https://github.com/velkymx/tickets/blob/master/docs/mcp.md).
+Note: `tools/list` returns all 19 tools in a single page. Full reference: [docs/mcp.md](https://github.com/velkymx/tickets/blob/master/docs/mcp.md).
 
 ## Base URL
 
@@ -44,14 +47,23 @@ Generate a token from the user profile page (`/user/api-token`). All API request
 | GET | `/health` | Health check — returns `{"status": "ok"}` |
 | GET | `/lookups` | Returns statuses, types, importance levels, projects, milestones, releases, and users with IDs |
 | GET | `/tickets` | List tickets — supports `status`, `unassigned`, `pulse` query params |
-| POST | `/tickets` | Create ticket — requires `subject`; optional `description`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints` |
+| POST | `/tickets` | Create ticket — requires `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id`; optional `description`, `status_id`, `assignee_id` (omit = self, `null` = unassigned), `due_at`, `estimate`, `storypoints` |
 | GET | `/tickets/{id}` | Get ticket detail with notes, reactions, replies, attachments |
+| PUT/PATCH | `/tickets/{id}` | Update ticket — any of `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`. Own/assigned only |
 | POST | `/tickets/{id}/note` | Add note — supports `body`, `status_id`, `hours`, `claim`. Body supports slash commands: `/decision`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen` |
 | POST | `/tickets/{id}/notes/{noteId}/reply` | Reply to a note |
 | PUT | `/tickets/{id}/notes/{noteId}` | Edit a note |
 | POST | `/tickets/{id}/notes/{noteId}/react` | Toggle emoji reaction on a note — pass `emoji` param |
 | POST | `/tickets/{id}/notes/{noteId}/resolve` | Resolve a thread — requires `resolution_message` |
+| POST | `/tickets/{id}/notes/{noteId}/moderate` | Pin/hide a note — `action` = `pin`/`unpin`/`hide`/`unhide`. Own/assigned only |
+| POST | `/tickets/{id}/notes/{noteId}/promote` | Promote a message note — `type` = `decision`/`blocker`/`action`; `assignee` for actions |
+| POST | `/tickets/{id}/watch` | Watch/mute a ticket — `action` = `watch`/`unwatch`/`mute`/`unmute` |
 | GET | `/tickets/{id}/pulse` | Returns execution state (ON TRACK, AT RISK, BLOCKED, IDLE), latest blocker, next action, latest decision, open threads |
+| GET | `/kb/lookups` | Knowledge base categories and tags with IDs |
+| GET | `/kb/articles` | Search articles — `query`, `category_id`, `status`, `tag_id`, `per_page`. Scoped to what you can see |
+| POST | `/kb/articles` | Create article — `title`, `body_markdown`, `category_id`, `visibility`, `commit_message`, `tags` (≥1); optional `status`. You become the owner |
+| GET | `/kb/articles/{idOrSlug}` | Get an article by numeric id or slug. Visible articles only |
+| PUT/PATCH | `/kb/articles/{id}` | Update an article (owner/permitted editor) — same fields as create; makes a new version |
 
 ## Key Concepts
 

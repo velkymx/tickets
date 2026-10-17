@@ -4,16 +4,23 @@ namespace Tests\Feature\Mcp;
 
 use App\Mcp\Servers\TicketsServer;
 use App\Mcp\Tools\AddNoteTool;
+use App\Mcp\Tools\CreateMilestoneTool;
 use App\Mcp\Tools\CreateTicketTool;
 use App\Mcp\Tools\EditNoteTool;
 use App\Mcp\Tools\GetLookupsTool;
+use App\Mcp\Tools\GetMilestoneTool;
 use App\Mcp\Tools\GetPulseTool;
 use App\Mcp\Tools\GetTicketTool;
+use App\Mcp\Tools\ListMilestonesTool;
 use App\Mcp\Tools\ListTicketsTool;
+use App\Mcp\Tools\ModerateNoteTool;
+use App\Mcp\Tools\PromoteNoteTool;
 use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
+use App\Mcp\Tools\UpdateMilestoneTool;
 use App\Mcp\Tools\UpdateTicketTool;
+use App\Mcp\Tools\WatchTicketTool;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -23,6 +30,7 @@ use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Mcp\Server\Transport\StdioTransport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -105,6 +113,51 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function create_ticket_tool_creates_unassigned_ticket(): void
+    {
+        $user = User::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(CreateTicketTool::class, [
+            'subject' => 'Unassigned via MCP',
+            'type_id' => Type::factory()->create()->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+            'assignee_id' => null,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Unassigned via MCP',
+            'user_id' => $user->id,
+            'user_id2' => null,
+        ]);
+    }
+
+    #[Test]
+    public function create_ticket_tool_assigns_to_another_user(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(CreateTicketTool::class, [
+            'subject' => 'Assigned via MCP',
+            'type_id' => Type::factory()->create()->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+            'assignee_id' => $assignee->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Assigned via MCP',
+            'user_id' => $user->id,
+            'user_id2' => $assignee->id,
+        ]);
+    }
+
+    #[Test]
     public function add_note_tool_adds_note_with_hours(): void
     {
         $user = User::factory()->create();
@@ -162,7 +215,7 @@ class TicketsServerTest extends TestCase
     #[Test]
     public function server_acknowledges_initialized_lifecycle_method(): void
     {
-        $server = new TicketsServer(new \Laravel\Mcp\Server\Transport\StdioTransport);
+        $server = new TicketsServer(new StdioTransport);
 
         $boot = new \ReflectionMethod($server, 'boot');
         $boot->setAccessible(true);
@@ -321,6 +374,193 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function update_ticket_tool_reassigns_ticket(): void
+    {
+        $user = User::factory()->create();
+        $newAssignee = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateTicketTool::class, [
+            'ticket_id' => $ticket->id,
+            'assignee_id' => $newAssignee->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'user_id2' => $newAssignee->id,
+        ]);
+    }
+
+    #[Test]
+    public function update_ticket_tool_updates_planning_fields(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $type = Type::factory()->create();
+        $importance = Importance::factory()->create();
+        $project = Project::factory()->create();
+        $milestone = Milestone::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateTicketTool::class, [
+            'ticket_id' => $ticket->id,
+            'type_id' => $type->id,
+            'importance_id' => $importance->id,
+            'project_id' => $project->id,
+            'milestone_id' => $milestone->id,
+            'due_at' => '2026-12-01',
+            'estimate' => 8,
+            'storypoints' => 5,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'type_id' => $type->id,
+            'importance_id' => $importance->id,
+            'project_id' => $project->id,
+            'milestone_id' => $milestone->id,
+            'storypoints' => 5,
+        ]);
+        $this->assertEquals('8.00', $ticket->fresh()->estimate);
+    }
+
+    #[Test]
+    public function moderate_note_tool_pins_and_hides(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(ModerateNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'action' => 'pin',
+        ])->assertOk();
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'pinned' => true]);
+
+        TicketsServer::actingAs($user)->tool(ModerateNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'action' => 'hide',
+        ])->assertOk();
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'hide' => true]);
+    }
+
+    #[Test]
+    public function moderate_note_tool_rejects_a_foreign_ticket(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $other->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(ModerateNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'action' => 'pin',
+        ]);
+
+        $response->assertHasErrors(['Ticket not found.']);
+    }
+
+    #[Test]
+    public function promote_note_tool_promotes_a_message_to_a_decision(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'We will ship the new billing flow next sprint.',
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'decision',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'notetype' => 'decision']);
+    }
+
+    #[Test]
+    public function promote_note_tool_requires_assignee_for_actions(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => 'Someone should look at this.',
+        ]);
+
+        TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'action',
+        ])->assertHasErrors(['Actions require exactly one @assignee.']);
+
+        TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'action', 'assignee' => 'alan',
+        ])->assertOk();
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'notetype' => 'action']);
+    }
+
+    #[Test]
+    public function promote_note_tool_rejects_non_message_notes(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'decision',
+            'body' => 'An already-decided decision that is plenty long.',
+        ]);
+
+        TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'blocker',
+        ])->assertHasErrors(['Only message notes can be promoted.']);
+    }
+
+    #[Test]
+    public function watch_tool_watches_unwatches_and_mutes_any_ticket(): void
+    {
+        $user = User::factory()->create();
+        // A ticket the user neither owns nor is assigned to.
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $other->id,
+            'user_id2' => $other->id,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(WatchTicketTool::class, [
+            'ticket_id' => $ticket->id,
+        ])->assertOk();
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $user->id, 'muted' => false,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(WatchTicketTool::class, [
+            'ticket_id' => $ticket->id, 'action' => 'mute',
+        ])->assertOk();
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $user->id, 'muted' => true,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(WatchTicketTool::class, [
+            'ticket_id' => $ticket->id, 'action' => 'unwatch',
+        ])->assertOk();
+        $this->assertDatabaseMissing('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $user->id,
+        ]);
+    }
+
+    #[Test]
     public function reply_tool_replies_to_top_level_note(): void
     {
         $user = User::factory()->create();
@@ -457,5 +697,101 @@ class TicketsServerTest extends TestCase
 
         $again->assertOk();
         $again->assertSee('removed');
+    }
+
+    #[Test]
+    public function list_milestones_tool_returns_milestones_with_progress(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['name' => 'Alpha Release']);
+        $closedIds = Status::closedStatusIds();
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'status_id' => reset($closedIds)]);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'status_id' => Status::whereNotIn('id', $closedIds)->first()->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(ListMilestonesTool::class, []);
+
+        $response->assertOk();
+        $response->assertSee('Alpha Release');
+        $response->assertSee('percent_complete');
+    }
+
+    #[Test]
+    public function list_milestones_tool_rejects_unauthenticated_calls(): void
+    {
+        $response = TicketsServer::tool(ListMilestonesTool::class, []);
+
+        $response->assertHasErrors(['Unauthenticated']);
+    }
+
+    #[Test]
+    public function get_milestone_tool_returns_detail_and_tickets(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['name' => 'Beta Release']);
+        $ticket = Ticket::factory()->create(['milestone_id' => $milestone->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(GetMilestoneTool::class, [
+            'milestone_id' => $milestone->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Beta Release');
+        $response->assertSee($ticket->subject);
+    }
+
+    #[Test]
+    public function create_milestone_tool_creates_milestone(): void
+    {
+        $user = User::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(CreateMilestoneTool::class, [
+            'name' => 'MCP created milestone',
+            'owner_user_id' => $user->id,
+            'start_at' => '2026-01-01',
+            'due_at' => '2026-02-01',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Milestone created.');
+        $this->assertDatabaseHas('milestones', [
+            'name' => 'MCP created milestone',
+            'owner_user_id' => $user->id,
+        ]);
+    }
+
+    #[Test]
+    public function update_milestone_tool_updates_owned_milestone(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['name' => 'Old Name', 'owner_user_id' => $user->id]);
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateMilestoneTool::class, [
+            'milestone_id' => $milestone->id,
+            'name' => 'New Name',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Milestone updated.');
+        $this->assertDatabaseHas('milestones', ['id' => $milestone->id, 'name' => 'New Name']);
+    }
+
+    #[Test]
+    public function update_milestone_tool_rejects_non_owner(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $milestone = Milestone::factory()->create([
+            'name' => 'Locked',
+            'owner_user_id' => $other->id,
+            'scrummaster_user_id' => $other->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateMilestoneTool::class, [
+            'milestone_id' => $milestone->id,
+            'name' => 'Hijacked',
+        ]);
+
+        $response->assertHasErrors();
+        $this->assertDatabaseHas('milestones', ['id' => $milestone->id, 'name' => 'Locked']);
     }
 }

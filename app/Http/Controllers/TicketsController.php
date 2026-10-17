@@ -7,7 +7,6 @@ use App\Http\Requests\EstimateTicketRequest;
 use App\Http\Requests\NoteTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
-use App\Http\Requests\UploadTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\ReleaseTicket;
 use App\Models\Status;
@@ -16,7 +15,6 @@ use App\Models\TicketEstimate;
 use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\User;
-use App\Services\AttachmentService;
 use App\Services\TicketPulseService;
 use App\Services\TicketQueryParser;
 use App\Services\TicketService;
@@ -26,7 +24,6 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 
 class TicketsController extends Controller
 {
@@ -39,7 +36,6 @@ class TicketsController extends Controller
     {
         $user = Auth::user();
 
-        $openStatusIds = Status::whereNotIn('id', Status::closedStatusIds())->pluck('id')->toArray();
         $closedStatusIds = Status::closedStatusIds();
 
         // Home lists the current user's tickets via the canonical list component.
@@ -51,11 +47,9 @@ class TicketsController extends Controller
 
         $tickets = Ticket::where('user_id2', $user->id)
             ->filter($parsed)
-            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
-                $q->where('hide', 0)->where('notetype', 'message');
-            }])
+            ->withListRelations()
             ->sortable(
-                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                Ticket::LIST_SORTABLE,
                 ['importance_id', 'desc']
             )
             ->paginate(15)
@@ -63,14 +57,15 @@ class TicketsController extends Controller
 
         $stats = [
             'assigned' => Ticket::where('user_id2', $user->id)->count(),
-            'open' => Ticket::where('user_id2', $user->id)->whereIn('status_id', $openStatusIds)->count(),
-            'closed' => Ticket::where('user_id2', $user->id)->whereIn('status_id', $closedStatusIds)->count(),
+            'open' => Ticket::where('user_id2', $user->id)->open()->count(),
+            'closed' => Ticket::where('user_id2', $user->id)->closed()->count(),
             'watching' => Ticket::whereHas('watchers', fn ($q) => $q->where('user_id', $user->id))->count(),
         ];
 
-        $recentTickets = Ticket::where('user_id2', $user->id)
-            ->whereNotIn('status_id', $closedStatusIds)
-            ->orWhere('user_id', $user->id)
+        $recentTickets = Ticket::where(function ($q) use ($user) {
+            $q->where('user_id2', $user->id)
+                ->orWhere('user_id', $user->id);
+        })
             ->whereNotIn('status_id', $closedStatusIds)
             ->with(['status', 'type', 'importance', 'project', 'assignee'])
             ->orderBy('updated_at', 'desc')
@@ -91,7 +86,7 @@ class TicketsController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return View('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers'));
+        return view('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers'));
     }
 
     public function index(Request $request)
@@ -114,11 +109,9 @@ class TicketsController extends Controller
 
         $tickets = Ticket::query()
             ->filter($filters)
-            ->with(['status', 'type', 'importance', 'project', 'assignee', 'notes' => function ($q) {
-                $q->where('hide', 0)->where('notetype', 'message');
-            }])
+            ->withListRelations()
             ->sortable(
-                ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
+                Ticket::LIST_SORTABLE,
                 ['importance_id', 'desc']
             )
             ->paginate($perpage)
@@ -159,7 +152,7 @@ class TicketsController extends Controller
     {
         $ticket = Ticket::with([
             'status', 'type', 'importance', 'project', 'assignee', 'user', 'milestone',
-            'watchers.user',
+            'watchers' => fn ($q) => $q->whereHas('user')->with('user'),
             'estimates.user',
             'notes' => function ($q) {
                 $q->where('hide', 0)->orderBy('created_at', 'asc');
@@ -187,6 +180,7 @@ class TicketsController extends Controller
 
         $ticketViews = TicketView::select('user_id', \DB::raw('max(created_at) as viewed_at'))
             ->where('ticket_id', $ticket->id)
+            ->whereHas('user')
             ->groupBy('user_id')
             ->with('user')
             ->get();
@@ -271,25 +265,10 @@ class TicketsController extends Controller
 
         $insert = new Ticket($data);
         $insert->user_id = Auth::id();
-        $insert->user_id2 = Auth::id();
+        $insert->user_id2 = $data['user_id2'] ?? Auth::id();
         $insert->save();
 
         return redirect('tickets/'.$insert->id)->with('status', 'Task was created successfully!');
-    }
-
-    public function upload(UploadTicketRequest $request, AttachmentService $attachmentService)
-    {
-        $file = $request->file('file');
-        $folder = preg_replace('/[^a-zA-Z0-9_-]/', '', $request->input('folder'));
-
-        $attachmentService->validateFileType($file);
-
-        $filename = time().'_'.Str::uuid().'.'.$file->getClientOriginalExtension();
-        $path = 'images/'.$folder.'/'.$filename;
-
-        $file->move(public_path('images/'.$folder), $filename);
-
-        return '/'.$path;
     }
 
     public function batch(BatchUpdateTicketRequest $request)

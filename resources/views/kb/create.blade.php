@@ -37,10 +37,9 @@
                 @enderror
             </div>
 
-            {{-- Body Markdown (EasyMDE) --}}
             <div class="mb-3">
                 <label for="body_markdown" class="form-label">Content (Markdown)</label>
-                <textarea name="body_markdown" id="body_markdown">{{ old('body_markdown') }}</textarea>
+                <textarea name="body_markdown" id="body_markdown" data-markdown-editor data-autosave-id="kb-create" data-placeholder="Write your article content in Markdown...">{{ old('body_markdown') }}</textarea>
                 @error('body_markdown')
                     <div class="text-danger small mt-1">{{ $message }}</div>
                 @enderror
@@ -54,9 +53,7 @@
                 <div class="d-flex gap-2">
                     <select name="category_id" id="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
                         <option value="">Select category...</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>
-                        @endforeach
+                        @include('kb.partials.category-options', ['parentId' => null, 'depth' => 0, 'selectedId' => old('category_id')])
                     </select>
                     <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" @click="adding = !adding">
                         <i class="fas fa-plus"></i>
@@ -231,25 +228,3 @@
     </div>
 </form>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    new EasyMDE({
-        element: document.getElementById('body_markdown'),
-        spellChecker: false,
-        autosave: { enabled: true, uniqueId: 'kb-create', delay: 5000 },
-        minHeight: '350px',
-        placeholder: 'Write your article content in Markdown...',
-        toolbar: [
-            'bold', 'italic', 'heading', '|',
-            'quote', 'unordered-list', 'ordered-list', 'checklist', '|',
-            'link', 'image', 'code', 'table', '|',
-            'preview', 'side-by-side', 'fullscreen', '|',
-            'guide'
-        ],
-        status: ['lines', 'words'],
-    });
-});
-</script>
-@endpush

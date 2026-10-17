@@ -268,7 +268,7 @@ class ImporterTest extends TestCase
             ['Bug', 'Test', 'Desc', 'High', 'Open', 'Test Project', 'Assignee'],
         ]);
 
-        // No Auth::login() — simulates CLI/queue context
+        // No Auth::login() - simulates CLI/queue context
         $this->importer->call($milestone->id, $this->tempFile, false, $creator->id);
 
         $ticket = Ticket::first();
@@ -458,7 +458,7 @@ class ImporterTest extends TestCase
 
         Auth::login($user);
 
-        // Column 1 (Type) is empty — error should say "Column 1", not "Column 2"
+        // Column 1 (Type) is empty - error should say "Column 1", not "Column 2"
         $this->writeCsv([
             ['', 'Subject', 'Description', 'high', 'new', 'Default Project', $user->name],
         ]);
@@ -467,5 +467,84 @@ class ImporterTest extends TestCase
         $this->expectExceptionMessage('Column 1');
 
         $this->importer->call($milestone->id, $this->tempFile, false, $user->id);
+    }
+
+    #[Test]
+    public function it_imports_fields_with_embedded_newlines_as_single_rows(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Bug']);
+        Importance::factory()->create(['name' => 'High']);
+        Status::factory()->create(['name' => 'Open']);
+        Project::factory()->create(['name' => 'Test Project', 'active' => true]);
+
+        Auth::login($user);
+
+        $this->writeCsv([
+            ['Bug', 'Multiline Ticket', "Line one\nLine two", 'High', 'Open', 'Test Project', 'Assignee'],
+        ]);
+
+        $this->importer->call($milestone->id, $this->tempFile, false);
+
+        $this->assertEquals(1, Ticket::count());
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Multiline Ticket',
+            'description' => "Line one\nLine two",
+        ]);
+    }
+
+    #[Test]
+    public function it_reports_file_line_numbers_when_a_header_is_present(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Bug']);
+        Importance::factory()->create(['name' => 'High']);
+        Status::factory()->create(['name' => 'Open']);
+        Project::factory()->create(['name' => 'Test Project', 'active' => true]);
+
+        Auth::login($user);
+
+        $this->writeCsv([
+            ['Type', 'Subject', 'Description', 'Importance', 'Status', 'Project', 'Assignee'],
+            ['Bug', 'Short Row'],
+        ]);
+
+        try {
+            $this->importer->call($milestone->id, $this->tempFile, true);
+            $this->fail('Expected an exception for the short row.');
+        } catch (Exception $e) {
+            $this->assertSame('CSV row must have at least 7 columns. Row 2 has 2 columns.', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function it_keeps_committed_chunks_when_a_later_row_fails(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Bug']);
+        Importance::factory()->create(['name' => 'High']);
+        Status::factory()->create(['name' => 'Open']);
+        Project::factory()->create(['name' => 'Test Project', 'active' => true]);
+
+        Auth::login($user);
+
+        $rows = [];
+        for ($i = 1; $i <= 100; $i++) {
+            $rows[] = ['Bug', "Ticket $i", 'Desc', 'High', 'Open', 'Test Project', 'Assignee'];
+        }
+        $rows[] = ['Bug', 'Short Row'];
+
+        $this->writeCsv($rows);
+
+        try {
+            $this->importer->call($milestone->id, $this->tempFile, false);
+            $this->fail('Expected an exception for the short row.');
+        } catch (Exception $e) {
+        }
+
+        $this->assertEquals(100, Ticket::where('milestone_id', $milestone->id)->count());
     }
 }

@@ -6,13 +6,15 @@
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "guzzlehttp/guzzle": "^7.8",
         "laravel/framework": "^13",
         "laravel/mcp": "^1.0",
         "laravel/socialite": "^5.10",
         "laravel/tinker": "^3.0",
+        "laravel/ui": "^4.6",
         "mustache/mustache": "^3.2",
+        "socialiteproviders/microsoft-azure": "^5.0",
         "symfony/html-sanitizer": "^8.1",
         "symfony/yaml": "^8.0"
     },

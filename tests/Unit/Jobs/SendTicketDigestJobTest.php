@@ -49,6 +49,24 @@ class SendTicketDigestJobTest extends TestCase
     }
 
     #[Test]
+    public function failed_clears_the_batch_cache(): void
+    {
+        Cache::flush();
+
+        $batchService = app(NotificationBatchService::class);
+        $batchKey = $batchService->batchKey(9, 142);
+        $scheduleKey = $batchService->scheduleKey(9, 142);
+
+        Cache::put($batchKey, [['type' => 'mention']], now()->addMinutes(10));
+        Cache::put($scheduleKey, true, now()->addMinutes(10));
+
+        (new SendTicketDigestJob(9, 142))->failed(new \RuntimeException('mail down'));
+
+        $this->assertNull(Cache::get($batchKey));
+        $this->assertNull(Cache::get($scheduleKey));
+    }
+
+    #[Test]
     public function it_handles_empty_entries_without_crashing(): void
     {
         $notification = new TicketDigestNotification(142, []);
@@ -56,5 +74,31 @@ class SendTicketDigestJobTest extends TestCase
         $mail = $notification->toMail(User::factory()->make());
 
         $this->assertNotNull($mail);
+    }
+
+    #[Test]
+    public function it_skips_entries_opted_out_after_scheduling(): void
+    {
+        Notification::fake();
+        Cache::flush();
+
+        $user = User::factory()->create();
+        $user->setNotificationPrefs(['mentions' => false]);
+        $key = "ticket-notification-batch:{$user->id}:142";
+
+        Cache::put($key, [
+            [
+                'type' => 'mention',
+                'subject' => 'Sarah mentioned you in Ticket #142',
+                'excerpt' => 'Can you check the deploy?',
+                'url' => 'http://example.com/tickets/142',
+                'created_at' => now()->toIso8601String(),
+            ],
+        ], now()->addMinutes(10));
+
+        (new SendTicketDigestJob($user->id, 142))->handle(app(NotificationBatchService::class));
+
+        Notification::assertNotSentTo($user, TicketDigestNotification::class);
+        $this->assertNull(Cache::get($key));
     }
 }

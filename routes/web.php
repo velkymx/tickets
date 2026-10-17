@@ -2,17 +2,19 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\Api\ApiDocsController;
+use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\Kb\KbAdminController;
 use App\Http\Controllers\Kb\KbController;
 use App\Http\Controllers\Kb\KbVersionController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\NotesController;
+use App\Http\Controllers\PaletteController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ReleaseController;
+use App\Http\Controllers\SavedViewController;
 use App\Http\Controllers\TicketPulseController;
 use App\Http\Controllers\TicketsController;
 use App\Http\Controllers\UsersController;
@@ -41,6 +43,9 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::get('/activity', [ActivityController::class, 'index'])->name('activity.index');
     Route::post('/activity/read/{id}', [ActivityController::class, 'read'])->name('activity.read');
     Route::post('/activity/read-all', [ActivityController::class, 'readAll'])->name('activity.read-all');
+    Route::get('/palette/search', PaletteController::class)->name('palette.search');
+    Route::post('/saved-views', [SavedViewController::class, 'store'])->name('saved-views.store');
+    Route::delete('/saved-views/{savedView}', [SavedViewController::class, 'destroy'])->name('saved-views.destroy');
 
     // --- Tickets Routes (CRITICAL: Static routes must come before dynamic routes) ---
 
@@ -118,7 +123,6 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::post('/tickets/batch', [TicketsController::class, 'batch'])->name('tickets.batch')->middleware('throttle:uploads');
     Route::post('/tickets/import', [ImportController::class, 'create'])->name('tickets.storeimport')->middleware('throttle:uploads');
     Route::put('/tickets/update/{id}', [TicketsController::class, 'update'])->name('tickets.update');
-    Route::post('/tickets/upload', [TicketsController::class, 'upload'])->name('tickets.upload')->middleware('throttle:uploads');
 
     // Milestone
     Route::post('/milestone/store/{id}', [MilestoneController::class, 'store'])->name('milestone.store');
@@ -191,7 +195,7 @@ Route::middleware(['auth'])->prefix('kb')->group(function () {
     Route::delete('/{slug}/attachments/{id}', [KbController::class, 'deleteAttachment'])->name('kb.detach');
 });
 
-// Public KB show route (MUST be last — wildcard)
+// Public KB show route (MUST be last - wildcard)
 Route::get('/kb/{slug}', [KbController::class, 'show'])->name('kb.show')
     ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');
 

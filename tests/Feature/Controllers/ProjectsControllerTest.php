@@ -119,6 +119,26 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function matrix_badges_prefer_story_points_over_hours(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $open = Status::factory()->open()->create();
+        cache()->forget('closed_status_ids');
+
+        Ticket::factory()->create([
+            'project_id' => $project->id, 'status_id' => $open->id,
+            'importance_id' => 5, 'estimate' => 0, 'storypoints' => 5,
+            'subject' => 'Points matrix task',
+        ]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('5SP', false);
+    }
+
+    #[Test]
     public function show_provides_open_blockers(): void
     {
         $user = User::factory()->create();
@@ -233,18 +253,18 @@ class ProjectsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('name="description"', false);
-        $response->assertSee('<textarea', false);
     }
 
     #[Test]
-    public function create_view_uses_the_lazy_quill_loader(): void
+    public function create_view_mounts_the_rich_text_editor(): void
     {
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/projects/create');
 
         $response->assertStatus(200);
-        $response->assertSee('window.loadQuill()', false);
+        $response->assertSee('data-rich-text', false);
+        $response->assertSee('data-target="#description-input"', false);
     }
 
     #[Test]
@@ -355,5 +375,23 @@ class ProjectsControllerTest extends TestCase
         ]);
 
         $response->assertRedirect('/projects');
+    }
+
+    #[Test]
+    public function show_renders_ticket_list_when_ticket_has_no_importance(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        // A ticket with no matching importance row (created without a priority).
+        Ticket::factory()->create([
+            'project_id' => $project->id,
+            'importance_id' => 0,
+            'subject' => 'Priorityless ticket',
+        ]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertOk();
+        $response->assertSee('Priorityless ticket');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -26,7 +27,15 @@ class WatcherNotification extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        $channels = [];
+
+        if ($notifiable instanceof User && $notifiable->mailsFor('watching')) {
+            $channels[] = 'mail';
+        }
+
+        $channels[] = 'database';
+
+        return $channels;
     }
 
     public function toMail($notifiable)

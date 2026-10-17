@@ -65,10 +65,10 @@ class ReactToNoteTool extends TicketTool
             ])
             ->toArray();
 
-        return Response::json([
+        return $this->respond([
             'message' => "Reaction {$toggled}.",
             'reactions' => $reactions,
-        ]);
+        ], 'Reaction toggled. Call get-ticket-tool to read the thread in context.');
     }
 
     /**

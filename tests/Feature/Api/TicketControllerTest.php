@@ -242,6 +242,68 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function store_rejects_estimate_and_storypoints_over_the_cap(): void
+    {
+        $payload = [
+            'subject' => 'Over the cap',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
+        ];
+
+        $this->postJson('/api/v1/tickets', $payload + ['estimate' => 100000], $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('estimate');
+
+        $this->postJson('/api/v1/tickets', $payload + ['storypoints' => 100000], $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('storypoints');
+    }
+
+    #[Test]
+    public function store_creates_unassigned_ticket(): void
+    {
+        $response = $this->postJson('/api/v1/tickets', [
+            'subject' => 'Unassigned Ticket',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
+            'assignee_id' => null,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Unassigned Ticket',
+            'user_id' => $this->user->id,
+            'user_id2' => null,
+        ]);
+    }
+
+    #[Test]
+    public function store_assigns_to_another_user(): void
+    {
+        $assignee = User::factory()->create();
+
+        $response = $this->postJson('/api/v1/tickets', [
+            'subject' => 'Assigned Ticket',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
+            'assignee_id' => $assignee->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Assigned Ticket',
+            'user_id' => $this->user->id,
+            'user_id2' => $assignee->id,
+        ]);
+    }
+
+    #[Test]
     public function store_accepts_optional_fields(): void
     {
         $project = Project::factory()->create();
@@ -372,6 +434,30 @@ class TicketControllerTest extends TestCase
 
         $ticket->refresh();
         $this->assertEquals($this->user->id, $ticket->user_id2);
+    }
+
+    #[Test]
+    public function note_rolls_back_claim_when_a_guard_rejects_the_note(): void
+    {
+        $other = User::factory()->create();
+        // Caller owns the ticket but it is assigned to someone else.
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $other->id,
+        ]);
+
+        // Two mentions trips the "exactly one @assignee" guard after the claim.
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'claim' => true,
+            'body' => '/action @alice @bob do the thing',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
+
+        // The claim must have rolled back - assignee unchanged, no note stored.
+        $ticket->refresh();
+        $this->assertEquals($other->id, $ticket->user_id2);
+        $this->assertDatabaseMissing('notes', ['ticket_id' => $ticket->id]);
     }
 
     #[Test]
@@ -999,11 +1085,11 @@ class TicketControllerTest extends TestCase
         $queriesFor5 = count(DB::getQueryLog());
         DB::disableQueryLog();
 
-        // Should not have 5× note queries — eager loading keeps it constant
+        // Should not have 5× note queries - eager loading keeps it constant
         // Without fix: ~5 note queries (one per ticket) + base queries
         // With fix: 1 bulk note query + base queries
         // We assert queries < 5 * per-ticket-cost
-        $this->assertLessThan(20, $queriesFor5, "Too many queries ($queriesFor5) — likely N+1 on pulse notes");
+        $this->assertLessThan(20, $queriesFor5, "Too many queries ($queriesFor5) - likely N+1 on pulse notes");
     }
 
     #[Test]
@@ -1244,6 +1330,180 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_changes_assignee_and_planning_fields(): void
+    {
+        Cache::flush();
+        $newAssignee = User::factory()->create();
+        $type = Type::factory()->create();
+        $importance = Importance::factory()->create();
+        $project = Project::factory()->create();
+        $milestone = Milestone::factory()->create();
+
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'assignee_id' => $newAssignee->id,
+            'type_id' => $type->id,
+            'importance_id' => $importance->id,
+            'project_id' => $project->id,
+            'milestone_id' => $milestone->id,
+            'due_at' => '2026-12-01',
+            'estimate' => 8,
+            'storypoints' => 5,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $ticket->refresh();
+        $this->assertEquals($newAssignee->id, $ticket->user_id2);
+        $this->assertEquals($type->id, $ticket->type_id);
+        $this->assertEquals($importance->id, $ticket->importance_id);
+        $this->assertEquals($project->id, $ticket->project_id);
+        $this->assertEquals($milestone->id, $ticket->milestone_id);
+        $this->assertEquals(5, $ticket->storypoints);
+        $this->assertEquals('8.00', $ticket->estimate);
+    }
+
+    #[Test]
+    public function moderate_note_pins_and_hides(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'pin'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.pinned', true);
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'pinned' => true]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'hide'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.hidden', true);
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'hide' => true]);
+    }
+
+    #[Test]
+    public function moderate_note_rejects_a_foreign_ticket(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $other->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'pin'], $this->apiHeaders())
+            ->assertStatus(404);
+    }
+
+    #[Test]
+    public function promote_note_promotes_a_message_to_a_decision(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
+            'body' => 'We will ship the new billing flow next sprint.',
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'decision'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.notetype', 'decision');
+    }
+
+    #[Test]
+    public function promote_note_requires_assignee_for_actions(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
+            'body' => 'Someone should look at this.',
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'action'], $this->apiHeaders())
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'action', 'assignee' => 'alan'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.notetype', 'action');
+    }
+
+    #[Test]
+    public function promote_note_rejects_non_message_notes(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'decision',
+            'body' => 'An already-decided decision that is plenty long.',
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'blocker'], $this->apiHeaders())
+            ->assertStatus(422);
+    }
+
+    #[Test]
+    public function watch_watches_mutes_and_unwatches_any_ticket(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $other->id,
+            'user_id2' => $other->id,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('watching', true);
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => false,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", ['action' => 'mute'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('muted', true);
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => true,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", ['action' => 'unwatch'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('watching', false);
+        $this->assertDatabaseMissing('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id,
+        ]);
+    }
+
+    #[Test]
+    public function watch_requires_authentication(): void
+    {
+        $ticket = Ticket::factory()->create();
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [])->assertStatus(401);
+    }
+
+    #[Test]
+    public function update_ignores_client_supplied_actual_hours(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+            'actual' => 5,
+        ]);
+
+        $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'subject' => 'Renamed',
+            'actual' => 999,
+        ], $this->apiHeaders())->assertStatus(200);
+
+        $ticket->refresh();
+        $this->assertEquals('Renamed', $ticket->subject);
+        $this->assertEquals(5, $ticket->actual);
+    }
+
+    #[Test]
     public function update_reopens_ticket_when_status_moves_to_open(): void
     {
         Cache::flush();
@@ -1295,7 +1555,7 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function reply_targets_the_requested_ticket_not_the_users_first_ticket(): void
     {
-        // A ticket the user is assigned to with a LOWER id — the old ungrouped
+        // A ticket the user is assigned to with a LOWER id - the old ungrouped
         // orWhere would resolve to this one regardless of the requested id.
         Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
 

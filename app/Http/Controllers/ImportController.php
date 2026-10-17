@@ -7,6 +7,7 @@ use App\Services\Importer;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 
 class ImportController extends Controller
 {
@@ -27,7 +28,7 @@ class ImportController extends Controller
         $csv = $request->file('csv');
 
         try {
-            $content = file_get_contents($csv->path());
+            $content = File::get($csv->path());
             if (! mb_check_encoding($content, 'UTF-8')) {
                 throw new Exception('CSV file must be UTF-8 encoded.');
             }

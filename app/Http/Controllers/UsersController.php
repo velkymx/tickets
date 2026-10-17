@@ -24,7 +24,7 @@ class UsersController extends Controller
         // Closed and New tickets are excluded: the profile shows active work only.
         $alltickets = [];
         if ($isOwnProfile) {
-            $newStatusIds = Status::whereRaw('LOWER(name) = ?', ['new'])->pluck('id')->toArray();
+            $newStatusIds = Status::byName('new')->pluck('id')->toArray();
 
             $tickets = Ticket::where('user_id2', $id)
                 ->whereNotIn('status_id', array_merge(Status::closedStatusIds(), $newStatusIds))
@@ -64,13 +64,7 @@ class UsersController extends Controller
         $contributionMax = $contributions ? max($contributions) : 0;
 
         $timezone = $user->timezone ?? config('app.timezone');
-        $time = new \DateTime(null, new \DateTimeZone($timezone));
-
-        // Add 12-hour format time for display
-        $ampm = $time->format('H') >= 12 ? ' ('.$time->format('g:i a').')' : '';
-
-        // Add sample time for current timezone
-        $currenttime = $time->format('H:i').$ampm;
+        $currenttime = $this->currentTimeFor($timezone);
 
         return view('users.show', compact('user', 'alltickets', 'currenttime', 'isOwnProfile', 'contributions', 'contributionTotal', 'contributionMax'));
 
@@ -105,6 +99,21 @@ class UsersController extends Controller
         $user->theme = $validated['theme'] ?? null;
         $user->title = $validated['title'] ?? null;
         $user->bio = $validated['bio'] ?? null;
+        $prefs = [];
+        foreach (['notify_mentions' => 'mentions', 'notify_replies' => 'replies', 'notify_watching' => 'watching'] as $field => $key) {
+            if (array_key_exists($field, $validated)) {
+                $prefs[$key] = (bool) $validated[$field];
+            }
+        }
+        if (array_key_exists('email_enabled', $validated)) {
+            $prefs['email_enabled'] = (bool) $validated['email_enabled'];
+        }
+        if (array_key_exists('email_mode', $validated)) {
+            $prefs['email_mode'] = $validated['email_mode'];
+        }
+        if ($prefs !== []) {
+            $user->setNotificationPrefs($prefs);
+        }
 
         $user->save();
 
@@ -146,17 +155,18 @@ class UsersController extends Controller
         foreach ($regions as $name => $mask) {
             $zones = \DateTimeZone::listIdentifiers($mask);
             foreach ($zones as $timezone) {
-                // Get current time in this timezone
-                $time = new \DateTime(null, new \DateTimeZone($timezone));
-
-                // Add 12-hour format for display
-                $ampm = $time->format('H') >= 12 ? ' ('.$time->format('g:i a').')' : '';
-
                 // Format timezone name with current time
-                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$time->format('H:i').$ampm;
+                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$this->currentTimeFor($timezone);
             }
         }
 
         return $timezones;
+    }
+
+    private function currentTimeFor(string $timezone): string
+    {
+        $time = now($timezone);
+
+        return $time->format('H:i').' ('.$time->format('g:i a').')';
     }
 }

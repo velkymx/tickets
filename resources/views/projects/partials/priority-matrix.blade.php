@@ -27,13 +27,12 @@
                 @forelse ($matrix[$key] as $tick)
                     <div class="d-flex justify-content-between align-items-center border-bottom py-1">
                         <span class="text-truncate me-2">
-                            <span class="text-{{ $tick->importance->class }}" title="Priority: {{ $tick->importance->name }}">
-                                <i class="{{ $tick->importance->icon }}"></i>
-                            </span>
+                            <x-importance-badge :importance="$tick->importance" />
                             <a href="/tickets/{{ $tick->id }}" class="text-decoration-none">#{{ $tick->id }} {{ $tick->subject }}</a>
                         </span>
-                        <span class="badge text-bg-light text-nowrap">
-                            {{ $tick->estimate > 0 ? rtrim(rtrim(number_format($tick->estimate, 2), '0'), '.') . 'h' : '—' }}
+                        @php($points = (int) ($tick->storypoints ?? 0))
+                        <span class="badge text-bg-light text-nowrap" title="{{ $points > 0 ? 'Story points' : 'Estimate (hours)' }}">
+                            {{ $points > 0 ? $points . 'SP' : ($tick->estimate > 0 ? rtrim(rtrim(number_format($tick->estimate, 2), '0'), '.') . 'h' : '-') }}
                         </span>
                     </div>
                 @empty

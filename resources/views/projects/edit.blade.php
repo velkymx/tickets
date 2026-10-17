@@ -22,19 +22,10 @@
         @enderror
     </div>
 
-    {{-- Project Description Field (Quill.js Target) --}}
     <div class="mb-3">
-        <label for="editor-container" class="form-label">Describe Project</label>
-        <textarea
-            name="description"
-            id="description-input"
-            rows="8"
-            class="form-control @error('description') is-invalid @enderror mb-3"
-        >{{ old('description', $project->description) }}</textarea>
-        {{-- Quill editor container --}}
-        <div id="editor-container" class="d-none">
-            {!! clean(old('description', $project->description)) !!}
-        </div>
+        <label for="description" class="form-label">Describe Project</label>
+        <input type="hidden" name="description" id="description-input" value="{{ old('description', $project->description) }}">
+        <div data-rich-text data-target="#description-input" data-placeholder="Enter the project description here..."></div>
         @error('description')
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
@@ -59,68 +50,4 @@
         <button type="submit" class="btn btn-success">Save Project</button>
     </div>
 </form>
-@endsection
-
-@section('javascript')
-<script>
-    document.addEventListener('DOMContentLoaded', async function() {
-        if (typeof window.loadQuill !== 'function') {
-            return;
-        }
-
-        const Quill = await window.loadQuill();
-        if (!Quill) {
-            return;
-        }
-        
-        // --- 1. Quill Initialization ---
-        const quillToolbarOptions = [
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            ['link', 'image'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Enter milestone details here...'
-        });
-        
-        // Load initial content from the hidden input/old value
-        // FIXED: Using the correct ID 'description-input' from the HTML
-        const initialContentInput = document.getElementById('description-input');
-        const editorContainer = document.getElementById('editor-container');
-
-        if (!initialContentInput || !editorContainer) {
-            return;
-        }
-
-        initialContentInput.classList.add('d-none');
-        editorContainer.classList.remove('d-none');
-        
-        if (initialContentInput && initialContentInput.value) {
-            // Dangerously paste HTML content into the editor
-            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
-        }
-
-        // --- 2. Form Submission Handler (Quill Content) ---
-        // FIXED: Using the correct form ID 'milestone_form' from the HTML
-        const form = document.getElementById('project_edit_form');
-        if (!form) {
-            return;
-        }
-        const hiddenInput = initialContentInput;
-
-        form.addEventListener('submit', function() {
-            // Get the HTML content from the editor and put it into the hidden input
-            hiddenInput.value = quill.root.innerHTML;
-        });
-        
-        // NOTE: The jQuery Datepicker block was removed to avoid using jQuery 
-        // and because there are no date fields in this form.
-    });
-</script>
 @endsection

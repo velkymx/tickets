@@ -23,10 +23,9 @@
     </div>
 
     <div class="mb-3">
-        <label for="editor-container" class="form-label">Bio</label>
-        <div id="editor-container">
-        </div>
+        <label for="bio" class="form-label">Bio</label>
         <input type="hidden" name="bio" id="bio-input" value="{{ old('bio', $user->bio) }}">
+        <div data-rich-text data-target="#bio-input" data-placeholder="Write a short bio about yourself here..."></div>
         @error('bio')
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
@@ -74,6 +73,31 @@
         @enderror
     </div>
 
+    <div class="mb-3">
+        <span class="form-label">Notify me about</span>
+        @php($prefs = $user->notificationPrefs())
+        @foreach (['notify_mentions' => ['mentions', 'Mentions'], 'notify_replies' => ['replies', 'Replies'], 'notify_watching' => ['watching', 'Watched tickets']] as $field => [$key, $label])
+            <div class="form-check">
+                {{-- Hidden 0 first: PHP keeps the last value per key, so checked yields 1 and unchecked yields 0. --}}
+                <input type="hidden" name="{{ $field }}" value="0">
+                <input type="checkbox" name="{{ $field }}" id="{{ $field }}" value="1" class="form-check-input" @checked(old($field, $prefs[$key] ?? true))>
+                <label for="{{ $field }}" class="form-check-label">{{ $label }}</label>
+            </div>
+        @endforeach
+        <div class="form-check mt-2">
+            <input type="hidden" name="email_enabled" value="0">
+            <input type="checkbox" name="email_enabled" id="email_enabled" value="1" class="form-check-input" @checked(old('email_enabled', $prefs['email_enabled'] ?? true))>
+            <label for="email_enabled" class="form-check-label">Email notifications</label>
+        </div>
+        <div class="mt-2" style="max-width: 220px;">
+            <label for="email_mode" class="form-label small">Email timing</label>
+            <select name="email_mode" id="email_mode" class="form-select form-select-sm">
+                <option value="digest" @selected(old('email_mode', $prefs['email_mode'] ?? 'digest') === 'digest')>Digest</option>
+                <option value="immediate" @selected(old('email_mode', $prefs['email_mode'] ?? 'digest') === 'immediate')>Immediately</option>
+            </select>
+        </div>
+    </div>
+
     <div class="d-flex justify-content-start mt-4">
         <button type="submit" class="btn btn-success">Save Profile</button>
     </div>
@@ -110,42 +134,4 @@
         <button type="submit" class="btn btn-primary">Generate API Token</button>
     </form>
 @endif
-@endsection
-
-@section('javascript')
-<script type="module">
-    document.addEventListener('DOMContentLoaded', async function() {
-        const Quill = await window.loadQuill();
-        
-        const quillToolbarOptions = [
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }], 
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            [{ 'color': [] }, { 'background': [] }], 
-            ['link', 'image', 'video'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Write a short bio about yourself here...'
-        });
-        
-        const initialContentInput = document.getElementById('bio-input');
-        
-        if (initialContentInput && initialContentInput.value) {
-            quill.clipboard.dangerouslyPasteHTML(initialContentInput.value);
-        }
-
-        const form = document.getElementById('user_form');
-        const hiddenInput = initialContentInput;
-
-        form.addEventListener('submit', function() {
-            hiddenInput.value = quill.root.innerHTML;
-        });
-    });
-</script>
 @endsection

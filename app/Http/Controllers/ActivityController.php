@@ -18,13 +18,12 @@ class ActivityController extends Controller
                 $type = match ($filter) {
                     'mentions' => 'mention',
                     'watching' => 'watching',
-                    'assigned' => 'assigned',
                     'replies' => 'reply',
                     default => null,
                 };
 
                 if ($type) {
-                    $query->where('data', 'like', '%"type":"'.$type.'"%');
+                    $query->where('data->type', $type);
                 }
             })
             ->latest()

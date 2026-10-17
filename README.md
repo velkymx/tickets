@@ -1,6 +1,10 @@
 # Tickets
 
+[![CI](https://github.com/velkymx/tickets/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/velkymx/tickets/actions/workflows/tests.yml?query=branch%3Amaster)
 [![Latest Release](https://img.shields.io/github/v/release/velkymx/tickets)](https://github.com/velkymx/tickets/releases)
+[![PHP Version](https://img.shields.io/badge/php-%5E8.4-777BB4?logo=php&logoColor=white)](https://www.php.net/releases/)
+[![Laravel](https://img.shields.io/badge/laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/docs/13.x)
+[![Node](https://img.shields.io/badge/node-%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/github/license/velkymx/tickets)](LICENSE.md)
 [![GitHub Stars](https://img.shields.io/github/stars/velkymx/tickets)](https://github.com/velkymx/tickets/stargazers)
 
@@ -44,6 +48,7 @@ Manage the work your team needs to get done.
 * CSV import for bulk ticket creation
 * Query-based filtering such as `status:completed assignee:me importance:blocker`
 * Search across tickets, projects, milestones, and related data
+* Command palette (`Cmd+K` / `Ctrl+K`) to jump to tickets, pages, and actions
 
 ### Real-Time Collaboration
 
@@ -111,7 +116,7 @@ This makes it possible to build workflows where specialized AI agents share the 
 
 Use [CrewAI](docs/crewai.md) to build role-based agent crews, or connect other MCP-compatible clients and agent runtimes to Tickets.
 
-* 16 MCP tools for tickets and the knowledge base
+* 19 MCP tools for tickets and the knowledge base
 * REST API with token authentication
 * Ticket Pulse for execution state
 * Agent-accessible decisions, blockers, actions, and notes
@@ -198,10 +203,15 @@ The fastest way to try Tickets is Docker.
 ```bash
 git clone https://github.com/velkymx/tickets.git
 cd tickets
+cp .env.example .env
+# In .env set DB_USERNAME (non-root), DB_PASSWORD, and APP_KEY.
+# Generate a key without a local PHP install:
+docker compose run --rm --no-deps --entrypoint php app artisan key:generate --show
 docker compose up -d --build
 ```
 
-Then open `http://localhost` in your browser.
+Then open `http://localhost` in your browser (the app migrates and seeds itself on
+first boot). Log in as `administrator` / `password123` and change the password.
 
 For complete installation, configuration, Docker deployment, and production hosting instructions, see the [Installation Guide](docs/installation.md).
 

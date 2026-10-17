@@ -6,7 +6,6 @@
     <h1 class="mb-3">Create a new Ticket</h1>
     <hr />
 
-    {{-- The form now includes a hidden input for the Quill content --}}
     <form method="POST" action="{{ url('tickets') }}" id="ticket-form">
         @csrf {{-- CSRF protection --}}
 
@@ -21,18 +20,10 @@
             @enderror
         </div>
 
-        {{-- Ticket Details: The original textarea is kept, but will be HIDDEN. 
-             We need this to hold the Quill content before submission. --}}
         <div class="mb-3">
             <label for="description" class="form-label">Ticket Details</label>
-            
-            {{-- This is the hidden input that will send the HTML content to Laravel --}}
             <input type="hidden" name="description" id="description_hidden" value="{{ old('description') }}">
-            
-            {{-- This is the DIV that Quill will target and render the rich text editor into --}}
-            <div id="editor-container" class="editor-lg">
-                {{ old('description') }}
-            </div>
+            <div data-rich-text data-target="#description_hidden" data-placeholder="Enter ticket details here..." class="editor-lg"></div>
             @error('description')
                 <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
@@ -140,6 +131,14 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
+            {{-- Story Points --}}
+            <div class="col-md-6">
+                <label for="storypoints" class="form-label">Story Points</label>
+                <input type="text" name="storypoints" id="storypoints" class="form-control @error('storypoints') is-invalid @enderror" value="{{ old('storypoints', 0) }}">
+                @error('storypoints')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
 
         {{-- Save Button --}}
@@ -149,47 +148,3 @@
         
     </form>
 @stop
-
-@section('javascript')
-{{-- Quill Initialization and Form Submission Logic --}}
-<script type="module">
-    document.addEventListener('DOMContentLoaded', async function() {
-        const Quill = await window.loadQuill();
-        
-        const toolbarOptions = [
-            ['bold', 'italic', 'underline', 'strike'],
-            ['blockquote', 'code-block'],
-            [{ 'header': 1 }, { 'header': 2 }],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'script': 'sub'}, { 'script': 'super' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            [{ 'direction': 'rtl' }],
-            [{ 'size': ['small', false, 'large', 'huge'] }],
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'font': [] }],
-            [{ 'align': [] }],
-            ['link', 'image'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: toolbarOptions },
-            theme: 'snow',
-            placeholder: 'Enter ticket details here...'
-        });
-        
-        const initialContent = document.getElementById('description_hidden').value;
-        if (initialContent) {
-            quill.clipboard.dangerouslyPasteHTML(initialContent);
-        }
-
-        const form = document.getElementById('ticket-form');
-        const hiddenInput = document.getElementById('description_hidden');
-
-        form.addEventListener('submit', function() {
-            hiddenInput.value = quill.root.innerHTML;
-        });
-    });
-</script>
-@endsection

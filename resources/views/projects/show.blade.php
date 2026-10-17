@@ -31,6 +31,7 @@
             {{-- Tab 1: Ticket Table --}}
             <div class="tab-pane fade show active" id="tickets" role="tabpanel" aria-labelledby="tickets-tab">
                 <x-ticket-search :query="$searchQuery" :tokens="$searchTokens" :action="url('projects/show/'.$project->id)" />
+                @include('partials.saved-views')
                 <x-ticket-table
                     :tickets="$tickets"
                     :paginator="$tickets"

@@ -47,8 +47,8 @@ class AutomationController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'trigger' => 'required|string|in:' . implode(',', array_keys(config('automations.triggers'))),
-            'conditions_json' => 'nullable|string',
-            'actions_json' => 'nullable|string',
+            'conditions_json' => 'nullable|string|json',
+            'actions_json' => 'nullable|string|json',
         ]);
 
         $automation = Automation::create([
@@ -60,8 +60,8 @@ class AutomationController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        $conditions = json_decode($validated['conditions_json'] ?? '{"all":[]}', true) ?? ['all' => []];
-        $actions = json_decode($validated['actions_json'] ?? '[]', true) ?? [];
+        $conditions = json_decode($validated['conditions_json'] ?? '{"all":[]}', true);
+        $actions = json_decode($validated['actions_json'] ?? '[]', true);
         $this->syncRules($automation, $conditions, $actions);
 
         return redirect()->route('automations.index')->with('success', 'Automation created.');
@@ -83,8 +83,8 @@ class AutomationController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'trigger' => 'required|string|in:' . implode(',', array_keys(config('automations.triggers'))),
-            'conditions_json' => 'nullable|string',
-            'actions_json' => 'nullable|string',
+            'conditions_json' => 'nullable|string|json',
+            'actions_json' => 'nullable|string|json',
         ]);
 
         $automation->update([
@@ -95,8 +95,8 @@ class AutomationController extends Controller
             'stop_after_match' => $request->boolean('stop_after_match', true),
         ]);
 
-        $conditions = json_decode($validated['conditions_json'] ?? '{"all":[]}', true) ?? ['all' => []];
-        $actions = json_decode($validated['actions_json'] ?? '[]', true) ?? [];
+        $conditions = json_decode($validated['conditions_json'] ?? '{"all":[]}', true);
+        $actions = json_decode($validated['actions_json'] ?? '[]', true);
         $automation->rules()->delete();
         $this->syncRules($automation, $conditions, $actions);
 

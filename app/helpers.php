@@ -21,7 +21,7 @@ if (! function_exists('clean')) {
         if ($sanitizer === null) {
             $config = (new HtmlSanitizerConfig())
                 ->allowSafeElements()
-                // Rendered task-list checkboxes only — no autofocus/on* vectors.
+                // Rendered task-list checkboxes only - no autofocus/on* vectors.
                 ->allowElement('input', ['type', 'checked', 'disabled'])
                 // Styling hooks emitted by the Markdown pipeline (slash-command,
                 // mention, cross-reference badges, checklist items).

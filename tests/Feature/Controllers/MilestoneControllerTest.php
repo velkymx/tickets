@@ -46,6 +46,33 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_paginates_active_milestones_beyond_first_page(): void
+    {
+        $user = User::factory()->create();
+        Milestone::factory()->count(25)->create();
+
+        $response = $this->actingAs($user)->get('/milestone');
+
+        $response->assertStatus(200);
+        $response->assertSee('active_page=2');
+    }
+
+    #[Test]
+    public function index_shows_released_milestones_regardless_of_active_volume(): void
+    {
+        $user = User::factory()->create();
+        for ($i = 1; $i <= 25; $i++) {
+            Milestone::factory()->create(['name' => sprintf('Active %02d', $i)]);
+        }
+        Milestone::factory()->completed()->create(['name' => 'Released Zulu']);
+
+        $response = $this->actingAs($user)->get('/milestone');
+
+        $response->assertStatus(200);
+        $response->assertSee('Released Zulu');
+    }
+
+    #[Test]
     public function print_requires_authentication(): void
     {
         $milestone = Milestone::factory()->create();
@@ -348,6 +375,21 @@ class MilestoneControllerTest extends TestCase
 
         $response->assertRedirect('/milestone');
         $this->assertDatabaseHas('milestones', ['name' => 'New Milestone']);
+    }
+
+    #[Test]
+    public function store_creates_new_milestone_without_id_in_body(): void
+    {
+        // The create form posts to /milestone/store/new and supplies id only
+        // as the route parameter, never as a form field.
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/milestone/store/new', [
+            'name' => 'Form Milestone',
+        ]);
+
+        $response->assertRedirect('/milestone');
+        $this->assertDatabaseHas('milestones', ['name' => 'Form Milestone']);
     }
 
     #[Test]

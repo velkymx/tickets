@@ -47,18 +47,10 @@
             @enderror
         </div>
 
-        {{-- Milestone Description (Quill.js Integration) --}}
         <div class="mb-3">
             <label for="description" class="form-label">Milestone Description</label>
-            
-            {{-- Hidden input to hold Quill content before submission --}}
-            <input type="hidden" name="description" id="description_hidden" 
-                   value="{{ old('description') }}">
-            
-            {{-- Quill Editor Container --}}
-            <div id="editor-container" class="editor-lg">
-                {{ old('description') }}
-            </div>
+            <input type="hidden" name="description" id="description_hidden" value="{{ old('description') }}">
+            <div data-rich-text data-target="#description_hidden" data-placeholder="Enter milestone description here..." class="editor-lg"></div>
             @error('description')
                 <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
@@ -102,38 +94,4 @@
         </div>
         
     </form>
-@endsection
-
-@section('javascript')
-<script type="module">
-    document.addEventListener('DOMContentLoaded', async function() {
-        const Quill = await window.loadQuill();
-        
-        const quillToolbarOptions = [
-            ['bold', 'italic', 'underline', 'strike'], 
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['link', 'image'],
-            ['clean']
-        ];
-
-        const quill = new Quill('#editor-container', {
-            modules: { toolbar: quillToolbarOptions },
-            theme: 'snow',
-            placeholder: 'Enter milestone description here...'
-        });
-        
-        const initialContent = document.getElementById('description_hidden').value;
-        if (initialContent) {
-            quill.clipboard.dangerouslyPasteHTML(initialContent);
-        }
-
-        const form = document.getElementById('milestone_form');
-        const hiddenInput = document.getElementById('description_hidden');
-
-        form.addEventListener('submit', function() {
-            hiddenInput.value = quill.root.innerHTML;
-        });
-    });
-</script>
 @endsection

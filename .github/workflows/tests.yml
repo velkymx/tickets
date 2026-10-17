@@ -1,0 +1,57 @@
+name: tests
+
+on:
+  push:
+    branches: ['master', '2.0.0']
+  pull_request:
+    branches: ['master', '2.0.0']
+
+jobs:
+  sqlite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: sqlite, pdo_sqlite
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: composer install --no-interaction --prefer-dist
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run test:js
+      - run: php artisan test
+
+  mysql:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mariadb:11.8
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: tickets_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mysql, pdo_mysql
+      - run: composer install --no-interaction --prefer-dist
+      - run: php artisan test tests/Unit/Models tests/Unit/Services
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: tickets_test
+          DB_USERNAME: root
+          DB_PASSWORD: password

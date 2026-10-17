@@ -3,19 +3,37 @@
 namespace App\Models;
 
 use App\Notifications\WatcherNotification;
+use App\Observers\TicketObserver;
 use App\Services\NotificationBatchService;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(TicketObserver::class)]
 class Ticket extends Model
 {
     use HasFactory;
 
     /** Request keys accepted by the filter scope (also used to repopulate the filter UI). */
     public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q', 'assignee'];
+
+    /** Sortable column whitelist shared by every paginated ticket list. */
+    public const LIST_SORTABLE = ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'];
+
+    /**
+     * Eager loads shared by every paginated ticket list, including the
+     * visible-notes filter. Single source for the list relations.
+     */
+    public function scopeWithListRelations(Builder $query): Builder
+    {
+        return $query->with([
+            'status', 'type', 'importance', 'project', 'assignee',
+            'notes' => fn ($q) => $q->where('hide', 0)->where('notetype', 'message'),
+        ]);
+    }
 
     /** Importance level id for "blocker" (seeded by DefaultsSeeder). */
     public const IMPORTANCE_BLOCKER = 5;
@@ -28,13 +46,28 @@ class Ticket extends Model
     {
         return $query
             ->where('importance_id', self::IMPORTANCE_BLOCKER)
-            ->whereNotIn('status_id', Status::closedStatusIds());
+            ->open();
+    }
+
+    public function scopeOpen(Builder $query): Builder
+    {
+        return $query->whereNotIn('status_id', Status::closedStatusIds());
+    }
+
+    public function scopeClosed(Builder $query): Builder
+    {
+        return $query->whereIn('status_id', Status::closedStatusIds());
     }
 
     /**
      * Apply the shared ticket-list filters from a request-parameter array.
      * Used by every paginated ticket list (/tickets, projects, milestones) so
      * the filtering rules live in one place.
+     *
+     * Spike #121 verdict: free-text search stays on this LIKE path. Scout
+     * with the database driver adds a dependency plus index sync for a
+     * single-column subject match, with no ranking gain and extra wiring to
+     * compose with these filters, so the parser stays the filter boundary.
      */
     public function scopeFilter(Builder $query, array $params): Builder
     {
@@ -45,16 +78,20 @@ class Ticket extends Model
         }
 
         if (($params['status_id'] ?? null) === 'none') {
-            $query->whereNotIn('status_id', Status::closedStatusIds());
+            $query->open();
         }
 
         if (($params['status_id'] ?? null) === 'closed') {
-            $query->whereIn('status_id', Status::closedStatusIds());
+            $query->closed();
         }
 
         if (! empty($params['q'])) {
-            $search = str_replace(['%', '_'], ['\\%', '\\_'], $params['q']);
-            $query->where('subject', 'like', '%'.$search.'%');
+            // Escape char is deliberately !, not backslash: backslash breaks
+            // MySQL/MariaDB string literals, while ! is inert on all drivers.
+            // Keep escape-first ordering in str_replace. Retest on MySQL
+            // before changing this.
+            $search = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $params['q']);
+            $query->whereRaw("subject like ? escape '!'", ['%'.$search.'%']);
         }
 
         if (($params['assignee'] ?? null) === 'me' && auth()->check()) {
@@ -62,46 +99,6 @@ class Ticket extends Model
         }
 
         return $query;
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::updating(function ($ticket) {
-            if (! $ticket->isDirty('status_id')) {
-                return;
-            }
-
-            $wasClosed = Status::isClosed((int) $ticket->getOriginal('status_id'));
-            $isClosed = Status::isClosed((int) $ticket->status_id);
-
-            // Auto-manage closed_at on status transitions, unless explicitly set.
-            if ($isClosed && ! $wasClosed && ! $ticket->isDirty('closed_at')) {
-                $ticket->closed_at = now();
-            }
-
-            if ($wasClosed && ! $isClosed && ! $ticket->isDirty('closed_at')) {
-                $ticket->closed_at = null;
-            }
-        });
-
-        static::updated(function ($ticket) {
-            if ($ticket->wasChanged('status_id')) {
-                $wasClosed = Status::isClosed((int) $ticket->getOriginal('status_id'));
-                $isClosed = Status::isClosed((int) $ticket->status_id);
-
-                if ($wasClosed && ! $isClosed) {
-                    $ticket->recordReopenAuditNote();
-                }
-
-                app(\App\Services\TicketPulseService::class)->invalidatePulse($ticket->id);
-            }
-
-            if ($ticket->wasChanged(['subject', 'description', 'status_id', 'user_id2', 'milestone_id', 'project_id', 'importance_id', 'due_at', 'closed_at', 'estimate', 'storypoints', 'actual'])) {
-                $ticket->notifyWatchers('Ticket', auth()->id() ?? 0);
-            }
-        });
     }
 
     /**
@@ -129,7 +126,7 @@ class Ticket extends Model
         ]);
     }
 
-    private function notifyWatchers(string $type, ?int $exceptUserId = null): void
+    public function notifyWatchers(string $type, ?int $exceptUserId = null): void
     {
         $url = url("/tickets/{$this->id}");
         $message = "The {$type} '{$this->subject}' has been updated.";

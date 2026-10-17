@@ -1,4 +1,4 @@
-{{-- Reaction Bar — two inline emoji buttons --}}
+{{-- Reaction Bar - two inline emoji buttons --}}
 @php
     $grouped = $note->groupedReactions();
     $emojis = ['thumbsup' => '👍', 'eyes' => '👀'];

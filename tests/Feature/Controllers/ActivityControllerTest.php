@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -29,7 +31,7 @@ class ActivityControllerTest extends TestCase
         $other = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
         $other->notifyNow(new WatcherNotification('Ticket', 'Unrelated update', 'http://example.com/tickets/999'));
 
         $response = $this->actingAs($user)->get('/activity');
@@ -49,8 +51,8 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Mention body', 'http://example.com/tickets/142'));
-        $user->notifyNow(new ReplyNotification($actor->id, $actor->name,142, 56, 'Reply body', 'http://example.com/tickets/142#note_56'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Mention body', 'http://example.com/tickets/142'));
+        $user->notifyNow(new ReplyNotification($actor->id, $actor->name, 142, 56, 'Reply body', 'http://example.com/tickets/142#note_56'));
 
         $response = $this->actingAs($user)->get('/activity?filter=mentions');
 
@@ -62,12 +64,53 @@ class ActivityControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_filter_matches_spaced_json_payload(): void
+    {
+        $user = User::factory()->create();
+
+        DB::table('notifications')->insert([
+            'id' => (string) Str::uuid(),
+            'type' => MentionNotification::class,
+            'notifiable_type' => User::class,
+            'notifiable_id' => $user->id,
+            'data' => json_encode(['type' => 'mention', 'excerpt' => 'Spaced body'], JSON_PRETTY_PRINT),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get('/activity?filter=mentions');
+
+        $response->assertOk();
+        $response->assertViewHas('notifications', function ($notifications) {
+            return $notifications->count() === 1
+                && ($notifications->first()->data['excerpt'] ?? null) === 'Spaced body';
+        });
+    }
+
+    #[Test]
+    public function index_unknown_filter_shows_all_instead_of_empty(): void
+    {
+        // No notification type named assigned is ever emitted, so the
+        // old assigned tab could never return a row. Unknown values
+        // skip the predicate and show the full feed.
+        $user = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Sarah']);
+
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Mention body', 'http://example.com/tickets/142'));
+
+        $response = $this->actingAs($user)->get('/activity?filter=assigned');
+
+        $response->assertOk();
+        $response->assertViewHas('notifications', fn ($notifications) => $notifications->count() === 1);
+    }
+
+    #[Test]
     public function index_renders_the_activity_center_layout(): void
     {
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
 
         $response = $this->actingAs($user)->get('/activity');
 
@@ -87,7 +130,7 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
 
         $response = $this->actingAs($user)->get('/activity');
 
@@ -102,7 +145,7 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
         $notification = $user->notifications()->first();
 
         $response = $this->actingAs($user)->post("/activity/read/{$notification->id}");
@@ -117,8 +160,8 @@ class ActivityControllerTest extends TestCase
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
 
-        $user->notifyNow(new MentionNotification($actor->id, $actor->name,142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
-        $user->notifyNow(new ReplyNotification($actor->id, $actor->name,142, 56, 'I pushed the fix.', 'http://example.com/tickets/142#note_56'));
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
+        $user->notifyNow(new ReplyNotification($actor->id, $actor->name, 142, 56, 'I pushed the fix.', 'http://example.com/tickets/142#note_56'));
 
         $response = $this->actingAs($user)->post('/activity/read-all');
 

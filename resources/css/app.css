@@ -1,36 +1,85 @@
 /* Import Bootstrap */
 @import 'bootstrap/dist/css/bootstrap.min.css';
 
-/* Quill rich text editor (lazy loaded in JS) */
-@import 'quill/dist/quill.snow.css';
-
 /* EasyMDE markdown editor */
 @import 'easymde/dist/easymde.min.css';
 
 /* Custom styles */
+[x-cloak] {
+    display: none !important;
+}
+
 body {
     font-family: 'Inter', sans-serif;
 }
 
-/* Quill editor height variants */
-#editor-container,
-#note-editor-container {
-    height: 250px;
+/* Rich text editor (Tiptap) */
+.rich-text {
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background-color: var(--bs-body-bg);
 }
 
-#editor-container.editor-lg,
-#note-editor-container.editor-lg {
+.rich-text-toolbar {
+    flex-wrap: wrap;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.rich-text-divider {
+    width: 1px;
+    align-self: stretch;
+    margin: 0 0.25rem;
+    background-color: var(--bs-border-color);
+}
+
+.rich-text-surface .tiptap {
+    height: 250px;
+    overflow-y: auto;
+    padding: 0.75rem;
+    outline: none;
+}
+
+.rich-text.editor-sm .tiptap {
+    height: 200px;
+}
+
+.rich-text.editor-lg .tiptap {
     height: 300px;
 }
 
-#editor-container.editor-xl,
-#note-editor-container.editor-xl {
+.rich-text.editor-xl .tiptap {
     height: 500px;
 }
 
-#editor-container.editor-sm,
-#note-editor-container.editor-sm {
-    height: 200px;
+.rich-text .tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--bs-secondary-color);
+}
+
+.rich-text .tiptap :first-child {
+    margin-top: 0;
+}
+
+.rich-text .tiptap blockquote {
+    padding-left: 1rem;
+    border-left: 3px solid var(--bs-border-color);
+    color: var(--bs-secondary-color);
+}
+
+.rich-text .tiptap pre {
+    padding: 0.75rem;
+    border-radius: var(--bs-border-radius);
+    background-color: var(--bs-tertiary-bg);
+    overflow-x: auto;
+}
+
+.rich-text-btn.active {
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
 }
 
 /* Kanban board columns */
@@ -38,6 +87,32 @@ body {
     width: 280px;
     min-width: 280px;
     max-width: 280px;
+}
+
+/* Board stays within the viewport so the horizontal scrollbar never
+   drops below the fold; each column scrolls vertically on its own. */
+.kanban-board {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: calc(100vh - 14rem);
+    min-height: min(320px, 40vh);
+}
+
+.kanban-board .kanban-column {
+    display: flex;
+}
+
+.kanban-board .kanban-column .card {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    width: 100%;
+}
+
+.kanban-board .kanban-column .card > .card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 /* Drop target must keep height when empty, else cross-column drops miss. */
@@ -65,16 +140,15 @@ body {
     pointer-events: none;
 }
 
-/* Kanban card bits */
+/* Ticket table cells truncate through Bootstrap .text-truncate plus an
+   inline max-width (no sticky header: the table sits in
+   .table-responsive, an unconstrained scroll container, so sticky has
+   nothing to stick to) */
 .kanban-avatar {
     width: 24px;
     height: 24px;
     font-size: 11px;
     font-weight: 600;
-}
-
-.kanban-project {
-    max-width: 110px;
 }
 
 @media (max-width: 576px) {
@@ -83,97 +157,4 @@ body {
         min-width: 260px;
         max-width: 260px;
     }
-}
-
-/* Quill Dark Mode Support */
-html[data-bs-theme="dark"] .ql-toolbar.ql-snow,
-html[data-bs-theme="dark"] .ql-container.ql-snow {
-    border-color: var(--bs-border-color);
-    background-color: var(--bs-body-bg);
-}
-
-html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-formats button:hover,
-html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-formats button.ql-active {
-    color: var(--bs-primary);
-}
-
-html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-picker {
-    color: var(--bs-body-color);
-}
-
-html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-picker-label {
-    color: var(--bs-body-color);
-}
-
-html[data-bs-theme="dark"] .ql-toolbar.ql-snow .ql-picker-options {
-    background-color: var(--bs-body-bg);
-    border-color: var(--bs-border-color);
-}
-
-html[data-bs-theme="dark"] .ql-snow .ql-tooltip {
-    background-color: var(--bs-body-bg);
-    border-color: var(--bs-border-color);
-    color: var(--bs-body-color);
-    box-shadow: var(--bs-box-shadow);
-}
-
-html[data-bs-theme="dark"] .ql-snow .ql-tooltip input[type="text"] {
-    background-color: var(--bs-body);
-    border-color: var(--bs-border-color);
-    color: var(--bs-body-color);
-}
-
-html[data-bs-theme="dark"] .ql-editor {
-    color: var(--bs-body-color);
-}
-
-html[data-bs-theme="dark"] .ql-editor.ql-blank::before {
-    color: var(--bs-secondary-color);
-}
-
-html[data-bs-theme="dark"] .ql-snow .ql-stroke {
-    stroke: var(--bs-body-color);
-}
-
-html[data-bs-theme="dark"] .ql-snow .ql-fill {
-    fill: var(--bs-body-color);
-}
-
-html[data-bs-theme="dark"] .ql-snow .ql-picker.ql-expanded .ql-picker-label {
-    border-color: var(--bs-border-color);
-}
-
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:hover,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:focus,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:focus,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button.ql-active,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar .ql-picker-label:hover,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar .ql-picker-label:hover,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar .ql-picker-label.ql-active,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar .ql-picker-label.ql-active,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar .ql-picker-item:hover,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar .ql-picker-item:hover,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar .ql-picker-item.ql-selected,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar .ql-picker-item.ql-selected {
-    color: var(--bs-primary);
-}
-
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:hover .ql-stroke,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover .ql-stroke,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:focus .ql-stroke,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:focus .ql-stroke,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button.ql-active .ql-stroke,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active .ql-stroke {
-    stroke: var(--bs-primary);
-}
-
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:hover .ql-fill,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover .ql-fill,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button:focus .ql-fill,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button:focus .ql-fill,
-html[data-bs-theme="dark"] .ql-snow.ql-toolbar button.ql-active .ql-fill,
-html[data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active .ql-fill {
-    fill: var(--bs-primary);
 }

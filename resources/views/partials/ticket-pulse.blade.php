@@ -8,16 +8,21 @@
         aria-controls="ticket-pulse-panel"
     >
         <span class="fw-bold">Ticket Pulse</span>
-        <span class="badge text-bg-dark" x-text="pulse.execution_state"></span>
+        <span>
+            <template x-if="pulse.open_threads.length">
+                <span class="badge text-bg-warning me-1" x-text="pulse.open_threads.length"></span>
+            </template>
+            <span class="badge text-bg-dark" x-text="pulse.execution_state"></span>
+        </span>
     </button>
 </div>
 
 <aside
     id="ticket-pulse-panel"
-    class="collapse d-lg-block card shadow-sm mb-4"
+    class="collapse d-lg-block mb-4"
     style="position: sticky; top: 1rem;"
 >
-    <div class="card-header fw-bold bg-body-secondary d-flex justify-content-between align-items-center">
+    <h6 class="text-uppercase text-body-secondary fw-semibold small mb-2 pb-1 border-bottom d-flex justify-content-between align-items-center">
         Ticket Pulse
         <span
             class="badge"
@@ -29,10 +34,19 @@
             }"
             x-text="pulse.execution_state"
         ></span>
-    </div>
-    <ul class="list-group list-group-flush">
+    </h6>
+    <ul class="list-unstyled mb-0 small">
+        <template x-if="pulse.open_threads.length">
+            <li class="py-2 border-top">
+                {{-- Badge on the mobile toggle is the small-screen affordance; this banner lives inside the collapse, so no expand handler here. --}}
+                <a href="#pulse-threads" class="alert alert-warning d-flex justify-content-between align-items-center py-2 px-2 mb-0 text-decoration-none">
+                    <span><strong>Needs your decision</strong> <span class="text-muted" x-text="`(${pulse.open_threads.length} open)`"></span></span>
+                    <i class="fa-solid fa-arrow-down small"></i>
+                </a>
+            </li>
+        </template>
         <template x-if="pulse.latest_blocker">
-            <li class="list-group-item">
+            <li class="py-2 border-top">
                 <strong>Blocker:</strong>
                 <span class="text-danger" x-html="pulse.latest_blocker.body"></span>
                 <div class="d-flex justify-content-between align-items-center mt-1">
@@ -57,7 +71,7 @@
         </template>
 
         <template x-if="pulse.next_action.id">
-            <li class="list-group-item">
+            <li class="py-2 border-top">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <strong>Next Action:</strong>
@@ -85,7 +99,7 @@
             </li>
         </template>
 
-        <li class="list-group-item">
+        <li class="py-2 border-top">
             <strong>Latest Decision:</strong>
             <template x-if="pulse.latest_decision">
                 <span>
@@ -103,7 +117,7 @@
             </template>
         </li>
 
-        <li class="list-group-item">
+        <li class="py-2 border-top" id="pulse-threads">
             <strong>Open Threads:</strong>
             <template x-if="pulse.open_threads.length">
                 <div class="mt-1 d-flex flex-column gap-1">

@@ -24,7 +24,7 @@ class KbAdminController extends Controller
 
     public function categories()
     {
-        $categories = KbCategory::orderBy('sort_order')->withCount('articles')->get();
+        $categories = KbCategory::orderBy('sort_order')->withCount('articles')->with('parent')->get();
 
         return view('kb.admin.categories', compact('categories'));
     }
@@ -35,6 +35,7 @@ class KbAdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
+            'parent_id' => 'nullable|exists:kb_categories,id',
         ]);
 
         KbCategory::create([
@@ -53,6 +54,17 @@ class KbAdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
+            'parent_id' => [
+                'nullable',
+                'exists:kb_categories,id',
+                function ($attribute, $value, $fail) use ($category) {
+                    if ((int) $value === $category->id) {
+                        $fail('A category cannot be its own parent.');
+                    } elseif (KbCategory::find($value)?->isDescendantOf($category)) {
+                        $fail('A category cannot move under its own child.');
+                    }
+                },
+            ],
         ]);
 
         $category->update([
@@ -69,6 +81,10 @@ class KbAdminController extends Controller
 
         if ($category->articles()->exists()) {
             return redirect()->back()->with('error', 'Cannot delete category with articles.');
+        }
+
+        if ($category->children()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete category with subcategories.');
         }
 
         $category->delete();
