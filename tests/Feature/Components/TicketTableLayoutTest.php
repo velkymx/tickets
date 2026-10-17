@@ -13,6 +13,30 @@ class TicketTableLayoutTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
+    public function estimate_column_replaces_notes_column(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create();
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee('>Est<', false);
+        $response->assertDontSee('>Notes<', false);
+    }
+
+    #[Test]
+    public function note_count_floats_right_on_subject(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+        \App\Models\Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee('float-end', false);
+    }
     public function list_renders_stacked_cards_for_small_screens(): void
     {
         $user = User::factory()->create();
