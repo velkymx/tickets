@@ -31,7 +31,6 @@
             :tickets="$tickets"
             :paginator="$tickets"
             :sortable="true"
-            :show-estimate="true"
             :show-updated="true" />
     </div>
     

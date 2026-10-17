@@ -119,6 +119,26 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function matrix_badges_prefer_story_points_over_hours(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $open = Status::factory()->open()->create();
+        cache()->forget('closed_status_ids');
+
+        Ticket::factory()->create([
+            'project_id' => $project->id, 'status_id' => $open->id,
+            'importance_id' => 5, 'estimate' => 0, 'storypoints' => 5,
+            'subject' => 'Points matrix task',
+        ]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('5SP', false);
+    }
+
+    #[Test]
     public function show_provides_open_blockers(): void
     {
         $user = User::factory()->create();

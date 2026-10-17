@@ -1,14 +1,13 @@
 @php
     $showCheckbox = $showCheckbox ?? false;
     $showType = $showType ?? false;
-    $showEstimate = $showEstimate ?? false;
     $showUpdated = $showUpdated ?? true;
     $small = $small ?? false;
     $sortable = $sortable ?? false;
     $paginator = $paginator ?? null;
     $emptyMessage = $emptyMessage ?? null;
 
-    $colCount = 1 + ($showCheckbox ? 1 : 0) + ($showType ? 1 : 0) + 1 + 1 + 1 + 1 + ($showEstimate ? 1 : 0) + 1 + ($showUpdated ? 1 : 0);
+    $colCount = 1 + ($showCheckbox ? 1 : 0) + ($showType ? 1 : 0) + 1 + 1 + 1 + 1 + 1 + ($showUpdated ? 1 : 0);
 @endphp
 
 <div class="table-responsive d-none d-md-block" data-pane="table">
@@ -38,10 +37,7 @@
                     <th class="col-2 d-none d-lg-table-cell">Project</th>
                 @endif
                 <th class="col-2">Assignee</th>
-                @if($showEstimate)
-                    <th class="col-1">Est</th>
-                @endif
-                <th class="col-1 d-none d-lg-table-cell">Notes</th>
+                <th class="col-1">Est</th>
                 @if($showUpdated)
                     @if($sortable)
                         <x-sort-header column="updated_at" label="Updated" class="d-none d-lg-table-cell" />
@@ -60,6 +56,10 @@
                         </td>
                     @endif
                     <td class="text-truncate" style="max-width: 280px;">
+                        @php $noteCount = $tick->notes->where('hide', '0')->count(); @endphp
+                        @if ($noteCount > 0)
+                            <span class="badge text-bg-info float-end ms-1" title="{{ $noteCount }} notes">{{ $noteCount }}</span>
+                        @endif
                         @if(!$showType)
                             <i class="{{ $tick->type->icon }} me-1" title="{{ $tick->type->name }}" aria-hidden="true"></i>
                         @endif
@@ -82,13 +82,14 @@
                             <span class="text-muted fst-italic">Unassigned</span>
                         @endif
                     </td>
-                    @if($showEstimate)
-                        <td class="text-nowrap"><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
-                    @endif
-                    <td class="d-none d-lg-table-cell">
-                        @php $noteCount = $tick->notes->where('hide', '0')->count(); @endphp
-                        @if ($noteCount > 0)
-                            <span class="badge text-bg-info">{{ $noteCount }}</span>
+                    <td class="text-nowrap">
+                        @php($points = (int) ($tick->storypoints ?? 0))
+                        @if($points > 0)
+                            <span class="badge text-bg-secondary">{{ $points }}SP</span>
+                        @elseif($tick->estimate > 0)
+                            <span class="badge text-bg-secondary">{{ rtrim(rtrim(number_format($tick->estimate, 2), '0'), '.') }}h</span>
+                        @else
+                            <span class="text-muted">-</span>
                         @endif
                     </td>
                     @if($showUpdated)
