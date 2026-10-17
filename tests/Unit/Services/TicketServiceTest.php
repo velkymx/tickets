@@ -510,21 +510,19 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_caches_lookups_for_60_minutes(): void
+    public function lookups_are_cached_for_sixty_minutes(): void
     {
         Cache::flush();
-        Type::factory()->create();
-
-        Cache::shouldReceive('remember')
-            ->once()
-            ->withArgs(function ($key, $ttl, $callback) {
-                return $key === 'ticket_lookups' && $ttl instanceof \DateTimeInterface;
-            })
-            ->andReturnUsing(function ($key, $ttl, $callback) {
-                return $callback();
-            });
-
+        $type = Type::factory()->create(['name' => 'Original']);
         $this->service->getLookups();
+
+        Type::whereKey($type->id)->update(['name' => 'Renamed']);
+
+        $this->travel(59)->minutes();
+        $this->assertContains('Original', $this->service->getLookups()['types']);
+
+        $this->travel(2)->minutes();
+        $this->assertContains('Renamed', $this->service->getLookups()['types']);
     }
 
     #[Test]

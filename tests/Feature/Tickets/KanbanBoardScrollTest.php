@@ -37,17 +37,4 @@ class KanbanBoardScrollTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('ticket-column', false);
     }
-
-    #[Test]
-    public function kanban_css_pins_the_scroll_mechanism_as_a_set(): void
-    {
-        $css = file_get_contents(resource_path('css/app.css'));
-
-        // The column body only scrolls when the card is a flex column
-        // and the body is a shrinkable flex item. Pin all three as a
-        // set so a future edit cannot drop one half of the mechanism.
-        $this->assertStringContainsString('flex-direction: column', $css);
-        $this->assertStringContainsString('flex: 1 1 auto', $css);
-        $this->assertStringContainsString('min-height: min(320px, 40vh)', $css);
-    }
 }

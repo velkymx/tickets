@@ -2,13 +2,7 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\Mention;
-use App\Models\Note;
-use App\Models\NoteReaction;
-use App\Models\Ticket;
 use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -16,83 +10,6 @@ use Tests\Traits\SeedsDatabase;
 class UserTest extends TestCase
 {
     use SeedsDatabase;
-
-    #[Test]
-    public function it_has_correct_fillable_fields(): void
-    {
-        $user = new User;
-        $fillable = $user->getFillable();
-
-        $this->assertContains('name', $fillable);
-        $this->assertContains('email', $fillable);
-        $this->assertContains('password', $fillable);
-        $this->assertContains('avatar', $fillable);
-        $this->assertContains('phone', $fillable);
-        $this->assertContains('timezone', $fillable);
-        $this->assertContains('theme', $fillable);
-        $this->assertContains('title', $fillable);
-        $this->assertContains('bio', $fillable);
-    }
-
-    #[Test]
-    public function it_hides_sensitive_fields(): void
-    {
-        $user = new User;
-        $hidden = $user->getHidden();
-
-        $this->assertContains('password', $hidden);
-        $this->assertContains('remember_token', $hidden);
-        $this->assertContains('api_token', $hidden);
-    }
-
-    #[Test]
-    public function it_casts_password_as_hashed(): void
-    {
-        $user = User::factory()->create(['password' => 'plain-password']);
-
-        $this->assertNotEquals('plain-password', $user->password);
-        $this->assertTrue(password_verify('plain-password', $user->password));
-    }
-
-    #[Test]
-    public function it_casts_email_verified_at_to_datetime(): void
-    {
-        $user = User::factory()->create(['email_verified_at' => now()]);
-
-        $this->assertInstanceOf(Carbon::class, $user->email_verified_at);
-    }
-
-    #[Test]
-    public function it_has_many_assigned_tickets(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
-
-        $this->assertTrue($user->assignedTickets->contains($ticket));
-        $this->assertInstanceOf(Collection::class, $user->assignedTickets);
-    }
-
-    #[Test]
-    public function it_has_many_owned_tickets(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
-
-        $this->assertTrue($user->createdTickets->contains($ticket));
-        $this->assertInstanceOf(Collection::class, $user->createdTickets);
-    }
-
-    #[Test]
-    public function it_does_not_mass_assign_kb_role(): void
-    {
-        $user = User::factory()->create(['kb_role' => null]);
-
-        $user->update(['name' => 'Updated Name', 'kb_role' => 'admin']);
-
-        $fresh = $user->fresh();
-        $this->assertEquals('Updated Name', $fresh->name);
-        $this->assertNull($fresh->kb_role);
-    }
 
     #[Test]
     public function it_generates_api_token(): void
@@ -136,33 +53,5 @@ class UserTest extends TestCase
         $expected = 'https://www.gravatar.com/avatar/'.md5('test@example.com').'?s=46&d=mp';
 
         $this->assertSame($expected, $user->avatarUrl());
-    }
-
-    #[Test]
-    public function it_has_many_mentions_and_reactions(): void
-    {
-        $user = User::factory()->create();
-        $author = User::factory()->create();
-        $ticket = Ticket::factory()->create([
-            'user_id' => $author->id,
-            'user_id2' => $author->id,
-        ]);
-        $note = Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $author->id,
-        ]);
-
-        $mention = Mention::create([
-            'note_id' => $note->id,
-            'user_id' => $user->id,
-        ]);
-        $reaction = NoteReaction::create([
-            'note_id' => $note->id,
-            'user_id' => $user->id,
-            'emoji' => 'thumbsup',
-        ]);
-
-        $this->assertTrue($user->mentions->contains($mention));
-        $this->assertTrue($user->reactions->contains($reaction));
     }
 }

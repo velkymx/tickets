@@ -14,12 +14,12 @@ class PriorityMatrixServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new PriorityMatrixService();
+        $this->service = new PriorityMatrixService;
     }
 
     private function ticket(int $importanceId, float $estimate, int $storypoints = 0): Ticket
     {
-        return (new Ticket())->forceFill([
+        return (new Ticket)->forceFill([
             'importance_id' => $importanceId,
             'estimate' => $estimate,
             'storypoints' => $storypoints,

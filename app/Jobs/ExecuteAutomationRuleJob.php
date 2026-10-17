@@ -59,6 +59,12 @@ class ExecuteAutomationRuleJob implements ShouldQueue
             }
         }
 
+        if ($run->actionLogs()->where('status', 'failed')->exists()) {
+            $run->update(['status' => 'failed', 'finished_at' => now()]);
+
+            return;
+        }
+
         $run->update(['status' => 'success', 'finished_at' => now()]);
     }
 

@@ -5,6 +5,7 @@ namespace Tests\Feature\Controllers;
 use App\Models\Note;
 use App\Models\NoteReaction;
 use App\Models\Ticket;
+use App\Models\TicketView;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -19,9 +20,12 @@ class NotesControllerTest extends TestCase
     #[Test]
     public function it_requires_authentication(): void
     {
-        $response = $this->post('/notes/hide/1');
+        $note = Note::factory()->create(['hide' => false]);
 
-        $response->assertRedirect('/login');
+        $this->post("/notes/hide/{$note->id}")->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertFalse((bool) $note->fresh()->hide);
     }
 
     #[Test]
@@ -91,11 +95,14 @@ class NotesControllerTest extends TestCase
     #[Test]
     public function it_requires_authentication_to_promote_a_note(): void
     {
-        $response = $this->post('/notes/1/promote', [
-            'type' => 'decision',
-        ]);
+        $note = Note::factory()->create(['notetype' => 'message']);
 
-        $response->assertRedirect('/login');
+        $this->post("/notes/{$note->id}/promote", [
+            'type' => 'decision',
+        ])->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertSame('message', $note->fresh()->notetype);
     }
 
     #[Test]
@@ -486,15 +493,25 @@ class NotesControllerTest extends TestCase
     }
 
     #[Test]
+    public function it_records_a_heartbeat_for_the_viewer(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->postJson("/tickets/{$ticket->id}/presence");
+
+        $response->assertOk();
+        $response->assertJsonPath('count', 1);
+        $this->assertDatabaseHas('ticket_views', ['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+    }
+
     public function it_returns_current_viewers(): void
     {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user1->id, 'user_id2' => $user2->id]);
-
-        // Both users send heartbeat
-        $this->actingAs($user1)->postJson("/tickets/{$ticket->id}/presence");
-        $this->actingAs($user2)->postJson("/tickets/{$ticket->id}/presence");
+        TicketView::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user1->id, 'updated_at' => now()]);
+        TicketView::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user2->id, 'updated_at' => now()]);
 
         $response = $this->actingAs($user1)->getJson("/tickets/{$ticket->id}/presence");
 
@@ -507,11 +524,14 @@ class NotesControllerTest extends TestCase
     #[Test]
     public function it_requires_authentication_to_toggle_a_reaction(): void
     {
-        $response = $this->post('/notes/1/react', [
-            'emoji' => 'thumbsup',
-        ]);
+        $note = Note::factory()->create();
 
-        $response->assertRedirect('/login');
+        $this->post("/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ])->assertRedirect('/login');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('note_reactions', ['note_id' => $note->id]);
     }
 
     #[Test]
