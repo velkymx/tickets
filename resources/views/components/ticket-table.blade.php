@@ -82,7 +82,16 @@
                             <span class="text-muted fst-italic">Unassigned</span>
                         @endif
                     </td>
-                    <td class="text-nowrap"><span class="badge text-bg-secondary">{{ $tick->storypoints }}SP</span></td>
+                    <td class="text-nowrap">
+                        @php($points = (int) ($tick->storypoints ?? 0))
+                        @if($points > 0)
+                            <span class="badge text-bg-secondary">{{ $points }}SP</span>
+                        @elseif($tick->estimate > 0)
+                            <span class="badge text-bg-secondary">{{ rtrim(rtrim(number_format($tick->estimate, 2), '0'), '.') }}h</span>
+                        @else
+                            <span class="text-muted">-</span>
+                        @endif
+                    </td>
                     @if($showUpdated)
                         <td class="small text-muted text-nowrap d-none d-lg-table-cell">{{ $tick->updated_at->format('M jS, Y g:ia') }}</td>
                     @endif
