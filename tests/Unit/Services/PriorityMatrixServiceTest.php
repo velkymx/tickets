@@ -17,11 +17,12 @@ class PriorityMatrixServiceTest extends TestCase
         $this->service = new PriorityMatrixService();
     }
 
-    private function ticket(int $importanceId, float $estimate): Ticket
+    private function ticket(int $importanceId, float $estimate, int $storypoints = 0): Ticket
     {
         return (new Ticket())->forceFill([
             'importance_id' => $importanceId,
             'estimate' => $estimate,
+            'storypoints' => $storypoints,
         ]);
     }
 
@@ -77,6 +78,38 @@ class PriorityMatrixServiceTest extends TestCase
         $this->assertSame(
             PriorityMatrixService::UNESTIMATED,
             $this->service->quadrantFor($this->ticket(5, 0))
+        );
+    }
+
+    #[Test]
+    public function story_points_stand_in_when_hours_are_missing(): void
+    {
+        $this->assertSame(
+            PriorityMatrixService::QUICK_WINS,
+            $this->service->quadrantFor($this->ticket(5, 0, 3))
+        );
+        $this->assertSame(
+            PriorityMatrixService::MAJOR_PROJECTS,
+            $this->service->quadrantFor($this->ticket(5, 0, 13))
+        );
+    }
+
+    #[Test]
+    public function points_win_when_both_estimates_exist(): void
+    {
+        // 21 points is high effort even beside a 2h estimate.
+        $this->assertSame(
+            PriorityMatrixService::MAJOR_PROJECTS,
+            $this->service->quadrantFor($this->ticket(5, 2, 21))
+        );
+    }
+
+    #[Test]
+    public function missing_both_estimates_is_unestimated(): void
+    {
+        $this->assertSame(
+            PriorityMatrixService::UNESTIMATED,
+            $this->service->quadrantFor($this->ticket(5, 0, 0))
         );
     }
 
