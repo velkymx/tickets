@@ -5,6 +5,7 @@ namespace Tests\Feature\Controllers;
 use App\Models\Note;
 use App\Models\NoteReaction;
 use App\Models\Ticket;
+use App\Models\TicketView;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -492,15 +493,25 @@ class NotesControllerTest extends TestCase
     }
 
     #[Test]
+    public function it_records_a_heartbeat_for_the_viewer(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->postJson("/tickets/{$ticket->id}/presence");
+
+        $response->assertOk();
+        $response->assertJsonPath('count', 1);
+        $this->assertDatabaseHas('ticket_views', ['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+    }
+
     public function it_returns_current_viewers(): void
     {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user1->id, 'user_id2' => $user2->id]);
-
-        // Both users send heartbeat
-        $this->actingAs($user1)->postJson("/tickets/{$ticket->id}/presence");
-        $this->actingAs($user2)->postJson("/tickets/{$ticket->id}/presence");
+        TicketView::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user1->id, 'updated_at' => now()]);
+        TicketView::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user2->id, 'updated_at' => now()]);
 
         $response = $this->actingAs($user1)->getJson("/tickets/{$ticket->id}/presence");
 

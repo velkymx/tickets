@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\SavedView;
 use App\Models\Ticket;
 use App\Models\User;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -90,24 +91,46 @@ class SavedViewsTest extends TestCase
     public function duplicate_names_are_rejected_per_user(): void
     {
         $user = User::factory()->create();
-        $other = User::factory()->create();
+        SavedView::factory()->create(['user_id' => $user->id, 'name' => 'My open', 'query' => 'is:open']);
 
-        $this->actingAs($user)->post('/saved-views', ['name' => 'My open', 'query' => 'is:open'])->assertRedirect();
         $this->actingAs($user)->post('/saved-views', ['name' => 'My open', 'query' => 'is:closed'])->assertSessionHasErrors('name');
-
-        $this->actingAs($other)->post('/saved-views', ['name' => 'My open', 'query' => 'is:open'])->assertRedirect();
     }
 
     #[Test]
-    public function chips_render_on_board_project_and_milestone_pages(): void
+    public function same_name_is_allowed_for_different_users(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        SavedView::factory()->create(['user_id' => $user->id, 'name' => 'My open', 'query' => 'is:open']);
+
+        $this->actingAs($other)->post('/saved-views', ['name' => 'My open', 'query' => 'is:open'])->assertRedirect();
+
+        $this->assertSame(1, SavedView::where('user_id', $other->id)->count());
+    }
+
+    public static function chipPages(): array
+    {
+        return [
+            'board' => ['board'],
+            'project' => ['project'],
+            'milestone' => ['milestone'],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('chipPages')]
+    public function saved_view_chips_render_across_pages(string $page): void
     {
         $user = User::factory()->create();
         SavedView::factory()->create(['user_id' => $user->id, 'name' => 'Everywhere chips']);
         $project = Project::factory()->create();
         $milestone = Milestone::factory()->create();
+        $url = match ($page) {
+            'board' => '/tickets/board',
+            'project' => "/projects/show/{$project->id}",
+            'milestone' => "/milestone/show/{$milestone->id}",
+        };
 
-        $this->actingAs($user)->get('/tickets/board')->assertOk()->assertSee('Everywhere chips');
-        $this->actingAs($user)->get("/projects/show/{$project->id}")->assertOk()->assertSee('Everywhere chips');
-        $this->actingAs($user)->get("/milestone/show/{$milestone->id}")->assertOk()->assertSee('Everywhere chips');
+        $this->actingAs($user)->get($url)->assertOk()->assertSee('Everywhere chips');
     }
 }
