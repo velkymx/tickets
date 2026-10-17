@@ -12,6 +12,11 @@ class SystemHealth
         Checks\RequirementsCheck::class,
         Checks\FeaturesCheck::class,
         Checks\QueueCheck::class,
+        Checks\MailCheck::class,
+        Checks\CacheCheck::class,
+        Checks\SecurityCheck::class,
+        Checks\StorageCheck::class,
+        Checks\DatabaseCheck::class,
     ];
 
     /**
