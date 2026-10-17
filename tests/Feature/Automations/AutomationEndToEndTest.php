@@ -2,16 +2,17 @@
 
 namespace Tests\Feature\Automations;
 
+use App\Automations\Support\SsrfGuard;
+use App\Jobs\ExecuteAutomationRuleJob;
 use App\Models\Automation;
 use App\Models\AutomationAction;
 use App\Models\AutomationRule;
-use App\Models\Ticket;
-use App\Automations\Support\SsrfGuard;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Project;
-use App\Models\Type;
 use App\Models\Status;
+use App\Models\Ticket;
+use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -48,7 +49,7 @@ class AutomationEndToEndTest extends TestCase
             'project_id' => $project->id,
         ]);
 
-        Queue::assertPushed(\App\Jobs\ExecuteAutomationRuleJob::class);
+        Queue::assertPushed(ExecuteAutomationRuleJob::class);
     }
 
     #[Test]

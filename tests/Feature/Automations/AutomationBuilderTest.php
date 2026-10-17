@@ -10,6 +10,7 @@ use Tests\Traits\SeedsDatabase;
 class AutomationBuilderTest extends TestCase
 {
     use SeedsDatabase;
+
     #[Test]
     public function create_page_uses_registered_alpine_builders(): void
     {

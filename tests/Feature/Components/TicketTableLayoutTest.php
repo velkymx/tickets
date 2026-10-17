@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Components;
 
+use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,7 +31,7 @@ class TicketTableLayoutTest extends TestCase
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create();
-        \App\Models\Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get('/tickets');
 
@@ -53,6 +54,7 @@ class TicketTableLayoutTest extends TestCase
         $response->assertSee('2.5h', false);
         $response->assertDontSee('0SP', false);
     }
+
     public function list_renders_stacked_cards_for_small_screens(): void
     {
         $user = User::factory()->create();

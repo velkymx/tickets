@@ -23,7 +23,7 @@ class TicketContextBuilderTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
 
         $event = new TicketCreated($ticket, $user->id);
-        $builder = new TicketCreatedContextBuilder();
+        $builder = new TicketCreatedContextBuilder;
         $context = $builder->build($event);
 
         $this->assertArrayHasKey('ticket', $context);
@@ -40,7 +40,7 @@ class TicketContextBuilderTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
 
         $event = new TicketUpdated($ticket, ['status_id' => 5], $user->id);
-        $builder = new TicketUpdatedContextBuilder();
+        $builder = new TicketUpdatedContextBuilder;
         $context = $builder->build($event);
 
         $this->assertArrayHasKey('changes', $context);
@@ -54,7 +54,7 @@ class TicketContextBuilderTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
 
         $event = new TicketCreated($ticket, $user->id);
-        $context = (new TicketCreatedContextBuilder())->build($event);
+        $context = (new TicketCreatedContextBuilder)->build($event);
 
         $this->assertArrayHasKey('changes', $context);
         $this->assertEmpty($context['changes']);

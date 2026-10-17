@@ -11,7 +11,7 @@ class PayloadRendererTest extends TestCase
     #[Test]
     public function it_renders_flat_template(): void
     {
-        $renderer = new PayloadRenderer();
+        $renderer = new PayloadRenderer;
         $result = $renderer->render(
             ['ticket_id' => '{{ ticket.id }}', 'title' => '{{ ticket.subject }}'],
             ['ticket' => ['id' => 42, 'subject' => 'Bug report']]
@@ -22,7 +22,7 @@ class PayloadRendererTest extends TestCase
     #[Test]
     public function it_renders_nested_template(): void
     {
-        $renderer = new PayloadRenderer();
+        $renderer = new PayloadRenderer;
         $result = $renderer->render(
             ['data' => ['id' => '{{ ticket.id }}']],
             ['ticket' => ['id' => 7]]
@@ -33,7 +33,7 @@ class PayloadRendererTest extends TestCase
     #[Test]
     public function it_leaves_unknown_variables_blank(): void
     {
-        $renderer = new PayloadRenderer();
+        $renderer = new PayloadRenderer;
         $result = $renderer->render(
             ['val' => '{{ ticket.nonexistent }}'],
             ['ticket' => ['id' => 1]]
