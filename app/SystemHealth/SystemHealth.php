@@ -11,6 +11,7 @@ class SystemHealth
         Checks\SystemInfoCheck::class,
         Checks\RequirementsCheck::class,
         Checks\FeaturesCheck::class,
+        Checks\QueueCheck::class,
     ];
 
     /**
