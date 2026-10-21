@@ -36,11 +36,11 @@
         ></span>
     </h6>
     <ul class="list-unstyled mb-0 small">
-        <template x-if="pulse.open_threads.length">
+        <template x-if="pulse.decision_requests.length">
             <li class="py-2 border-top">
                 {{-- Badge on the mobile toggle is the small-screen affordance; this banner lives inside the collapse, so no expand handler here. --}}
                 <a href="#pulse-threads" class="alert alert-warning d-flex justify-content-between align-items-center py-2 px-2 mb-0 text-decoration-none">
-                    <span><strong>Needs your decision</strong> <span class="text-muted" x-text="`(${pulse.open_threads.length} open)`"></span></span>
+                    <span><strong>Needs your decision</strong> <span class="text-muted" x-text="`(${pulse.decision_requests.length} open)`"></span></span>
                     <i class="fa-solid fa-arrow-down small"></i>
                 </a>
             </li>

@@ -16,8 +16,12 @@ class Note extends Model
 
     protected $fillable = [
         'body', 'body_markdown', 'user_id', 'ticket_id', 'parent_id', 'hours', 'notetype', 'hide', 'edited_at',
-        'pinned', 'resolved', 'resolved_by', 'supersedes_id', 'resolution_message',
+        'pinned', 'resolved', 'resolved_by', 'supersedes_id', 'resolution_message', 'decider_id',
     ];
+
+    public const DECISION_WARNING_HOURS = 24;
+
+    public const DECISION_DANGER_HOURS = 72;
 
     protected function casts(): array
     {
@@ -68,6 +72,11 @@ class Note extends Model
     public function resolvedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    public function decider(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'decider_id');
     }
 
     public function supersedes(): BelongsTo
@@ -124,6 +133,17 @@ class Note extends Model
         return $this->created_at && $this->created_at->diffInHours($referenceTime) > 48;
     }
 
+    public function decisionUrgency(?Carbon $referenceTime = null): string
+    {
+        $hours = $this->created_at ? $this->created_at->diffInHours($referenceTime ?? now()) : 0;
+
+        return match (true) {
+            $hours >= self::DECISION_DANGER_HOURS => 'danger',
+            $hours >= self::DECISION_WARNING_HOURS => 'warning',
+            default => 'info',
+        };
+    }
+
     // Scopes
     public function scopePinned($query)
     {
@@ -143,5 +163,13 @@ class Note extends Model
     public function scopeActiveBlockers($query)
     {
         return $query->where('notetype', 'blocker')->where('resolved', false);
+    }
+
+    public function scopeOpenDecisionRequests($query)
+    {
+        return $query->where('notetype', 'decision_needed')
+            ->where('resolved', false)
+            ->where('hide', false)
+            ->whereNull('parent_id');
     }
 }

@@ -2,18 +2,20 @@
 @php
     $signalStyles = [
         'decision' => 'border-start border-4 border-success',
+        'decision_needed' => 'border-start border-4 border-danger',
         'blocker'  => 'border-start border-4 border-danger',
         'update'   => 'border-start border-4 border-info',
         'action'   => 'border-start border-4 border-warning',
     ];
     $signalBadges = [
         'decision' => ['text' => 'Decision', 'class' => 'text-bg-success'],
+        'decision_needed' => ['text' => 'Decision Needed', 'class' => 'text-bg-danger'],
         'blocker'  => ['text' => 'Blocker', 'class' => 'text-bg-danger'],
         'update'   => ['text' => 'Update', 'class' => 'text-bg-info'],
         'action'   => ['text' => 'Action', 'class' => 'text-bg-warning'],
     ];
     $isResolved = $note->isResolved();
-    $cardClass = ($note->notetype === 'blocker' && $isResolved)
+    $cardClass = (in_array($note->notetype, ['blocker', 'decision_needed'], true) && $isResolved)
         ? 'border-start border-4 border-secondary'
         : ($signalStyles[$note->notetype] ?? '');
 @endphp
@@ -26,7 +28,7 @@
             <strong><a href="/users/{{ $note->user->id }}" class="text-decoration-none">{{ $note->user->name }}</a></strong>
             @if(isset($signalBadges[$note->notetype]))
                 @php
-                    $badgeClass = ($note->notetype === 'blocker' && $isResolved)
+                    $badgeClass = (in_array($note->notetype, ['blocker', 'decision_needed'], true) && $isResolved)
                         ? 'text-bg-secondary'
                         : $signalBadges[$note->notetype]['class'];
                 @endphp
@@ -77,6 +79,14 @@
                             <button type="submit" class="dropdown-item">Promote to Blocker</button>
                         </form>
                     </li>
+                    <li>
+                        <form method="POST" action="/notes/{{ $note->id }}/promote" onsubmit="var a = prompt('Who needs to decide? Enter their username.'); if (!a) { return false; } this.assignee.value = a; return true;">
+                            @csrf
+                            <input type="hidden" name="type" value="decision_needed">
+                            <input type="hidden" name="assignee" value="">
+                            <button type="submit" class="dropdown-item">Request Decision</button>
+                        </form>
+                    </li>
                 @endif
             </ul>
         </div>
@@ -104,7 +114,7 @@
         @endif
 
         {{-- Blocker resolution message --}}
-        @if($note->notetype === 'blocker' && $isResolved && $note->resolution_message)
+        @if(in_array($note->notetype, ['blocker', 'decision_needed'], true) && $isResolved && $note->resolution_message)
             <div class="mt-2 p-2 rounded bg-body-secondary border-start border-3 border-secondary small text-muted">
                 <i class="fas fa-check-circle text-success me-1"></i>
                 <strong>{{ $note->resolvedByUser->name ?? 'Someone' }}</strong>: {{ $note->resolution_message }}

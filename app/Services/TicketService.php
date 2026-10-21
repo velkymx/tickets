@@ -142,6 +142,7 @@ class TicketService
             $insert = array_merge($insert, $noteAttributes);
 
             $note = Note::create($insert);
+            app(DecisionRequestService::class)->closeWith($note);
             $this->createMentions($note, $message);
             $this->notifyMentionedUsers($note);
             $this->notifyParentAuthor($note);

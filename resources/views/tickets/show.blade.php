@@ -106,6 +106,7 @@
                                     ['cmd' => '/assign', 'desc' => 'Assign ticket to user'],
                                     ['cmd' => '/status', 'desc' => 'Change ticket status'],
                                     ['cmd' => '/decision', 'desc' => 'Record a decision (immutable)'],
+                                    ['cmd' => '/decide', 'desc' => 'Ask someone for a decision'],
                                     ['cmd' => '/blocker', 'desc' => 'Flag a blocker'],
                                     ['cmd' => '/action', 'desc' => 'Create an action item'],
                                     ['cmd' => '/hours', 'desc' => 'Log time'],
