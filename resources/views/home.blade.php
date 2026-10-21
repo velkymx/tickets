@@ -11,6 +11,10 @@ Dashboard
     </a>
 </div>
 
+@if ($decisionRequests->isNotEmpty())
+    <x-decision-box :requests="$decisionRequests" />
+@endif
+
 {{-- Quick Stats --}}
 <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
     <div class="col">

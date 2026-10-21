@@ -172,4 +172,11 @@ class Note extends Model
             ->where('hide', false)
             ->whereNull('parent_id');
     }
+
+    public function scopeAwaitingDecisionFrom($query, int $userId)
+    {
+        return $query->openDecisionRequests()
+            ->where('decider_id', $userId)
+            ->whereHas('ticket', fn ($q) => $q->open());
+    }
 }
