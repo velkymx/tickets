@@ -47,6 +47,10 @@
         </div>
     @endif
 
+    @foreach ($ticket->notes->where('notetype', 'decision_needed')->where('resolved', false)->whereNull('parent_id') as $decisionRequest)
+        <x-decision-banner :request="$decisionRequest" />
+    @endforeach
+
     <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-9">

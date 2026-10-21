@@ -155,6 +155,49 @@ class DecisionRequestSurfacesTest extends TestCase
             ->assertDontSee('data-decision-count', false);
     }
 
+    #[Test]
+    public function ticket_page_leads_with_a_banner_for_each_open_request(): void
+    {
+        $asker = User::factory()->create(['name' => 'asker']);
+        $decider = User::factory()->create(['name' => 'decider']);
+        $ticket = Ticket::factory()->create(['user_id2' => $asker->id, 'subject' => 'Pick a database']);
+        $request = $this->decisionRequest($ticket, $asker, $decider, ['body' => 'SQLite or MySQL for prod?']);
+        $this->decisionRequest($ticket, $asker, $decider, ['body' => 'Already settled question', 'resolved' => true]);
+
+        $response = $this->actingAs($decider)->get("/tickets/{$ticket->id}");
+
+        $response->assertOk();
+        $response->assertSeeInOrder(['data-decision-banner', 'Decision needed from decider', 'SQLite or MySQL for prod?', 'Asked by asker', 'Record decision', 'Pick a database'], false);
+        $response->assertSee("data-record-decision=\"{$request->id}\"", false);
+        $this->assertSame(1, substr_count($response->getContent(), 'data-decision-banner'));
+    }
+
+    #[Test]
+    public function ticket_page_banner_escalates_with_wait_time(): void
+    {
+        $asker = User::factory()->create();
+        $decider = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $asker->id]);
+        $request = $this->decisionRequest($ticket, $asker, $decider);
+        $request->forceFill(['created_at' => now()->subHours(30)])->save();
+
+        $this->actingAs($decider)->get("/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertSee('alert alert-warning', false)
+            ->assertSee('data-decision-urgency="warning"', false);
+    }
+
+    #[Test]
+    public function ticket_page_has_no_banner_without_open_requests(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
+
+        $this->actingAs($user)->get("/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertDontSee('data-decision-banner', false);
+    }
+
     private function decisionRequest(Ticket $ticket, User $author, User $decider, array $attributes = []): Note
     {
         return Note::factory()->create(array_merge([
