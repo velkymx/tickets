@@ -126,6 +126,35 @@ class DecisionRequestSurfacesTest extends TestCase
             ->assertSee('decision%3Ame', false);
     }
 
+    #[Test]
+    public function navbar_counts_decisions_waiting_on_me_on_every_page(): void
+    {
+        $asker = User::factory()->create();
+        $decider = User::factory()->create();
+        $first = Ticket::factory()->create(['user_id2' => $asker->id]);
+        $second = Ticket::factory()->create(['user_id2' => $asker->id]);
+        $this->decisionRequest($first, $asker, $decider);
+        $this->decisionRequest($first, $asker, $decider);
+        $this->decisionRequest($second, $asker, $decider);
+        $this->decisionRequest($second, $asker, $asker);
+
+        $response = $this->actingAs($decider)->get('/projects');
+
+        $response->assertOk();
+        $response->assertSee('data-decision-count="3"', false);
+        $response->assertSee('/tickets?q=decision%3Ame', false);
+    }
+
+    #[Test]
+    public function navbar_hides_the_badge_with_nothing_waiting(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/projects')
+            ->assertOk()
+            ->assertDontSee('data-decision-count', false);
+    }
+
     private function decisionRequest(Ticket $ticket, User $author, User $decider, array $attributes = []): Note
     {
         return Note::factory()->create(array_merge([

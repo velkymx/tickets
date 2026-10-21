@@ -2,6 +2,7 @@
 
 namespace App\ViewComposers;
 
+use App\Models\Note;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -17,5 +18,6 @@ class NotificationComposer
 
         $view->with('latestNotifications', $user->notifications()->latest()->limit(5)->get());
         $view->with('unreadNotificationCount', $user->unreadNotifications()->count());
+        $view->with('pendingDecisionCount', Note::query()->awaitingDecisionFrom($user->id)->count());
     }
 }
