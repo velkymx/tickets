@@ -39,8 +39,8 @@ state. No direct agent-to-agent channel needed.
 
 **Coordinator** (Hermes/Grokbot style loop) watches the milestone:
 
-- `standup-digest-prompt` each cycle: blocked items with owner, at-risk
-  items with why, decisions needed listed last.
+- `standup-digest-prompt` each cycle: decisions needed first (question,
+  decider, wait), then blocked items with owner, at-risk items with why.
 - Reassign stuck tickets with `update-ticket-tool` instead of nagging.
 
 ## Rules that keep it working
