@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controllers;
 
 use App\Models\User;
+use App\Notifications\DecisionRequestNotification;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
@@ -60,6 +61,25 @@ class ActivityControllerTest extends TestCase
         $response->assertViewHas('notifications', function ($notifications) {
             return $notifications->count() === 1
                 && ($notifications->first()->data['excerpt'] ?? null) === 'Mention body';
+        });
+    }
+
+    #[Test]
+    public function index_filters_decision_requests(): void
+    {
+        $user = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Sarah']);
+
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Mention body', 'http://example.com/tickets/142'));
+        $user->notifyNow(new DecisionRequestNotification($actor->id, $actor->name, 142, 57, 'Ship Friday?', 'http://example.com/tickets/142#note_57'));
+
+        $response = $this->actingAs($user)->get('/activity?filter=decisions');
+
+        $response->assertOk();
+        $response->assertSee('Decisions');
+        $response->assertViewHas('notifications', function ($notifications) {
+            return $notifications->count() === 1
+                && ($notifications->first()->data['type'] ?? null) === 'decision_request';
         });
     }
 

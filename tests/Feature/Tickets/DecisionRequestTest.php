@@ -5,8 +5,11 @@ namespace Tests\Feature\Tickets;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Notifications\DecisionRequestNotification;
+use App\Notifications\MentionNotification;
 use App\Services\TicketPulseService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -197,6 +200,59 @@ class DecisionRequestTest extends TestCase
         $this->assertSame($decider->id, $pulse->decision_requests[0]['decider_id']);
         $this->assertSame('asker', $pulse->decision_requests[0]['requester']);
         $this->assertContains($open->id, array_column($pulse->open_threads, 'id'));
+    }
+
+    #[Test]
+    public function decide_command_notifies_the_decider_once(): void
+    {
+        Notification::fake();
+        $author = User::factory()->create();
+        $decider = User::factory()->create(['name' => 'decider']);
+        $ticket = Ticket::factory()->create(['user_id2' => $author->id]);
+
+        $this->actingAs($author)->post('/notes', [
+            'ticket_id' => $ticket->id,
+            'note' => '/decide @decider Ship with SQLite or MySQL?',
+        ]);
+
+        Notification::assertSentToTimes($decider, DecisionRequestNotification::class, 1);
+        Notification::assertNotSentTo($decider, MentionNotification::class);
+    }
+
+    #[Test]
+    public function asking_yourself_sends_no_notification(): void
+    {
+        Notification::fake();
+        $author = User::factory()->create(['name' => 'author']);
+        $ticket = Ticket::factory()->create(['user_id2' => $author->id]);
+
+        $this->actingAs($author)->post('/notes', [
+            'ticket_id' => $ticket->id,
+            'note' => '/decide @author Ship with SQLite or MySQL?',
+        ]);
+
+        Notification::assertNotSentTo($author, DecisionRequestNotification::class);
+    }
+
+    #[Test]
+    public function promoting_to_a_decision_request_notifies_the_decider(): void
+    {
+        Notification::fake();
+        $owner = User::factory()->create();
+        $decider = User::factory()->create(['name' => 'decider']);
+        $ticket = Ticket::factory()->create(['user_id2' => $owner->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $owner->id,
+            'body' => 'Which database should we ship?',
+        ]);
+
+        $this->actingAs($owner)->post("/notes/{$note->id}/promote", [
+            'type' => 'decision_needed',
+            'assignee' => 'decider',
+        ]);
+
+        Notification::assertSentToTimes($decider, DecisionRequestNotification::class, 1);
     }
 
     private function decisionRequest(Ticket $ticket, User $author, User $decider, array $attributes = []): Note

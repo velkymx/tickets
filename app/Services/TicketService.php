@@ -144,6 +144,7 @@ class TicketService
             $note = Note::create($insert);
             app(DecisionRequestService::class)->closeWith($note);
             $this->createMentions($note, $message);
+            app(DecisionRequestService::class)->notify($note);
             $this->notifyMentionedUsers($note);
             $this->notifyParentAuthor($note);
             $createdActivity = true;
@@ -217,7 +218,7 @@ class TicketService
         $excerpt = trim(strip_tags($note->body_markdown ?: $note->body));
 
         $note->mentions->each(function ($mention) use ($note, $url, $excerpt) {
-            if ($mention->user_id !== $note->user_id && $mention->user) {
+            if ($mention->user_id !== $note->user_id && $mention->user_id !== (int) $note->decider_id && $mention->user) {
                 $this->notificationBatchService->dispatch(
                     $mention->user,
                     new MentionNotification(

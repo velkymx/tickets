@@ -7,6 +7,7 @@
         $filters = [
             'all' => 'All',
             'mentions' => 'Mentions',
+            'decisions' => 'Decisions',
             'watching' => 'Watching',
             'replies' => 'Replies',
         ];
