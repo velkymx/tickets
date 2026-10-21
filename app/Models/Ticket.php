@@ -18,7 +18,7 @@ class Ticket extends Model
     use HasFactory;
 
     /** Request keys accepted by the filter scope (also used to repopulate the filter UI). */
-    public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q', 'assignee'];
+    public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q', 'assignee', 'decision'];
 
     /** Sortable column whitelist shared by every paginated ticket list. */
     public const LIST_SORTABLE = ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'];
@@ -30,9 +30,17 @@ class Ticket extends Model
     public function scopeWithListRelations(Builder $query): Builder
     {
         return $query->with([
-            'status', 'type', 'importance', 'project', 'assignee',
+            'status', 'type', 'importance', 'project', 'assignee', 'openDecisionRequests',
             'notes' => fn ($q) => $q->where('hide', 0)->where('notetype', 'message'),
         ]);
+    }
+
+    public function scopeNeedsDecision(Builder $query, ?int $deciderId = null): Builder
+    {
+        return $query->whereHas('openDecisionRequests', fn ($q) => $q->when(
+            $deciderId !== null,
+            fn ($q) => $q->where('decider_id', $deciderId)
+        ));
     }
 
     /** Importance level id for "blocker" (seeded by DefaultsSeeder). */
@@ -96,6 +104,14 @@ class Ticket extends Model
 
         if (($params['assignee'] ?? null) === 'me' && auth()->check()) {
             $query->where('user_id2', auth()->id());
+        }
+
+        if (($params['decision'] ?? null) === 'me' && auth()->check()) {
+            $query->needsDecision(auth()->id());
+        }
+
+        if (($params['decision'] ?? null) === 'any') {
+            $query->needsDecision();
         }
 
         return $query;
@@ -203,6 +219,11 @@ class Ticket extends Model
     public function notes(): HasMany
     {
         return $this->hasMany(Note::class);
+    }
+
+    public function openDecisionRequests(): HasMany
+    {
+        return $this->hasMany(Note::class)->openDecisionRequests();
     }
 
     public function estimates(): HasMany

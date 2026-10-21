@@ -75,6 +75,57 @@ class DecisionRequestSurfacesTest extends TestCase
         $response->assertSee('data-decision-urgency="danger"', false);
     }
 
+    #[Test]
+    public function ticket_list_marks_rows_with_open_requests(): void
+    {
+        $asker = User::factory()->create();
+        $decider = User::factory()->create();
+        $flagged = Ticket::factory()->create(['user_id2' => $asker->id]);
+        Ticket::factory()->create(['user_id2' => $asker->id]);
+        $this->decisionRequest($flagged, $asker, $decider);
+
+        $response = $this->actingAs($asker)->get('/tickets');
+
+        $response->assertOk();
+        $this->assertSame(2, substr_count($response->getContent(), 'data-decision-needed'));
+    }
+
+    #[Test]
+    public function ticket_list_filters_to_decisions_from_me(): void
+    {
+        $asker = User::factory()->create();
+        $decider = User::factory()->create();
+        $other = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id2' => $asker->id, 'subject' => 'Waiting on me']);
+        $theirs = Ticket::factory()->create(['user_id2' => $asker->id, 'subject' => 'Waiting on other']);
+        $plain = Ticket::factory()->create(['user_id2' => $asker->id, 'subject' => 'Nothing pending']);
+        $this->decisionRequest($mine, $asker, $decider);
+        $this->decisionRequest($theirs, $asker, $other);
+
+        $this->actingAs($decider)->get('/tickets?q=decision:me')
+            ->assertOk()
+            ->assertSee('Waiting on me')
+            ->assertDontSee('Waiting on other')
+            ->assertDontSee('Nothing pending');
+
+        $this->actingAs($decider)->get('/tickets?q=decision:any')
+            ->assertOk()
+            ->assertSee('Waiting on me')
+            ->assertSee('Waiting on other')
+            ->assertDontSee('Nothing pending');
+    }
+
+    #[Test]
+    public function ticket_list_offers_the_needs_my_decision_view(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/tickets')
+            ->assertOk()
+            ->assertSee('Needs my decision')
+            ->assertSee('decision%3Ame', false);
+    }
+
     private function decisionRequest(Ticket $ticket, User $author, User $decider, array $attributes = []): Note
     {
         return Note::factory()->create(array_merge([

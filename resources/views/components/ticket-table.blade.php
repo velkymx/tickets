@@ -60,6 +60,9 @@
                         @if ($noteCount > 0)
                             <span class="badge text-bg-info float-end ms-1" title="{{ $noteCount }} notes">{{ $noteCount }}</span>
                         @endif
+                        @if ($oldestRequest = $tick->openDecisionRequests->sortBy('created_at')->first())
+                            <span class="badge text-bg-{{ $oldestRequest->decisionUrgency() }} float-end ms-1" data-decision-needed title="Decision needed, waiting {{ $oldestRequest->created_at->diffForHumans(null, true) }}"><i class="fa-solid fa-gavel" aria-hidden="true"></i><span class="visually-hidden">Decision needed</span></span>
+                        @endif
                         @if(!$showType)
                             <i class="{{ $tick->type->icon }} me-1" title="{{ $tick->type->name }}" aria-hidden="true"></i>
                         @endif
@@ -118,6 +121,9 @@
                     <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-body fw-semibold flex-grow-1">
                         <span class="text-muted">#{{ $tick->id }}</span> {{ $tick->subject }}
                     </a>
+                    @if ($oldestRequest = $tick->openDecisionRequests->sortBy('created_at')->first())
+                        <span class="badge text-bg-{{ $oldestRequest->decisionUrgency() }}" data-decision-needed title="Decision needed, waiting {{ $oldestRequest->created_at->diffForHumans(null, true) }}"><i class="fa-solid fa-gavel" aria-hidden="true"></i><span class="visually-hidden">Decision needed</span></span>
+                    @endif
                     <span class="badge text-bg-secondary text-nowrap">{{ $tick->status->name }}</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
