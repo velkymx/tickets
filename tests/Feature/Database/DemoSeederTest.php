@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Database;
 
+use App\Models\Note;
+use App\Models\User;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
@@ -31,6 +33,20 @@ class DemoSeederTest extends TestCase
         $this->assertEquals(1, DB::table('projects')->where('name', 'Demo Sandbox')->count());
         $this->assertEquals(1, DB::table('tickets')->where('subject', 'Demo: blocked checkout flow')->count());
         $this->assertEquals(1, DB::table('notes')->where('body', 'Demo: ship checklist')->count());
+    }
+
+    #[Test]
+    public function demo_seeder_adds_decision_requests_at_each_urgency(): void
+    {
+        $this->seed(DemoSeeder::class);
+        $this->seed(DemoSeeder::class);
+
+        $demo = User::where('email', 'demo@ajbapps.com')->firstOrFail();
+        $waiting = Note::awaitingDecisionFrom($demo->id)->get();
+
+        $this->assertCount(3, $waiting);
+        $this->assertEqualsCanonicalizing(['info', 'warning', 'danger'], $waiting->map->decisionUrgency()->all());
+        $this->assertSame(1, Note::where('notetype', 'decision_needed')->where('resolved', true)->count());
     }
 
     #[Test]
