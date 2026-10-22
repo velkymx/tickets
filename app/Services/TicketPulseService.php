@@ -110,7 +110,7 @@ class TicketPulseService
             owner_id: $ticket->user_id2,
             owner_label: $this->deriveOwnerLabel($ticket, $activeBlocker),
             next_action: $this->buildNextAction($latestAction),
-            latest_decision: $this->buildLatestDecision($latestDecision),
+            latest_decision: $this->buildLatestDecision($latestDecision, $latestDecision ? $notes->firstWhere('id', $latestDecision->parent_id) : null),
             open_threads: $openThreads,
             decision_requests: $decisionRequests,
             latest_blocker: $this->buildLatestBlocker($activeBlocker),
@@ -175,7 +175,7 @@ class TicketPulseService
         ];
     }
 
-    protected function buildLatestDecision(?Note $latestDecision): ?array
+    protected function buildLatestDecision(?Note $latestDecision, ?Note $thread): ?array
     {
         if (! $latestDecision) {
             return null;
@@ -183,6 +183,7 @@ class TicketPulseService
 
         return [
             'id' => $latestDecision->id,
+            'question' => $thread ? Str::of(strip_tags($thread->body))->trim()->before("\n")->trim()->toString() : null,
             'body' => $latestDecision->body,
             'author' => $latestDecision->user?->name,
             'created_at' => $latestDecision->created_at?->toISOString(),

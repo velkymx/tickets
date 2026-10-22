@@ -255,6 +255,55 @@ class DecisionRequestTest extends TestCase
         Notification::assertSentToTimes($decider, DecisionRequestNotification::class, 1);
     }
 
+    #[Test]
+    public function latest_decision_carries_the_question_it_answers(): void
+    {
+        $author = User::factory()->create();
+        $decider = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $author->id]);
+        $request = $this->decisionRequest($ticket, $author, $decider, ['body' => "<p>Ship on Friday?</p>\n<p>More context</p>", 'resolved' => true]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $decider->id,
+            'parent_id' => $request->id,
+            'notetype' => 'decision',
+            'body' => 'yes!',
+        ]);
+
+        $pulse = app(TicketPulseService::class)->getPulse($ticket->fresh());
+
+        $this->assertSame('yes!', $pulse->latest_decision['body']);
+        $this->assertSame('Ship on Friday?', $pulse->latest_decision['question']);
+    }
+
+    #[Test]
+    public function a_top_level_decision_has_no_question(): void
+    {
+        $author = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $author->id]);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'notetype' => 'decision',
+            'body' => 'We will use MySQL in production',
+        ]);
+
+        $pulse = app(TicketPulseService::class)->getPulse($ticket->fresh());
+
+        $this->assertNull($pulse->latest_decision['question']);
+    }
+
+    #[Test]
+    public function sidebar_shows_the_question_above_the_latest_decision(): void
+    {
+        $author = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $author->id]);
+
+        $this->actingAs($author)->get("/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertSeeInOrder(['Latest Decision:', 'pulse.latest_decision.question', 'pulse.latest_decision.body'], false);
+    }
+
     private function decisionRequest(Ticket $ticket, User $author, User $decider, array $attributes = []): Note
     {
         return Note::factory()->create(array_merge([

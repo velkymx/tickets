@@ -103,6 +103,9 @@
             <strong>Latest Decision:</strong>
             <template x-if="pulse.latest_decision">
                 <span>
+                    <template x-if="pulse.latest_decision.question">
+                        <span class="d-block small text-muted" x-text="pulse.latest_decision.question"></span>
+                    </template>
                     <span x-html="pulse.latest_decision.body"></span>
                     <span class="small text-muted ms-1" x-text="pulse.latest_decision.author"></span>
                     <template x-if="pulse.latest_decision.supersedes">
