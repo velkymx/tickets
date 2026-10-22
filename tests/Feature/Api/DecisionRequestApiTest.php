@@ -7,6 +7,7 @@ use App\Mcp\Tools\AddNoteTool;
 use App\Mcp\Tools\GetTicketTool;
 use App\Mcp\Tools\ListTicketsTool;
 use App\Mcp\Tools\PromoteNoteTool;
+use App\Mcp\Tools\ReplyToNoteTool;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
@@ -205,6 +206,22 @@ class DecisionRequestApiTest extends TestCase
         ])->assertHasErrors(['Decision requests require exactly one @decider']);
 
         $this->assertSame(0, Note::where('ticket_id', $ticket->id)->count());
+    }
+
+    #[Test]
+    public function mcp_add_note_decision_reply_closes_the_request(): void
+    {
+        $asker = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $request = $this->decisionRequest($ticket, $asker, $this->user);
+
+        TicketsServer::actingAs($this->user)->tool(ReplyToNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $request->id,
+            'body' => '/decision Ship Friday after the smoke test',
+        ])->assertOk();
+
+        $this->assertTrue($request->fresh()->resolved);
     }
 
     private function apiHeaders(): array
