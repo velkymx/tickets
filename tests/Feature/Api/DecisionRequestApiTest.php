@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Mcp\Servers\TicketsServer;
+use App\Mcp\Tools\GetTicketTool;
 use App\Mcp\Tools\ListTicketsTool;
 use App\Models\Note;
 use App\Models\Ticket;
@@ -140,6 +141,20 @@ class DecisionRequestApiTest extends TestCase
         $response->assertSee('"decision_needed":true');
         $response->assertSee("\"decision_needed_from\":{$this->user->id}");
         $response->assertSee('"total":1');
+    }
+
+    #[Test]
+    public function mcp_get_ticket_includes_decision_requests(): void
+    {
+        $decider = User::factory()->create(['name' => 'decider']);
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $this->decisionRequest($ticket, $this->user, $decider, ['body' => 'Ship Friday?']);
+
+        $response = TicketsServer::actingAs($this->user)->tool(GetTicketTool::class, ['ticket_id' => $ticket->id]);
+
+        $response->assertOk();
+        $response->assertSee('decision_requests');
+        $response->assertSee('Ship Friday?');
     }
 
     private function apiHeaders(): array
