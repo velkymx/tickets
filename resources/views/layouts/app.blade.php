@@ -54,7 +54,7 @@
                             <a class="nav-link d-inline-flex align-items-center gap-2" href="/tickets?q=decision%3Ame" title="Decisions waiting on you">
                                 <i class="fa-solid fa-gavel" aria-hidden="true"></i>
                                 <span class="visually-hidden">Decisions waiting on you</span>
-                                <span class="badge rounded-pill bg-danger" data-decision-count="{{ $pendingDecisionCount }}">{{ $pendingDecisionCount }}</span>
+                                <span class="badge rounded-pill bg-danger notification-count-inline" data-decision-count="{{ $pendingDecisionCount }}">{{ $pendingDecisionCount }}</span>
                             </a>
                         </li>
                     @endif
