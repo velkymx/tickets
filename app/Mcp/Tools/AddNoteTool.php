@@ -7,6 +7,7 @@ use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
 use App\Services\SlashCommandService;
@@ -17,7 +18,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 
-#[Description('Add a note to a ticket you own or are assigned to. Supports slash commands in the body (/close, /status, /hours, /blocker, /decision, /action @user, /estimate). Optionally log hours, change status, or claim the ticket.')]
+#[Description('Add a note to a ticket you own or are assigned to. Supports slash commands in the body (/close, /status, /hours, /blocker, /decision, /decide @user, /action @user, /estimate). Use /decide @user question to ask one person for a decision; they are notified at once. Optionally log hours, change status, or claim the ticket.')]
 class AddNoteTool extends TicketTool
 {
     public function handle(Request $request): Response
@@ -80,7 +81,7 @@ class AddNoteTool extends TicketTool
                     $warnings = $commandResult['warnings'] ?? [];
 
                     foreach ($commandResult['changes'] ?? [] as $change) {
-                        if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions')) {
+                        if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions') || str_contains($change, 'Decision requests require')) {
                             throw new ToolException($change);
                         }
                     }
@@ -99,6 +100,7 @@ class AddNoteTool extends TicketTool
                             'hours' => $totalHours,
                             'notetype' => $commandResult['note_type'] ?? 'message',
                             'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
+                            'decider_id' => $commandResult['note_attributes']['decider_id'] ?? null,
                         ]);
 
                         $mentionUsernames = $mentionService->parseMentions($parsedBody);
@@ -111,6 +113,10 @@ class AddNoteTool extends TicketTool
             });
         } catch (ToolException $e) {
             return Response::error($e->getMessage());
+        }
+
+        if ($createdNote) {
+            app(DecisionRequestService::class)->notify($createdNote);
         }
 
         $ticket->load(['status', 'assignee']);
@@ -143,7 +149,7 @@ class AddNoteTool extends TicketTool
     {
         return [
             'ticket_id' => $schema->integer()->description('The ticket ID.')->required(),
-            'body' => $schema->string()->description('Note text. Supports slash commands like /close, /blocker, /decision, /action @user task.'),
+            'body' => $schema->string()->description('Note text. Supports slash commands like /close, /blocker, /decision, /decide @user question, /action @user task.'),
             'hours' => $schema->number()->description('Hours to log against the ticket.'),
             'status_id' => $schema->integer()->description('Move the ticket to this status ID.'),
             'claim' => $schema->boolean()->description('Assign the ticket to yourself.'),

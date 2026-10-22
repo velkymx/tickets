@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Mcp\Servers\TicketsServer;
+use App\Mcp\Tools\AddNoteTool;
 use App\Mcp\Tools\GetTicketTool;
 use App\Mcp\Tools\ListTicketsTool;
 use App\Mcp\Tools\PromoteNoteTool;
@@ -174,6 +175,36 @@ class DecisionRequestApiTest extends TestCase
 
         $this->assertSame('decision_needed', $note->fresh()->notetype);
         $this->assertSame($decider->id, (int) $note->fresh()->decider_id);
+    }
+
+    #[Test]
+    public function mcp_add_note_decide_creates_and_notifies(): void
+    {
+        Notification::fake();
+        $decider = User::factory()->create(['name' => 'decider']);
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        TicketsServer::actingAs($this->user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/decide @decider Ship Friday?',
+        ])->assertOk();
+
+        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'decision_needed')->firstOrFail();
+        $this->assertSame($decider->id, $note->decider_id);
+        Notification::assertSentToTimes($decider, DecisionRequestNotification::class, 1);
+    }
+
+    #[Test]
+    public function mcp_add_note_decide_rejects_a_missing_decider(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        TicketsServer::actingAs($this->user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/decide Ship Friday?',
+        ])->assertHasErrors(['Decision requests require exactly one @decider']);
+
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->count());
     }
 
     private function apiHeaders(): array
