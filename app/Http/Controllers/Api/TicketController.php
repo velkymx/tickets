@@ -714,16 +714,19 @@ class TicketController extends Controller
         $markdownService = app(MarkdownService::class);
         $mentionService = app(MentionService::class);
 
-        $bodyHtml = $markdownService->parse($request->body);
+        $isDecision = (bool) preg_match('/^\/decision\s+(.+)$/s', trim($request->body), $decision);
+        $body = $isDecision ? trim($decision[1]) : $request->body;
 
         $reply = Note::create([
             'user_id' => $user->id,
             'ticket_id' => $ticket->id,
             'parent_id' => $parent->id,
-            'body' => $bodyHtml,
-            'body_markdown' => $request->body,
-            'notetype' => 'message',
+            'body' => $markdownService->parse($body),
+            'body_markdown' => $body,
+            'notetype' => $isDecision ? 'decision' : 'message',
         ]);
+
+        app(DecisionRequestService::class)->closeWith($reply);
 
         $mentionUsernames = $mentionService->parseMentions($request->body);
         $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();

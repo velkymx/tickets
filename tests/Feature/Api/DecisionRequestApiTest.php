@@ -109,6 +109,21 @@ class DecisionRequestApiTest extends TestCase
         ], $this->apiHeaders())->assertStatus(422);
     }
 
+    #[Test]
+    public function api_decision_reply_closes_the_request(): void
+    {
+        $asker = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $request = $this->decisionRequest($ticket, $asker, $this->user);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$request->id}/reply", [
+            'body' => '/decision Ship Friday after the smoke test',
+        ], $this->apiHeaders())->assertOk();
+
+        $this->assertTrue($request->fresh()->resolved);
+        $this->assertSame('decision', Note::where('parent_id', $request->id)->first()->notetype);
+    }
+
     private function apiHeaders(): array
     {
         return [
