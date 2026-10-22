@@ -307,7 +307,7 @@ class TicketController extends Controller
                 // Check for blocker/action constraints from the slash service
                 $noteType = $commandResult['note_type'] ?? 'message';
                 foreach ($commandResult['changes'] ?? [] as $change) {
-                    if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions')) {
+                    if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions') || str_contains($change, 'Decision requests require')) {
                         $this->rejectNote($change);
                     }
                 }
@@ -326,6 +326,7 @@ class TicketController extends Controller
                         'hours' => $totalHours,
                         'notetype' => $noteType,
                         'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
+                        'decider_id' => $commandResult['note_attributes']['decider_id'] ?? null,
                     ]);
 
                     // Create mention records
@@ -339,6 +340,10 @@ class TicketController extends Controller
 
             return [$createdNote, $warnings];
         });
+
+        if ($createdNote) {
+            app(DecisionRequestService::class)->notify($createdNote);
+        }
 
         $ticket->load(['status', 'assignee']);
 

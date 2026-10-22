@@ -5,7 +5,9 @@ namespace Tests\Feature\Api;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Notifications\DecisionRequestNotification;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -84,6 +86,26 @@ class DecisionRequestApiTest extends TestCase
 
         $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", [
             'type' => 'decision_needed',
+        ], $this->apiHeaders())->assertStatus(422);
+    }
+
+    #[Test]
+    public function api_note_decide_creates_and_notifies(): void
+    {
+        Notification::fake();
+        $decider = User::factory()->create(['name' => 'decider']);
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/decide @decider Ship Friday?',
+        ], $this->apiHeaders())->assertOk();
+
+        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'decision_needed')->firstOrFail();
+        $this->assertSame($decider->id, $note->decider_id);
+        Notification::assertSentToTimes($decider, DecisionRequestNotification::class, 1);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/decide Ship Friday?',
         ], $this->apiHeaders())->assertStatus(422);
     }
 
