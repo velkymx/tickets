@@ -5,7 +5,6 @@ namespace App\Mcp\Tools;
 use App\Mcp\Exceptions\ToolException;
 use App\Models\Note;
 use App\Models\Status;
-use App\Models\Ticket;
 use App\Models\User;
 use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;

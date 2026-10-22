@@ -3,7 +3,6 @@
 namespace App\Mcp\Tools;
 
 use App\Models\Note;
-use App\Models\Ticket;
 use App\Models\User;
 use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;
