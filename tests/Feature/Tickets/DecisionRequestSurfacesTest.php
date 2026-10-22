@@ -116,14 +116,31 @@ class DecisionRequestSurfacesTest extends TestCase
     }
 
     #[Test]
-    public function ticket_list_offers_the_needs_my_decision_view(): void
+    public function ticket_list_header_offers_needs_my_decision_with_count(): void
+    {
+        $asker = User::factory()->create();
+        $decider = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $asker->id]);
+        $this->decisionRequest($ticket, $asker, $decider);
+
+        $this->actingAs($decider)->get('/tickets')
+            ->assertOk()
+            ->assertSeeInOrder(['btn btn-sm btn-outline-danger', 'Needs my decision', '>1<', 'Create Ticket'], false);
+
+        $this->actingAs($decider)->get('/tickets?q=decision:me')
+            ->assertOk()
+            ->assertSee('btn btn-sm btn-danger', false)
+            ->assertSee('aria-current="true"', false);
+    }
+
+    #[Test]
+    public function saved_views_row_stays_hidden_without_views_or_query(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)->get('/tickets')
             ->assertOk()
-            ->assertSee('Needs my decision')
-            ->assertSee('decision%3Ame', false);
+            ->assertDontSee('Save view as', false);
     }
 
     #[Test]

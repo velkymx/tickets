@@ -5,7 +5,17 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Tickets</h1>
-        <a href="/ticket/create" class="btn btn-sm btn-primary">Create Ticket</a>
+        <div class="d-flex gap-2">
+            @php($decisionActive = $searchQuery === 'decision:me')
+            <a href="{{ $decisionActive ? url('tickets') : url('tickets').'?q=decision%3Ame' }}"
+               class="btn btn-sm {{ $decisionActive ? 'btn-danger' : 'btn-outline-danger' }} d-inline-flex align-items-center gap-2"
+               @if($decisionActive) aria-current="true" @endif>
+                <i class="fa-solid fa-gavel" aria-hidden="true"></i>
+                Needs my decision
+                <span class="badge {{ $decisionActive ? 'text-bg-light' : 'text-bg-danger' }}">{{ $pendingDecisions }}</span>
+            </a>
+            <a href="/ticket/create" class="btn btn-sm btn-primary">Create Ticket</a>
+        </div>
     </div>
 
     {{-- Query Search --}}

@@ -134,7 +134,9 @@ class TicketsController extends Controller
         $lookups['users'][0] = 'No Change';
         $lookups['releases'][0] = 'No Change';
 
-        return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens'));
+        $pendingDecisions = Note::query()->awaitingDecisionFrom(Auth::id())->count();
+
+        return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens', 'pendingDecisions'));
     }
 
     public function claim($id)
