@@ -20,7 +20,7 @@
         : ($signalStyles[$note->notetype] ?? '');
 @endphp
 
-<div class="card mb-0 {{ $cardClass }}" id="note_{{ $note->id }}">
+<div class="card mb-0 {{ $cardClass }}" id="note_{{ $note->id }}" x-data="{ requestingDecision: false }">
     {{-- Header --}}
     <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center py-2">
         <div class="d-flex align-items-center gap-2">
@@ -80,12 +80,7 @@
                         </form>
                     </li>
                     <li>
-                        <form method="POST" action="/notes/{{ $note->id }}/promote" onsubmit="var a = prompt('Who needs to decide? Enter their username.'); if (!a) { return false; } this.assignee.value = a; return true;">
-                            @csrf
-                            <input type="hidden" name="type" value="decision_needed">
-                            <input type="hidden" name="assignee" value="">
-                            <button type="submit" class="dropdown-item">Request Decision</button>
-                        </form>
+                        <button type="button" class="dropdown-item" @click="requestingDecision = true">Request Decision</button>
                     </li>
                 @endif
             </ul>
@@ -121,6 +116,24 @@
             </div>
         @endif
     </div>
+
+    @if($note->notetype === 'message')
+        <div class="card-body border-top pt-2 pb-2" x-show="requestingDecision" x-cloak>
+            <form method="POST" action="/notes/{{ $note->id }}/promote" class="d-flex flex-wrap align-items-center gap-2">
+                @csrf
+                <input type="hidden" name="type" value="decision_needed">
+                <label for="decider_{{ $note->id }}" class="small fw-semibold mb-0">Who needs to decide?</label>
+                <select name="assignee" id="decider_{{ $note->id }}" class="form-select form-select-sm w-auto" required>
+                    <option value="">Choose a person</option>
+                    @foreach($allUsers ?? [] as $candidate)
+                        <option value="{{ $candidate['name'] }}">{{ $candidate['name'] }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-sm btn-danger">Request Decision</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="requestingDecision = false">Cancel</button>
+            </form>
+        </div>
+    @endif
 
     {{-- Blocker action bar --}}
     @if($note->notetype === 'blocker' && !$isResolved)

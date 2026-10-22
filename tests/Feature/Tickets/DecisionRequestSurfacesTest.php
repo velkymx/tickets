@@ -144,6 +144,21 @@ class DecisionRequestSurfacesTest extends TestCase
     }
 
     #[Test]
+    public function message_notes_offer_a_decider_picker(): void
+    {
+        $owner = User::factory()->create();
+        User::factory()->create(['name' => 'picker-target']);
+        $ticket = Ticket::factory()->create(['user_id2' => $owner->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $owner->id]);
+
+        $this->actingAs($owner)->get("/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertSee("id=\"decider_{$note->id}\"", false)
+            ->assertSee('<option value="picker-target">picker-target</option>', false)
+            ->assertDontSee('prompt(', false);
+    }
+
+    #[Test]
     public function navbar_counts_decisions_waiting_on_me_on_every_page(): void
     {
         $asker = User::factory()->create();
