@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Api;
 
+use App\Mcp\Servers\TicketsServer;
+use App\Mcp\Tools\ListTicketsTool;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
@@ -122,6 +124,22 @@ class DecisionRequestApiTest extends TestCase
 
         $this->assertTrue($request->fresh()->resolved);
         $this->assertSame('decision', Note::where('parent_id', $request->id)->first()->notetype);
+    }
+
+    #[Test]
+    public function mcp_list_reports_and_filters_decision_requests(): void
+    {
+        $asker = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id2' => $asker->id]);
+        Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $this->decisionRequest($mine, $asker, $this->user);
+
+        $response = TicketsServer::actingAs($this->user)->tool(ListTicketsTool::class, ['decision' => 'me']);
+
+        $response->assertOk();
+        $response->assertSee('"decision_needed":true');
+        $response->assertSee("\"decision_needed_from\":{$this->user->id}");
+        $response->assertSee('"total":1');
     }
 
     private function apiHeaders(): array
