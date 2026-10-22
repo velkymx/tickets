@@ -31,6 +31,7 @@ class Note extends Model
             'edited_at' => 'datetime',
             'pinned' => 'boolean',
             'resolved' => 'boolean',
+            'decider_id' => 'integer',
         ];
     }
 

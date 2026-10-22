@@ -218,7 +218,7 @@ class TicketService
         $excerpt = trim(strip_tags($note->body_markdown ?: $note->body));
 
         $note->mentions->each(function ($mention) use ($note, $url, $excerpt) {
-            if ($mention->user_id !== $note->user_id && $mention->user_id !== (int) $note->decider_id && $mention->user) {
+            if ($mention->user_id !== $note->user_id && $mention->user_id !== $note->decider_id && $mention->user) {
                 $this->notificationBatchService->dispatch(
                     $mention->user,
                     new MentionNotification(

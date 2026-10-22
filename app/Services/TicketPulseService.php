@@ -89,7 +89,7 @@ class TicketPulseService
                 'question' => Str::of(strip_tags($note->body))->before("\n")->trim()->toString(),
                 'requester' => $note->user?->name,
                 'decider' => $note->decider?->name,
-                'decider_id' => $note->decider_id === null ? null : (int) $note->decider_id,
+                'decider_id' => $note->decider_id,
                 'created_at' => $note->created_at?->toISOString(),
             ])
             ->values()

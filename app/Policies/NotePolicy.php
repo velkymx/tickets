@@ -54,7 +54,7 @@ class NotePolicy
 
     public function resolve(User $user, Note $note): Response
     {
-        return $this->involved($user, $note) || $user->id === (int) $note->decider_id
+        return $this->involved($user, $note) || $user->id === $note->decider_id
             ? Response::allow()
             : Response::deny('Only the thread author, ticket creator, assignee, or decider can resolve.');
     }
