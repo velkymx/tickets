@@ -44,19 +44,27 @@ class TicketController extends Controller
 
         $includePulse = $request->get('include') === 'pulse';
 
-        $eagerLoads = ['status', 'importance'];
+        $request->validate(['decision' => 'nullable|in:me,any']);
+
+        $eagerLoads = ['status', 'importance', 'openDecisionRequests'];
         if ($includePulse) {
-            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'assignee']);
+            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'notes.decider', 'assignee']);
         }
 
         $query = Ticket::with($eagerLoads);
 
-        if ($request->boolean('unassigned')) {
+        if ($request->get('decision') === 'me') {
+            $query->needsDecision($user->id);
+        } elseif ($request->boolean('unassigned')) {
             $query->where(function ($q) {
                 $q->whereNull('user_id2')->orWhere('user_id2', 0);
             });
         } else {
             $query->where('user_id2', $user->id);
+        }
+
+        if ($request->get('decision') === 'any') {
+            $query->needsDecision();
         }
 
         if ($request->has('status')) {
@@ -77,6 +85,8 @@ class TicketController extends Controller
                 'closed_at' => $ticket->closed_at,
                 'created_at' => $ticket->created_at->toDateString(),
                 'link' => "/api/v1/tickets/{$ticket->id}",
+                'decision_needed' => $ticket->openDecisionRequests->isNotEmpty(),
+                'decision_needed_from' => $ticket->openDecisionRequests->sortBy('id')->first()?->decider_id,
             ];
 
             if ($includePulse) {

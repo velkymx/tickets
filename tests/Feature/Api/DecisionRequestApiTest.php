@@ -1,0 +1,90 @@
+<?php
+
+namespace Tests\Feature\Api;
+
+use App\Models\Note;
+use App\Models\Ticket;
+use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+use Tests\Traits\SeedsDatabase;
+
+class DecisionRequestApiTest extends TestCase
+{
+    use SeedsDatabase;
+
+    private User $user;
+
+    private string $token = 'test-api-token-that-is-long-enough-for-sha256';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+
+        $this->user = User::factory()->create(['api_token' => hash('sha256', $this->token)]);
+    }
+
+    #[Test]
+    public function api_list_reports_decision_fields(): void
+    {
+        $decider = User::factory()->create();
+        $flagged = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $plain = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $this->decisionRequest($flagged, $this->user, $decider);
+
+        $data = collect($this->getJson('/api/v1/tickets', $this->apiHeaders())->assertOk()->json('data'))->keyBy('id');
+
+        $this->assertTrue($data[$flagged->id]['decision_needed']);
+        $this->assertSame($decider->id, $data[$flagged->id]['decision_needed_from']);
+        $this->assertFalse($data[$plain->id]['decision_needed']);
+        $this->assertNull($data[$plain->id]['decision_needed_from']);
+    }
+
+    #[Test]
+    public function api_list_filters_to_decisions_from_me_across_owners(): void
+    {
+        $asker = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id2' => $asker->id]);
+        Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $this->decisionRequest($mine, $asker, $this->user);
+
+        $ids = collect($this->getJson('/api/v1/tickets?decision=me', $this->apiHeaders())->assertOk()->json('data'))->pluck('id')->all();
+
+        $this->assertSame([$mine->id], $ids);
+    }
+
+    #[Test]
+    public function api_list_filters_to_any_open_request_on_my_tickets(): void
+    {
+        $decider = User::factory()->create();
+        $flagged = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $this->decisionRequest($flagged, $this->user, $decider);
+
+        $ids = collect($this->getJson('/api/v1/tickets?decision=any', $this->apiHeaders())->assertOk()->json('data'))->pluck('id')->all();
+
+        $this->assertSame([$flagged->id], $ids);
+    }
+
+    private function apiHeaders(): array
+    {
+        return [
+            'Authorization' => 'Bearer '.$this->token,
+            'Accept' => 'application/json',
+        ];
+    }
+
+    private function decisionRequest(Ticket $ticket, User $author, User $decider, array $attributes = []): Note
+    {
+        return Note::factory()->create(array_merge([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'notetype' => 'decision_needed',
+            'decider_id' => $decider->id,
+            'body' => 'Which database should we ship?',
+            'resolved' => false,
+        ], $attributes));
+    }
+}
