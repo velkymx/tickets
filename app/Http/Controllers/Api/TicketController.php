@@ -13,6 +13,7 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
 use App\Services\SlashCommandService;
@@ -474,10 +475,10 @@ class TicketController extends Controller
         ]);
     }
 
-    public function promoteNote(Request $request, $id, $noteId)
+    public function promoteNote(Request $request, $id, $noteId, DecisionRequestService $decisionRequests)
     {
         $validated = $request->validate([
-            'type' => 'required|in:decision,blocker,action',
+            'type' => 'required|in:decision,blocker,action,decision_needed',
             'assignee' => 'nullable|string',
         ]);
 
@@ -501,6 +502,21 @@ class TicketController extends Controller
 
         if ($type === 'action' && ! $hasMention && empty($validated['assignee'])) {
             return response()->json(['message' => 'Actions require exactly one @assignee'], 422);
+        }
+
+        if ($type === 'decision_needed') {
+            $decider = $decisionRequests->findDecider($note->body_markdown ?: $body, $validated['assignee'] ?? null);
+
+            if (! $decider) {
+                return response()->json(['message' => 'Decision requests require exactly one @decider'], 422);
+            }
+
+            $decisionRequests->promote($note, $decider);
+
+            return response()->json([
+                'message' => 'Note promoted successfully',
+                'note' => ['id' => $note->id, 'notetype' => $note->notetype, 'decider_id' => $decider->id],
+            ]);
         }
 
         // Append the assignee mention when supplied and not already present.

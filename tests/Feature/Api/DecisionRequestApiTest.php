@@ -68,6 +68,25 @@ class DecisionRequestApiTest extends TestCase
         $this->assertSame([$flagged->id], $ids);
     }
 
+    #[Test]
+    public function api_promote_creates_a_decision_request(): void
+    {
+        $decider = User::factory()->create(['name' => 'decider']);
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'body' => 'Which database?']);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", [
+            'type' => 'decision_needed',
+            'assignee' => 'decider',
+        ], $this->apiHeaders())->assertOk();
+
+        $this->assertSame($decider->id, (int) $note->fresh()->decider_id);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", [
+            'type' => 'decision_needed',
+        ], $this->apiHeaders())->assertStatus(422);
+    }
+
     private function apiHeaders(): array
     {
         return [
