@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Mcp\Servers\TicketsServer;
 use App\Mcp\Tools\GetTicketTool;
 use App\Mcp\Tools\ListTicketsTool;
+use App\Mcp\Tools\PromoteNoteTool;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
@@ -155,6 +156,24 @@ class DecisionRequestApiTest extends TestCase
         $response->assertOk();
         $response->assertSee('decision_requests');
         $response->assertSee('Ship Friday?');
+    }
+
+    #[Test]
+    public function mcp_promote_creates_a_decision_request(): void
+    {
+        $decider = User::factory()->create(['name' => 'decider']);
+        $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'body' => 'Which database?']);
+
+        TicketsServer::actingAs($this->user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $note->id,
+            'type' => 'decision_needed',
+            'assignee' => 'decider',
+        ])->assertOk();
+
+        $this->assertSame('decision_needed', $note->fresh()->notetype);
+        $this->assertSame($decider->id, (int) $note->fresh()->decider_id);
     }
 
     private function apiHeaders(): array
