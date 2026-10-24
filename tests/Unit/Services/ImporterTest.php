@@ -268,7 +268,7 @@ class ImporterTest extends TestCase
             ['Bug', 'Test', 'Desc', 'High', 'Open', 'Test Project', 'Assignee'],
         ]);
 
-        // No Auth::login() — simulates CLI/queue context
+        // No Auth::login() - simulates CLI/queue context
         $this->importer->call($milestone->id, $this->tempFile, false, $creator->id);
 
         $ticket = Ticket::first();
@@ -458,7 +458,7 @@ class ImporterTest extends TestCase
 
         Auth::login($user);
 
-        // Column 1 (Type) is empty — error should say "Column 1", not "Column 2"
+        // Column 1 (Type) is empty - error should say "Column 1", not "Column 2"
         $this->writeCsv([
             ['', 'Subject', 'Description', 'high', 'new', 'Default Project', $user->name],
         ]);

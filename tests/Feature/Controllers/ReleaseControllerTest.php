@@ -162,12 +162,13 @@ class ReleaseControllerTest extends TestCase
     {
         $release = Release::factory()->create();
 
-        $response = $this->put("/release/edit/{$release->id}", [
+        $this->put("/release/edit/{$release->id}", [
             'title' => 'Updated Title',
             'body' => 'Updated Body',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($release->title, $release->fresh()->title);
     }
 
     #[Test]
@@ -203,12 +204,15 @@ class ReleaseControllerTest extends TestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->post('/release/store', [
+        $before = Release::count();
+
+        $this->post('/release/store', [
             'title' => 'New Release',
             'body' => 'Release Body',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($before, Release::count());
     }
 
     #[Test]

@@ -82,7 +82,8 @@ class SendTicketDigestJobTest extends TestCase
         Notification::fake();
         Cache::flush();
 
-        $user = User::factory()->create(['notify_mentions' => false]);
+        $user = User::factory()->create();
+        $user->setNotificationPrefs(['mentions' => false]);
         $key = "ticket-notification-batch:{$user->id}:142";
 
         Cache::put($key, [

@@ -51,7 +51,7 @@
                             </span>
                         </div>
                         @if ($overWip)
-                            <div class="small text-danger mt-1">Over WIP limit — finish work before pulling more.</div>
+                            <div class="small text-danger mt-1">Over WIP limit - finish work before pulling more.</div>
                         @endif
                     </div>
 
@@ -103,7 +103,7 @@
                                     <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
                                         <span class="d-inline-flex align-items-center gap-2">
                                             @if ($ticket->project)
-                                                <span class="text-truncate kanban-project" title="{{ $ticket->project->name }}">{{ $ticket->project->name }}</span>
+                                                <span class="text-truncate" style="max-width: 110px;" title="{{ $ticket->project->name }}">{{ $ticket->project->name }}</span>
                                             @endif
                                             <span title="{{ $ticket->open_notes_count }} visible notes"><i class="fa-regular fa-comment"></i> {{ $ticket->open_notes_count }}</span>
                                         </span>

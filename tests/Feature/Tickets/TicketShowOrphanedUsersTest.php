@@ -26,8 +26,12 @@ class TicketShowOrphanedUsersTest extends TestCase
         TicketUserWatcher::create(['user_id' => $viewer->id, 'ticket_id' => $ticket->id]);
 
         DB::table('users')->where('id', $viewer->id)->delete();
+        $this->assertDatabaseHas('ticket_views', ['user_id' => $viewer->id]);
 
-        $this->actingAs($owner)->get("/tickets/{$ticket->id}")->assertOk();
+        $this->actingAs($owner)->get("/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertSee($ticket->subject)
+            ->assertSee($owner->name);
     }
 
     #[Test]

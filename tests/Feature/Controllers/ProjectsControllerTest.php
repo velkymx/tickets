@@ -7,6 +7,7 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\PriorityMatrixService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -47,7 +48,7 @@ class ProjectsControllerTest extends TestCase
         $response->assertStatus(200);
         $projects = $response->viewData('projects');
         $this->assertLessThanOrEqual(25, $projects->count());
-        $this->assertInstanceOf(\Illuminate\Contracts\Pagination\LengthAwarePaginator::class, $projects);
+        $this->assertInstanceOf(LengthAwarePaginator::class, $projects);
     }
 
     #[Test]
@@ -116,6 +117,26 @@ class ProjectsControllerTest extends TestCase
 
         $response->assertSee('Quick win task');
         $response->assertSee('Major project task');
+    }
+
+    #[Test]
+    public function matrix_badges_prefer_story_points_over_hours(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $open = Status::factory()->open()->create();
+        cache()->forget('closed_status_ids');
+
+        Ticket::factory()->create([
+            'project_id' => $project->id, 'status_id' => $open->id,
+            'importance_id' => 5, 'estimate' => 0, 'storypoints' => 5,
+            'subject' => 'Points matrix task',
+        ]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('5SP', false);
     }
 
     #[Test]
@@ -294,12 +315,15 @@ class ProjectsControllerTest extends TestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->post('/projects/store/new', [
+        $before = Project::count();
+
+        $this->post('/projects/store/new', [
             'id' => 'new',
             'name' => 'Test',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($before, Project::count());
     }
 
     #[Test]

@@ -199,7 +199,7 @@ Route::middleware(['auth'])->prefix('kb')->group(function () {
     Route::delete('/{slug}/attachments/{id}', [KbController::class, 'deleteAttachment'])->name('kb.detach');
 });
 
-// Public KB show route (MUST be last — wildcard)
+// Public KB show route (MUST be last - wildcard)
 Route::get('/kb/{slug}', [KbController::class, 'show'])->name('kb.show')
     ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');
 

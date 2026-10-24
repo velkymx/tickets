@@ -305,11 +305,12 @@ class MilestoneControllerTest extends TestCase
     {
         $milestone = Milestone::factory()->create();
 
-        $response = $this->put("/milestone/update/{$milestone->id}", [
+        $this->put("/milestone/update/{$milestone->id}", [
             'name' => 'Updated Name',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($milestone->name, $milestone->fresh()->name);
     }
 
     #[Test]
@@ -355,12 +356,15 @@ class MilestoneControllerTest extends TestCase
     #[Test]
     public function store_requires_authentication(): void
     {
-        $response = $this->post('/milestone/store/new', [
+        $before = Milestone::count();
+
+        $this->post('/milestone/store/new', [
             'id' => 'new',
             'name' => 'New Milestone',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame($before, Milestone::count());
     }
 
     #[Test]
@@ -439,9 +443,10 @@ class MilestoneControllerTest extends TestCase
     {
         $milestone = Milestone::factory()->create();
 
-        $response = $this->post("/milestone/watch/{$milestone->id}");
+        $this->post("/milestone/watch/{$milestone->id}")->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertDatabaseMissing('milestone_user_watchers', ['milestone_id' => $milestone->id]);
     }
 
     #[Test]

@@ -65,7 +65,7 @@ class WebhookActionDriverTest extends TestCase
             'type' => 'call_webhook',
             'config_json' => [
                 'url' => 'https://example.com/webhook',
-                'method' => 'sink', // not an HTTP verb — must be rejected
+                'method' => 'sink', // not an HTTP verb - must be rejected
                 'headers' => [],
                 'payload' => [],
             ],

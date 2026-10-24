@@ -43,7 +43,7 @@ This means a burst of 10 notes in 5 minutes produces one email, not ten.
 
 ## Muted watchers and active viewers
 
-If you are currently viewing a ticket (presence is active), or if you have muted the ticket's notifications, you receive **database-only notifications** — the notification bell updates but no email is sent.
+If you are currently viewing a ticket (presence is active), or if you have muted the ticket's notifications, you receive **database-only notifications** - the notification bell updates but no email is sent.
 
 ## @mentions
 
@@ -63,5 +63,5 @@ To disable email for a specific ticket while staying a watcher, mute the ticket 
 
 ## See also
 
-- [Note Signals](note-signals.md) — @mentions and what triggers watcher notifications
-- [Installation](installation.md) — configuring `MAIL_*` settings and the queue worker
+- [Note Signals](note-signals.md) - @mentions and what triggers watcher notifications
+- [Installation](installation.md) - configuring `MAIL_*` settings and the queue worker

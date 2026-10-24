@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services;
 
 use App\Models\Project;
+use App\Models\Status;
 use App\Models\User;
 use App\Services\TicketQueryParser;
 use PHPUnit\Framework\Attributes\Test;
@@ -42,7 +43,7 @@ class TicketQueryParserTest extends TestCase
     #[Test]
     public function status_active_resolves_the_active_status_by_name(): void
     {
-        $active = \App\Models\Status::whereRaw('LOWER(name) = ?', ['active'])->firstOrFail();
+        $active = Status::whereRaw('LOWER(name) = ?', ['active'])->firstOrFail();
 
         $this->assertSame(['status_id' => $active->id], $this->parser()->parse('status:active'));
     }

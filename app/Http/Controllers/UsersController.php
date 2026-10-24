@@ -99,10 +99,20 @@ class UsersController extends Controller
         $user->theme = $validated['theme'] ?? null;
         $user->title = $validated['title'] ?? null;
         $user->bio = $validated['bio'] ?? null;
-        foreach (['notify_mentions', 'notify_replies', 'notify_watching'] as $pref) {
-            if (array_key_exists($pref, $validated)) {
-                $user->{$pref} = $validated[$pref];
+        $prefs = [];
+        foreach (['notify_mentions' => 'mentions', 'notify_replies' => 'replies', 'notify_watching' => 'watching'] as $field => $key) {
+            if (array_key_exists($field, $validated)) {
+                $prefs[$key] = (bool) $validated[$field];
             }
+        }
+        if (array_key_exists('email_enabled', $validated)) {
+            $prefs['email_enabled'] = (bool) $validated['email_enabled'];
+        }
+        if (array_key_exists('email_mode', $validated)) {
+            $prefs['email_mode'] = $validated['email_mode'];
+        }
+        if ($prefs !== []) {
+            $user->setNotificationPrefs($prefs);
         }
 
         $user->save();

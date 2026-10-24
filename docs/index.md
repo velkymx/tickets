@@ -1,4 +1,4 @@
-# Tickets — Documentation Index
+# Tickets - Documentation Index
 
 **Tickets** is a Laravel-based agile ticket tracker with a REST API, knowledge base, automation engine, and AI agent integration.
 
@@ -41,7 +41,7 @@ Interactive API docs (Swagger UI) are available at `/api/docs` on any running in
 |----------|---------------|
 | [Users](users.md) | Admin flag, KB roles, profile fields, avatar, API token generation/revocation, password reset |
 | [Automations](automations.md) | Triggers, condition builder, operators, webhook/API actions, run history, enable/disable |
-| [CSV Import](csv-import.md) | Bulk ticket creation — column format, required fields, error handling |
+| [CSV Import](csv-import.md) | Bulk ticket creation - column format, required fields, error handling |
 | [Projects, Milestones & Releases](projects.md) | Creating projects, milestone reports, burndown charts, release management |
 | [Knowledge Base Admin](kb-admin.md) | Categories, tags, article visibility, version history, trash recovery |
 
@@ -61,5 +61,5 @@ Interactive API docs (Swagger UI) are available at `/api/docs` on any running in
 - **Authentication:** All API requests require `Authorization: Bearer <token>`. Generate tokens at **Profile → Edit Profile → API Token**.
 - **Lookups:** Call `GET /api/v1/lookups` first to resolve names (statuses, types, projects, milestones) to IDs before creating tickets.
 - **Slash commands:** The `POST /tickets/{id}/note` endpoint accepts slash commands in the `body` field (`/close`, `/assign`, `/status`, `/decision`, `/blocker`, `/action`, etc.).
-- **Pulse:** `GET /tickets/{id}/pulse` returns structured execution state (`ON TRACK`, `AT RISK`, `BLOCKED`, `IDLE`) plus open threads, blockers, and next actions — useful for triage agents.
-- **Automations:** Webhook actions fire on `ticket.created` and `ticket.updated` events — use these to push data into external systems without polling.
+- **Pulse:** `GET /tickets/{id}/pulse` returns structured execution state (`ON TRACK`, `AT RISK`, `BLOCKED`, `IDLE`) plus open threads, blockers, and next actions - useful for triage agents.
+- **Automations:** Webhook actions fire on `ticket.created` and `ticket.updated` events - use these to push data into external systems without polling.

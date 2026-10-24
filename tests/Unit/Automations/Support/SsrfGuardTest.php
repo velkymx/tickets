@@ -4,62 +4,41 @@ namespace Tests\Unit\Automations\Support;
 
 use App\Automations\Exceptions\SsrfException;
 use App\Automations\Support\SsrfGuard;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SsrfGuardTest extends TestCase
 {
     #[Test]
-    public function it_allows_public_urls(): void
+    public function it_allows_a_public_ip(): void
     {
-        $guard = new SsrfGuard();
-        try {
-            $guard->validate('https://hooks.example.com/webhook');
-            $this->expectNotToPerformAssertions();
-        } catch (\App\Automations\Exceptions\SsrfException $e) {
-            $this->markTestSkipped('DNS not available in test environment');
-        }
+        (new SsrfGuard)->validate('https://93.184.215.14/webhook');
+
+        $this->addToAssertionCount(1);
+    }
+
+    public static function blockedUrls(): array
+    {
+        return [
+            'loopback' => ['http://127.0.0.1/'],
+            'localhost' => ['http://localhost/'],
+            'private 10/8' => ['http://10.0.0.1/'],
+            'private 172.16/12' => ['http://172.16.5.4/'],
+            'private 192.168/16' => ['http://192.168.1.1/'],
+            'cgnat 100.64/10' => ['http://100.64.0.1/'],
+            'aws metadata' => ['http://169.254.169.254/latest/meta-data/'],
+            'alibaba metadata' => ['http://100.100.100.200/'],
+            'no host' => ['not-a-url'],
+        ];
     }
 
     #[Test]
-    public function it_blocks_localhost(): void
+    #[DataProvider('blockedUrls')]
+    public function it_blocks_internal_targets(string $url): void
     {
         $this->expectException(SsrfException::class);
-        (new SsrfGuard())->validate('http://localhost/evil');
-    }
 
-    #[Test]
-    public function it_blocks_127_0_0_1(): void
-    {
-        $this->expectException(SsrfException::class);
-        (new SsrfGuard())->validate('http://127.0.0.1/evil');
-    }
-
-    #[Test]
-    public function it_blocks_private_192_range(): void
-    {
-        $this->expectException(SsrfException::class);
-        (new SsrfGuard())->validate('http://192.168.1.1/evil');
-    }
-
-    #[Test]
-    public function it_blocks_private_10_range(): void
-    {
-        $this->expectException(SsrfException::class);
-        (new SsrfGuard())->validate('http://10.0.0.1/evil');
-    }
-
-    #[Test]
-    public function it_blocks_aws_metadata_endpoint(): void
-    {
-        $this->expectException(SsrfException::class);
-        (new SsrfGuard())->validate('http://169.254.169.254/latest/meta-data/');
-    }
-
-    #[Test]
-    public function it_throws_on_missing_host(): void
-    {
-        $this->expectException(SsrfException::class);
-        (new SsrfGuard())->validate('not-a-url');
+        (new SsrfGuard)->validate($url);
     }
 }

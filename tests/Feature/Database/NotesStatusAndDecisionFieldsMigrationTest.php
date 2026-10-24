@@ -5,7 +5,6 @@ namespace Tests\Feature\Database;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -26,13 +25,17 @@ class NotesStatusAndDecisionFieldsMigrationTest extends TestCase
             'resolution_message',
         ]));
 
-        $columns = collect(DB::select('PRAGMA table_info(notes)'))->keyBy('name');
+        $columns = collect(Schema::getColumns('notes'))->keyBy('name');
 
-        $this->assertSame("'0'", (string) $columns['pinned']->dflt_value);
-        $this->assertSame("'0'", (string) $columns['resolved']->dflt_value);
-        $this->assertNull($columns['resolved_by']->dflt_value);
-        $this->assertNull($columns['supersedes_id']->dflt_value);
-        $this->assertNull($columns['resolution_message']->dflt_value);
+        $this->assertSame('0', trim((string) $columns['pinned']['default'], "'"));
+        $this->assertSame('0', trim((string) $columns['resolved']['default'], "'"));
+        foreach (['resolved_by', 'supersedes_id', 'resolution_message'] as $column) {
+            $default = $columns[$column]['default'];
+            $this->assertTrue(
+                $default === null || strtoupper((string) $default) === 'NULL',
+                "notes.{$column} should default to NULL, got ".var_export($default, true)
+            );
+        }
     }
 
     #[Test]
