@@ -133,6 +133,31 @@ All tests should pass on a clean install.
 
 ---
 
+## System Health
+
+Admins get a System Health page under the user dropdown, next to Manage Users.
+It answers "is this install set up right?" without reading `.env` or running
+artisan commands. A banner summarizes problems and warnings, then one card per
+section shows each check with its value and a fix hint. Disabled features are
+normal states, not warnings. The page makes no outbound network calls.
+
+- **System info:** app version, environment, PHP, Laravel, OS, database, timezone and PHP size limits.
+- **PHP requirements:** the same gates as the installer (PHP 8.4, extensions, PDO driver).
+- **Features:** which features are on or off, one row per SSO provider, plus misconfigurations such as an SSO client ID without a secret.
+- **Queue:** backend state, stale and failed jobs, plus a Ping worker button that sends a job through the queue and reports whether a worker answers within 10 seconds.
+- **Mail:** warns when the mailer is `log` or `array` outside local, since notifications go nowhere.
+- **Cache and session:** proves a cache write plus read round trip, and pings redis when configured.
+- **Security and config:** debug mode, app key, APP_URL host mismatch, and the production config cache.
+- **Storage:** writability, the public storage link, and free disk space.
+- **Database:** connection and pending migrations.
+
+Common fixes: run `php artisan queue:work` when the ping goes unanswered,
+`php artisan migrate` for a missing jobs table or pending migrations,
+`php artisan storage:link` for a missing public link, `php artisan key:generate`
+for an empty app key, and `php artisan config:cache` in production.
+
+---
+
 ## Docker Compose
 
 The Docker setup includes PHP, Nginx, MariaDB, Redis, and a queue worker. No local
