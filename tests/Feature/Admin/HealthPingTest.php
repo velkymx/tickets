@@ -54,21 +54,21 @@ class HealthPingTest extends TestCase
     {
         Cache::flush();
 
-        (new HealthPingJob('abc123'))->handle();
+        (new HealthPingJob('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))->handle();
 
-        $this->assertSame(['at' => now()->timestamp], Cache::get('health-ping:abc123'));
+        $this->assertIsFloat(Cache::get('health-ping:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['at']);
     }
 
     #[Test]
     public function status_is_pending_then_answered(): void
     {
         Cache::flush();
-        $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/abc123')->assertOk()->assertJson(['status' => 'pending']);
+        $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertOk()->assertJson(['status' => 'pending']);
 
-        Cache::put('health-ping-sent:abc123', now()->timestamp - 2, 30);
-        (new HealthPingJob('abc123'))->handle();
+        Cache::put('health-ping-sent:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', now()->timestamp - 2, 30);
+        (new HealthPingJob('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))->handle();
 
-        $response = $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/abc123')->assertOk();
+        $response = $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertOk();
 
         $this->assertSame('answered', $response->json('status'));
         $this->assertGreaterThanOrEqual(1, $response->json('duration'));

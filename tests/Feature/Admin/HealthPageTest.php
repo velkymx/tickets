@@ -32,7 +32,7 @@ class HealthPageTest extends TestCase
 
         $this->actingAs($user)->get('/admin/health')->assertForbidden();
         $this->actingAs($user)->postJson('/admin/health/queue-ping')->assertForbidden();
-        $this->actingAs($user)->getJson('/admin/health/queue-ping/abc')->assertForbidden();
+        $this->actingAs($user)->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertForbidden();
     }
 
     #[Test]
