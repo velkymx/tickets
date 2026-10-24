@@ -66,6 +66,8 @@ class SystemHealthTest extends TestCase
     #[Test]
     public function requirements_resolve_the_driver_behind_a_named_connection(): void
     {
+        $original = (string) config('database.default');
+
         config([
             'database.connections.primary' => ['driver' => 'sqlite', 'database' => ':memory:'],
             'database.default' => 'primary',
@@ -76,7 +78,7 @@ class SystemHealthTest extends TestCase
         $this->assertContains('PHP extension: pdo_sqlite', $labels);
         $this->assertNotContains('PHP extension for primary', $labels);
 
-        config(['database.default' => 'sqlite']);
+        config(['database.default' => $original]);
     }
 
     #[Test]
