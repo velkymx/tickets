@@ -114,7 +114,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::get('/health', [HealthController::class, 'show'])->name('health.show');
         Route::post('/health/queue-ping', [HealthController::class, 'ping'])->name('health.ping');
-        Route::get('/health/queue-ping/{token}', [HealthController::class, 'pingStatus'])->name('health.ping.status');
+        Route::get('/health/queue-ping/{token}', [HealthController::class, 'pingStatus'])->where('token', '[A-Za-z0-9]{32}')->name('health.ping.status');
     });
 
     // --- POST/PUT/PATCH Routes ---
