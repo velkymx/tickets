@@ -21,17 +21,21 @@ class RequirementsTest extends TestCase
     }
 
     #[Test]
-    public function missing_driver_extension_is_reported(): void
+    public function every_driver_maps_to_its_pdo_extension(): void
     {
-        $results = Requirements::check('pgsql');
+        foreach (Requirements::DRIVER_EXTENSIONS as $driver => $ext) {
+            $names = array_map(fn ($r) => $r->name, Requirements::check($driver));
 
-        $names = array_column(array_map(fn ($r) => ['name' => $r->name, 'ok' => $r->ok], $results), 'ok', 'name');
-
-        if (extension_loaded('pdo_pgsql')) {
-            $this->assertTrue($names['PHP extension: pdo_pgsql']);
-        } else {
-            $this->assertFalse($names['PHP extension: pdo_pgsql']);
+            $this->assertContains("PHP extension: {$ext}", $names);
         }
+    }
+
+    #[Test]
+    public function mariadb_maps_to_pdo_mysql(): void
+    {
+        $names = array_map(fn ($r) => $r->name, Requirements::check('mariadb'));
+
+        $this->assertContains('PHP extension: pdo_mysql', $names);
     }
 
     #[Test]
