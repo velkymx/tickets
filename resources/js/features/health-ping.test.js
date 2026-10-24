@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { pingWorker } from './health-ping.js';
+import { initHealthPing, pingWorker } from './health-ping.js';
 
 describe('pingWorker', () => {
     beforeEach(() => {
@@ -41,5 +41,33 @@ describe('pingWorker', () => {
         await pingWorker(postPing, vi.fn(), onUpdate, { interval: 1000, attempts: 10 });
 
         expect(onUpdate).toHaveBeenCalledWith({ state: 'error', message: 'backend down' });
+    });
+});
+
+describe('initHealthPing', () => {
+    it('starts the ping on init when the button exists', () => {
+        document.body.innerHTML = `
+            <div data-health-ping data-ping-url="/ping" data-status-url="/ping/TOKEN">
+                <button data-ping-start>Ping worker</button>
+                <span data-ping-result></span>
+            </div>`;
+        globalThis.fetch = vi.fn(() => new Promise(() => {}));
+
+        initHealthPing(document);
+
+        expect(globalThis.fetch).toHaveBeenCalledWith('/ping', expect.objectContaining({ method: 'POST' }));
+        expect(document.querySelector('[data-ping-start]').disabled).toBe(true);
+    });
+
+    it('does nothing when the page has no ping button', () => {
+        document.body.innerHTML = `
+            <div data-health-ping data-ping-url="/ping" data-status-url="/ping/TOKEN">
+                <p>The sync driver runs jobs inside the request.</p>
+            </div>`;
+        globalThis.fetch = vi.fn();
+
+        initHealthPing(document);
+
+        expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 });
