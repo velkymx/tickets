@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
-use App\SystemHealth\Requirements;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -302,24 +301,40 @@ class InstallCommand extends Command
 
     private function checkBasePrerequisites(): array
     {
-        return $this->missingFrom(Requirements::check());
+        $missing = [];
+
+        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
+            $missing[] = ['PHP >= 8.4', 'found '.PHP_VERSION];
+        }
+
+        foreach (['ctype', 'curl', 'dom', 'fileinfo', 'filter', 'hash', 'mbstring', 'openssl', 'pdo', 'session', 'tokenizer', 'xml'] as $ext) {
+            if (! extension_loaded($ext)) {
+                $missing[] = ["PHP extension: {$ext}", 'not loaded'];
+            }
+        }
+
+        return $missing;
     }
 
     private function checkDriverPrerequisites(string $driver, bool $build): array
     {
-        return $this->missingFrom(Requirements::check($driver, $build));
-    }
-
-    /**
-     * @param  list<RequirementResult>  $results
-     */
-    private function missingFrom(array $results): array
-    {
         $missing = [];
 
-        foreach ($results as $result) {
-            if (! $result->ok) {
-                $missing[] = [$result->name, $result->detail];
+        $pdoDriver = ['sqlite' => 'pdo_sqlite', 'mysql' => 'pdo_mysql', 'pgsql' => 'pdo_pgsql'][$driver];
+
+        if (! extension_loaded($pdoDriver)) {
+            $missing[] = ["PHP extension: {$pdoDriver}", "required for {$driver}"];
+        }
+
+        if ($build) {
+            $node = Process::run(['node', '--version']);
+
+            if (! $node->successful() || version_compare(ltrim($node->output(), 'v'), '24.0.0', '<')) {
+                $missing[] = ['Node.js >= 24', trim($node->output()) ?: 'not found'];
+            }
+
+            if (! Process::run(['npm', '--version'])->successful()) {
+                $missing[] = ['npm', 'not found'];
             }
         }
 

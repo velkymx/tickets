@@ -47,7 +47,7 @@ class InstallGuardsTest extends TestCase
         // Intent: the hardcoded gate string must track the composer floor.
         // Reads source as text; a comment containing the version would also
         // satisfy it, so treat this as a drift tripwire, not a behavior pin.
-        $source = file_get_contents(app_path('SystemHealth/Requirements.php'));
+        $source = file_get_contents(app_path('Console/Commands/InstallCommand.php'));
         $composer = json_decode((string) file_get_contents(base_path('composer.json')), true);
 
         $this->assertSame('^8.4', $composer['require']['php']);
@@ -79,7 +79,7 @@ class InstallGuardsTest extends TestCase
     #[Test]
     public function node_gate_matches_package_engines(): void
     {
-        $source = file_get_contents(app_path('SystemHealth/Requirements.php'));
+        $source = file_get_contents(app_path('Console/Commands/InstallCommand.php'));
         $package = json_decode((string) file_get_contents(base_path('package.json')), true);
 
         $this->assertSame('>=24', $package['engines']['node'] ?? null);

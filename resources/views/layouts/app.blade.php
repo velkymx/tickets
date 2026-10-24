@@ -100,7 +100,6 @@
                             @if (Auth::user()->isAdmin())
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">Manage Users</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.health.show') }}">System Health</a></li>
                             @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
