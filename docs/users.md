@@ -13,6 +13,16 @@ The `admin` flag is set directly in the database - there is no UI to promote use
 App\Models\User::where('email', 'user@example.com')->update(['admin' => true]);
 ```
 
+## Deactivating a user
+
+Admins can set a user inactive under **Admin → Users → Edit** (`active = false`). Deactivation blocks every access path immediately:
+
+- Password and SSO login are refused.
+- Existing web sessions end on the next request and the user is redirected to the login page.
+- The user's API token is rejected on REST and MCP HTTP calls, and `MCP_USER_ID` no longer resolves for stdio MCP servers.
+
+Reactivating the user (`active = true`) restores access with the same token.
+
 ## Knowledge Base roles
 
 KB access is controlled separately from the admin flag:
