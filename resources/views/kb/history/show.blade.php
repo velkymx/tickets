@@ -40,7 +40,7 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="article-content">
-            {!! $versionModel->body_html !!}
+            {!! clean($versionModel->body_html) !!}
         </div>
     </div>
 </div>
