@@ -54,7 +54,10 @@ class QueueCheck implements HealthCheck
 
     private function staleJob(string $table): HealthResult
     {
-        $oldest = DB::table($table)->where('available_at', '<=', now()->timestamp)->min('created_at');
+        $oldest = DB::table($table)
+            ->whereNull('reserved_at')
+            ->where('available_at', '<=', now()->timestamp)
+            ->min('available_at');
 
         if ($oldest !== null && now()->timestamp - (int) $oldest > 300) {
             return new HealthResult(
