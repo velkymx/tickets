@@ -97,11 +97,17 @@ Returns tickets assigned to the authenticated user, paginated.
 | `per_page` | integer | Items per page. Default: 20. Max: 100. |
 | `status` | integer | Filter by status ID. |
 | `unassigned` | boolean | Set to `1` to list unassigned tickets instead. |
+| `decision` | string | `me` lists tickets with an open decision request aimed at you, whoever owns them. `any` narrows your tickets to those with any open decision request. |
 | `include` | string | Set to `pulse` to include pulse summary on each ticket. |
+
+Each ticket includes `decision_needed` (bool) and `decision_needed_from` (the user id of the oldest open request's decider, or `null`).
 
 ```bash
 curl -H "Authorization: Bearer <token>" \
   "https://your-app.example.com/api/v1/tickets?per_page=50&status=1"
+
+curl -H "Authorization: Bearer <token>" \
+  "https://your-app.example.com/api/v1/tickets?decision=me"
 ```
 
 ---
@@ -220,6 +226,7 @@ Adds a note, logs hours, changes status, or runs slash commands.
 | `/hours 2` | Log 2 hours |
 | `/pin` | Pin this note |
 | `/decision` | Mark note as a decision |
+| `/decide @user Question` | Ask exactly one user for a decision. They are notified at once. 422 without exactly one known `@user`. |
 | `/blocker` | Mark note as a blocker |
 | `/action @user Task description` | Create an action item |
 | `/update` | Mark as a status update |
@@ -331,7 +338,7 @@ curl -X POST \
 POST /tickets/{id}/notes/{noteId}/promote
 ```
 
-Turns a plain message note into a `decision`, `blocker`, or `action`. Only message notes can be promoted; decisions need 20+ characters, and actions need exactly one `@assignee` (a mention in the body or the `assignee` field).
+Turns a plain message note into a `decision`, `blocker`, `action`, or `decision_needed`. Only message notes can be promoted; decisions need 20+ characters, actions need exactly one `@assignee`, and decision requests exactly one `@decider` (a mention in the body or the `assignee` field). Promoting to `decision_needed` notifies the decider.
 
 ```bash
 curl -X POST \
@@ -339,6 +346,18 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"type": "action", "assignee": "jane"}' \
   https://your-app.example.com/api/v1/tickets/42/notes/99/promote
+```
+
+### Decision Requests
+
+A `decision_needed` note asks one person to decide. It stays open, and shows on that person's Home page and navbar, until someone replies on the thread with a body starting `/decision`, or resolves the thread. Pulse lists open ones under `decision_requests` (`id`, `question`, `requester`, `decider`, `decider_id`, `created_at`).
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"body": "/decision Ship Friday after the smoke test"}' \
+  https://your-app.example.com/api/v1/tickets/42/notes/99/reply
 ```
 
 ---

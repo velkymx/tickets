@@ -14,6 +14,7 @@
         ['label' => 'Open', 'query' => 'is:open'],
         ['label' => 'Critical', 'query' => 'importance:critical'],
         ['label' => 'Blockers', 'query' => 'importance:blocker'],
+        ['label' => 'Needs my decision', 'query' => 'decision:me'],
         ['label' => 'Completed', 'query' => 'status:completed'],
     ];
 
@@ -53,7 +54,7 @@
     </div>
 
     <div class="form-text">
-        Filter with <code>key:value</code> - status, importance, type, project, milestone, assignee (<code>assignee:me</code>). Plain words search the subject.
+        Filter with <code>key:value</code> - status, importance, type, project, milestone, assignee (<code>assignee:me</code>), decision (<code>decision:me</code>, <code>decision:any</code>). Plain words search the subject.
     </div>
 </form>
 

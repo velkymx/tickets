@@ -27,6 +27,7 @@
                     <thead><tr><th>Command</th><th>Description</th><th>Example</th></tr></thead>
                     <tbody>
                         <tr><td><code>/decision</code></td><td>Record a decision (immutable)</td><td><code>/decision We'll use Redis for caching</code></td></tr>
+                        <tr><td><code>/decide</code></td><td>Ask one person for a decision</td><td><code>/decide @sarah Ship on Friday or Monday?</code></td></tr>
                         <tr><td><code>/blocker</code></td><td>Flag a blocker</td><td><code>/blocker Waiting on API key from vendor</code></td></tr>
                         <tr><td><code>/action</code></td><td>Assign an action item</td><td><code>/action @john Verify fix on staging</code></td></tr>
                         <tr><td><code>/assign</code></td><td>Assign the ticket</td><td><code>/assign @sarah</code></td></tr>
@@ -54,6 +55,7 @@
                 <h6>Signal Types</h6>
                 <ul class="small">
                     <li><strong class="text-success">Decision</strong> - Immutable record. Cannot be edited after creation. Use <code>/decision</code> to create.</li>
+                    <li><strong class="text-danger">Decision Needed</strong> - Asks one person to decide. Shows on their Home page and navbar until someone replies with <code>/decision</code> or resolves it. Use <code>/decide @user question</code>.</li>
                     <li><strong class="text-danger">Blocker</strong> - Flags an issue blocking progress. Surfaces in Ticket Pulse. Use <code>/blocker</code>.</li>
                     <li><strong class="text-warning">Action</strong> - Assigns a task to someone. Must include an @mention. Use <code>/action @user task</code>.</li>
                     <li><strong class="text-info">Update</strong> - General status update. Use <code>/update</code>.</li>

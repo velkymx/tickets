@@ -13,6 +13,7 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
 use App\Services\SlashCommandService;
@@ -44,19 +45,27 @@ class TicketController extends Controller
 
         $includePulse = $request->get('include') === 'pulse';
 
-        $eagerLoads = ['status', 'importance'];
+        $request->validate(['decision' => 'nullable|in:me,any']);
+
+        $eagerLoads = ['status', 'importance', 'openDecisionRequests'];
         if ($includePulse) {
-            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'assignee']);
+            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'notes.decider', 'assignee']);
         }
 
         $query = Ticket::with($eagerLoads);
 
-        if ($request->boolean('unassigned')) {
+        if ($request->get('decision') === 'me') {
+            $query->needsDecision($user->id);
+        } elseif ($request->boolean('unassigned')) {
             $query->where(function ($q) {
                 $q->whereNull('user_id2')->orWhere('user_id2', 0);
             });
         } else {
             $query->where('user_id2', $user->id);
+        }
+
+        if ($request->get('decision') === 'any') {
+            $query->needsDecision();
         }
 
         if ($request->has('status')) {
@@ -77,6 +86,8 @@ class TicketController extends Controller
                 'closed_at' => $ticket->closed_at,
                 'created_at' => $ticket->created_at->toDateString(),
                 'link' => "/api/v1/tickets/{$ticket->id}",
+                'decision_needed' => $ticket->openDecisionRequests->isNotEmpty(),
+                'decision_needed_from' => $ticket->openDecisionRequests->sortBy('id')->first()?->decider_id,
             ];
 
             if ($includePulse) {
@@ -296,7 +307,7 @@ class TicketController extends Controller
                 // Check for blocker/action constraints from the slash service
                 $noteType = $commandResult['note_type'] ?? 'message';
                 foreach ($commandResult['changes'] ?? [] as $change) {
-                    if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions')) {
+                    if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions') || str_contains($change, 'Decision requests require')) {
                         $this->rejectNote($change);
                     }
                 }
@@ -315,6 +326,7 @@ class TicketController extends Controller
                         'hours' => $totalHours,
                         'notetype' => $noteType,
                         'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
+                        'decider_id' => $commandResult['note_attributes']['decider_id'] ?? null,
                     ]);
 
                     // Create mention records
@@ -328,6 +340,10 @@ class TicketController extends Controller
 
             return [$createdNote, $warnings];
         });
+
+        if ($createdNote) {
+            app(DecisionRequestService::class)->notify($createdNote);
+        }
 
         $ticket->load(['status', 'assignee']);
 
@@ -464,10 +480,10 @@ class TicketController extends Controller
         ]);
     }
 
-    public function promoteNote(Request $request, $id, $noteId)
+    public function promoteNote(Request $request, $id, $noteId, DecisionRequestService $decisionRequests)
     {
         $validated = $request->validate([
-            'type' => 'required|in:decision,blocker,action',
+            'type' => 'required|in:decision,blocker,action,decision_needed',
             'assignee' => 'nullable|string',
         ]);
 
@@ -491,6 +507,21 @@ class TicketController extends Controller
 
         if ($type === 'action' && ! $hasMention && empty($validated['assignee'])) {
             return response()->json(['message' => 'Actions require exactly one @assignee'], 422);
+        }
+
+        if ($type === 'decision_needed') {
+            $decider = $decisionRequests->findDecider($note->body_markdown ?: $body, $validated['assignee'] ?? null);
+
+            if (! $decider) {
+                return response()->json(['message' => 'Decision requests require exactly one @decider'], 422);
+            }
+
+            $decisionRequests->promote($note, $decider);
+
+            return response()->json([
+                'message' => 'Note promoted successfully',
+                'note' => ['id' => $note->id, 'notetype' => $note->notetype, 'decider_id' => $decider->id],
+            ]);
         }
 
         // Append the assignee mention when supplied and not already present.
@@ -683,16 +714,19 @@ class TicketController extends Controller
         $markdownService = app(MarkdownService::class);
         $mentionService = app(MentionService::class);
 
-        $bodyHtml = $markdownService->parse($request->body);
+        $isDecision = (bool) preg_match('/^\/decision\s+(.+)$/s', trim($request->body), $decision);
+        $body = $isDecision ? trim($decision[1]) : $request->body;
 
         $reply = Note::create([
             'user_id' => $user->id,
             'ticket_id' => $ticket->id,
             'parent_id' => $parent->id,
-            'body' => $bodyHtml,
-            'body_markdown' => $request->body,
-            'notetype' => 'message',
+            'body' => $markdownService->parse($body),
+            'body_markdown' => $body,
+            'notetype' => $isDecision ? 'decision' : 'message',
         ]);
+
+        app(DecisionRequestService::class)->closeWith($reply);
 
         $mentionUsernames = $mentionService->parseMentions($request->body);
         $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();

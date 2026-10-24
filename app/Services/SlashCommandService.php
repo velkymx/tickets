@@ -229,6 +229,20 @@ class SlashCommandService
                 $result['actions'][] = ['action' => 'signal_set', 'to' => 'action'];
                 break;
 
+            case 'decide':
+                $decider = app(DecisionRequestService::class)->findDecider($args);
+
+                if (! $decider) {
+                    $result['changes'][] = 'Decision requests require exactly one @decider';
+                    break;
+                }
+
+                $result['note_type'] = 'decision_needed';
+                $result['note_attributes'] = ['decider_id' => $decider->id];
+                $result['body_lines'][] = $args;
+                $result['actions'][] = ['action' => 'signal_set', 'to' => 'decision_needed'];
+                break;
+
             default:
                 $result['warnings'][] = "Unknown command: /{$command} - will be treated as text";
                 $result['body_lines'][] = $rawLine;

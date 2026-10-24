@@ -8,6 +8,7 @@ use App\Http\Requests\NoteTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Http\Resources\TicketResource;
+use App\Models\Note;
 use App\Models\ReleaseTicket;
 use App\Models\Status;
 use App\Models\Ticket;
@@ -86,7 +87,13 @@ class TicketsController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers'));
+        $decisionRequests = Note::query()
+            ->awaitingDecisionFrom($user->id)
+            ->with(['ticket', 'user'])
+            ->oldest()
+            ->get();
+
+        return view('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers', 'decisionRequests'));
     }
 
     public function index(Request $request)
@@ -127,7 +134,9 @@ class TicketsController extends Controller
         $lookups['users'][0] = 'No Change';
         $lookups['releases'][0] = 'No Change';
 
-        return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens'));
+        $pendingDecisions = Note::query()->awaitingDecisionFrom(Auth::id())->count();
+
+        return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens', 'pendingDecisions'));
     }
 
     public function claim($id)

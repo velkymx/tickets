@@ -11,7 +11,7 @@ namespace App\Services;
  *
  * Grammar: space-separated key:value tokens (values may be "quoted") plus free
  * text. Recognised keys: status/is, importance, type, project, milestone,
- * assignee. Unknown keys or unresolved values are ignored (play dumb); leftover
+ * assignee, decision. Unknown keys or unresolved values are ignored (play dumb); leftover
  * bare words become a subject search.
  */
 class TicketQueryParser
@@ -78,6 +78,7 @@ class TicketQueryParser
             'project' => $this->setResolved($filters, 'project_id', 'projects', $value),
             'milestone' => $this->setResolved($filters, 'milestone_id', 'milestones', $value),
             'assignee' => $this->applyAssignee($filters, $v),
+            'decision' => $this->applyDecision($filters, $v),
             default => false,
         };
     }
@@ -107,6 +108,17 @@ class TicketQueryParser
         }
 
         return $this->setLookup($filters, 'user_id2', 'users', $v);
+    }
+
+    private function applyDecision(array &$filters, string $v): bool
+    {
+        if (! in_array($v, ['me', 'any'], true)) {
+            return false;
+        }
+
+        $filters['decision'] = $v;
+
+        return true;
     }
 
     private function setLookup(array &$filters, string $param, string $lookupKey, string $lowerValue): bool

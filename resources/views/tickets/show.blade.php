@@ -47,6 +47,10 @@
         </div>
     @endif
 
+    @foreach ($ticket->notes->where('notetype', 'decision_needed')->where('resolved', false)->whereNull('parent_id') as $decisionRequest)
+        <x-decision-banner :request="$decisionRequest" />
+    @endforeach
+
     <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-9">
@@ -106,6 +110,7 @@
                                     ['cmd' => '/assign', 'desc' => 'Assign ticket to user'],
                                     ['cmd' => '/status', 'desc' => 'Change ticket status'],
                                     ['cmd' => '/decision', 'desc' => 'Record a decision (immutable)'],
+                                    ['cmd' => '/decide', 'desc' => 'Ask someone for a decision'],
                                     ['cmd' => '/blocker', 'desc' => 'Flag a blocker'],
                                     ['cmd' => '/action', 'desc' => 'Create an action item'],
                                     ['cmd' => '/hours', 'desc' => 'Log time'],

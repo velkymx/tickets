@@ -12,7 +12,7 @@ use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
-#[Description('List tickets assigned to the authenticated user, newest first. Optionally filter by status ID, list unassigned tickets instead, or include pulse health summaries.')]
+#[Description('List tickets assigned to the authenticated user, newest first. Optionally filter by status ID, list unassigned tickets instead, list tickets waiting on your decision (decision: "me"), or include pulse health summaries. Each ticket reports decision_needed and decision_needed_from.')]
 #[IsReadOnly]
 #[IsIdempotent]
 class ListTicketsTool extends TicketTool
@@ -29,25 +29,33 @@ class ListTicketsTool extends TicketTool
             'status_id' => 'nullable|integer|exists:statuses,id',
             'unassigned' => 'nullable|boolean',
             'include_pulse' => 'nullable|boolean',
+            'decision' => 'nullable|in:me,any',
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
         $perPage = $validated['per_page'] ?? 20;
         $includePulse = (bool) ($validated['include_pulse'] ?? false);
 
-        $eagerLoads = ['status', 'importance'];
+        $eagerLoads = ['status', 'importance', 'openDecisionRequests'];
         if ($includePulse) {
-            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'assignee']);
+            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'notes.decider', 'assignee']);
         }
 
         $query = Ticket::with($eagerLoads);
+        $decision = $validated['decision'] ?? null;
 
-        if (! empty($validated['unassigned'])) {
+        if ($decision === 'me') {
+            $query->needsDecision($user->id);
+        } elseif (! empty($validated['unassigned'])) {
             $query->where(function ($q) {
                 $q->whereNull('user_id2')->orWhere('user_id2', 0);
             });
         } else {
             $query->where('user_id2', $user->id);
+        }
+
+        if ($decision === 'any') {
+            $query->needsDecision();
         }
 
         if (! empty($validated['status_id'])) {
@@ -67,6 +75,8 @@ class ListTicketsTool extends TicketTool
                 'due_at' => $ticket->due_at,
                 'closed_at' => $ticket->closed_at,
                 'created_at' => $ticket->created_at->toDateString(),
+                'decision_needed' => $ticket->openDecisionRequests->isNotEmpty(),
+                'decision_needed_from' => $ticket->openDecisionRequests->sortBy('id')->first()?->decider_id,
             ];
 
             if ($includePulse) {
@@ -103,6 +113,7 @@ class ListTicketsTool extends TicketTool
             'status_id' => $schema->integer()->description('Filter by status ID (see lookups).'),
             'unassigned' => $schema->boolean()->description('Set true to list unassigned tickets instead of your own.'),
             'include_pulse' => $schema->boolean()->description('Include a pulse health summary on each ticket.'),
+            'decision' => $schema->string()->description('"me" lists tickets with an open decision request aimed at you, on any ticket. "any" narrows your tickets to those with any open decision request.'),
             'per_page' => $schema->integer()->description('Items per page, max 100. Default 20.'),
         ];
     }

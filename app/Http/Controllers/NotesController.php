@@ -7,6 +7,7 @@ use App\Models\NoteAttachment;
 use App\Models\NoteReaction;
 use App\Models\User;
 use App\Services\AttachmentService;
+use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
 use App\Services\TicketService;
@@ -30,18 +31,22 @@ class NotesController extends Controller
         return response()->json(['message' => 'Note Removed!']);
     }
 
-    public function promote($id)
+    public function promote($id, DecisionRequestService $decisionRequests)
     {
         $note = Note::with('ticket')->findOrFail($id);
 
         $this->authorize('promote', $note);
 
         $validator = Validator::make(request()->all(), [
-            'type' => 'required|in:decision,blocker,action',
+            'type' => 'required|in:decision,blocker,action,decision_needed',
             'assignee' => 'nullable|string',
         ]);
 
-        $validator->after(function ($validator) use ($note) {
+        $decider = request('type') === 'decision_needed'
+            ? $decisionRequests->findDecider($note->body_markdown ?: strip_tags($note->body), request('assignee'))
+            : null;
+
+        $validator->after(function ($validator) use ($note, $decider) {
             $type = request('type');
             $body = strip_tags($note->body);
 
@@ -56,6 +61,10 @@ class NotesController extends Controller
             if ($type === 'action' && ! preg_match('/@\[([^\]]+)\]/u', $body) && ! request('assignee')) {
                 $validator->errors()->add('type', 'Actions require exactly one @assignee');
             }
+
+            if ($type === 'decision_needed' && ! $decider) {
+                $validator->errors()->add('type', 'Decision requests require exactly one @decider');
+            }
         });
 
         if ($validator->fails()) {
@@ -69,6 +78,12 @@ class NotesController extends Controller
         if (request('type') === 'action' && request('assignee') && ! preg_match('/@\[([^\]]+)\]/u', $note->body)) {
             $assigneeName = ltrim((string) request('assignee'), '@');
             $note->body = rtrim($note->body).' @['.$assigneeName.']';
+        }
+
+        if ($decider) {
+            $decisionRequests->promote($note, $decider);
+
+            return redirect('tickets/'.$note->ticket_id);
         }
 
         $note->notetype = request('type');

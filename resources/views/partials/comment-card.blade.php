@@ -2,23 +2,25 @@
 @php
     $signalStyles = [
         'decision' => 'border-start border-4 border-success',
+        'decision_needed' => 'border-start border-4 border-danger',
         'blocker'  => 'border-start border-4 border-danger',
         'update'   => 'border-start border-4 border-info',
         'action'   => 'border-start border-4 border-warning',
     ];
     $signalBadges = [
         'decision' => ['text' => 'Decision', 'class' => 'text-bg-success'],
+        'decision_needed' => ['text' => 'Decision Needed', 'class' => 'text-bg-danger'],
         'blocker'  => ['text' => 'Blocker', 'class' => 'text-bg-danger'],
         'update'   => ['text' => 'Update', 'class' => 'text-bg-info'],
         'action'   => ['text' => 'Action', 'class' => 'text-bg-warning'],
     ];
     $isResolved = $note->isResolved();
-    $cardClass = ($note->notetype === 'blocker' && $isResolved)
+    $cardClass = (in_array($note->notetype, ['blocker', 'decision_needed'], true) && $isResolved)
         ? 'border-start border-4 border-secondary'
         : ($signalStyles[$note->notetype] ?? '');
 @endphp
 
-<div class="card mb-0 {{ $cardClass }}" id="note_{{ $note->id }}">
+<div class="card mb-0 {{ $cardClass }}" id="note_{{ $note->id }}" x-data="{ requestingDecision: false }">
     {{-- Header --}}
     <div class="card-header bg-body-secondary d-flex justify-content-between align-items-center py-2">
         <div class="d-flex align-items-center gap-2">
@@ -26,7 +28,7 @@
             <strong><a href="/users/{{ $note->user->id }}" class="text-decoration-none">{{ $note->user->name }}</a></strong>
             @if(isset($signalBadges[$note->notetype]))
                 @php
-                    $badgeClass = ($note->notetype === 'blocker' && $isResolved)
+                    $badgeClass = (in_array($note->notetype, ['blocker', 'decision_needed'], true) && $isResolved)
                         ? 'text-bg-secondary'
                         : $signalBadges[$note->notetype]['class'];
                 @endphp
@@ -77,6 +79,9 @@
                             <button type="submit" class="dropdown-item">Promote to Blocker</button>
                         </form>
                     </li>
+                    <li>
+                        <button type="button" class="dropdown-item" @click="requestingDecision = true">Request Decision</button>
+                    </li>
                 @endif
             </ul>
         </div>
@@ -104,13 +109,31 @@
         @endif
 
         {{-- Blocker resolution message --}}
-        @if($note->notetype === 'blocker' && $isResolved && $note->resolution_message)
+        @if(in_array($note->notetype, ['blocker', 'decision_needed'], true) && $isResolved && $note->resolution_message)
             <div class="mt-2 p-2 rounded bg-body-secondary border-start border-3 border-secondary small text-muted">
                 <i class="fas fa-check-circle text-success me-1"></i>
                 <strong>{{ $note->resolvedByUser->name ?? 'Someone' }}</strong>: {{ $note->resolution_message }}
             </div>
         @endif
     </div>
+
+    @if($note->notetype === 'message')
+        <div class="card-body border-top pt-2 pb-2" x-show="requestingDecision" x-cloak>
+            <form method="POST" action="/notes/{{ $note->id }}/promote" class="d-flex flex-wrap align-items-center gap-2">
+                @csrf
+                <input type="hidden" name="type" value="decision_needed">
+                <label for="decider_{{ $note->id }}" class="small fw-semibold mb-0">Who needs to decide?</label>
+                <select name="assignee" id="decider_{{ $note->id }}" class="form-select form-select-sm w-auto" required>
+                    <option value="">Choose a person</option>
+                    @foreach($allUsers ?? [] as $candidate)
+                        <option value="{{ $candidate['name'] }}">{{ $candidate['name'] }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-sm btn-danger">Request Decision</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="requestingDecision = false">Cancel</button>
+            </form>
+        </div>
+    @endif
 
     {{-- Blocker action bar --}}
     @if($note->notetype === 'blocker' && !$isResolved)

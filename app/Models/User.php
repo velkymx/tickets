@@ -98,7 +98,7 @@ class User extends Authenticatable
     public function wantsNotification(string $type): bool
     {
         return match ($type) {
-            'mention' => (bool) $this->notificationPrefs()['mentions'],
+            'mention', 'decision_request' => (bool) $this->notificationPrefs()['mentions'],
             'reply' => (bool) $this->notificationPrefs()['replies'],
             'watching' => (bool) $this->notificationPrefs()['watching'],
             default => $this->unknownNotificationType($type),

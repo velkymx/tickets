@@ -36,7 +36,7 @@ class TicketPulseService
     {
         $notes = $ticket->relationLoaded('notes')
             ? $ticket->notes
-            : $ticket->notes()->with(['user', 'supersedes', 'replies'])->get();
+            : $ticket->notes()->with(['user', 'supersedes', 'replies', 'decider'])->get();
 
         $activeBlocker = $notes
             ->where('notetype', 'blocker')
@@ -67,13 +67,30 @@ class TicketPulseService
         $openThreads = $notes
             ->whereNull('parent_id')
             ->where('resolved', false)
-            ->filter(fn (Note $note) => $note->replies->isNotEmpty() || in_array($note->notetype, ['blocker', 'action'], true))
+            ->filter(fn (Note $note) => $note->replies->isNotEmpty() || in_array($note->notetype, ['blocker', 'action', 'decision_needed'], true))
             ->sortBy('id')
             ->map(fn (Note $note) => [
                 'id' => $note->id,
                 'notetype' => $note->notetype,
                 'subject' => Str::of(strip_tags($note->body))->before("\n")->trim()->toString(),
                 'reply_count' => $note->replies->count(),
+            ])
+            ->values()
+            ->all();
+
+        $decisionRequests = $notes
+            ->whereNull('parent_id')
+            ->where('notetype', 'decision_needed')
+            ->where('resolved', false)
+            ->where('hide', false)
+            ->sortBy('id')
+            ->map(fn (Note $note) => [
+                'id' => $note->id,
+                'question' => Str::of(strip_tags($note->body))->before("\n")->trim()->toString(),
+                'requester' => $note->user?->name,
+                'decider' => $note->decider?->name,
+                'decider_id' => $note->decider_id,
+                'created_at' => $note->created_at?->toISOString(),
             ])
             ->values()
             ->all();
@@ -93,8 +110,9 @@ class TicketPulseService
             owner_id: $ticket->user_id2,
             owner_label: $this->deriveOwnerLabel($ticket, $activeBlocker),
             next_action: $this->buildNextAction($latestAction),
-            latest_decision: $this->buildLatestDecision($latestDecision),
+            latest_decision: $this->buildLatestDecision($latestDecision, $latestDecision ? $notes->firstWhere('id', $latestDecision->parent_id) : null),
             open_threads: $openThreads,
+            decision_requests: $decisionRequests,
             latest_blocker: $this->buildLatestBlocker($activeBlocker),
             execution_state: $this->deriveExecutionState($activeBlocker, $latestAction, $lastActivity, $isClosed),
             last_activity_at: $lastActivity?->toISOString(),
@@ -157,7 +175,7 @@ class TicketPulseService
         ];
     }
 
-    protected function buildLatestDecision(?Note $latestDecision): ?array
+    protected function buildLatestDecision(?Note $latestDecision, ?Note $thread): ?array
     {
         if (! $latestDecision) {
             return null;
@@ -165,6 +183,7 @@ class TicketPulseService
 
         return [
             'id' => $latestDecision->id,
+            'question' => $thread ? Str::of(strip_tags($thread->body))->trim()->before("\n")->trim()->toString() : null,
             'body' => $latestDecision->body,
             'author' => $latestDecision->user?->name,
             'created_at' => $latestDecision->created_at?->toISOString(),

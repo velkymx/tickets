@@ -295,4 +295,35 @@ class NoteTest extends TestCase
         $this->assertCount(1, Note::activeActions()->get());
         $this->assertTrue(Note::activeActions()->first()->is($action));
     }
+
+    #[Test]
+    public function decision_urgency_escalates_with_wait_time()
+    {
+        $note = Note::factory()->make(['notetype' => 'decision_needed']);
+        $note->created_at = now()->subHours(2);
+        $this->assertSame('info', $note->decisionUrgency());
+
+        $note->created_at = now()->subHours(Note::DECISION_WARNING_HOURS);
+        $this->assertSame('warning', $note->decisionUrgency());
+
+        $note->created_at = now()->subHours(Note::DECISION_DANGER_HOURS);
+        $this->assertSame('danger', $note->decisionUrgency());
+    }
+
+    #[Test]
+    public function awaiting_decision_from_returns_open_requests_for_that_user_only()
+    {
+        $decider = User::factory()->create();
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+        $open = Note::factory()->create(['ticket_id' => $ticket->id, 'notetype' => 'decision_needed', 'decider_id' => $decider->id]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'notetype' => 'decision_needed', 'decider_id' => $decider->id, 'resolved' => true]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'notetype' => 'decision_needed', 'decider_id' => $decider->id, 'hide' => true]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'notetype' => 'decision_needed', 'decider_id' => $other->id]);
+
+        $found = Note::awaitingDecisionFrom($decider->id)->get();
+
+        $this->assertCount(1, $found);
+        $this->assertTrue($found->first()->is($open));
+    }
 }
