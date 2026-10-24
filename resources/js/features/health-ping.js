@@ -28,7 +28,7 @@ export async function pingWorker(postPing, getStatus, onUpdate, options = {}) {
         }
 
         if (status && status.status === 'answered') {
-            onUpdate({ state: 'answered', duration: status.duration });
+            onUpdate({ state: 'answered', duration: status.duration, connection: status.connection, queue: status.queue });
             return;
         }
     }
@@ -79,7 +79,7 @@ export function initHealthPing(root = document) {
             },
             (update) => {
                 if (update.state === 'answered') {
-                    result.textContent = `Worker answered in ${update.duration} s.`;
+                    result.textContent = `Worker answered in ${update.duration} s (${update.connection}, queue ${update.queue}).`;
                 } else if (update.state === 'unanswered') {
                     result.textContent = 'No worker picked up the ping in 10 s. Run `php artisan queue:work`.';
                 } else {
@@ -89,6 +89,8 @@ export function initHealthPing(root = document) {
             },
         );
     });
+
+    button.click();
 }
 
 document.addEventListener('DOMContentLoaded', () => initHealthPing());

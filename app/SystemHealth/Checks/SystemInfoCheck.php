@@ -33,20 +33,12 @@ class SystemInfoCheck implements HealthCheck
 
     private function database(): string
     {
-        $driver = (string) config('database.default');
-
         try {
-            $version = DB::selectOne(
-                match ($driver) {
-                    'mysql' => 'select version() as v',
-                    'pgsql' => 'select version() as v',
-                    default => 'select sqlite_version() as v',
-                }
-            )->v ?? 'unknown';
-        } catch (\Throwable) {
-            $version = 'unreachable';
-        }
+            $connection = DB::connection();
 
-        return "{$driver} ({$version})";
+            return $connection->getDriverName().' ('.$connection->getServerVersion().')';
+        } catch (\Throwable) {
+            return (string) config('database.default').' (unreachable)';
+        }
     }
 }

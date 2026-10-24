@@ -7,6 +7,7 @@ use App\Models\User;
 use App\SystemHealth\Checks\QueueCheck;
 use App\SystemHealth\HealthStatus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -54,21 +55,21 @@ class HealthPingTest extends TestCase
     {
         Cache::flush();
 
-        (new HealthPingJob('abc123'))->handle();
+        (new HealthPingJob('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))->handle();
 
-        $this->assertSame(['at' => now()->timestamp], Cache::get('health-ping:abc123'));
+        $this->assertIsFloat(Cache::get('health-ping:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['at']);
     }
 
     #[Test]
     public function status_is_pending_then_answered(): void
     {
         Cache::flush();
-        $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/abc123')->assertOk()->assertJson(['status' => 'pending']);
+        $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertOk()->assertJson(['status' => 'pending']);
 
-        Cache::put('health-ping-sent:abc123', now()->timestamp - 2, 30);
-        (new HealthPingJob('abc123'))->handle();
+        Cache::put('health-ping-sent:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', now()->timestamp - 2, 30);
+        (new HealthPingJob('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))->handle();
 
-        $response = $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/abc123')->assertOk();
+        $response = $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertOk();
 
         $this->assertSame('answered', $response->json('status'));
         $this->assertGreaterThanOrEqual(1, $response->json('duration'));
@@ -93,5 +94,84 @@ class HealthPingTest extends TestCase
 
         $this->assertSame(HealthStatus::Problem, $result->status);
         $this->assertNotNull($result->fix);
+    }
+
+    #[Test]
+    public function default_database_queue_has_its_jobs_table(): void
+    {
+        config(['queue.default' => 'database', 'queue.connections.database.table' => 'jobs']);
+
+        $this->assertSame(HealthStatus::Ok, $this->results()['Queue backend']->status);
+    }
+
+    #[Test]
+    public function reserved_jobs_are_not_stale(): void
+    {
+        config(['queue.default' => 'database', 'queue.connections.database.table' => 'jobs']);
+
+        DB::table('jobs')->insert([
+            'queue' => 'default',
+            'payload' => '{}',
+            'attempts' => 1,
+            'reserved_at' => now()->timestamp,
+            'available_at' => now()->timestamp - 600,
+            'created_at' => now()->timestamp - 600,
+        ]);
+
+        $this->assertSame(HealthStatus::Ok, $this->results()['Pending jobs']->status);
+    }
+
+    #[Test]
+    public function unreserved_old_jobs_are_stale(): void
+    {
+        config(['queue.default' => 'database', 'queue.connections.database.table' => 'jobs']);
+
+        DB::table('jobs')->insert([
+            'queue' => 'default',
+            'payload' => '{}',
+            'attempts' => 0,
+            'reserved_at' => null,
+            'available_at' => now()->timestamp - 600,
+            'created_at' => now()->timestamp - 600,
+        ]);
+
+        $this->assertSame(HealthStatus::Warning, $this->results()['Pending jobs']->status);
+    }
+
+    #[Test]
+    public function answered_status_reports_connection_and_queue(): void
+    {
+        $token = str_repeat('b', 32);
+        Cache::put("health-ping-sent:{$token}", microtime(true) - 1.5, 30);
+        (new HealthPingJob($token))->handle();
+
+        $this->actingAs($this->admin())->getJson("/admin/health/queue-ping/{$token}")
+            ->assertOk()
+            ->assertJson([
+                'status' => 'answered',
+                'connection' => (string) config('queue.default'),
+            ])
+            ->assertJsonStructure(['duration', 'queue']);
+    }
+
+    #[Test]
+    public function ping_reports_backend_failure_and_clears_pending(): void
+    {
+        config([
+            'queue.default' => 'database',
+            'queue.connections.database.table' => 'missing_jobs_table',
+        ]);
+
+        $this->actingAs($this->admin())->postJson('/admin/health/queue-ping')
+            ->assertStatus(500)
+            ->assertJsonStructure(['error']);
+
+        $this->assertNull(Cache::get('health-ping-pending'));
+    }
+
+    #[Test]
+    public function malformed_ping_token_is_not_found(): void
+    {
+        $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/abc')->assertNotFound();
     }
 }

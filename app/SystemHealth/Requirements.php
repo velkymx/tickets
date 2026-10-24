@@ -18,6 +18,7 @@ class Requirements
     public const DRIVER_EXTENSIONS = [
         'sqlite' => 'pdo_sqlite',
         'mysql' => 'pdo_mysql',
+        'mariadb' => 'pdo_mysql',
         'pgsql' => 'pdo_pgsql',
     ];
 

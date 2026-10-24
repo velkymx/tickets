@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\SystemHealth\RequirementResult;
 use App\SystemHealth\Requirements;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
