@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Http;
 
 class WebhookActionDriver implements AutomationActionDriverInterface
 {
-    /** HTTP verbs a webhook may use — prevents dynamic dispatch to arbitrary PendingRequest methods. */
+    /** HTTP verbs a webhook may use - prevents dynamic dispatch to arbitrary PendingRequest methods. */
     private const ALLOWED_METHODS = ['get', 'post', 'put', 'patch', 'delete'];
 
     public function __construct(

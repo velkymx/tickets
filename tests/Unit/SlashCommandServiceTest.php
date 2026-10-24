@@ -9,7 +9,6 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SlashCommandService;
-use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -216,6 +215,19 @@ class SlashCommandServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_prefers_exact_case_for_action_assignees(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        User::factory()->create(['name' => 'john']);
+        $exact = User::factory()->create(['name' => 'John']);
+
+        $result = $this->service->handle($ticket, '/action Verify fix @[John]');
+
+        $this->assertEquals($exact->id, $ticket->fresh()->user_id2);
+        $this->assertContains(['action' => 'assigned', 'to' => 'John'], $result['actions']);
+    }
+
+    #[Test]
     public function it_can_mark_a_note_as_pinned_via_slash_command()
     {
         $ticket = Ticket::factory()->create();
@@ -233,7 +245,7 @@ class SlashCommandServiceTest extends TestCase
 
         $result = $this->service->handle($ticket, "/statsu testing\nMessage body");
 
-        $this->assertContains('Unknown command: /statsu — will be treated as text', $result['warnings']);
+        $this->assertContains('Unknown command: /statsu - will be treated as text', $result['warnings']);
         $this->assertStringContainsString('/statsu testing', $result['body']);
         $this->assertStringContainsString('Message body', $result['body']);
     }

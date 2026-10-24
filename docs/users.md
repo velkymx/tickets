@@ -7,7 +7,7 @@
 | Standard user | `admin = false` | Tickets, KB (based on KB role), own profile |
 | Administrator | `admin = true` | Everything, including Admin menu and Automations |
 
-The `admin` flag is set directly in the database — there is no UI to promote users to admin after seeding. Use a database client or `php artisan tinker`:
+The `admin` flag is set directly in the database - there is no UI to promote users to admin after seeding. Use a database client or `php artisan tinker`:
 
 ```php
 App\Models\User::where('email', 'user@example.com')->update(['admin' => true]);
@@ -48,7 +48,7 @@ Users manage their own profiles. Navigate to **Profile → Edit Profile** (top-r
 
 ## Notification preferences
 
-**Profile → Edit Profile** ends with three toggles, all on by default: Mentions, Replies, and Watched tickets. Unchecking one suppresses that type everywhere: the immediate notification, the batched digest entries, and the direct watcher path. The digest job re-checks preferences at send time, so opting out after a digest is scheduled still excludes those entries. Omitted fields never reset an explicit opt-out.
+**Profile → Edit Profile** ends with notification controls, all on by default: per-category toggles (Mentions, Replies, Watched tickets), an Email master switch, and Email timing (Digest or Immediately). Turning a category off keeps it in-app only; turning Email off keeps everything in-app only. Immediately sends mail at once, Digest keeps the batched summary. Preferences live in one JSON column with defaults merged on read, so untouched users see no change. The digest job re-checks preferences at send time, so opting out after a digest is scheduled still excludes those entries. Omitted fields never reset an explicit opt-out. A muted ticket never emails.
 
 ## Avatar
 
@@ -62,7 +62,7 @@ Each user has at most one API token at a time.
 1. Navigate to **Profile → Edit Profile**.
 2. Scroll to **API Token**.
 3. Click **Generate Token**.
-4. Copy the token — it is shown only once.
+4. Copy the token - it is shown only once.
 
 **Revoke:**
 1. Navigate to **Profile → Edit Profile → API Token**.
@@ -72,12 +72,28 @@ Revoking immediately invalidates the existing token.
 
 ## Password
 
-Users change their own password on the **Edit Profile** page. There is no admin password-reset UI — use `php artisan tinker` if a user is locked out:
+Users change their own password on the **Edit Profile** page. Locked-out users
+reset it themselves from the login page ("Forgot your password?"): the link
+request never reveals whether an email exists, tokens expire after 60 minutes
+and are single-use. If mail is not configured, use `php artisan tinker`:
 
 ```php
 App\Models\User::where('email', 'user@example.com')
     ->update(['password' => bcrypt('new-password')]);
 ```
+
+## Single sign-on
+
+Google, GitHub, GitLab (including self-hosted via `GITLAB_HOST`), and
+Microsoft Entra logins are available when their credentials are set in
+`config/services.php` (`*_CLIENT_ID`, `*_CLIENT_SECRET`, `*_REDIRECT_URI`).
+Unconfigured providers stay off the login page entirely. First-time SSO users
+are created only when an allow-list permits it (`SSO_ALLOWED_DOMAINS`,
+`AZURE_TENANT_ID`, `GITHUB_ALLOWED_ORG`, `GITLAB_ALLOWED_GROUP`); otherwise the
+callback refuses with no account created. Email linking requires a verified
+provider email. Deactivated users are blocked on every path. Set
+`PASSWORD_LOGIN_ENABLED=false` or `REGISTRATION_ENABLED=false` for SSO-only
+installs.
 
 ## The `unassigned` system account
 
@@ -87,5 +103,5 @@ The `UserSeeder` creates an `unassigned` account (no password) used as a placeho
 
 ## See also
 
-- [KB Admin](kb-admin.md) — managing KB categories, tags, and article visibility
-- [API](api.md) — token generation and revocation
+- [KB Admin](kb-admin.md) - managing KB categories, tags, and article visibility
+- [API](api.md) - token generation and revocation

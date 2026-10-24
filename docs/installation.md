@@ -95,7 +95,7 @@ Default accounts created:
 | Email | Password | Notes |
 |-------|----------|-------|
 | administrator | password123 | **Change this immediately after first login** |
-| unassigned | *(none)* | System account — do not log in as this user |
+| unassigned | *(none)* | System account - do not log in as this user |
 
 > **Security:** The default administrator password is public knowledge. Change it before exposing the app to any network. Navigate to **Profile → Edit Profile** after logging in.
 
@@ -133,10 +133,35 @@ All tests should pass on a clean install.
 
 ---
 
+## System Health
+
+Admins get a System Health page under the user dropdown, next to Manage Users.
+It answers "is this install set up right?" without reading `.env` or running
+artisan commands. A banner summarizes problems and warnings, then one card per
+section shows each check with its value and a fix hint. Disabled features are
+normal states, not warnings. The page makes no outbound network calls.
+
+- **System info:** app version, environment, PHP, Laravel, OS, database, timezone and PHP size limits.
+- **PHP requirements:** the same gates as the installer (PHP 8.4, extensions, PDO driver).
+- **Features:** which features are on or off, one row per SSO provider, plus misconfigurations such as an SSO client ID without a secret.
+- **Queue:** backend state, stale and failed jobs, plus a Ping worker button that sends a job through the queue and reports whether a worker answers within 10 seconds.
+- **Mail:** warns when the mailer is `log` or `array` outside local, since notifications go nowhere.
+- **Cache and session:** proves a cache write plus read round trip, and pings redis when configured.
+- **Security and config:** debug mode, app key, APP_URL host mismatch, and the production config cache.
+- **Storage:** writability, the public storage link, and free disk space.
+- **Database:** connection and pending migrations.
+
+Common fixes: run `php artisan queue:work` when the ping goes unanswered,
+`php artisan migrate` for a missing jobs table or pending migrations,
+`php artisan storage:link` for a missing public link, `php artisan key:generate`
+for an empty app key, and `php artisan config:cache` in production.
+
+---
+
 ## Docker Compose
 
 The Docker setup includes PHP, Nginx, MariaDB, Redis, and a queue worker. No local
-PHP or Node required — the image builds the Composer dependencies and front-end
+PHP or Node required - the image builds the Composer dependencies and front-end
 assets, and the app container runs migrations, seeding, and cache warming
 automatically on first boot.
 
@@ -148,13 +173,13 @@ cp .env.example .env
 
 In `.env`, set these before starting:
 
-- `DB_USERNAME` — any **non-root** name, e.g. `tickets` (MariaDB refuses to create a
+- `DB_USERNAME` - any **non-root** name, e.g. `tickets` (MariaDB refuses to create a
   user called `root`).
-- `DB_PASSWORD` — a password of your choice. The database container and the app
+- `DB_PASSWORD` - a password of your choice. The database container and the app
   both read it from here, so they always match.
 
 Leave `DB_HOST`, `DB_PORT`, `REDIS_HOST`, and the cache/session/queue drivers alone
-— Compose wires them to the Docker services automatically.
+- Compose wires them to the Docker services automatically.
 
 ### 2. Generate an application key
 
@@ -188,5 +213,5 @@ and change the password immediately.
 
 ## See also
 
-- [API](api.md) — REST API reference and token setup
-- [CSV Import](csv-import.md) — bulk ticket creation
+- [API](api.md) - REST API reference and token setup
+- [CSV Import](csv-import.md) - bulk ticket creation

@@ -14,7 +14,7 @@ class KbSearchService implements SearchableRepository
         $builder = KbArticle::query()
             ->with(['category', 'tags', 'owner']);
 
-        // Search by keyword (LIKE fallback — works on SQLite and MySQL)
+        // Search by keyword (LIKE fallback - works on SQLite and MySQL)
         if ($query !== '') {
             $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $query);
 

@@ -3,9 +3,8 @@
 namespace Tests\Unit\ViewComposers;
 
 use App\Models\User;
-use App\ViewComposers\NotificationComposer;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
+use App\Notifications\MentionNotification;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -15,32 +14,30 @@ class NotificationComposerTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function it_shares_notification_data_with_view(): void
+    public function layout_receives_latest_five_and_unread_count(): void
     {
         $user = User::factory()->create();
-        Auth::login($user);
+        foreach (range(1, 7) as $i) {
+            $user->notifications()->create([
+                'id' => (string) Str::uuid(),
+                'type' => MentionNotification::class,
+                'data' => ['message' => "Note {$i}"],
+                'read_at' => $i <= 2 ? now() : null,
+                'created_at' => now()->addMinutes($i),
+            ]);
+        }
 
-        $composer = new NotificationComposer;
-        $view = $this->mock(View::class);
+        $response = $this->actingAs($user)->get('/home');
 
-        $view->shouldReceive('with')
-            ->once()
-            ->with('latestNotifications', \Mockery::type('Illuminate\Database\Eloquent\Collection'));
-        $view->shouldReceive('with')
-            ->once()
-            ->with('unreadNotificationCount', \Mockery::type('int'));
-
-        $composer->compose($view);
+        $response->assertOk();
+        $response->assertSee('5 unread', false);
+        $response->assertSeeInOrder(['Note 7', 'Note 6', 'Note 5', 'Note 4', 'Note 3']);
+        $response->assertDontSee('Note 2');
     }
 
     #[Test]
-    public function it_skips_when_no_user_authenticated(): void
+    public function guest_layout_gets_no_notification_data(): void
     {
-        $composer = new NotificationComposer;
-        $view = $this->mock(View::class);
-
-        $view->shouldNotReceive('with');
-
-        $composer->compose($view);
+        $this->get('/login')->assertViewMissing('latestNotifications');
     }
 }

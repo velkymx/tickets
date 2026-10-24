@@ -1,6 +1,6 @@
 # Ticket Pulse
 
-Every ticket has a **Pulse** — an automated health signal computed from its note activity. The Pulse tells you whether a ticket is on track, at risk, blocked, or idle without reading every note.
+Every ticket has a **Pulse** - an automated health signal computed from its note activity. The Pulse tells you whether a ticket is on track, at risk, blocked, or idle without reading every note.
 
 ## Execution states
 
@@ -20,7 +20,7 @@ The Pulse surfaces more than just a state label. Each pulse includes:
 | Component | What it shows |
 |-----------|--------------|
 | **Execution state** | `ON TRACK`, `AT RISK`, `BLOCKED`, or `IDLE` |
-| **Is blocked** | Boolean — true if an active blocker exists |
+| **Is blocked** | Boolean - true if an active blocker exists |
 | **Blocker reason** | Text of the active (unresolved) blocker note |
 | **Owner label** | Assignee name, or "Waiting on: @mention" if blocked |
 | **Next action** | The most recent unresolved `/action` note |
@@ -36,7 +36,7 @@ The Pulse surfaces more than just a state label. Each pulse includes:
 
 **Via API:** `GET /api/v1/tickets/{id}/pulse` returns the full pulse object.
 
-**In the ticket list:** `GET /api/v1/tickets?include=pulse` adds a `pulse_summary` to each item in the list response — useful for triage agents scanning many tickets at once.
+**In the ticket list:** `GET /api/v1/tickets?include=pulse` adds a `pulse_summary` to each item in the list response - useful for triage agents scanning many tickets at once.
 
 ## How the state is computed
 
@@ -57,7 +57,7 @@ The Pulse is recomputed from the ticket's notes and cached for one hour. It reca
 | Current state | How to improve it |
 |---------------|------------------|
 | `BLOCKED` | Resolve the blocker note (open the note, click **Resolve**, enter a resolution message) |
-| `IDLE` | Add any note — even a brief status message moves it to `AT RISK` or better |
+| `IDLE` | Add any note - even a brief status message moves it to `AT RISK` or better |
 | `AT RISK` | Add a `/action @assignee next step` note to define the next step and reset the activity timer |
 
 ## Using Pulse for triage (AI agents)
@@ -70,6 +70,6 @@ Example: find all BLOCKED tickets and surface them in a standup report by readin
 
 ## See also
 
-- [Note Signals](note-signals.md) — creating blocker, action, and decision notes that drive Pulse state
-- [Agile Workflow](agile-workflow.md) — using Pulse during milestone execution
-- [API](api.md) — `GET /tickets/{id}/pulse` and `?include=pulse` query parameter
+- [Note Signals](note-signals.md) - creating blocker, action, and decision notes that drive Pulse state
+- [Agile Workflow](agile-workflow.md) - using Pulse during milestone execution
+- [API](api.md) - `GET /tickets/{id}/pulse` and `?include=pulse` query parameter

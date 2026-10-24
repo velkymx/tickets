@@ -14,7 +14,7 @@ class UpdateUserRequestTest extends TestCase
         $rules = (new UpdateUserRequest)->rules();
 
         $this->assertSame(
-            ['name', 'email', 'phone', 'title', 'timezone', 'theme', 'bio', 'notify_mentions', 'notify_replies', 'notify_watching'],
+            ['name', 'email', 'phone', 'title', 'timezone', 'theme', 'bio', 'notify_mentions', 'notify_replies', 'notify_watching', 'email_enabled', 'email_mode'],
             array_keys($rules)
         );
     }

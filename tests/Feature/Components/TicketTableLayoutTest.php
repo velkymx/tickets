@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Components;
 
+use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,6 +14,47 @@ class TicketTableLayoutTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
+    public function estimate_column_replaces_notes_column(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create();
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee('>Est<', false);
+        $response->assertDontSee('>Notes<', false);
+    }
+
+    #[Test]
+    public function note_count_floats_right_on_subject(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create();
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee('float-end', false);
+    }
+
+    #[Test]
+    public function estimate_cell_prefers_points_then_hours_then_dash(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['subject' => 'Points row ticket', 'storypoints' => 5]);
+        Ticket::factory()->create(['subject' => 'Hours row ticket', 'storypoints' => 0, 'estimate' => 2.5]);
+        Ticket::factory()->create(['subject' => 'Bare row ticket', 'storypoints' => 0, 'estimate' => 0]);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertStatus(200);
+        $response->assertSee('5SP', false);
+        $response->assertSee('2.5h', false);
+        $response->assertDontSee('0SP', false);
+    }
+
     public function list_renders_stacked_cards_for_small_screens(): void
     {
         $user = User::factory()->create();
@@ -46,7 +88,7 @@ class TicketTableLayoutTest extends TestCase
         $response = $this->actingAs($user)->get('/tickets');
 
         $response->assertOk();
-        $response->assertSee('ticket-cell-truncate', false);
+        $response->assertSee('text-truncate', false);
     }
 
     #[Test]

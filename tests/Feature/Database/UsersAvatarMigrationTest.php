@@ -3,7 +3,6 @@
 namespace Tests\Feature\Database;
 
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -18,12 +17,12 @@ class UsersAvatarMigrationTest extends TestCase
     {
         $this->assertTrue(Schema::hasColumn('users', 'avatar'));
 
-        $columns = collect(DB::select('PRAGMA table_info(users)'));
+        $columns = collect(Schema::getColumns('users'));
         $avatar = $columns->firstWhere('name', 'avatar');
 
         $this->assertNotNull($avatar);
-        $this->assertSame(0, $avatar->notnull);
-        $this->assertNull($avatar->dflt_value);
+        $this->assertTrue($avatar['nullable']);
+        $this->assertTrue($avatar['default'] === null || strtoupper((string) $avatar['default']) === 'NULL');
     }
 
     #[Test]

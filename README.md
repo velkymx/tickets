@@ -1,6 +1,10 @@
 # Tickets
 
+[![CI](https://github.com/velkymx/tickets/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/velkymx/tickets/actions/workflows/tests.yml?query=branch%3Amaster)
 [![Latest Release](https://img.shields.io/github/v/release/velkymx/tickets)](https://github.com/velkymx/tickets/releases)
+[![PHP Version](https://img.shields.io/badge/php-%5E8.4-777BB4?logo=php&logoColor=white)](https://www.php.net/releases/)
+[![Laravel](https://img.shields.io/badge/laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/docs/13.x)
+[![Node](https://img.shields.io/badge/node-%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/github/license/velkymx/tickets)](LICENSE.md)
 [![GitHub Stars](https://img.shields.io/github/stars/velkymx/tickets)](https://github.com/velkymx/tickets/stargazers)
 

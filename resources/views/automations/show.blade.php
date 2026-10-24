@@ -67,7 +67,7 @@
                             @if($run->started_at && $run->finished_at)
                                 {{ $run->started_at->diffInMilliseconds($run->finished_at) }}ms
                             @else
-                                —
+                                -
                             @endif
                         </td>
                         <td>{{ $run->actionLogs->count() }}</td>

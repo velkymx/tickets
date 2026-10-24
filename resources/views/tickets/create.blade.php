@@ -131,6 +131,14 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
+            {{-- Story Points --}}
+            <div class="col-md-6">
+                <label for="storypoints" class="form-label">Story Points</label>
+                <input type="text" name="storypoints" id="storypoints" class="form-control @error('storypoints') is-invalid @enderror" value="{{ old('storypoints', 0) }}">
+                @error('storypoints')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
 
         {{-- Save Button --}}

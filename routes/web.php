@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Admin\HealthController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\ApiDocsController;
 use App\Http\Controllers\AutomationController;
@@ -111,6 +112,9 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::get('/health', [HealthController::class, 'show'])->name('health.show');
+        Route::post('/health/queue-ping', [HealthController::class, 'ping'])->name('health.ping');
+        Route::get('/health/queue-ping/{token}', [HealthController::class, 'pingStatus'])->name('health.ping.status');
     });
 
     // --- POST/PUT/PATCH Routes ---
@@ -195,7 +199,7 @@ Route::middleware(['auth'])->prefix('kb')->group(function () {
     Route::delete('/{slug}/attachments/{id}', [KbController::class, 'deleteAttachment'])->name('kb.detach');
 });
 
-// Public KB show route (MUST be last — wildcard)
+// Public KB show route (MUST be last - wildcard)
 Route::get('/kb/{slug}', [KbController::class, 'show'])->name('kb.show')
     ->where('slug', '^(?!create$|search$|category$|tag$|admin$).*');
 

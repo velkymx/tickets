@@ -7,7 +7,6 @@ use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -29,10 +28,10 @@ class NoteReactionsTableTest extends TestCase
             'updated_at',
         ]));
 
-        $indexes = collect(DB::select('PRAGMA index_list(note_reactions)'));
+        $indexes = collect(Schema::getIndexes('note_reactions'))->pluck('name');
 
         $this->assertTrue(
-            $indexes->contains(fn (object $index) => $index->name === 'note_reactions_note_id_user_id_emoji_unique'),
+            $indexes->contains('note_reactions_note_id_user_id_emoji_unique'),
             'Failed asserting that the note_reactions unique index exists.'
         );
     }

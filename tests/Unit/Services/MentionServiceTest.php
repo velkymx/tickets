@@ -56,7 +56,7 @@ class MentionServiceTest extends TestCase
     public function it_parses_multiple_bracket_mentions_and_deduplicates(): void
     {
         $mentions = $this->service->parseMentions(
-            '@[Alice Jones (PM)] and @[Bob Lee (Dev)] — also loop in @[Alice Jones (PM)]'
+            '@[Alice Jones (PM)] and @[Bob Lee (Dev)] - also loop in @[Alice Jones (PM)]'
         );
         $this->assertContains('Alice Jones', $mentions);
         $this->assertContains('Bob Lee', $mentions);

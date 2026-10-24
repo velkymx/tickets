@@ -239,12 +239,15 @@ class UsersControllerTest extends TestCase
     #[Test]
     public function update_requires_authentication(): void
     {
-        $response = $this->post('/user/update', [
+        $user = User::factory()->create(['name' => 'Original Name']);
+
+        $this->post('/user/update', [
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
-        ]);
+        ])->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->assertGuest();
+        $this->assertSame('Original Name', $user->fresh()->name);
     }
 
     #[Test]
@@ -330,6 +333,24 @@ class UsersControllerTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('email');
+    }
+
+    #[Test]
+    public function profile_update_cannot_grant_admin(): void
+    {
+        $user = User::factory()->create(['admin' => false, 'kb_role' => null, 'timezone' => 'UTC', 'theme' => 'simplex']);
+
+        $this->actingAs($user)->post('/user/update', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'timezone' => 'UTC',
+            'theme' => 'simplex',
+            'admin' => 1,
+            'kb_role' => 'admin',
+        ]);
+
+        $this->assertFalse($user->fresh()->admin);
+        $this->assertNull($user->fresh()->kb_role);
     }
 
     #[Test]

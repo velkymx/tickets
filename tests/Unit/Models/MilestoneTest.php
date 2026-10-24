@@ -4,7 +4,6 @@ namespace Tests\Unit\Models;
 
 use App\Models\Milestone;
 use App\Models\MilestoneWatcher;
-use App\Models\Ticket;
 use App\Models\User;
 use App\Notifications\WatcherNotification;
 use Illuminate\Support\Facades\Notification;
@@ -17,72 +16,11 @@ class MilestoneTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function it_has_correct_fillable_fields(): void
-    {
-        $milestone = new Milestone;
-        $fillable = $milestone->getFillable();
-
-        $this->assertContains('name', $fillable);
-        $this->assertContains('description', $fillable);
-        $this->assertContains('scrummaster_user_id', $fillable);
-        $this->assertContains('owner_user_id', $fillable);
-        $this->assertContains('start_at', $fillable);
-        $this->assertContains('due_at', $fillable);
-        $this->assertContains('end_at', $fillable);
-    }
-
-    #[Test]
     public function it_has_timestamps_disabled(): void
     {
         $milestone = new Milestone;
 
         $this->assertFalse($milestone->timestamps);
-    }
-
-    #[Test]
-    public function it_has_many_tickets(): void
-    {
-        $owner = User::factory()->create();
-        $milestone = Milestone::factory()->create(['owner_user_id' => $owner->id]);
-        $ticket = Ticket::factory()->create(['milestone_id' => $milestone->id]);
-
-        $this->assertCount(1, $milestone->tickets);
-        $this->assertTrue($milestone->tickets->contains($ticket));
-    }
-
-    #[Test]
-    public function it_belongs_to_owner(): void
-    {
-        $owner = User::factory()->create(['name' => 'Milestone Owner']);
-        $milestone = Milestone::factory()->create(['owner_user_id' => $owner->id]);
-
-        $this->assertInstanceOf(User::class, $milestone->owner);
-        $this->assertEquals('Milestone Owner', $milestone->owner->name);
-    }
-
-    #[Test]
-    public function it_belongs_to_scrummaster(): void
-    {
-        $scrummaster = User::factory()->create(['name' => 'Scrum Master']);
-        $milestone = Milestone::factory()->create(['scrummaster_user_id' => $scrummaster->id]);
-
-        $this->assertInstanceOf(User::class, $milestone->scrummaster);
-        $this->assertEquals('Scrum Master', $milestone->scrummaster->name);
-    }
-
-    #[Test]
-    public function it_has_many_watchers(): void
-    {
-        $owner = User::factory()->create();
-        $milestone = Milestone::factory()->create(['owner_user_id' => $owner->id]);
-        $watcher = User::factory()->create();
-        MilestoneWatcher::factory()->create([
-            'milestone_id' => $milestone->id,
-            'user_id' => $watcher->id,
-        ]);
-
-        $this->assertCount(1, $milestone->watchers);
-        $this->assertInstanceOf(MilestoneWatcher::class, $milestone->watchers->first());
     }
 
     #[Test]

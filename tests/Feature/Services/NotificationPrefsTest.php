@@ -2,16 +2,20 @@
 
 namespace Tests\Feature\Services;
 
+use App\Jobs\SendTicketDigestJob;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
+use App\Notifications\WatcherDatabaseNotification;
 use App\Notifications\WatcherNotification;
 use App\Services\NotificationBatchService;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -21,24 +25,10 @@ class NotificationPrefsTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function disabled_mention_type_is_skipped(): void
+    public function disabled_mention_type_lands_in_app_only(): void
     {
-        $user = User::factory()->create(['notify_mentions' => false]);
-        $actor = User::factory()->create(['name' => 'Sarah']);
-
-        app(NotificationBatchService::class)->dispatch(
-            $user,
-            new MentionNotification($actor->id, $actor->name, 142, 55, 'Hi there', 'http://example.com/tickets/142'),
-            142
-        );
-
-        $this->assertDatabaseMissing('notifications', ['notifiable_id' => $user->id]);
-    }
-
-    #[Test]
-    public function enabled_mention_type_is_delivered(): void
-    {
-        $user = User::factory()->create(['notify_mentions' => true]);
+        $user = User::factory()->create();
+        $user->setNotificationPrefs(['mentions' => false]);
         $actor = User::factory()->create(['name' => 'Sarah']);
 
         app(NotificationBatchService::class)->dispatch(
@@ -48,13 +38,62 @@ class NotificationPrefsTest extends TestCase
         );
 
         $this->assertDatabaseHas('notifications', ['notifiable_id' => $user->id]);
+        $this->assertNull(Cache::get(app(NotificationBatchService::class)->batchKey($user->id, 142)));
+    }
+
+    #[Test]
+    public function enabled_mention_type_is_delivered_and_batched(): void
+    {
+        Queue::fake();
+
+        $user = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Sarah']);
+
+        app(NotificationBatchService::class)->dispatch(
+            $user,
+            new MentionNotification($actor->id, $actor->name, 142, 55, 'Hi there', 'http://example.com/tickets/142'),
+            142
+        );
+
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $user->id]);
+        $this->assertNotEmpty(Cache::get(app(NotificationBatchService::class)->batchKey($user->id, 142)));
+        Queue::assertPushed(SendTicketDigestJob::class);
+    }
+
+    #[Test]
+    public function immediate_mode_sends_mail_at_once(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+        $user->setNotificationPrefs(['email_mode' => 'immediate']);
+        $actor = User::factory()->create(['name' => 'Sarah']);
+
+        app(NotificationBatchService::class)->dispatch(
+            $user,
+            new MentionNotification($actor->id, $actor->name, 142, 55, 'Hi there', 'http://example.com/tickets/142'),
+            142
+        );
+
+        Notification::assertSentTo(
+            $user,
+            MentionNotification::class,
+            fn ($notification, $channels) => in_array('mail', $channels)
+        );
+        Notification::assertSentTo(
+            $user,
+            MentionNotification::class,
+            fn ($notification, $channels) => in_array('database', $channels)
+        );
+        $this->assertNull(Cache::get(app(NotificationBatchService::class)->batchKey($user->id, 142)));
     }
 
     #[Test]
     public function profile_update_persists_prefs(): void
     {
         // Omitted prefs must not reset an explicit opt-out back to on.
-        $user = User::factory()->create(['notify_mentions' => false]);
+        $user = User::factory()->create();
+        $user->setNotificationPrefs(['mentions' => false]);
 
         $this->actingAs($user)->post('/user/update', [
             'name' => $user->name,
@@ -63,8 +102,8 @@ class NotificationPrefsTest extends TestCase
             'theme' => 'auto',
         ]);
 
-        $this->assertFalse($user->fresh()->notify_mentions);
-        $this->assertTrue($user->fresh()->notify_watching);
+        $this->assertFalse($user->fresh()->notificationPrefs()['mentions']);
+        $this->assertTrue($user->fresh()->notificationPrefs()['watching']);
     }
 
     #[Test]
@@ -78,16 +117,18 @@ class NotificationPrefsTest extends TestCase
             'timezone' => 'UTC',
             'theme' => 'auto',
             'notify_mentions' => '0',
+            'email_mode' => 'immediate',
         ]);
 
-        $this->assertFalse($user->fresh()->notify_mentions);
-        $this->assertTrue($user->fresh()->notify_watching);
+        $this->assertFalse($user->fresh()->notificationPrefs()['mentions']);
+        $this->assertSame('immediate', $user->fresh()->notificationPrefs()['email_mode']);
     }
 
     #[Test]
-    public function disabled_reply_type_is_skipped(): void
+    public function disabled_reply_type_lands_in_app_only(): void
     {
-        $user = User::factory()->create(['notify_replies' => false]);
+        $user = User::factory()->create();
+        $user->setNotificationPrefs(['replies' => false]);
         $actor = User::factory()->create(['name' => 'Alex']);
 
         app(NotificationBatchService::class)->dispatch(
@@ -96,7 +137,8 @@ class NotificationPrefsTest extends TestCase
             142
         );
 
-        $this->assertDatabaseMissing('notifications', ['notifiable_id' => $user->id]);
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $user->id]);
+        $this->assertNull(Cache::get(app(NotificationBatchService::class)->batchKey($user->id, 142)));
     }
 
     #[Test]
@@ -139,15 +181,16 @@ class NotificationPrefsTest extends TestCase
 
         $ticket = Ticket::factory()->create();
         $author = User::factory()->create();
-        $muted = User::factory()->create(['notify_watching' => false]);
-        $open = User::factory()->create(['notify_watching' => true]);
-        TicketUserWatcher::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $muted->id]);
+        $muted = User::factory()->create();
+        $muted->setNotificationPrefs(['watching' => false]);
+        $open = User::factory()->create();
+        TicketUserWatcher::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $muted->id, 'muted' => true]);
         TicketUserWatcher::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $open->id]);
         $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $author->id]);
 
         app(NotificationService::class)->notifyWatchers($ticket, $note);
 
-        Notification::assertNotSentTo($muted, WatcherNotification::class);
+        Notification::assertSentTo($muted, WatcherDatabaseNotification::class);
         Notification::assertSentTo($open, WatcherNotification::class);
     }
 }

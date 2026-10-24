@@ -41,7 +41,7 @@ Click **Edit** next to the tag, update the name, and save.
 
 ### Delete a tag
 
-Click **Delete**. Tags can be deleted regardless of whether articles use them — the association is removed.
+Click **Delete**. Tags can be deleted regardless of whether articles use them - the association is removed.
 
 ## Article visibility
 
@@ -63,12 +63,12 @@ Every save of an article creates a version. To view and restore:
 
 1. Open the article.
 2. Click **Version History**.
-3. Select two versions to compare — a diff is shown.
+3. Select two versions to compare - a diff is shown.
 4. Click **Restore** on any version to make it the current content.
 
 ## Trash (soft deletes)
 
-Deleting an article soft-deletes it — it disappears from the KB but can be recovered.
+Deleting an article soft-deletes it - it disappears from the KB but can be recovered.
 
 **Navigate to:** Knowledge Base → Admin → Trash
 
@@ -83,5 +83,5 @@ The KB search bar (top of the KB index) searches across article titles, body con
 
 ## See also
 
-- [Users](users.md) — setting KB roles on users
-- [kb.md](kb.md) — author-level KB usage (creating and editing articles)
+- [Users](users.md) - setting KB roles on users
+- [kb.md](kb.md) - author-level KB usage (creating and editing articles)

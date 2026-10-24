@@ -22,3 +22,5 @@ import './components/BurndownChart';
 import './features/ticket-show';
 
 import './features/bulk-select';
+
+import './features/health-ping';

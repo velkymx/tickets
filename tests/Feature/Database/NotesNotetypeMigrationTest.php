@@ -5,7 +5,7 @@ namespace Tests\Feature\Database;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -17,11 +17,11 @@ class NotesNotetypeMigrationTest extends TestCase
     #[Test]
     public function it_defaults_notetype_to_message(): void
     {
-        $columns = collect(DB::select('PRAGMA table_info(notes)'));
+        $columns = collect(Schema::getColumns('notes'));
         $notetype = $columns->firstWhere('name', 'notetype');
 
         $this->assertNotNull($notetype);
-        $this->assertSame("'message'", $notetype->dflt_value);
+        $this->assertSame('message', trim((string) $notetype['default'], "'"));
     }
 
     #[Test]

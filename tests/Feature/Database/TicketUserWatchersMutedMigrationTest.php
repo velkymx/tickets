@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Database;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -17,8 +16,8 @@ class TicketUserWatchersMutedMigrationTest extends TestCase
     {
         $this->assertTrue(Schema::hasColumn('ticket_user_watchers', 'muted'));
 
-        $columns = collect(DB::select('PRAGMA table_info(ticket_user_watchers)'))->keyBy('name');
+        $columns = collect(Schema::getColumns('ticket_user_watchers'))->keyBy('name');
 
-        $this->assertContains((string) $columns['muted']->dflt_value, ['0', "'0'"]);
+        $this->assertSame('0', trim((string) $columns['muted']['default'], "'"));
     }
 }

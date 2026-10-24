@@ -20,8 +20,8 @@ Every row must have exactly 7 columns in this order:
 | Column | Field | Required | Notes |
 |--------|-------|----------|-------|
 | 1 | Type | Yes | Must match an existing type name exactly (e.g. `Bug`, `Feature`) |
-| 2 | Subject | Yes | Ticket title — cannot be blank |
-| 3 | Description | Yes | Body text — can be empty string but column must be present |
+| 2 | Subject | Yes | Ticket title - cannot be blank |
+| 3 | Description | Yes | Body text - can be empty string but column must be present |
 | 4 | Importance | Yes | Must match an existing importance level name (e.g. `High`, `Low`) |
 | 5 | Status | Yes | Must match an existing status name (e.g. `Open`, `In Progress`) |
 | 6 | Project | Yes | Must match an existing project name exactly |
@@ -43,7 +43,7 @@ Feature,Dark mode toggle,User preference stored in profile,Medium,Backlog,Fronte
 
 ## Error handling
 
-If any row fails validation, the entire import is rolled back — no tickets are created. The error message identifies the row number and column that caused the failure. Fix the CSV and re-upload.
+If any row fails validation, the entire import is rolled back - no tickets are created. The error message identifies the row number and column that caused the failure. Fix the CSV and re-upload.
 
 Common errors:
 
@@ -62,5 +62,5 @@ On success, you are redirected to the milestone page where the new tickets appea
 
 ## See also
 
-- [Projects](projects.md) — managing milestones tickets are imported into
-- [API](api.md) — `POST /tickets` for single-ticket creation via API
+- [Projects](projects.md) - managing milestones tickets are imported into
+- [API](api.md) - `POST /tickets` for single-ticket creation via API
