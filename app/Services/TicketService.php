@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\SlashCommandException;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -107,6 +108,13 @@ class TicketService
         return $change_list;
     }
 
+    /**
+     * Record a note, hours and/or field changes on a ticket, applying any
+     * slash commands in the message first.
+     *
+     * @throws SlashCommandException when a slash command fails
+     *                               a business rule guard
+     */
     public function notate(int $ticketId, string $message, array $changes, float $addHours = 0, ?int $parentId = null): void
     {
         $ticket = Ticket::findOrFail($ticketId);

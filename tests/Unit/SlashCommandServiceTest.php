@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Exceptions\SlashCommandException;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -44,7 +45,7 @@ class SlashCommandServiceTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
         $author = User::factory()->create();
-        $status = Status::factory()->create(['name' => 'Testing']);
+        Status::factory()->create(['name' => 'Testing']);
 
         Note::create([
             'body' => 'Blocked on API rollout',
@@ -54,10 +55,10 @@ class SlashCommandServiceTest extends TestCase
             'resolved' => false,
         ]);
 
-        $result = $this->service->handle($ticket, '/status Testing');
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Resolve blocker before changing status');
 
-        $this->assertNotEquals($status->id, $ticket->fresh()->status_id);
-        $this->assertContains('Resolve blocker before changing status', $result['changes']);
+        $this->service->handle($ticket, '/status Testing');
     }
 
     #[Test]
@@ -101,10 +102,10 @@ class SlashCommandServiceTest extends TestCase
             'resolved' => false,
         ]);
 
-        $result = $this->service->handle($ticket, '/close');
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Resolve blocker before changing status');
 
-        $this->assertNull($ticket->fresh()->closed_at);
-        $this->assertContains('Resolve blocker before changing status', $result['changes']);
+        $this->service->handle($ticket, '/close');
     }
 
     #[Test]
@@ -176,11 +177,14 @@ class SlashCommandServiceTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
 
-        $missing = $this->service->handle($ticket, '/action Verify fix');
-        $multiple = $this->service->handle($ticket, '/action Verify fix @[john] @[sarah]');
-
-        $this->assertContains('Actions require exactly one @assignee', $missing['changes']);
-        $this->assertContains('Actions require exactly one @assignee', $multiple['changes']);
+        foreach (['/action Verify fix', '/action Verify fix @[john] @[sarah]'] as $body) {
+            try {
+                $this->service->handle($ticket, $body);
+                $this->fail('Expected SlashCommandException for '.$body);
+            } catch (SlashCommandException $e) {
+                $this->assertSame('Actions require exactly one @assignee', $e->getMessage());
+            }
+        }
     }
 
     #[Test]
@@ -197,9 +201,10 @@ class SlashCommandServiceTest extends TestCase
             'resolved' => false,
         ]);
 
-        $result = $this->service->handle($ticket, '/action Verify fix @[john]');
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Too many open actions');
 
-        $this->assertContains('Too many open actions. Resolve or overwrite an existing action before creating a new one', $result['changes']);
+        $this->service->handle($ticket, '/action Verify fix @[john]');
     }
 
     #[Test]
