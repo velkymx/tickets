@@ -27,7 +27,7 @@ Generate a token from the user profile page (`/user/api-token`). All API request
 | POST | `/api/v1/tickets` | Create ticket: requires `subject`; optional `description`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints` |
 | GET | `/api/v1/tickets/{id}` | Get ticket detail with notes, reactions, replies, attachments |
 | PUT/PATCH | `/api/v1/tickets/{id}` | Update ticket |
-| POST | `/api/v1/tickets/{id}/note` | Add note: supports `body`, `status_id`, `hours`, `claim`. Body supports slash commands: `/decision`, `/decide @user`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen` |
+| POST | `/api/v1/tickets/{id}/note` | Add note: supports `body`, `status_id`, `hours`, `claim`. Body supports slash commands: `/decision`, `/decide @user`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen`. Mentions notify, and field changes are written to the changelog |
 | POST | `/api/v1/tickets/{id}/notes/{id}/react` | Toggle emoji reaction on a note: pass `emoji` param |
 | POST | `/api/v1/tickets/{id}/notes/{id}/reply` | Reply to a note. A body starting `/decision` records a decision and closes a decision request thread |
 | PUT | `/api/v1/tickets/{id}/notes/{id}` | Edit a note |
