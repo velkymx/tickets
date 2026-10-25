@@ -2032,6 +2032,48 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function note_with_blocked_status_command_redirects_with_error_and_no_changelog(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $status = Status::factory()->create(['name' => 'Testing']);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = $this->actingAs($user)->post('/notes', [
+            'ticket_id' => $ticket->id,
+            'note' => '/status Testing',
+        ]);
+
+        $response->assertSessionHasErrors('note');
+        $this->assertNotEquals($status->id, $ticket->fresh()->status_id);
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->count());
+    }
+
+    #[Test]
+    public function note_with_two_action_mentions_redirects_with_error(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create(['name' => 'alice']);
+        User::factory()->create(['name' => 'bob']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->post('/notes', [
+            'ticket_id' => $ticket->id,
+            'note' => '/action @alice @bob do the thing',
+        ]);
+
+        $response->assertSessionHasErrors('note');
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->where('notetype', 'action')->count());
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->count());
+    }
+
+    #[Test]
     public function note_allows_unrelated_authenticated_users_to_change_status(): void
     {
         $viewer = User::factory()->create();

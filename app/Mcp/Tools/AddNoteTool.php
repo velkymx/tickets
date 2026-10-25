@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Exceptions\SlashCommandException;
 use App\Mcp\Exceptions\ToolException;
 use App\Models\Note;
 use App\Models\Status;
@@ -64,26 +65,12 @@ class AddNoteTool extends TicketTool
                 }
 
                 if (array_key_exists('body', $validated) || array_key_exists('hours', $validated)) {
-                    if (preg_match('/^\/action\b/m', $bodyText)) {
-                        preg_match_all('/@([\w.\-]+)/', $bodyText, $matches);
-                        $mentions = array_values(array_unique($matches[1] ?? []));
-                        if (count($mentions) !== 1) {
-                            throw new ToolException('Actions require exactly one @assignee.');
-                        }
-                    }
-
                     $slashService = app(SlashCommandService::class);
                     $markdownService = app(MarkdownService::class);
                     $mentionService = app(MentionService::class);
 
                     $commandResult = $slashService->handle($ticket, $bodyText);
                     $warnings = $commandResult['warnings'] ?? [];
-
-                    foreach ($commandResult['changes'] ?? [] as $change) {
-                        if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions') || str_contains($change, 'Decision requests require')) {
-                            throw new ToolException($change);
-                        }
-                    }
 
                     $parsedBody = $commandResult['body'] ?? '';
                     $parsedHtml = $markdownService->parse($parsedBody);
@@ -110,7 +97,7 @@ class AddNoteTool extends TicketTool
 
                 return [$createdNote, $warnings];
             });
-        } catch (ToolException $e) {
+        } catch (SlashCommandException|ToolException $e) {
             return Response::error($e->getMessage());
         }
 

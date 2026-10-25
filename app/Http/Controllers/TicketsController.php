@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SlashCommandException;
 use App\Http\Requests\BatchUpdateTicketRequest;
 use App\Http\Requests\EstimateTicketRequest;
 use App\Http\Requests\NoteTicketRequest;
@@ -406,7 +407,13 @@ class TicketsController extends Controller
 
         $change_list = $this->ticketService->changes($old, $ticket->toArray());
 
-        $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
+        try {
+            $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
+        } catch (SlashCommandException $e) {
+            return redirect('tickets/'.$request['ticket_id'])
+                ->withErrors(['note' => $e->getMessage()])
+                ->withInput();
+        }
 
         $ticket->unsetRelation('notes');
         $ticket->loadSum('notes', 'hours');

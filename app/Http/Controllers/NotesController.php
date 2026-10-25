@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SlashCommandException;
 use App\Models\Note;
 use App\Models\NoteAttachment;
 use App\Models\NoteReaction;
@@ -122,13 +123,23 @@ class NotesController extends Controller
             return response()->json(['errors' => ['parent_id' => ['Cannot reply to a reply. Only top-level notes accept replies.']]], 422);
         }
 
-        $ticketService->notate(
-            (int) $validated['ticket_id'],
-            $validated['body'],
-            [],
-            0,
-            (int) $parent->id
-        );
+        try {
+            $ticketService->notate(
+                (int) $validated['ticket_id'],
+                $validated['body'],
+                [],
+                0,
+                (int) $parent->id
+            );
+        } catch (SlashCommandException $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['errors' => ['body' => [$e->getMessage()]]], 422);
+            }
+
+            return redirect("/tickets/{$validated['ticket_id']}#note_{$parent->id}")
+                ->withErrors(['body' => $e->getMessage()])
+                ->withInput();
+        }
 
         $note = Note::query()
             ->where('ticket_id', $validated['ticket_id'])
