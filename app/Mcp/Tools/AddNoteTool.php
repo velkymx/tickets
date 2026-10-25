@@ -65,8 +65,7 @@ class AddNoteTool extends TicketTool
 
                 if (array_key_exists('body', $validated) || array_key_exists('hours', $validated)) {
                     if (preg_match('/^\/action\b/m', $bodyText)) {
-                        preg_match_all('/@([\w.\-]+)/', $bodyText, $matches);
-                        $mentions = array_values(array_unique($matches[1] ?? []));
+                        $mentions = app(MentionService::class)->parseMentions($bodyText);
                         if (count($mentions) !== 1) {
                             throw new ToolException('Actions require exactly one @assignee.');
                         }

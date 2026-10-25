@@ -199,6 +199,50 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function add_note_tool_accepts_bracket_mention_with_space_for_actions(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create(['name' => 'Sarah Connor']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => null,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/action @[Sarah Connor] verify fix on staging',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+        $this->assertSame($assignee->id, $ticket->fresh()->user_id2);
+    }
+
+    #[Test]
+    public function add_note_tool_rejects_email_address_as_action_assignee(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/action Contact support@example.com about the outage',
+        ]);
+
+        $response->assertHasErrors();
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+    }
+
+    #[Test]
     public function get_pulse_tool_returns_execution_state(): void
     {
         $user = User::factory()->create();
