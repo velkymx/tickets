@@ -214,6 +214,10 @@ Adds a note, logs hours, changes status, or runs slash commands.
 | `hours` | number | Log hours against this ticket. |
 | `claim` | boolean | Assign the ticket to yourself. |
 
+Business rule guards, such as `/action` without exactly one assignee or
+`/status` while a blocker is open, return 422 and write nothing, including any
+claim or status change in the same request.
+
 **Slash commands** (include in `body`):
 
 | Command | Effect |
