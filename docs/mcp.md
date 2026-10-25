@@ -321,7 +321,9 @@ playbook for that flow. To run several specialists through one server, see
 `/close`, `/reopen`, `/status <name>`, `/hours <n>`, `/estimate <n>`,
 `/blocker <reason>`, `/decision <text>`, `/action @user <text>` (requires
 exactly one `@assignee`), `/decide @user <question>` (requires exactly one
-`@decider`, who is notified at once), `/assign @user`.
+`@decider`, who is notified at once), `/assign @user`. Names with spaces use
+the bracket form, for example `/action @[Jane Doe] <text>`. Email addresses
+are never read as mentions.
 
 ### Pulse fields
 
