@@ -107,23 +107,32 @@ class TicketService
         return $change_list;
     }
 
-    public function notate(int $ticketId, string $message, array $changes, float $addHours = 0, ?int $parentId = null): void
+    /**
+     * Record a note, hours and/or field changes on a ticket, applying any
+     * slash commands in the message first. Returns what was written so callers
+     * can surface warnings or abort the surrounding transaction.
+     *
+     * @return array{note: Note|null, changes: array<int, string>, warnings: array<int, string>}
+     */
+    public function notate(int $ticketId, string $message, array $changes, float $addHours = 0, ?int $parentId = null): array
     {
         $ticket = Ticket::findOrFail($ticketId);
         $commandResults = $this->slashCommandService->handle($ticket, $message);
 
         $message = $commandResults['body'] ?? trim($message);
         $changes = array_merge($changes, $commandResults['changes'] ?? []);
+        $changes = array_values(array_unique($changes));
         $addHours += (float) ($commandResults['hours'] ?? 0);
         $noteType = $commandResults['note_type'] ?? 'message';
         $noteAttributes = $commandResults['note_attributes'] ?? [];
+        $warnings = $commandResults['warnings'] ?? [];
 
         $hasMessage = strlen($message) > 0;
         $hasHours = $addHours > 0;
         $hasChanges = is_array($changes) && count($changes) > 0;
 
         if (! $hasMessage && ! $hasHours && ! $hasChanges) {
-            return;
+            return ['note' => null, 'changes' => $changes, 'warnings' => $warnings];
         }
 
         $insert = [
@@ -134,6 +143,7 @@ class TicketService
             'hours' => $addHours,
         ];
         $createdActivity = false;
+        $note = null;
 
         if (strlen($message) > 0) {
             $insert['body_markdown'] = $message;
@@ -173,6 +183,8 @@ class TicketService
         if ($createdActivity) {
             $this->notifyWatchers($ticket);
         }
+
+        return ['note' => $note, 'changes' => $changes, 'warnings' => $warnings];
     }
 
     private function createMentions(Note $note, string $markdown): void
