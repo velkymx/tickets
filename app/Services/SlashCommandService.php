@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class SlashCommandService
 {
+    public function __construct(private ?MentionService $mentionService = null)
+    {
+        $this->mentionService ??= app(MentionService::class);
+    }
+
     public function handle(Ticket $ticket, string $text): array
     {
         return DB::transaction(function () use ($ticket, $text) {
@@ -259,17 +264,7 @@ class SlashCommandService
 
     protected function extractMentions(string $text): array
     {
-        preg_match_all('/@\[([^\]]+)\]/u', $text, $bracketMatches);
-        preg_match_all('/@([\w.\-]+)/u', $text, $bareMatches);
-
-        $bracketMentions = array_values(array_unique(array_map(
-            fn (string $token) => preg_replace('/\s*\([^)]*\)$/', '', trim($token)),
-            $bracketMatches[1] ?? []
-        )));
-
-        $bareMentions = array_values(array_unique($bareMatches[1] ?? []));
-
-        return array_unique(array_merge($bracketMentions, $bareMentions));
+        return $this->mentionService->parseMentions($text);
     }
 
     protected function findByName(string $class, string $value): mixed
