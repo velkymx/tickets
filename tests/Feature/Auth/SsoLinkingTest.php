@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,6 +22,18 @@ class SsoLinkingTest extends TestCase
         ]);
 
         Socialite::shouldReceive('driver->user')->andReturn($socialUser);
+    }
+
+    #[Test]
+    public function azure_email_match_does_not_take_over_an_existing_account(): void
+    {
+        $admin = User::factory()->create(['email' => 'boss@corp.test', 'admin' => true]);
+        $this->fakeAzure('boss@corp.test', 'evil-tenant');
+
+        $this->get('/auth/azure/callback')->assertRedirect(route('login'));
+
+        $this->assertGuest();
+        $this->assertSame(0, $admin->socialAccounts()->count());
     }
 
     #[Test]
