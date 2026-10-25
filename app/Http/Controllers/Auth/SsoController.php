@@ -155,16 +155,16 @@ class SsoController extends Controller
 
         $domains = array_filter(array_map(
             fn ($d) => strtolower(trim($d)),
-            explode(',', (string) env('SSO_ALLOWED_DOMAINS', ''))
+            explode(',', (string) config('services.sso.allowed_domains'))
         ));
 
         if ($domains !== [] && ! in_array(Str::after($email, '@'), $domains, true)) {
             return false;
         }
 
-        $tenant = (string) env('AZURE_TENANT_ID', '');
-        $org = (string) env('GITHUB_ALLOWED_ORG', '');
-        $group = (string) env('GITLAB_ALLOWED_GROUP', '');
+        $tenant = (string) config('services.sso.azure_tenant');
+        $org = (string) config('services.sso.github_org');
+        $group = (string) config('services.sso.gitlab_group');
 
         if ($provider === 'azure' && $tenant !== '') {
             $tid = (string) ($socialUser->user['tid'] ?? '');
