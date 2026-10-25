@@ -28,7 +28,7 @@ class KbSearchService implements SearchableRepository
         }
 
         // Apply visibility scoping
-        $this->applyVisibilityScope($builder, $user);
+        $builder->visibleTo($user);
 
         // Apply filters
         if (! empty($filters['category_id'])) {
@@ -42,42 +42,5 @@ class KbSearchService implements SearchableRepository
         }
 
         return $builder->orderByDesc('updated_at')->paginate($filters['per_page'] ?? 15);
-    }
-
-    private function applyVisibilityScope($builder, ?User $user): void
-    {
-        if (! $user) {
-            $builder->where('visibility', 'public')->where('status', 'verified');
-
-            return;
-        }
-
-        if ($user->isKbAdmin()) {
-            return; // Admins see everything
-        }
-
-        $builder->where(function ($q) use ($user) {
-            // Own drafts
-            $q->where(function ($draft) use ($user) {
-                $draft->where('status', 'draft')->where('user_id', $user->id);
-            })
-            // Public verified
-                ->orWhere(function ($pub) {
-                    $pub->where('visibility', 'public')->where('status', '!=', 'draft');
-                })
-            // Internal non-draft
-                ->orWhere(function ($internal) {
-                    $internal->where('visibility', 'internal')->where('status', '!=', 'draft');
-                })
-            // Restricted where user is owner or permitted
-                ->orWhere(function ($restricted) use ($user) {
-                    $restricted->where('visibility', 'restricted')
-                        ->where('status', '!=', 'draft')
-                        ->where(function ($access) use ($user) {
-                            $access->where('owner_id', $user->id)
-                                ->orWhereHas('permissions', fn ($p) => $p->where('user_id', $user->id));
-                        });
-                });
-        });
     }
 }

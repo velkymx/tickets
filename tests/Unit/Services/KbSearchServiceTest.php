@@ -36,6 +36,17 @@ class KbSearchServiceTest extends TestCase
     }
 
     #[Test]
+    public function authenticated_users_do_not_see_unverified_public_articles(): void
+    {
+        $user = User::factory()->create();
+        KbArticle::factory()->deprecated()->public()->create(['title' => 'Deprecated Public']);
+
+        $results = $this->service->search('', $user);
+
+        $this->assertNotContains('Deprecated Public', $results->pluck('title')->all());
+    }
+
+    #[Test]
     public function authenticated_user_sees_internal_and_own_drafts(): void
     {
         $user = User::factory()->create();
