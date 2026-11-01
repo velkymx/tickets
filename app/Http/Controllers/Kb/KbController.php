@@ -151,7 +151,7 @@ class KbController extends Controller
         $this->authorize('update', $article);
 
         $request->validate([
-            'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,svg,webp,pdf,md,txt,csv,zip',
+            'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,md,txt,csv,zip',
         ]);
 
         if ($article->attachments()->count() >= 20) {
