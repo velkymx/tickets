@@ -480,13 +480,13 @@ class TicketController extends Controller
 
         $type = $validated['type'];
         $body = strip_tags($note->body);
-        $hasMention = (bool) preg_match('/@\[([^\]]+)\]/u', $note->body);
+        $mentions = app(MentionService::class)->parseMentions($note->body_markdown ?: $body);
 
         if ($type === 'decision' && mb_strlen(trim($body)) < 20) {
             return response()->json(['message' => 'Decision notes must be at least 20 characters'], 422);
         }
 
-        if ($type === 'action' && ! $hasMention && empty($validated['assignee'])) {
+        if ($type === 'action' && count($mentions) !== 1 && empty($validated['assignee'])) {
             return response()->json(['message' => 'Actions require exactly one @assignee'], 422);
         }
 
@@ -505,8 +505,7 @@ class TicketController extends Controller
             ]);
         }
 
-        // Append the assignee mention when supplied and not already present.
-        if ($type === 'action' && ! empty($validated['assignee']) && ! $hasMention) {
+        if ($type === 'action' && ! empty($validated['assignee']) && $mentions === []) {
             $assigneeName = ltrim((string) $validated['assignee'], '@');
             $note->body = rtrim($note->body).' @['.$assigneeName.']';
         }
