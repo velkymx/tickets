@@ -1062,7 +1062,7 @@ class TicketsControllerTest extends TestCase
         $user = User::factory()->create(['email' => 'test@example.com']);
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
 
-        Note::factory()->create([
+        $note = Note::factory()->create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'body' => 'Comment with avatar',
@@ -1070,85 +1070,56 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $response->assertStatus(200);
-        $response->assertSee('rounded-circle', false);
-        $response->assertSee('gravatar.com', false);
+        $response->assertOk();
+
+        preg_match('/id="note_'.preg_quote($note->id, '/').'".*?(?=id="note_|$)/s', $response->getContent(), $card);
+
+        $this->assertStringContainsString('rounded-circle', $card[0] ?? '', 'Note card should use the round avatar');
+        $this->assertStringContainsString('gravatar.com', $card[0] ?? '', 'Note card should use the Gravatar avatar');
     }
 
     #[Test]
-    public function show_renders_markdown_composer_replacing_quill(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        // Markdown textarea present
-        $response->assertSee('markdown-composer', false);
-        $response->assertSee('note-textarea', false);
-        // Status & time section
-        $response->assertSee('status-time-section', false);
-        // Submit button
-        $response->assertSee('Post Update');
-        // allUsers JSON for @mention autocomplete
-        $response->assertSee('data-users', false);
-    }
-
-    #[Test]
-    public function show_does_not_render_quill_editor(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertDontSee('note-editor-container', false);
-        $response->assertDontSee('loadQuill', false);
-    }
-
-    #[Test]
-    public function show_renders_composer_help_link(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('composer-help', false);
-        $response->assertSee('Help');
-        $response->assertSee('composerHelpModal', false);
-        $response->assertSee('/decision');
-        $response->assertSee('/blocker');
-        $response->assertSee('/assign');
-    }
-
-    #[Test]
-    public function show_renders_slash_command_autocomplete_container(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('slash-autocomplete', false);
-        $response->assertSee('data-commands', false);
-    }
-
-    #[Test]
-    public function show_renders_mention_autocomplete_container(): void
+    public function ticket_page_exposes_its_composer_and_client_hooks(): void
     {
         $user = User::factory()->create(['name' => 'TestUser']);
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $response->assertStatus(200);
-        $response->assertSee('mention-autocomplete', false);
-        $response->assertSee('TestUser');
+        $response->assertOk();
+
+        foreach ([
+            'markdown-composer',
+            'note-textarea',
+            'status-time-section',
+            'Post Update',
+            'data-users',
+            'composer-help',
+            'composerHelpModal',
+            '/decision',
+            '/blocker',
+            '/assign',
+            'slash-autocomplete',
+            'data-commands',
+            'mention-autocomplete',
+            'TestUser',
+            'fa-paperclip',
+            'data-action="attach"',
+            'data-keyboard-shortcuts',
+            'keyboard-icon',
+            'presence-indicator',
+            'data-ticket-id="'.$ticket->id.'"',
+            'signal-nudge',
+            'data-ticket-show',
+            'reply-composer',
+            'data-entry-type',
+        ] as $hook) {
+            $response->assertSee($hook, false);
+        }
+
+        $response->assertDontSee('note-editor-container', false);
+        $response->assertDontSee('loadQuill', false);
     }
 
     #[Test]
@@ -1204,95 +1175,9 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $content = $response->getContent();
-        // Find the note card for this decision and verify no edit action
-        $response->assertStatus(200);
-        // Decision notes should show "Update Decision" not "Edit"
-        $response->assertDontSee('data-action="edit"', false);
-    }
-
-    #[Test]
-    public function show_renders_attachment_button_in_composer(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('fa-paperclip', false);
-        $response->assertSee('data-action="attach"', false);
-    }
-
-    #[Test]
-    public function show_includes_keyboard_shortcut_data(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('data-keyboard-shortcuts', false);
-        $response->assertSee('keyboard-icon', false);
-    }
-
-    #[Test]
-    public function show_renders_presence_indicator(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('presence-indicator', false);
-        $response->assertSee('data-ticket-id="'.$ticket->id.'"', false);
-    }
-
-    #[Test]
-    public function show_renders_signal_nudge_container(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('signal-nudge', false);
-    }
-
-    #[Test]
-    public function show_renders_paste_detection_support(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('note-textarea', false);
-        $response->assertSee('data-ticket-show', false);
-    }
-
-    #[Test]
-    public function show_renders_mobile_responsive_classes(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-        ]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        // Reply form should have mobile-friendly submit
-        $response->assertSee('reply-composer', false);
-        // Consecutive changelog collapse attribute
-        $response->assertSee('data-entry-type', false);
+        $response->assertOk()
+            ->assertSee('Immutable decision')
+            ->assertDontSee('data-action="edit"', false);
     }
 
     #[Test]
@@ -2376,7 +2261,7 @@ class TicketsControllerTest extends TestCase
     public function fetch_returns_ticket_resource_collection(): void
     {
         $user = User::factory()->create();
-        Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-06-15 00:00:00']);
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-06-15 00:00:00']);
 
         $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
 
@@ -2391,7 +2276,7 @@ class TicketsControllerTest extends TestCase
                     'created_at',
                 ],
             ],
-        ]);
+        ])->assertJsonPath('data.0.id', $ticket->id);
     }
 
     #[Test]
