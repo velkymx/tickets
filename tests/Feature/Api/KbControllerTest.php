@@ -47,8 +47,8 @@ class KbControllerTest extends TestCase
         $response = $this->getJson('/api/v1/kb/lookups', $this->apiHeaders());
 
         $response->assertStatus(200)
-            ->assertSee('Runbooks')
-            ->assertSee('deploy');
+            ->assertJsonFragment(['name' => 'Runbooks'])
+            ->assertJsonFragment(['name' => 'deploy']);
     }
 
     #[Test]
@@ -67,8 +67,8 @@ class KbControllerTest extends TestCase
         $response = $this->getJson('/api/v1/kb/articles?query=e', $this->apiHeaders());
 
         $response->assertStatus(200)
-            ->assertSee('Deploy Guide')
-            ->assertDontSee('Secret Draft');
+            ->assertJsonFragment(['title' => 'Deploy Guide'])
+            ->assertJsonMissing(['title' => 'Secret Draft']);
     }
 
     #[Test]

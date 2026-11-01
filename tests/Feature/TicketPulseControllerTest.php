@@ -29,7 +29,9 @@ class TicketPulseControllerTest extends TestCase
                 'is_blocked',
                 'owner_label',
                 'viewers',
-            ]);
+            ])
+            ->assertJsonPath('id', $ticket->id)
+            ->assertJsonPath('status', $ticket->status->name);
     }
 
     #[Test]

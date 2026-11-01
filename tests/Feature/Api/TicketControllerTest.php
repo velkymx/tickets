@@ -16,7 +16,6 @@ use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -79,7 +78,12 @@ class TicketControllerTest extends TestCase
                     'projects',
                     'milestones',
                 ],
-            ]);
+            ])
+            ->assertJsonFragment(['name' => 'Open'])
+            ->assertJsonFragment(['name' => 'Bug'])
+            ->assertJsonFragment(['name' => 'High'])
+            ->assertJsonFragment(['name' => 'Project 1'])
+            ->assertJsonFragment(['name' => 'Sprint 1']);
     }
 
     #[Test]
@@ -110,7 +114,9 @@ class TicketControllerTest extends TestCase
                     'per_page',
                     'total',
                 ],
-            ]);
+            ])
+            ->assertJsonPath('data.0.id', $ticket->id)
+            ->assertJsonPath('meta.total', 1);
     }
 
     #[Test]
@@ -345,7 +351,9 @@ class TicketControllerTest extends TestCase
                     'created_at',
                     'notes',
                 ],
-            ]);
+            ])
+            ->assertJsonPath('data.id', $ticket->id)
+            ->assertJsonPath('data.subject', $ticket->subject);
     }
 
     #[Test]
@@ -685,7 +693,8 @@ class TicketControllerTest extends TestCase
                     'status',
                     'assignee',
                 ],
-            ]);
+            ])
+            ->assertJsonPath('ticket.id', $ticket->id);
     }
 
     #[Test]
@@ -959,25 +968,6 @@ class TicketControllerTest extends TestCase
         ], $this->apiHeaders());
 
         $response->assertStatus(403);
-    }
-
-    #[Test]
-    public function all_api_routes_are_registered(): void
-    {
-        $routes = collect(Route::getRoutes()->getRoutes())
-            ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/'))
-            ->map(fn ($route) => $route->methods()[0].' '.$route->uri())
-            ->sort()
-            ->values()
-            ->toArray();
-
-        $this->assertContains('GET api/v1/tickets/{id}', $routes);
-        $this->assertContains('GET api/v1/tickets/{id}/pulse', $routes);
-        $this->assertContains('POST api/v1/tickets/{id}/note', $routes);
-        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/react', $routes);
-        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/reply', $routes);
-        $this->assertContains('PUT api/v1/tickets/{id}/notes/{noteId}', $routes);
-        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/resolve', $routes);
     }
 
     #[Test]
