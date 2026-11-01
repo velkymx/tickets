@@ -21,16 +21,6 @@ use App\Http\Controllers\TicketsController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| These routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group.
-|
-*/
-
 // --- Public Routes ---
 Route::get('/', function () {
     return view('welcome');
@@ -50,12 +40,11 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
     // --- Tickets Routes (CRITICAL: Static routes must come before dynamic routes) ---
 
-    // Pulse Route (New)
     Route::get('/tickets/{ticket}/pulse', [TicketPulseController::class, 'show'])->name('tickets.pulse');
 
     // Static Routes (Creation, Import, API Access)
     Route::get('/ticket/create', [TicketsController::class, 'create'])->name('tickets.create');
-    Route::get('/tickets/import', [ImportController::class, 'index'])->name('tickets.import'); // FIX: MOVED UP
+    Route::get('/tickets/import', [ImportController::class, 'index'])->name('tickets.import');
     Route::post('/tickets/api/{id}', [TicketsController::class, 'api'])->name('tickets.api');
 
     // Action/Modifier Routes
