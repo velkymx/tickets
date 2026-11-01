@@ -38,6 +38,17 @@ class PaletteSearchTest extends TestCase
     }
 
     #[Test]
+    public function missing_query_returns_empty(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['subject' => 'Login crash']);
+
+        $response = $this->actingAs($user)->getJson('/palette/search');
+
+        $response->assertOk()->assertExactJson([]);
+    }
+
+    #[Test]
     public function overlong_queries_are_rejected(): void
     {
         $user = User::factory()->create();
