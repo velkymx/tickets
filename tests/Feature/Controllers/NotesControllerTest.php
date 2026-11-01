@@ -505,6 +505,7 @@ class NotesControllerTest extends TestCase
         $this->assertDatabaseHas('ticket_views', ['ticket_id' => $ticket->id, 'user_id' => $user->id]);
     }
 
+    #[Test]
     public function it_returns_current_viewers(): void
     {
         $user1 = User::factory()->create();
