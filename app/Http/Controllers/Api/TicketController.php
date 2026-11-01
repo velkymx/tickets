@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
+use App\Services\NotePromotionService;
 use App\Services\TicketPulseService;
 use App\Services\TicketService;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -461,7 +462,7 @@ class TicketController extends Controller
         ]);
     }
 
-    public function promoteNote(Request $request, $id, $noteId, DecisionRequestService $decisionRequests)
+    public function promoteNote(Request $request, $id, $noteId, NotePromotionService $promotion)
     {
         $validated = $request->validate([
             'type' => 'required|in:decision,blocker,action,decision_needed',
@@ -474,49 +475,18 @@ class TicketController extends Controller
         })->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
-        if ($note->notetype !== 'message') {
-            return response()->json(['message' => 'Only message notes can be promoted'], 422);
+        $error = $promotion->promote($note, $validated['type'], $validated['assignee'] ?? null);
+
+        if ($error) {
+            return response()->json(['message' => $error], 422);
         }
-
-        $type = $validated['type'];
-        $body = strip_tags($note->body);
-        $hasMention = (bool) preg_match('/@\[([^\]]+)\]/u', $note->body);
-
-        if ($type === 'decision' && mb_strlen(trim($body)) < 20) {
-            return response()->json(['message' => 'Decision notes must be at least 20 characters'], 422);
-        }
-
-        if ($type === 'action' && ! $hasMention && empty($validated['assignee'])) {
-            return response()->json(['message' => 'Actions require exactly one @assignee'], 422);
-        }
-
-        if ($type === 'decision_needed') {
-            $decider = $decisionRequests->findDecider($note->body_markdown ?: $body, $validated['assignee'] ?? null);
-
-            if (! $decider) {
-                return response()->json(['message' => 'Decision requests require exactly one @decider'], 422);
-            }
-
-            $decisionRequests->promote($note, $decider);
-
-            return response()->json([
-                'message' => 'Note promoted successfully',
-                'note' => ['id' => $note->id, 'notetype' => $note->notetype, 'decider_id' => $decider->id],
-            ]);
-        }
-
-        // Append the assignee mention when supplied and not already present.
-        if ($type === 'action' && ! empty($validated['assignee']) && ! $hasMention) {
-            $assigneeName = ltrim((string) $validated['assignee'], '@');
-            $note->body = rtrim($note->body).' @['.$assigneeName.']';
-        }
-
-        $note->notetype = $type;
-        $note->save();
 
         return response()->json([
             'message' => 'Note promoted successfully',
-            'note' => ['id' => $note->id, 'notetype' => $note->notetype],
+            'note' => array_filter(
+                ['id' => $note->id, 'notetype' => $note->notetype, 'decider_id' => $note->decider_id],
+                fn ($value) => $value !== null,
+            ),
         ]);
     }
 

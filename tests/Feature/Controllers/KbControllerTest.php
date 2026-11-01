@@ -316,4 +316,19 @@ class KbControllerTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    #[Test]
+    public function svg_attachment_is_rejected(): void
+    {
+        Storage::fake('public');
+
+        $author = User::factory()->create(['kb_role' => 'author']);
+        $article = KbArticle::factory()->create(['owner_id' => $author->id, 'user_id' => $author->id]);
+
+        $this->actingAs($author)->postJson("/kb/{$article->slug}/attachments", [
+            'file' => UploadedFile::fake()->create('logo.svg', 1, 'image/svg+xml'),
+        ])->assertStatus(422)->assertJsonValidationErrors('file');
+
+        $this->assertDatabaseMissing('kb_article_attachments', ['article_id' => $article->id]);
+    }
 }

@@ -8,14 +8,14 @@ use App\Models\NoteAttachment;
 use App\Models\NoteReaction;
 use App\Models\User;
 use App\Services\AttachmentService;
-use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
+use App\Services\NotePromotionService;
 use App\Services\TicketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class NotesController extends Controller
 {
@@ -32,63 +32,22 @@ class NotesController extends Controller
         return response()->json(['message' => 'Note Removed!']);
     }
 
-    public function promote($id, DecisionRequestService $decisionRequests)
+    public function promote(Request $request, $id, NotePromotionService $promotion)
     {
         $note = Note::with('ticket')->findOrFail($id);
 
         $this->authorize('promote', $note);
 
-        $validator = Validator::make(request()->all(), [
+        $validated = $request->validate([
             'type' => 'required|in:decision,blocker,action,decision_needed',
             'assignee' => 'nullable|string',
         ]);
 
-        $decider = request('type') === 'decision_needed'
-            ? $decisionRequests->findDecider($note->body_markdown ?: strip_tags($note->body), request('assignee'))
-            : null;
+        $error = $promotion->promote($note, $validated['type'], $validated['assignee'] ?? null);
 
-        $validator->after(function ($validator) use ($note, $decider) {
-            $type = request('type');
-            $body = strip_tags($note->body);
-
-            if ($note->notetype !== 'message') {
-                $validator->errors()->add('type', 'Only message notes can be promoted.');
-            }
-
-            if ($type === 'decision' && mb_strlen(trim($body)) < 20) {
-                $validator->errors()->add('type', 'Decision notes must be at least 20 characters.');
-            }
-
-            if ($type === 'action' && ! preg_match('/@\[([^\]]+)\]/u', $body) && ! request('assignee')) {
-                $validator->errors()->add('type', 'Actions require exactly one @assignee');
-            }
-
-            if ($type === 'decision_needed' && ! $decider) {
-                $validator->errors()->add('type', 'Decision requests require exactly one @decider');
-            }
-        });
-
-        if ($validator->fails()) {
-            if (request()->expectsJson() || request()->ajax()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-
-            return redirect('tickets/'.$note->ticket_id)->withErrors($validator)->withInput();
+        if ($error) {
+            throw ValidationException::withMessages(['type' => $error])->redirectTo(url('tickets/'.$note->ticket_id));
         }
-
-        if (request('type') === 'action' && request('assignee') && ! preg_match('/@\[([^\]]+)\]/u', $note->body)) {
-            $assigneeName = ltrim((string) request('assignee'), '@');
-            $note->body = rtrim($note->body).' @['.$assigneeName.']';
-        }
-
-        if ($decider) {
-            $decisionRequests->promote($note, $decider);
-
-            return redirect('tickets/'.$note->ticket_id);
-        }
-
-        $note->notetype = request('type');
-        $note->save();
 
         return redirect('tickets/'.$note->ticket_id);
     }

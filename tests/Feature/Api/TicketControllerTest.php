@@ -14,6 +14,7 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\MarkdownService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -1443,8 +1444,42 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function promote_note_uses_stored_mention_for_action(): void
+    {
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $markdown = 'Fix the @param docblock, @[Jane Doe]';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'action'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.notetype', 'action');
+
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id, 'user_id' => $jane->id]);
+    }
+
+    #[Test]
+    public function promote_note_rejects_action_with_unknown_assignee(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
+            'body' => 'Someone should look at this.',
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'action', 'assignee' => 'nobody'], $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Actions require exactly one @assignee.');
+    }
+
+    #[Test]
     public function promote_note_with_assignee_creates_action(): void
     {
+        User::factory()->create(['name' => 'alan']);
         $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
         $note = Note::factory()->create([
             'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',

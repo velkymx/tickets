@@ -16,7 +16,7 @@ class Note extends Model
 
     protected $fillable = [
         'body', 'body_markdown', 'user_id', 'ticket_id', 'parent_id', 'hours', 'notetype', 'hide', 'edited_at',
-        'pinned', 'resolved', 'resolved_by', 'supersedes_id', 'resolution_message', 'decider_id',
+        'pinned', 'resolved', 'resolved_by', 'supersedes_id', 'resolution_message', 'decider_id', 'assignee_id',
     ];
 
     public const DECISION_WARNING_HOURS = 24;
@@ -32,6 +32,7 @@ class Note extends Model
             'pinned' => 'boolean',
             'resolved' => 'boolean',
             'decider_id' => 'integer',
+            'assignee_id' => 'integer',
         ];
     }
 
@@ -78,6 +79,11 @@ class Note extends Model
     public function decider(): BelongsTo
     {
         return $this->belongsTo(User::class, 'decider_id');
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assignee_id');
     }
 
     public function supersedes(): BelongsTo

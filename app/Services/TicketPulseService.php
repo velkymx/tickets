@@ -145,7 +145,7 @@ class TicketPulseService
     protected function deriveOwnerLabel(Ticket $ticket, ?Note $activeBlocker): string
     {
         if ($activeBlocker) {
-            $mention = $this->extractMention($activeBlocker->body);
+            $mention = $this->extractMention($activeBlocker);
             if ($mention) {
                 return "Waiting on: {$mention}";
             }
@@ -170,7 +170,9 @@ class TicketPulseService
         return [
             'id' => $latestAction->id,
             'body' => $latestAction->body,
-            'assignee' => $this->extractMention($latestAction->body),
+            'assignee' => $latestAction->loadMissing('assignee')->assignee
+                ? '@'.$latestAction->assignee->name
+                : $this->extractMention($latestAction),
             'created_at' => $latestAction->created_at?->toISOString(),
         ];
     }
@@ -205,12 +207,12 @@ class TicketPulseService
         ];
     }
 
-    protected function extractMention(string $body): ?string
+    protected function extractMention(Note $note): ?string
     {
-        if (preg_match('/@([\w.\-]+)/', $body, $matches) !== 1) {
-            return null;
-        }
+        $user = app(MentionService::class)
+            ->resolveUsers($note->body_markdown ?: strip_tags($note->body))
+            ->first();
 
-        return '@'.$matches[1];
+        return $user ? '@'.$user->name : null;
     }
 }
