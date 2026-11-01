@@ -30,7 +30,7 @@ use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
-use Laravel\Mcp\Server\Transport\StdioTransport;
+use Laravel\Mcp\Server\Contracts\Transport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -213,18 +213,44 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
-    public function server_acknowledges_initialized_lifecycle_method(): void
+    public function server_acknowledges_the_initialized_lifecycle_request(): void
     {
-        $server = new TicketsServer(new StdioTransport);
+        $transport = new class implements Transport
+        {
+            /** @var array<int, string> */
+            public array $sent = [];
 
-        $boot = new \ReflectionMethod($server, 'boot');
-        $boot->setAccessible(true);
-        $boot->invoke($server);
+            public function onReceive(\Closure $handler): void {}
 
-        $methods = new \ReflectionProperty($server, 'methods');
-        $methods->setAccessible(true);
+            public function run(): void {}
 
-        $this->assertArrayHasKey('notifications/initialized', $methods->getValue($server));
+            public function send(string $message): void
+            {
+                $this->sent[] = $message;
+            }
+
+            public function stream(\Closure $stream): void
+            {
+                foreach ($stream() as $message) {
+                    $this->sent[] = $message;
+                }
+            }
+        };
+
+        $server = new TicketsServer($transport);
+        $server->start();
+        $server->handle((string) json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'notifications/initialized',
+        ]));
+
+        $this->assertCount(1, $transport->sent);
+
+        $reply = json_decode($transport->sent[0], true);
+
+        $this->assertSame(1, $reply['id']);
+        $this->assertArrayNotHasKey('error', $reply);
     }
 
     #[Test]
