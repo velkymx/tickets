@@ -322,13 +322,16 @@ class SlashCommandServiceTest extends TestCase
             }
         };
 
+        $this->expectException(\RuntimeException::class);
+
         try {
             $service->handle($ticket, "/status active\n/close");
-        } catch (\RuntimeException) {
-            // expected
+        } finally {
+            $this->assertEquals(
+                $originalStatusId,
+                $ticket->fresh()->status_id,
+                'Status change should be rolled back'
+            );
         }
-
-        $ticket->refresh();
-        $this->assertEquals($originalStatusId, $ticket->status_id, 'Status change should be rolled back');
     }
 }
