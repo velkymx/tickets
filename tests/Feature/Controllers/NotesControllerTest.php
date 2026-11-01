@@ -7,6 +7,7 @@ use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\TicketView;
 use App\Models\User;
+use App\Services\MarkdownService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -165,6 +166,30 @@ class NotesControllerTest extends TestCase
         $response->assertRedirect("/tickets/{$ticket->id}");
         $response->assertSessionHasErrors(['type']);
         $this->assertEquals('message', $note->fresh()->notetype);
+    }
+
+    #[Test]
+    public function it_promotes_a_note_to_action_using_its_stored_mention(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Verify the staging deploy @[Jane Doe]';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals('action', $note->fresh()->notetype);
     }
 
     #[Test]
