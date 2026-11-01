@@ -207,7 +207,7 @@ class TicketsController extends Controller
         return view('tickets.show', compact('ticket', 'lookups', 'ticketViews', 'pulse', 'allUsers', 'pinnedNotes', 'lastViewedAt'));
     }
 
-    public function create($value = '')
+    public function create()
     {
         $lookups = $this->ticketService->getLookups();
 
