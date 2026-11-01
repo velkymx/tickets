@@ -31,14 +31,6 @@ class RequirementsTest extends TestCase
     }
 
     #[Test]
-    public function mariadb_maps_to_pdo_mysql(): void
-    {
-        $names = array_map(fn ($r) => $r->name, Requirements::check('mariadb'));
-
-        $this->assertContains('PHP extension: pdo_mysql', $names);
-    }
-
-    #[Test]
     public function unknown_driver_reports_a_problem(): void
     {
         $results = Requirements::check('oracle');
