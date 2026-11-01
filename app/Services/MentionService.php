@@ -5,9 +5,45 @@ namespace App\Services;
 use App\Models\Mention;
 use App\Models\Note;
 use App\Models\TicketUserWatcher;
+use App\Models\User;
+use Illuminate\Support\Collection;
 
 class MentionService
 {
+    public function findMentionedUser(string $markdown, ?string $name = null): ?User
+    {
+        if ($name !== null && trim($name) !== '') {
+            return $this->findUser(ltrim(trim($name), '@'));
+        }
+
+        $users = $this->resolveUsers($markdown);
+
+        return $users->count() === 1 ? $users->first() : null;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function resolveUsers(string $markdown): Collection
+    {
+        return collect($this->parseMentions($markdown))
+            ->map(fn (string $name) => $this->findUser($name))
+            ->filter()
+            ->unique('id')
+            ->values();
+    }
+
+    public function findUser(string $name): ?User
+    {
+        $name = preg_replace('/\s*\([^)]*\)$/', '', trim($name));
+
+        $candidates = User::query()
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+            ->get();
+
+        return $candidates->firstWhere('name', $name) ?? $candidates->first();
+    }
+
     public function parseMentions(string $markdown): array
     {
         preg_match_all('/@\[([^\]]+)\]/u', $markdown, $bracketMatches);

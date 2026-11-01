@@ -8,17 +8,9 @@ use App\Notifications\DecisionRequestNotification;
 
 class DecisionRequestService
 {
-    public function __construct(private MentionService $mentionService) {}
-
     public function findDecider(string $text, ?string $assignee = null): ?User
     {
-        if ($assignee !== null && trim($assignee) !== '') {
-            return $this->findUser(ltrim(trim($assignee), '@'));
-        }
-
-        $names = $this->mentionService->parseMentions($text);
-
-        return count($names) === 1 ? $this->findUser(reset($names)) : null;
+        return app(MentionService::class)->findMentionedUser($text, $assignee);
     }
 
     public function promote(Note $note, User $decider): void
@@ -61,16 +53,5 @@ class DecisionRequestService
             'resolved_by' => $decision->user_id,
             'resolution_message' => trim(strip_tags($decision->body_markdown ?: $decision->body)),
         ]);
-    }
-
-    private function findUser(string $name): ?User
-    {
-        $name = preg_replace('/\s*\([^)]*\)$/', '', trim($name));
-
-        $candidates = User::query()
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
-            ->get();
-
-        return $candidates->firstWhere('name', $name) ?? $candidates->first();
     }
 }
