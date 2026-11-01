@@ -1745,7 +1745,9 @@ class TicketsControllerTest extends TestCase
             'tickets' => [],
         ]);
 
-        $response->assertSessionHasErrors('tickets');
+        $response->assertSessionHasErrors([
+            'tickets' => 'At least one ticket must be selected.',
+        ]);
     }
 
     #[Test]
