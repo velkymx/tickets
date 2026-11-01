@@ -306,8 +306,8 @@ playbook for that flow. To run several specialists through one server, see
 | `get-ticket-tool` | `ticket_id` (required) - full detail, visible notes with replies, pulse state including `decision_requests`. |
 | `get-pulse-tool` | `ticket_id` (required) - execution state, blocker, next action, decisions, threads. |
 | `create-ticket-tool` | `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `assignee_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you by default; pass `assignee_id` for someone else, or `assignee_id: null` to leave it unassigned. |
-| `update-ticket-tool` | `ticket_id` (required); any of `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`. Own/assigned only. |
-| `add-note-tool` | `ticket_id` (required); `body` (slash commands supported); `hours` (max 999); `status_id`; `claim` (bool, self-assign). Command-only bodies (e.g. `/close`) apply without storing a note. |
+| `update-ticket-tool` | `ticket_id` (required); any of `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`. Own/assigned only. Changed fields are written to the ticket changelog. |
+| `add-note-tool` | `ticket_id` (required); `body` (slash commands supported); `hours` (max 999); `status_id`; `claim` (bool, self-assign). Mentions notify the mentioned users, status and claim changes are written to the changelog, and watchers are notified. Command-only bodies (e.g. `/close`) apply without storing a note. |
 | `reply-to-note-tool` | `ticket_id`, `note_id` (top-level only), `body` (all required). A body starting `/decision` records a decision; on a decision request thread it also closes the request. |
 | `edit-note-tool` | `ticket_id`, `note_id`, `body` (all required). Own notes only; decisions immutable. |
 | `resolve-note-tool` | `ticket_id`, `note_id`, `resolution_message` (all required). Author or assignee only. |
