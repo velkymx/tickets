@@ -424,6 +424,31 @@ class ImporterTest extends TestCase
     }
 
     #[Test]
+    public function it_imports_the_fixture_header_row_with_quoted_commas(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Regression']);
+        foreach (['Blocker', 'Critical', 'Major'] as $importance) {
+            Importance::factory()->create(['name' => $importance]);
+        }
+        foreach (['New', 'Active'] as $status) {
+            Status::factory()->create(['name' => $status]);
+        }
+        Project::factory()->create(['name' => 'Platform', 'active' => true]);
+
+        copy(base_path('tests/Fixtures/import.csv'), $this->tempFile);
+
+        $this->importer->call($milestone->id, $this->tempFile, true, $user->id);
+
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'FOUR-3722',
+            'description' => 'Select list with dropdown type data connectors in web entry, it is not displayed correctly',
+        ]);
+        $this->assertSame(6, Ticket::where('milestone_id', $milestone->id)->count());
+    }
+
+    #[Test]
     public function it_imports_large_files_in_chunks(): void
     {
         $user = User::factory()->create(['name' => 'Assignee']);
