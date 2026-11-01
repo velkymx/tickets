@@ -149,23 +149,10 @@ class ReleaseControllerTest extends TestCase
             'body' => 'Updated Body',
         ]);
 
+        $response->assertRedirect("/release/{$release->id}");
         $release->refresh();
         $this->assertEquals('Updated Title', $release->title);
         $this->assertEquals('Updated Body', $release->body);
-    }
-
-    #[Test]
-    public function put_redirects_to_release_show(): void
-    {
-        $user = User::factory()->create();
-        $release = Release::factory()->create(['user_id' => $user->id]);
-
-        $response = $this->actingAs($user)->put("/release/edit/{$release->id}", [
-            'title' => 'Updated Title',
-            'body' => 'Updated Body',
-        ]);
-
-        $response->assertRedirect("/release/{$release->id}");
     }
 
     #[Test]
@@ -194,25 +181,12 @@ class ReleaseControllerTest extends TestCase
             'completed_at' => '2024-01-31',
         ]);
 
+        $response->assertRedirect('/release/'.Release::first()->id);
         $this->assertDatabaseHas('releases', [
             'title' => 'New Release',
             'body' => 'Release Body',
             'user_id' => $user->id,
         ]);
-    }
-
-    #[Test]
-    public function store_redirects_to_release_show(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/release/store', [
-            'title' => 'New Release',
-            'body' => 'Release Body',
-        ]);
-
-        $release = Release::first();
-        $response->assertRedirect("/release/{$release->id}");
     }
 
     #[Test]

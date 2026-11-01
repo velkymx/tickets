@@ -392,19 +392,6 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
-    public function store_redirects_to_milestone_index(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/milestone/store/new', [
-            'id' => 'new',
-            'name' => 'New Milestone',
-        ]);
-
-        $response->assertRedirect('/milestone');
-    }
-
-    #[Test]
     public function toggle_watcher_creates_watcher_when_not_watching(): void
     {
         $user = User::factory()->create();

@@ -979,6 +979,13 @@ class TicketsControllerTest extends TestCase
         return '';
     }
 
+    private function reactionForm(string $html, string $emoji): string
+    {
+        preg_match('/data-emoji="'.preg_quote($emoji, '/').'".*?<\/form>/s', $html, $match);
+
+        return $match[0] ?? '';
+    }
+
     #[Test]
     public function show_reaction_bar_displays_emoji_counts(): void
     {
@@ -1019,9 +1026,12 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $response->assertStatus(200);
-        // User has reacted, so btn-primary should appear (highlighted)
-        $response->assertSee('btn-primary', false);
+        $response->assertOk();
+
+        $form = $this->reactionForm($response->getContent(), 'thumbsup');
+
+        $this->assertStringContainsString('btn-primary', $form, 'Reacted emoji should be highlighted');
+        $this->assertStringNotContainsString('btn-outline-secondary', $form);
     }
 
     #[Test]
@@ -1037,10 +1047,13 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $response->assertStatus(200);
-        // Even with no reactions, the add-reaction buttons should show
+        $response->assertOk();
         $response->assertSee('reaction-bar', false);
         $response->assertSee('add-reaction', false);
+
+        $form = $this->reactionForm($response->getContent(), 'thumbsup');
+
+        $this->assertStringContainsString('btn-outline-secondary', $form, 'Unreacted emoji should stay outlined');
     }
 
     #[Test]
@@ -2510,5 +2523,30 @@ class TicketsControllerTest extends TestCase
         $this->assertNotNull($found);
         $this->assertEquals('Alice', $found['name']);
         $this->assertEquals('PM', $found['title']);
+    }
+
+    #[Test]
+    public function clone_view_carries_the_source_ticket(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'subject' => 'Original Ticket',
+            'description' => 'Original description',
+            'type_id' => Type::factory()->create()->id,
+            'status_id' => Status::factory()->create(['name' => 'Open'])->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/clone/{$ticket->id}");
+
+        $response->assertOk();
+        $response->assertViewHas('ticket', function ($loaded) use ($ticket) {
+            return $loaded->is($ticket)
+                && $loaded->subject === $ticket->subject
+                && $loaded->description === $ticket->description;
+        });
     }
 }

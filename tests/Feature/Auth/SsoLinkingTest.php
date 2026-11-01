@@ -37,12 +37,23 @@ class SsoLinkingTest extends TestCase
     }
 
     #[Test]
-    public function register_gate_reads_config_not_env(): void
+    public function allowed_domain_registers_a_new_user(): void
     {
         config(['services.sso.allowed_domains' => 'corp.test']);
         $this->fakeAzure('new@corp.test', 'good-tenant');
 
         $this->get('/auth/azure/callback')->assertRedirect('/home');
         $this->assertAuthenticated();
+    }
+
+    #[Test]
+    public function domain_outside_the_allowlist_is_rejected(): void
+    {
+        config(['services.sso.allowed_domains' => 'other.test']);
+        $this->fakeAzure('new@corp.test', 'good-tenant');
+
+        $this->get('/auth/azure/callback')->assertRedirect(route('login'));
+
+        $this->assertGuest();
     }
 }

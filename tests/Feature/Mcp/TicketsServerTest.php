@@ -18,6 +18,7 @@ use App\Mcp\Tools\PromoteNoteTool;
 use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
+use App\Mcp\Tools\SearchTicketsTool;
 use App\Mcp\Tools\UpdateMilestoneTool;
 use App\Mcp\Tools\UpdateTicketTool;
 use App\Mcp\Tools\WatchTicketTool;
@@ -31,6 +32,7 @@ use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Mcp\Server\Contracts\Transport;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -57,11 +59,19 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
-    public function lookups_tool_rejects_unauthenticated_calls(): void
+    #[DataProvider('unauthenticatedToolCalls')]
+    public function tools_reject_unauthenticated_calls(string $tool, array $args): void
     {
-        $response = TicketsServer::tool(GetLookupsTool::class, []);
+        TicketsServer::tool($tool, $args)->assertHasErrors(['Unauthenticated']);
+    }
 
-        $response->assertHasErrors(['Unauthenticated']);
+    public static function unauthenticatedToolCalls(): array
+    {
+        return [
+            'lookups' => [GetLookupsTool::class, []],
+            'list milestones' => [ListMilestonesTool::class, []],
+            'search tickets' => [SearchTicketsTool::class, ['query' => 'login']],
+        ];
     }
 
     #[Test]
@@ -796,14 +806,6 @@ class TicketsServerTest extends TestCase
         $response->assertOk();
         $response->assertSee('Alpha Release');
         $response->assertSee('percent_complete');
-    }
-
-    #[Test]
-    public function list_milestones_tool_rejects_unauthenticated_calls(): void
-    {
-        $response = TicketsServer::tool(ListMilestonesTool::class, []);
-
-        $response->assertHasErrors(['Unauthenticated']);
     }
 
     #[Test]

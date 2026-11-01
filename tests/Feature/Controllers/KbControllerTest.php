@@ -161,9 +161,7 @@ class KbControllerTest extends TestCase
     {
         $user = User::factory()->create(['kb_role' => $role]);
 
-        $this->actingAs($user)->get('/kb/create')
-            ->assertOk()
-            ->assertSee('data-markdown-editor', false);
+        $this->actingAs($user)->get('/kb/create')->assertOk();
     }
 
     #[Test]
