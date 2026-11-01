@@ -3,7 +3,7 @@
 namespace App\Mcp\Tools;
 
 use App\Models\Note;
-use App\Services\DecisionRequestService;
+use App\Services\NotePromotionService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type as JsonType;
 use Laravel\Mcp\Request;
@@ -13,7 +13,7 @@ use Laravel\Mcp\Server\Attributes\Description;
 #[Description('Promote a plain message note into a decision, blocker, action, or decision request (decision_needed) on a ticket you own or are assigned to. Decisions need at least 20 characters; actions need exactly one @assignee and decision requests exactly one @decider (a mention in the body or the assignee argument).')]
 class PromoteNoteTool extends TicketTool
 {
-    public function handle(Request $request, DecisionRequestService $decisionRequests): Response
+    public function handle(Request $request, NotePromotionService $promotion): Response
     {
         $user = $this->apiUser($request);
 
@@ -40,45 +40,18 @@ class PromoteNoteTool extends TicketTool
             return $this->noteNotFound();
         }
 
-        if ($note->notetype !== 'message') {
-            return Response::error('Only message notes can be promoted.');
+        $error = $promotion->promote($note, $validated['type'], $validated['assignee'] ?? null);
+
+        if ($error) {
+            return Response::error($error);
         }
 
-        $type = $validated['type'];
-        $body = strip_tags($note->body);
-        $hasMention = (bool) preg_match('/@\[([^\]]+)\]/u', $note->body);
-
-        if ($type === 'decision' && mb_strlen(trim($body)) < 20) {
-            return Response::error('Decision notes must be at least 20 characters.');
-        }
-
-        if ($type === 'action' && ! $hasMention && empty($validated['assignee'])) {
-            return Response::error('Actions require exactly one @assignee.');
-        }
-
-        if ($type === 'decision_needed') {
-            $decider = $decisionRequests->findDecider($note->body_markdown ?: $body, $validated['assignee'] ?? null);
-
-            if (! $decider) {
-                return Response::error('Decision requests require exactly one @decider.');
-            }
-
-            $decisionRequests->promote($note, $decider);
-
+        if ($note->notetype === 'decision_needed') {
             return $this->respond([
                 'message' => 'Note promoted.',
-                'note' => ['id' => $note->id, 'notetype' => $note->notetype, 'decider_id' => $decider->id],
+                'note' => ['id' => $note->id, 'notetype' => $note->notetype, 'decider_id' => $note->decider_id],
             ], 'Decision requested. The decider was notified; a /decision reply on this thread closes it.');
         }
-
-        // Append the assignee mention when supplied and not already present.
-        if ($type === 'action' && ! empty($validated['assignee']) && ! $hasMention) {
-            $assigneeName = ltrim((string) $validated['assignee'], '@');
-            $note->body = rtrim($note->body).' @['.$assigneeName.']';
-        }
-
-        $note->notetype = $type;
-        $note->save();
 
         return $this->respond([
             'message' => 'Note promoted.',

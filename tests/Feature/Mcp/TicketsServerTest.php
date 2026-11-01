@@ -30,6 +30,7 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\MarkdownService;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Mcp\Server\Contracts\Transport;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -587,6 +588,7 @@ class TicketsServerTest extends TestCase
     public function promote_note_tool_requires_assignee_for_actions(): void
     {
         $user = User::factory()->create();
+        User::factory()->create(['name' => 'alan']);
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
         $note = Note::factory()->create([
             'ticket_id' => $ticket->id,
@@ -603,6 +605,29 @@ class TicketsServerTest extends TestCase
             'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'action', 'assignee' => 'alan',
         ])->assertOk();
         $this->assertDatabaseHas('notes', ['id' => $note->id, 'notetype' => 'action']);
+    }
+
+    #[Test]
+    public function promote_note_tool_uses_stored_mention_for_action(): void
+    {
+        $user = User::factory()->create();
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Fix the @param docblock, @[Jane Doe]';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'action',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'notetype' => 'action']);
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id, 'user_id' => $jane->id]);
     }
 
     #[Test]

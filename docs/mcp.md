@@ -317,7 +317,7 @@ playbook for that flow. To run several specialists through one server, see
 | `resolve-note-tool` | `ticket_id`, `note_id`, `resolution_message` (all required). Author or assignee only. |
 | `react-to-note-tool` | `ticket_id`, `note_id`, `emoji` (`thumbsup`, `eyes`). Toggles. |
 | `moderate-note-tool` | `ticket_id`, `note_id`, `action` (`pin`/`unpin`/`hide`/`unhide`). Own/assigned ticket only. |
-| `promote-note-tool` | `ticket_id`, `note_id`, `type` (`decision`/`blocker`/`action`/`decision_needed`); `assignee` (username, for actions or the decider). Message notes only; decisions need 20+ characters, actions need exactly one @assignee, decision requests exactly one @decider. |
+| `promote-note-tool` | `ticket_id`, `note_id`, `type` (`decision`/`blocker`/`action`/`decision_needed`); `assignee` (username, for actions or the decider). Message notes only; decisions need 20+ characters, actions need exactly one @assignee, decision requests exactly one @decider. Only mentions that match an existing user count; an unknown `assignee` is rejected. Same rules as the web and API promote. |
 | `watch-ticket-tool` | `ticket_id`, `action` (`watch`/`unwatch`/`mute`/`unmute`). Any viewable ticket, not just your own. |
 
 ### Slash commands (in `add-note-tool` body)
