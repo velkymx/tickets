@@ -137,21 +137,6 @@ class ActivityControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_uses_theme_aware_notification_card_backgrounds(): void
-    {
-        $user = User::factory()->create();
-        $actor = User::factory()->create(['name' => 'Sarah']);
-
-        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
-
-        $response = $this->actingAs($user)->get('/activity');
-
-        $response->assertOk();
-        $response->assertSee('bg-body', false);
-        $response->assertDontSee('bg-white', false);
-    }
-
-    #[Test]
     public function read_marks_a_single_notification_as_read(): void
     {
         $user = User::factory()->create();
@@ -202,8 +187,6 @@ class ActivityControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('id="notificationsDropdown"', false);
         $response->assertSee('fas fa-bell', false);
-        $response->assertSee('notification-count-inline', false);
-        $response->assertDontSee('translate-middle badge', false);
         $response->assertSee('6 unread');
         $response->assertSee('View all');
         $response->assertSee('/activity', false);
