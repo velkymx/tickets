@@ -67,6 +67,70 @@ class AutomationControllerTest extends TestCase
     }
 
     #[Test]
+    public function store_defaults_checkboxes_to_disabled_when_absent(): void
+    {
+        $user = User::factory()->create(['admin' => true]);
+
+        $this->actingAs($user)->post(route('automations.store'), [
+            'name' => 'Disabled Automation',
+            'trigger' => 'ticket.updated',
+            'conditions_json' => json_encode(['all' => []]),
+            'actions_json' => json_encode([]),
+        ])->assertRedirect();
+
+        $automation = Automation::where('name', 'Disabled Automation')->firstOrFail();
+
+        $this->assertFalse($automation->enabled);
+        $this->assertFalse($automation->stop_after_match);
+    }
+
+    #[Test]
+    public function update_can_disable_an_automation(): void
+    {
+        $user = User::factory()->create(['admin' => true]);
+        $automation = Automation::factory()->create([
+            'enabled' => true,
+            'stop_after_match' => true,
+        ]);
+
+        $this->actingAs($user)->put(route('automations.update', $automation), [
+            'name' => $automation->name,
+            'trigger' => $automation->trigger,
+            'conditions_json' => json_encode(['all' => []]),
+            'actions_json' => json_encode([]),
+        ])->assertRedirect();
+
+        $automation->refresh();
+
+        $this->assertFalse($automation->enabled);
+        $this->assertFalse($automation->stop_after_match);
+    }
+
+    #[Test]
+    public function update_can_enable_an_automation(): void
+    {
+        $user = User::factory()->create(['admin' => true]);
+        $automation = Automation::factory()->create([
+            'enabled' => false,
+            'stop_after_match' => false,
+        ]);
+
+        $this->actingAs($user)->put(route('automations.update', $automation), [
+            'name' => $automation->name,
+            'trigger' => $automation->trigger,
+            'enabled' => '1',
+            'stop_after_match' => '1',
+            'conditions_json' => json_encode(['all' => []]),
+            'actions_json' => json_encode([]),
+        ])->assertRedirect();
+
+        $automation->refresh();
+
+        $this->assertTrue($automation->enabled);
+        $this->assertTrue($automation->stop_after_match);
+    }
+
+    #[Test]
     public function destroy_deletes_automation(): void
     {
         $user = User::factory()->create(['admin' => true]);
