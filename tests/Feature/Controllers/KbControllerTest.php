@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controllers;
 
 use App\Models\KbArticle;
+use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
 use App\Models\User;
@@ -47,6 +48,74 @@ class KbControllerTest extends TestCase
         $response = $this->get("/kb/{$article->slug}");
         $response->assertOk();
         $response->assertSee($article->title);
+    }
+
+    #[Test]
+    public function show_hides_internal_and_restricted_related_articles_from_guests(): void
+    {
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create();
+        $article->tags()->attach($tag);
+
+        $internal = KbArticle::factory()->verified()->internal()->create(['title' => 'Internal Playbook']);
+        $internal->tags()->attach($tag);
+
+        $restricted = KbArticle::factory()->verified()->restricted()->create(['title' => 'Restricted Runbook']);
+        $restricted->tags()->attach($tag);
+
+        $this->get("/kb/{$article->slug}")
+            ->assertOk()
+            ->assertDontSee('Internal Playbook')
+            ->assertDontSee('Restricted Runbook');
+    }
+
+    #[Test]
+    public function show_lists_internal_related_articles_to_authenticated_users(): void
+    {
+        $user = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create();
+        $article->tags()->attach($tag);
+
+        $internal = KbArticle::factory()->verified()->internal()->create(['title' => 'Internal Playbook']);
+        $internal->tags()->attach($tag);
+
+        $this->actingAs($user)->get("/kb/{$article->slug}")
+            ->assertOk()
+            ->assertSee('Internal Playbook');
+    }
+
+    #[Test]
+    public function show_hides_restricted_related_articles_from_unpermitted_users(): void
+    {
+        $user = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create();
+        $article->tags()->attach($tag);
+
+        $restricted = KbArticle::factory()->verified()->restricted()->create(['title' => 'Restricted Runbook']);
+        $restricted->tags()->attach($tag);
+
+        $this->actingAs($user)->get("/kb/{$article->slug}")
+            ->assertOk()
+            ->assertDontSee('Restricted Runbook');
+    }
+
+    #[Test]
+    public function show_lists_restricted_related_articles_to_permitted_users(): void
+    {
+        $user = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create();
+        $article->tags()->attach($tag);
+
+        $restricted = KbArticle::factory()->verified()->restricted()->create(['title' => 'Restricted Runbook']);
+        $restricted->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $restricted->id, 'user_id' => $user->id]);
+
+        $this->actingAs($user)->get("/kb/{$article->slug}")
+            ->assertOk()
+            ->assertSee('Restricted Runbook');
     }
 
     #[Test]

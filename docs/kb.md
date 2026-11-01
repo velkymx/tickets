@@ -283,7 +283,7 @@ KB gets its own sub-layout extending `layouts/app.blade.php` - adds a sidebar fo
 ### Discovery Features
 
 - Sidebar navigation by category and tags
-- Related articles (shared tags) shown at the bottom of article view
+- Related articles (shared tags) shown at the bottom of article view, filtered to articles the reader may see
 - Recently updated articles on KB index page
 - Filter by governance status to surface stale/deprecated content
 
