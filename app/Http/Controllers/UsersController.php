@@ -73,7 +73,23 @@ class UsersController extends Controller
 
         $user = User::findOrFail(Auth::id());
 
-        $timezones = $this->get_timezones();
+        $regions = [
+            'Africa' => \DateTimeZone::AFRICA,
+            'America' => \DateTimeZone::AMERICA,
+            'Antarctica' => \DateTimeZone::ANTARCTICA,
+            'Asia' => \DateTimeZone::ASIA,
+            'Atlantic' => \DateTimeZone::ATLANTIC,
+            'Europe' => \DateTimeZone::EUROPE,
+            'Indian' => \DateTimeZone::INDIAN,
+            'Pacific' => \DateTimeZone::PACIFIC,
+        ];
+
+        $timezones = [];
+        foreach ($regions as $name => $mask) {
+            foreach (\DateTimeZone::listIdentifiers($mask) as $timezone) {
+                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$this->currentTimeFor($timezone);
+            }
+        }
 
         $themes = [
             'auto' => 'Automatic (OS Preference)',
@@ -134,31 +150,6 @@ class UsersController extends Controller
         $user->save();
 
         return back()->with('info_message', 'API token revoked.');
-    }
-
-    private function get_timezones()
-    {
-        $regions = [
-            'Africa' => \DateTimeZone::AFRICA,
-            'America' => \DateTimeZone::AMERICA,
-            'Antarctica' => \DateTimeZone::ANTARCTICA,
-            'Asia' => \DateTimeZone::ASIA,
-            'Atlantic' => \DateTimeZone::ATLANTIC,
-            'Europe' => \DateTimeZone::EUROPE,
-            'Indian' => \DateTimeZone::INDIAN,
-            'Pacific' => \DateTimeZone::PACIFIC,
-        ];
-
-        $timezones = [];
-        foreach ($regions as $name => $mask) {
-            $zones = \DateTimeZone::listIdentifiers($mask);
-            foreach ($zones as $timezone) {
-                // Format timezone name with current time
-                $timezones[$name][$timezone] = substr($timezone, strlen($name) + 1).' - '.$this->currentTimeFor($timezone);
-            }
-        }
-
-        return $timezones;
     }
 
     private function currentTimeFor(string $timezone): string
