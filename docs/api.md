@@ -345,7 +345,7 @@ curl -X POST \
 POST /tickets/{id}/notes/{noteId}/promote
 ```
 
-Turns a plain message note into a `decision`, `blocker`, `action`, or `decision_needed`. Only message notes can be promoted; decisions need 20+ characters, actions need exactly one `@assignee`, and decision requests exactly one `@decider` (a mention in the body or the `assignee` field). Promoting to `decision_needed` notifies the decider.
+Turns a plain message note into a `decision`, `blocker`, `action`, or `decision_needed`. Only message notes can be promoted; decisions need 20+ characters, actions need exactly one `@assignee`, and decision requests exactly one `@decider` (a mention in the body or the `assignee` field). Only mentions that match an existing user count, so tokens such as `@param` are ignored, and an unknown `assignee` is rejected. An action `assignee` is written into the note as an `@[Name]` mention and shows as the owner in the pulse. Promoting to `decision_needed` notifies the decider.
 
 ```bash
 curl -X POST \
