@@ -240,6 +240,32 @@ class NotesControllerTest extends TestCase
     }
 
     #[Test]
+    public function it_shows_the_explicit_action_assignee_over_an_earlier_mention(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create(['name' => 'Bob']);
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Ask @[Bob] for the logs, then fix the deploy.';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        $this->actingAs($user)->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+            'assignee' => 'Jane Doe',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame($jane->id, $note->fresh()->assignee_id);
+        $this->actingAs($user)->getJson("/tickets/{$ticket->id}/pulse")
+            ->assertJsonPath('next_action.assignee', '@Jane Doe');
+    }
+
+    #[Test]
     public function it_can_promote_a_note_to_action_with_a_prompted_assignee(): void
     {
         $user = User::factory()->create();

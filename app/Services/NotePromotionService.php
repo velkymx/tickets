@@ -50,6 +50,7 @@ class NotePromotionService
             $note->body = $this->markdownService->parse($markdown);
         }
 
+        $note->assignee_id = $user->id;
         $note->notetype = 'action';
         $note->save();
 

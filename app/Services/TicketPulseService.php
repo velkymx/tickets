@@ -170,7 +170,9 @@ class TicketPulseService
         return [
             'id' => $latestAction->id,
             'body' => $latestAction->body,
-            'assignee' => $this->extractMention($latestAction),
+            'assignee' => $latestAction->loadMissing('assignee')->assignee
+                ? '@'.$latestAction->assignee->name
+                : $this->extractMention($latestAction),
             'created_at' => $latestAction->created_at?->toISOString(),
         ];
     }
