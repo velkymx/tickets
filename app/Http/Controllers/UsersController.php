@@ -18,8 +18,6 @@ class UsersController extends Controller
 
         $isOwnProfile = (int) $id === Auth::id();
 
-        $statuses = Status::pluck('name', 'id');
-
         // Ticket lists are private: only visible on your own profile.
         // Closed and New tickets are excluded: the profile shows active work only.
         $alltickets = [];
