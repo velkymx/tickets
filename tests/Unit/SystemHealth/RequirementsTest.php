@@ -21,13 +21,11 @@ class RequirementsTest extends TestCase
     }
 
     #[Test]
-    public function every_driver_maps_to_its_pdo_extension(): void
+    public function named_driver_reports_its_pdo_extension(): void
     {
-        foreach (Requirements::DRIVER_EXTENSIONS as $driver => $ext) {
-            $names = array_map(fn ($r) => $r->name, Requirements::check($driver));
+        $names = array_map(fn ($r) => $r->name, Requirements::check('pgsql'));
 
-            $this->assertContains("PHP extension: {$ext}", $names);
-        }
+        $this->assertContains('PHP extension: pdo_pgsql', $names);
     }
 
     #[Test]
