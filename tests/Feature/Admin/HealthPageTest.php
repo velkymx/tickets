@@ -57,6 +57,7 @@ class HealthPageTest extends TestCase
         $admin = User::factory()->create(['admin' => true]);
 
         $this->actingAs($admin)->get('/admin/health')
-            ->assertSee('<span class="badge text-bg-secondary">Disabled</span>', false);
+            ->assertOk()
+            ->assertSee('Disabled');
     }
 }

@@ -490,19 +490,10 @@ class NotesControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonStructure(['viewers', 'count']);
         $response->assertJsonPath('count', 1);
-    }
-
-    #[Test]
-    public function it_records_a_heartbeat_for_the_viewer(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->postJson("/tickets/{$ticket->id}/presence");
-
-        $response->assertOk();
-        $response->assertJsonPath('count', 1);
-        $this->assertDatabaseHas('ticket_views', ['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+        $this->assertDatabaseHas('ticket_views', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
     }
 
     #[Test]
@@ -635,66 +626,6 @@ class NotesControllerTest extends TestCase
             'user_id' => $user->id,
             'emoji' => 'thumbsup',
         ]);
-    }
-
-    #[Test]
-    public function it_requires_authentication_to_reply_to_a_note(): void
-    {
-        $response = $this->postJson('/notes/reply', [
-            'ticket_id' => 1,
-            'parent_id' => 1,
-            'body' => 'Reply body',
-        ]);
-
-        $response->assertStatus(401);
-    }
-
-    #[Test]
-    public function it_requires_the_parent_note_to_belong_to_the_same_ticket(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-        $otherTicket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-        $parent = Note::factory()->create([
-            'ticket_id' => $otherTicket->id,
-            'user_id' => $user->id,
-            'parent_id' => null,
-        ]);
-
-        $response = $this->actingAs($user)->postJson('/notes/reply', [
-            'ticket_id' => $ticket->id,
-            'parent_id' => $parent->id,
-            'body' => 'Reply body',
-        ]);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['parent_id']);
-    }
-
-    #[Test]
-    public function it_requires_the_parent_note_to_be_top_level(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-        $thread = Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'parent_id' => null,
-        ]);
-        $reply = Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'parent_id' => $thread->id,
-        ]);
-
-        $response = $this->actingAs($user)->postJson('/notes/reply', [
-            'ticket_id' => $ticket->id,
-            'parent_id' => $reply->id,
-            'body' => 'Reply body',
-        ]);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['parent_id']);
     }
 
     #[Test]

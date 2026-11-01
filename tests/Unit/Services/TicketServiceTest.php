@@ -597,14 +597,11 @@ class TicketServiceTest extends TestCase
 
         $lookups = $this->service->getLookups();
 
-        // Seeded statuses in ID order
+        // Seeded statuses in ID order; names are asserted in
+        // it_returns_lookups_with_seeded_values.
         $this->assertSame(
             [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             array_keys($lookups['statuses'])
-        );
-        $this->assertSame(
-            ['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined', 'backlog'],
-            array_values($lookups['statuses'])
         );
     }
 

@@ -22,52 +22,15 @@ class TicketPolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_any_user_to_view_tickets(): void
+    public function read_create_and_note_abilities_are_open_to_any_user(): void
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create();
 
         $this->assertTrue($this->policy->viewAny($user));
-    }
-
-    #[Test]
-    public function it_allows_owner_to_view_ticket(): void
-    {
-        $owner = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
-
-        $this->assertTrue($this->policy->view($owner, $ticket));
-    }
-
-    #[Test]
-    public function it_allows_assignee_to_view_ticket(): void
-    {
-        $owner = User::factory()->create();
-        $assignee = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
-
-        $this->assertTrue($this->policy->view($assignee, $ticket));
-    }
-
-    #[Test]
-    public function it_allows_any_authenticated_user_to_view(): void
-    {
-        $unrelated = User::factory()->create();
-        $owner = User::factory()->create();
-        $assignee = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
-
-        $this->assertTrue($this->policy->view($unrelated, $ticket));
-        $this->assertTrue($this->policy->view($owner, $ticket));
-        $this->assertTrue($this->policy->view($assignee, $ticket));
-    }
-
-    #[Test]
-    public function it_allows_any_user_to_create_tickets(): void
-    {
-        $user = User::factory()->create();
-
+        $this->assertTrue($this->policy->view($user, $ticket));
         $this->assertTrue($this->policy->create($user));
+        $this->assertTrue($this->policy->addNote($user, $ticket));
     }
 
     #[Test]
@@ -186,36 +149,6 @@ class TicketPolicyTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
 
         $this->assertFalse($this->policy->estimate($unrelated, $ticket));
-    }
-
-    #[Test]
-    public function it_denies_unrelated_user_from_adding_note(): void
-    {
-        $unrelated = User::factory()->create();
-        $owner = User::factory()->create();
-        $assignee = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
-
-        $this->assertTrue($this->policy->addNote($unrelated, $ticket));
-    }
-
-    #[Test]
-    public function it_allows_owner_to_add_note(): void
-    {
-        $owner = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
-
-        $this->assertTrue($this->policy->addNote($owner, $ticket));
-    }
-
-    #[Test]
-    public function it_allows_assignee_to_add_note(): void
-    {
-        $owner = User::factory()->create();
-        $assignee = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $assignee->id]);
-
-        $this->assertTrue($this->policy->addNote($assignee, $ticket));
     }
 
     #[Test]

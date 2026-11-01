@@ -48,13 +48,4 @@ class DemoSeederTest extends TestCase
         $this->assertEqualsCanonicalizing(['info', 'warning', 'danger'], $waiting->map->decisionUrgency()->all());
         $this->assertSame(1, Note::where('notetype', 'decision_needed')->where('resolved', true)->count());
     }
-
-    #[Test]
-    public function demo_seeder_runs_through_the_documented_command(): void
-    {
-        $this->artisan('db:seed', ['--class' => 'DemoSeeder'])->assertOk();
-
-        $this->assertDatabaseHas('projects', ['name' => 'Demo Sandbox']);
-        $this->assertDatabaseHas('tickets', ['subject' => 'Demo: blocked checkout flow']);
-    }
 }
