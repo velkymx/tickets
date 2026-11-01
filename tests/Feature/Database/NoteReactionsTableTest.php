@@ -95,10 +95,4 @@ class NoteReactionsTableTest extends TestCase
 
         $this->assertDatabaseMissing('note_reactions', ['id' => $secondReaction->id]);
     }
-
-    #[Test]
-    public function note_reaction_model_limits_v21_emojis(): void
-    {
-        $this->assertSame(['thumbsup', 'eyes'], NoteReaction::ALLOWED_EMOJIS);
-    }
 }

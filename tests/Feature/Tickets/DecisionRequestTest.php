@@ -292,14 +292,26 @@ class DecisionRequestTest extends TestCase
     }
 
     #[Test]
-    public function sidebar_shows_the_question_above_the_latest_decision(): void
+    public function sidebar_payload_carries_the_question_and_latest_decision(): void
     {
         $author = User::factory()->create();
+        $decider = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id2' => $author->id]);
+        $request = $this->decisionRequest($ticket, $author, $decider, ['body' => '<p>Ship on Friday?</p>']);
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $decider->id,
+            'parent_id' => $request->id,
+            'notetype' => 'decision',
+            'body' => 'Yes, ship it',
+        ]);
 
+        // The pulse panel renders client side from JSON embedded by @js, so the
+        // HTTP test pins the payload it is handed, not the Alpine template.
         $this->actingAs($author)->get("/tickets/{$ticket->id}")
             ->assertOk()
-            ->assertSeeInOrder(['Latest Decision:', 'pulse.latest_decision.question', 'pulse.latest_decision.body'], false);
+            ->assertSee('Ship on Friday?')
+            ->assertSee('Yes, ship it');
     }
 
     private function decisionRequest(Ticket $ticket, User $author, User $decider, array $attributes = []): Note

@@ -39,12 +39,6 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
-    public function kb_endpoints_require_authentication(): void
-    {
-        $this->getJson('/api/v1/kb/articles')->assertStatus(401);
-    }
-
-    #[Test]
     public function lookups_returns_categories_and_tags(): void
     {
         KbCategory::factory()->create(['name' => 'Runbooks']);

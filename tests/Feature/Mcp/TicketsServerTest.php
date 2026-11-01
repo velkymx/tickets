@@ -30,7 +30,7 @@ use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
-use Laravel\Mcp\Server\Transport\StdioTransport;
+use Laravel\Mcp\Server\Contracts\Transport;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -199,6 +199,50 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function add_note_tool_accepts_bracket_mention_with_space_for_actions(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create(['name' => 'Sarah Connor']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => null,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/action @[Sarah Connor] verify fix on staging',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+        $this->assertSame($assignee->id, $ticket->fresh()->user_id2);
+    }
+
+    #[Test]
+    public function add_note_tool_rejects_email_address_as_action_assignee(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/action Contact support@example.com about the outage',
+        ]);
+
+        $response->assertHasErrors();
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+    }
+
+    #[Test]
     public function get_pulse_tool_returns_execution_state(): void
     {
         $user = User::factory()->create();
@@ -213,18 +257,44 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
-    public function server_acknowledges_initialized_lifecycle_method(): void
+    public function server_acknowledges_the_initialized_lifecycle_request(): void
     {
-        $server = new TicketsServer(new StdioTransport);
+        $transport = new class implements Transport
+        {
+            /** @var array<int, string> */
+            public array $sent = [];
 
-        $boot = new \ReflectionMethod($server, 'boot');
-        $boot->setAccessible(true);
-        $boot->invoke($server);
+            public function onReceive(\Closure $handler): void {}
 
-        $methods = new \ReflectionProperty($server, 'methods');
-        $methods->setAccessible(true);
+            public function run(): void {}
 
-        $this->assertArrayHasKey('notifications/initialized', $methods->getValue($server));
+            public function send(string $message): void
+            {
+                $this->sent[] = $message;
+            }
+
+            public function stream(\Closure $stream): void
+            {
+                foreach ($stream() as $message) {
+                    $this->sent[] = $message;
+                }
+            }
+        };
+
+        $server = new TicketsServer($transport);
+        $server->start();
+        $server->handle((string) json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'notifications/initialized',
+        ]));
+
+        $this->assertCount(1, $transport->sent);
+
+        $reply = json_decode($transport->sent[0], true);
+
+        $this->assertSame(1, $reply['id']);
+        $this->assertArrayNotHasKey('error', $reply);
     }
 
     #[Test]

@@ -89,7 +89,7 @@ Click **Reply** on any top-level note to add a reply. Replies cannot be nested (
 
 ## @mentions
 
-Type `@` in the note body to trigger autocomplete. Select a user to insert `@[Name]`. Mentioned users receive a separate notification regardless of whether they are watching the ticket.
+Type `@` in the note body to trigger autocomplete. Select a user to insert `@[Name]`. Names containing spaces must use the bracket form (`@[Jane Doe]`); single word names also work bare (`@jane`). Email addresses are never treated as mentions. Mentioned users receive a separate notification regardless of whether they are watching the ticket.
 
 ## Smart paste
 

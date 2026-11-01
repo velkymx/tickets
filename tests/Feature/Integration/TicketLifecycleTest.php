@@ -155,7 +155,11 @@ class TicketLifecycleTest extends TestCase
 
         $response = $this->actingAs($this->user)->get("/tickets/clone/{$ticket->id}");
 
-        $response->assertStatus(200);
-        $response->assertViewHas('ticket');
+        $response->assertOk();
+        $response->assertViewHas('ticket', function ($loaded) use ($ticket) {
+            return $loaded->is($ticket)
+                && $loaded->subject === $ticket->subject
+                && $loaded->description === $ticket->description;
+        });
     }
 }

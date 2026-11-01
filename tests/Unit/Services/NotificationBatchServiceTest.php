@@ -6,9 +6,11 @@ use App\Jobs\SendTicketDigestJob;
 use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Services\NotificationBatchService;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -53,25 +55,31 @@ class NotificationBatchServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_releases_lock_even_when_cache_put_throws(): void
+    public function it_releases_the_lock_when_cache_put_throws(): void
     {
         Notification::fake();
-        Bus::fake();
         Cache::flush();
 
         $user = User::factory()->create();
         $actor = User::factory()->create(['name' => 'Sarah']);
         $notification = new MentionNotification($actor->id, $actor->name, 142, 55, 'Check deploy', 'http://example.com/tickets/142');
 
-        $service = app(NotificationBatchService::class);
-        $lockKey = $service->batchKey($user->id, 142).':lock';
+        $lock = Mockery::mock(Lock::class);
+        $lock->shouldReceive('block')->once()->with(2);
+        $lock->shouldReceive('release')->once();
 
-        // Dispatch once to exercise the lock path
-        $service->dispatch($user, $notification, 142);
+        Cache::shouldReceive('lock')
+            ->once()
+            ->with('ticket-notification-batch:'.$user->id.':142:lock', 5)
+            ->andReturn($lock);
+        Cache::shouldReceive('get')->once()->andReturn([]);
+        Cache::shouldReceive('put')->once()->andThrow(new \RuntimeException('cache down'));
 
-        // Lock should be released - verify we can acquire it immediately
-        $lock = Cache::lock($lockKey, 5);
-        $this->assertTrue($lock->get(), 'Lock should be released after dispatch completes');
-        $lock->release();
+        try {
+            app(NotificationBatchService::class)->dispatch($user, $notification, 142);
+            $this->fail('Expected the cache failure to surface.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('cache down', $e->getMessage());
+        }
     }
 }
