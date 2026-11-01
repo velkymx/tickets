@@ -1035,18 +1035,34 @@ class TicketControllerTest extends TestCase
             return $ticket;
         });
 
-        // Count queries for 5 tickets with pulse
-        DB::enableQueryLog();
-        $this->getJson('/api/v1/tickets?include=pulse', $this->apiHeaders())
-            ->assertStatus(200);
-        $queriesFor5 = count(DB::getQueryLog());
-        DB::disableQueryLog();
+        $queriesFor = function (int $count): int {
+            Ticket::query()->delete();
+            Ticket::factory()->count($count)->create(['user_id2' => $this->user->id]);
 
-        // Should not have 5× note queries - eager loading keeps it constant
-        // Without fix: ~5 note queries (one per ticket) + base queries
-        // With fix: 1 bulk note query + base queries
-        // We assert queries < 5 * per-ticket-cost
-        $this->assertLessThan(20, $queriesFor5, "Too many queries ($queriesFor5) - likely N+1 on pulse notes");
+            Cache::flush();
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+
+            $this->getJson('/api/v1/tickets?include=pulse', $this->apiHeaders())
+                ->assertOk();
+
+            $count = count(DB::getQueryLog());
+            DB::disableQueryLog();
+            DB::flushQueryLog();
+
+            return $count;
+        };
+
+        $queriesFor5 = $queriesFor(5);
+        $queriesFor10 = $queriesFor(10);
+
+        // A constant query count proves the note loading is bulk; an N+1 would
+        // add one query per ticket and make the second run larger.
+        $this->assertSame(
+            $queriesFor5,
+            $queriesFor10,
+            "Pulse note loading scales with ticket count: {$queriesFor5} queries for 5 tickets, {$queriesFor10} for 10"
+        );
     }
 
     #[Test]
