@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Importer;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -407,24 +408,19 @@ class ImporterTest extends TestCase
             ['Bug', 'Ticket 3', 'Desc', 'High', 'Open', 'Test Project', 'Assignee'],
         ]);
 
-        $importer = new class extends Importer
-        {
-            public array $models = [];
+        DB::flushQueryLog();
+        DB::enableQueryLog();
 
-            public function getModels(): array
-            {
-                return $this->models;
-            }
-        };
+        $this->importer->call($milestone->id, $this->tempFile, false);
 
-        $reflection = new \ReflectionClass(Importer::class);
-        $property = $reflection->getProperty('models');
-        $property->setAccessible(true);
+        $typeQueries = collect(DB::getQueryLog())->pluck('query')
+            ->filter(fn ($query) => str_contains($query, 'types') && str_contains($query, 'LOWER(name)'))
+            ->values();
 
-        $importer->call($milestone->id, $this->tempFile, false);
+        DB::disableQueryLog();
+        DB::flushQueryLog();
 
-        $models = $property->getValue($importer);
-        $this->assertArrayHasKey('App\Models\Type|Bug', $models);
+        $this->assertSame(1, $typeQueries->count(), 'Type lookups should be cached across rows: '.$typeQueries->implode("\n"));
     }
 
     #[Test]
