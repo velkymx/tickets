@@ -13,9 +13,9 @@ class SsrfGuardTest extends TestCase
     #[Test]
     public function it_allows_a_public_ip(): void
     {
-        (new SsrfGuard)->validate('https://93.184.215.14/webhook');
+        $this->expectNotToPerformAssertions();
 
-        $this->addToAssertionCount(1);
+        (new SsrfGuard)->validate('https://93.184.215.14/webhook');
     }
 
     public static function blockedUrls(): array
