@@ -41,6 +41,7 @@ class KbController extends Controller
         $article->load(['category', 'tags', 'owner', 'creator']);
         $relatedArticles = KbArticle::where('id', '!=', $article->id)
             ->where('status', 'verified')
+            ->visibleTo(Auth::user())
             ->whereHas('tags', fn ($q) => $q->whereIn('kb_tags.id', $article->tags->pluck('id')))
             ->limit(5)
             ->get();

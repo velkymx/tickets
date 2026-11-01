@@ -13,6 +13,22 @@ class BatchUpdateTicketRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        // The batch form sends 0 for "No Change" on every select. Normalize to
+        // null so the nullable rules treat it as untouched instead of failing
+        // the exists check on a nonexistent id 0.
+        $normalized = [];
+
+        foreach (['type_id', 'status_id', 'importance_id', 'milestone_id', 'project_id', 'user_id2', 'release_id'] as $field) {
+            if ($this->has($field) && in_array((string) $this->input($field), ['0', ''], true)) {
+                $normalized[$field] = null;
+            }
+        }
+
+        $this->merge($normalized);
+    }
+
     public function rules(): array
     {
         return [

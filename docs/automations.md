@@ -20,7 +20,7 @@ Automations run actions automatically when events occur in the system. Each auto
    - **Name** - descriptive label (required)
    - **Description** - optional notes
    - **Trigger** - select from the available triggers
-   - **Enabled** - toggle to activate/deactivate without deleting
+   - **Enabled** - toggle to activate/deactivate without deleting. Unchecking and saving stops the automation firing immediately.
    - **Stop after match** - prevents later automations from running once this one fires
 4. Build conditions (optional - see [Conditions](#conditions)).
 5. Add actions (see [Actions](#actions)).

@@ -509,7 +509,11 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(200);
 
-        $note = Note::where('ticket_id', $ticket->id)->where('user_id', $this->user->id)->latest('id')->first();
+        $note = Note::where('ticket_id', $ticket->id)
+            ->where('user_id', $this->user->id)
+            ->where('notetype', 'message')
+            ->latest('id')
+            ->first();
         $this->assertNotNull($note);
         $this->assertStringContainsString('<p>Test note</p>', $note->body);
         $this->assertEquals('Test note', $note->body_markdown);
@@ -1662,6 +1666,111 @@ class TicketControllerTest extends TestCase
             'ticket_id' => $target->id,
             'parent_id' => $note->id,
             'body_markdown' => 'Reply on the correct ticket',
+        ]);
+    }
+
+    #[Test]
+    public function api_note_writes_a_changelog_when_the_status_changes(): void
+    {
+        Cache::flush();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $newStatus = Status::factory()->create(['name' => 'Escalated']);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => 'Escalating this',
+            'status_id' => $newStatus->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $this->assertSame($newStatus->id, $ticket->fresh()->status_id);
+
+        $changelog = Note::where('ticket_id', $ticket->id)
+            ->where('notetype', 'changelog')
+            ->first();
+
+        $this->assertNotNull($changelog);
+        $this->assertStringContainsString('Status changed to Escalated', $changelog->body_markdown);
+    }
+
+    #[Test]
+    public function api_note_creates_mentions_and_sends_a_notification(): void
+    {
+        Cache::flush();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $mentioned = User::factory()->create();
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => "Need help @[{$mentioned->name}]",
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'message')->latest('id')->firstOrFail();
+
+        $this->assertDatabaseHas('mentions', [
+            'note_id' => $note->id,
+            'user_id' => $mentioned->id,
+        ]);
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $mentioned->id]);
+    }
+
+    #[Test]
+    public function api_reply_writes_note_and_notifies_parent_author(): void
+    {
+        Cache::flush();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $author = User::factory()->create();
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'parent_id' => null,
+        ]);
+
+        $response = $this->postJson(
+            "/api/v1/tickets/{$ticket->id}/notes/{$parent->id}/reply",
+            ['body' => 'Thanks for the update'],
+            $this->apiHeaders(),
+        );
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'user_id' => $this->user->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $author->id,
+        ]);
+    }
+
+    #[Test]
+    public function api_update_writes_changelog_entry(): void
+    {
+        Cache::flush();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $newStatus = Status::factory()->create();
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'status_id' => $newStatus->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
         ]);
     }
 }

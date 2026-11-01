@@ -61,4 +61,11 @@ return [
         'tenant' => env('AZURE_TENANT_ID'),
     ],
 
+    'sso' => [
+        'allowed_domains' => env('SSO_ALLOWED_DOMAINS', ''),
+        'azure_tenant' => env('AZURE_TENANT_ID', ''),
+        'github_org' => env('GITHUB_ALLOWED_ORG', ''),
+        'gitlab_group' => env('GITLAB_ALLOWED_GROUP', ''),
+    ],
+
 ];
