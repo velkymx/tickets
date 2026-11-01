@@ -318,7 +318,11 @@ class TicketsController extends Controller
                 }
 
                 if (! empty($updateFields)) {
+                    $changes = $this->ticketService->changes($ticket->toArray(), $updateFields);
+
                     $ticket->update($updateFields);
+
+                    $this->ticketService->notate((int) $ticket->id, '', $changes);
                 }
 
                 $i++;

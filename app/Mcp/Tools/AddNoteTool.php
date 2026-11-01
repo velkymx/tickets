@@ -4,15 +4,11 @@ namespace App\Mcp\Tools;
 
 use App\Exceptions\SlashCommandException;
 use App\Mcp\Exceptions\ToolException;
-use App\Models\Note;
 use App\Models\Status;
-use App\Models\User;
-use App\Services\DecisionRequestService;
-use App\Services\MarkdownService;
-use App\Services\MentionService;
-use App\Services\SlashCommandService;
+use App\Services\TicketService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type as JsonType;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -28,6 +24,8 @@ class AddNoteTool extends TicketTool
         if (! $user) {
             return $this->unauthenticated();
         }
+
+        Auth::setUser($user);
 
         $validated = $request->validate([
             'ticket_id' => 'required|integer|exists:tickets,id',
@@ -49,61 +47,40 @@ class AddNoteTool extends TicketTool
         // rolls back the claim/status changes too. Business-rule failures are
         // thrown as ToolException and caught below, never escaping the handler.
         try {
-            [$createdNote, $warnings] = DB::transaction(function () use ($user, $ticket, $validated, $bodyText) {
-                $createdNote = null;
-                $warnings = [];
+            $result = DB::transaction(function () use ($user, $ticket, $validated, $bodyText) {
+                $old = $ticket->toArray();
 
                 if (! empty($validated['claim'])) {
                     $ticket->user_id2 = $user->id;
                     $ticket->save();
                 }
 
-                if (! empty($validated['status_id']) && $validated['status_id'] != $ticket->status_id) {
+                if (! empty($validated['status_id']) && (int) $validated['status_id'] !== (int) $ticket->status_id) {
                     $ticket->status_id = $validated['status_id'];
                     $ticket->closed_at = Status::isClosed($validated['status_id']) ? now() : null;
                     $ticket->save();
                 }
 
-                if (array_key_exists('body', $validated) || array_key_exists('hours', $validated)) {
-                    $slashService = app(SlashCommandService::class);
-                    $markdownService = app(MarkdownService::class);
-                    $mentionService = app(MentionService::class);
+                $ticketService = app(TicketService::class);
+                $changes = $ticketService->changes($old, $ticket->fresh()->toArray());
 
-                    $commandResult = $slashService->handle($ticket, $bodyText);
-                    $warnings = $commandResult['warnings'] ?? [];
-
-                    $parsedBody = $commandResult['body'] ?? '';
-                    $parsedHtml = $markdownService->parse($parsedBody);
-                    $totalHours = ($validated['hours'] ?? 0) + ($commandResult['hours'] ?? 0);
-
-                    // Skip commands that leave no text behind (e.g. /estimate, /close).
-                    if (trim(strip_tags($parsedHtml)) !== '' || $totalHours > 0) {
-                        $createdNote = Note::create([
-                            'user_id' => $user->id,
-                            'ticket_id' => $ticket->id,
-                            'body' => $parsedHtml,
-                            'body_markdown' => $parsedBody,
-                            'hours' => $totalHours,
-                            'notetype' => $commandResult['note_type'] ?? 'message',
-                            'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
-                            'decider_id' => $commandResult['note_attributes']['decider_id'] ?? null,
-                        ]);
-
-                        $mentionUsernames = $mentionService->parseMentions($parsedBody);
-                        $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-                        $mentionService->createMentions($createdNote, $mentionUserIds);
-                    }
+                if (! array_key_exists('body', $validated) && ! array_key_exists('hours', $validated) && $changes === []) {
+                    return ['note' => null, 'changes' => [], 'warnings' => []];
                 }
 
-                return [$createdNote, $warnings];
+                return $ticketService->notate(
+                    (int) $ticket->id,
+                    $bodyText,
+                    $changes,
+                    (float) ($validated['hours'] ?? 0),
+                );
             });
         } catch (SlashCommandException|ToolException $e) {
             return Response::error($e->getMessage());
         }
 
-        if ($createdNote) {
-            app(DecisionRequestService::class)->notify($createdNote);
-        }
+        $createdNote = $result['note'];
+        $warnings = $result['warnings'];
 
         $ticket->load(['status', 'assignee']);
 

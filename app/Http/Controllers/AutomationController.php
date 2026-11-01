@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Automation;
 use App\Models\AutomationAction;
 use App\Models\AutomationRule;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -46,7 +47,7 @@ class AutomationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'trigger' => 'required|string|in:' . implode(',', array_keys(config('automations.triggers'))),
+            'trigger' => 'required|string|in:'.implode(',', array_keys(config('automations.triggers'))),
             'conditions_json' => 'nullable|string|json',
             'actions_json' => 'nullable|string|json',
         ]);
@@ -55,8 +56,8 @@ class AutomationController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'trigger' => $validated['trigger'],
-            'enabled' => $request->boolean('enabled', true),
-            'stop_after_match' => $request->boolean('stop_after_match', true),
+            'enabled' => $request->boolean('enabled'),
+            'stop_after_match' => $request->boolean('stop_after_match'),
             'created_by' => auth()->id(),
         ]);
 
@@ -82,7 +83,7 @@ class AutomationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'trigger' => 'required|string|in:' . implode(',', array_keys(config('automations.triggers'))),
+            'trigger' => 'required|string|in:'.implode(',', array_keys(config('automations.triggers'))),
             'conditions_json' => 'nullable|string|json',
             'actions_json' => 'nullable|string|json',
         ]);
@@ -91,8 +92,8 @@ class AutomationController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'trigger' => $validated['trigger'],
-            'enabled' => $request->boolean('enabled', true),
-            'stop_after_match' => $request->boolean('stop_after_match', true),
+            'enabled' => $request->boolean('enabled'),
+            'stop_after_match' => $request->boolean('stop_after_match'),
         ]);
 
         $conditions = json_decode($validated['conditions_json'] ?? '{"all":[]}', true);
@@ -120,7 +121,7 @@ class AutomationController extends Controller
         return redirect()->route('automations.index')->with('success', 'Automation deleted.');
     }
 
-    public function fields(string $trigger): \Illuminate\Http\JsonResponse
+    public function fields(string $trigger): JsonResponse
     {
         $fields = [
             'ticket.created' => [

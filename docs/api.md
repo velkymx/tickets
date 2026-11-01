@@ -169,7 +169,7 @@ PUT /tickets/{id}
 PATCH /tickets/{id}
 ```
 
-Updates any subset of a ticket you own or are assigned to. Send only the fields you want to change.
+Updates any subset of a ticket you own or are assigned to. Send only the fields you want to change. Changed fields are written to the ticket changelog, the same as an edit in the web UI.
 
 **Fields:** `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`.
 
@@ -203,7 +203,10 @@ curl -X PUT \
 POST /tickets/{id}/note
 ```
 
-Adds a note, logs hours, changes status, or runs slash commands.
+Adds a note, logs hours, changes status, or runs slash commands. The note
+records mentions and notifies the mentioned users, and any status, claim,
+field, or slash-command change is written to the ticket changelog. Watchers
+are notified of the write.
 
 **Fields:**
 

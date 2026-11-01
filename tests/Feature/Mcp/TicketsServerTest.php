@@ -288,7 +288,15 @@ class TicketsServerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('no note stored');
-        $this->assertDatabaseMissing('notes', ['ticket_id' => $ticket->id]);
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+        ]);
+        // The field change still lands in the changelog for the audit trail.
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
     }
 
     #[Test]
@@ -798,5 +806,107 @@ class TicketsServerTest extends TestCase
 
         $response->assertHasErrors();
         $this->assertDatabaseHas('milestones', ['id' => $milestone->id, 'name' => 'Locked']);
+    }
+
+    #[Test]
+    public function add_note_tool_creates_mentions_and_notifies(): void
+    {
+        Cache::flush();
+        $user = User::factory()->create();
+        $mentioned = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => "Ping @[{$mentioned->name}]",
+        ]);
+
+        $response->assertOk();
+        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'message')->latest('id')->firstOrFail();
+
+        $this->assertDatabaseHas('mentions', [
+            'note_id' => $note->id,
+            'user_id' => $mentioned->id,
+        ]);
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $mentioned->id]);
+    }
+
+    #[Test]
+    public function add_note_tool_writes_a_changelog_when_status_changes(): void
+    {
+        Cache::flush();
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $newStatus = Status::factory()->create(['name' => 'Escalated']);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'status_id' => $newStatus->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertSame($newStatus->id, $ticket->fresh()->status_id);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
+    }
+
+    #[Test]
+    public function reply_to_note_tool_creates_reply(): void
+    {
+        Cache::flush();
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(ReplyToNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $parent->id,
+            'body' => 'Reply from MCP',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body_markdown' => 'Reply from MCP',
+        ]);
+    }
+
+    #[Test]
+    public function update_ticket_tool_creates_changelog(): void
+    {
+        Cache::flush();
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $newStatus = Status::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateTicketTool::class, [
+            'ticket_id' => $ticket->id,
+            'status_id' => $newStatus->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
     }
 }

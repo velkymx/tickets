@@ -3,12 +3,11 @@
 namespace App\Mcp\Tools;
 
 use App\Models\Note;
-use App\Models\User;
 use App\Services\DecisionRequestService;
-use App\Services\MarkdownService;
-use App\Services\MentionService;
+use App\Services\TicketService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type as JsonType;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -23,6 +22,8 @@ class ReplyToNoteTool extends TicketTool
         if (! $user) {
             return $this->unauthenticated();
         }
+
+        Auth::setUser($user);
 
         $validated = $request->validate([
             'ticket_id' => 'required|integer|exists:tickets,id',
@@ -45,26 +46,23 @@ class ReplyToNoteTool extends TicketTool
             return Response::error('Cannot reply to a reply. Replies must be on top-level notes.');
         }
 
-        $markdownService = app(MarkdownService::class);
-        $mentionService = app(MentionService::class);
-
         $isDecision = (bool) preg_match('/^\/decision\s+(.+)$/s', trim($validated['body']), $decision);
         $body = $isDecision ? trim($decision[1]) : $validated['body'];
 
-        $reply = Note::create([
-            'user_id' => $user->id,
-            'ticket_id' => $ticket->id,
-            'parent_id' => $parent->id,
-            'body' => $markdownService->parse($body),
-            'body_markdown' => $body,
-            'notetype' => $isDecision ? 'decision' : 'message',
-        ]);
+        $ticketService = app(TicketService::class);
+        $ticketService->notate((int) $ticket->id, $body, [], 0, (int) $parent->id);
 
-        app(DecisionRequestService::class)->closeWith($reply);
+        $reply = Note::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('parent_id', $parent->id)
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->firstOrFail();
 
-        $mentionUsernames = $mentionService->parseMentions($validated['body']);
-        $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-        $mentionService->createMentions($reply, $mentionUserIds);
+        if ($isDecision) {
+            $reply->update(['notetype' => 'decision']);
+            app(DecisionRequestService::class)->closeWith($reply);
+        }
 
         return $this->respond([
             'message' => 'Reply added.',
