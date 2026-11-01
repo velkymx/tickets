@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\SlashCommandException;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Status;
@@ -100,8 +101,7 @@ class SlashCommandService
         switch ($command) {
             case 'status':
                 if ($this->hasActiveBlocker($ticket)) {
-                    $result['changes'][] = 'Resolve blocker before changing status';
-                    break;
+                    throw new SlashCommandException('Resolve blocker before changing status');
                 }
 
                 $status = $this->findByName(Status::class, $args);
@@ -126,8 +126,7 @@ class SlashCommandService
 
             case 'close':
                 if ($this->hasActiveBlocker($ticket)) {
-                    $result['changes'][] = 'Resolve blocker before changing status';
-                    break;
+                    throw new SlashCommandException('Resolve blocker before changing status');
                 }
 
                 $closedStatusId = Status::byName('closed')->value('id')
@@ -210,13 +209,11 @@ class SlashCommandService
                 $mentions = $this->extractMentions($args);
 
                 if (count($mentions) !== 1) {
-                    $result['changes'][] = 'Actions require exactly one @assignee';
-                    break;
+                    throw new SlashCommandException('Actions require exactly one @assignee');
                 }
 
                 if ($ticket->notes()->where('notetype', 'action')->where('resolved', false)->count() >= 3) {
-                    $result['changes'][] = 'Too many open actions. Resolve or overwrite an existing action before creating a new one';
-                    break;
+                    throw new SlashCommandException('Too many open actions. Resolve or overwrite an existing action before creating a new one');
                 }
 
                 $assigneeName = $mentions[0];
@@ -238,8 +235,7 @@ class SlashCommandService
                 $decider = app(DecisionRequestService::class)->findDecider($args);
 
                 if (! $decider) {
-                    $result['changes'][] = 'Decision requests require exactly one @decider';
-                    break;
+                    throw new SlashCommandException('Decision requests require exactly one @decider');
                 }
 
                 $result['note_type'] = 'decision_needed';

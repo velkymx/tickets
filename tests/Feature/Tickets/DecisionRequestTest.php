@@ -55,17 +55,15 @@ class DecisionRequestTest extends TestCase
         $this->actingAs($author)->post('/notes', [
             'ticket_id' => $ticket->id,
             'note' => '/decide Which database?',
-        ]);
+        ])->assertSessionHasErrors('note');
         $this->actingAs($author)->post('/notes', [
             'ticket_id' => $ticket->id,
             'note' => '/decide @alpha @beta Which database?',
-        ]);
+        ])->assertSessionHasErrors('note');
 
         $this->assertSame(0, Note::where('ticket_id', $ticket->id)->where('notetype', 'decision_needed')->count());
-        $this->assertSame(2, Note::where('ticket_id', $ticket->id)
-            ->where('notetype', 'changelog')
-            ->where('body_markdown', 'like', '%Decision requests require exactly one @decider%')
-            ->count());
+        // Guard failures are errors, not changelog entries.
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->count());
     }
 
     #[Test]

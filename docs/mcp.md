@@ -285,6 +285,10 @@ async with tickets:
 - **Errors** come back as `isError: true` with a plain message. Tickets/notes
   and articles you cannot see or edit return a clean "not found" / "cannot
   edit" message rather than leaking existence.
+- **Slash command guards** reject the write with a plain message. A guard
+  failure (for example `/action` without exactly one assignee, or `/status`
+  while a blocker is open) writes no note or changelog entry, and any claim or
+  status change in the same call is rolled back.
 - Reads are visibility-scoped; writes are limited to tickets you own or are
   assigned to, and to KB articles you own or may edit.
 

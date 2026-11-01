@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\SlashCommandException;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -110,9 +111,12 @@ class TicketService
     /**
      * Record a note, hours and/or field changes on a ticket, applying any
      * slash commands in the message first. Returns what was written so callers
-     * can surface warnings or abort the surrounding transaction.
+     * can surface warnings.
      *
      * @return array{note: Note|null, changes: array<int, string>, warnings: array<int, string>}
+     *
+     * @throws SlashCommandException when a slash command fails
+     *                               a business rule guard
      */
     public function notate(int $ticketId, string $message, array $changes, float $addHours = 0, ?int $parentId = null): array
     {

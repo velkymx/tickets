@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\SlashCommandException;
 use App\Http\Controllers\Controller;
 use App\Models\Importance;
 use App\Models\Milestone;
@@ -274,52 +275,41 @@ class TicketController extends Controller
 
         $bodyText = (string) ($request->body ?? '');
 
-        // Actions must name exactly one assignee. Check before any writes.
-        if (preg_match('/^\/action\b/m', $bodyText) && count($this->extractMentionsFromText($bodyText)) !== 1) {
-            $this->rejectNote('Actions require exactly one @assignee');
-        }
-
         // All writes run in one transaction so a failed slash-command guard
-        // rolls back the claim/status changes too. Guard failures throw an
-        // HttpResponseException, which unwinds the transaction and renders the
+        // rolls back the claim/status changes too. Guard failures throw
+        // SlashCommandException, which unwinds the transaction and renders the
         // 422 directly.
-        $result = DB::transaction(function () use ($request, $user, $ticket, $bodyText, $ticketService) {
-            $old = $ticket->toArray();
+        try {
+            $result = DB::transaction(function () use ($request, $user, $ticket, $bodyText, $ticketService) {
+                $old = $ticket->toArray();
 
-            if ($request->boolean('claim')) {
-                $ticket->user_id2 = $user->id;
-                $ticket->save();
-            }
-
-            if ($request->has('status_id') && (int) $request->status_id !== (int) $ticket->status_id) {
-                $ticket->status_id = $request->status_id;
-                $ticket->closed_at = Status::isClosed($request->status_id) ? now() : null;
-                $ticket->save();
-            }
-
-            $changes = $ticketService->changes($old, $ticket->fresh()->toArray());
-
-            if ($bodyText === '' && ! $request->has('hours') && $changes === []) {
-                return ['note' => null, 'changes' => [], 'warnings' => []];
-            }
-
-            $result = $ticketService->notate(
-                (int) $ticket->id,
-                $bodyText,
-                $changes,
-                (float) ($request->hours ?? 0),
-            );
-
-            // Blockers, action caps and decision rules surface as changes.
-            // Throwing rolls back the claim/status writes above as well.
-            foreach ($result['changes'] as $change) {
-                if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions') || str_contains($change, 'Decision requests require')) {
-                    $this->rejectNote($change);
+                if ($request->boolean('claim')) {
+                    $ticket->user_id2 = $user->id;
+                    $ticket->save();
                 }
-            }
 
-            return $result;
-        });
+                if ($request->has('status_id') && (int) $request->status_id !== (int) $ticket->status_id) {
+                    $ticket->status_id = $request->status_id;
+                    $ticket->closed_at = Status::isClosed($request->status_id) ? now() : null;
+                    $ticket->save();
+                }
+
+                $changes = $ticketService->changes($old, $ticket->fresh()->toArray());
+
+                if ($bodyText === '' && ! $request->has('hours') && $changes === []) {
+                    return ['note' => null, 'changes' => [], 'warnings' => []];
+                }
+
+                return $ticketService->notate(
+                    (int) $ticket->id,
+                    $bodyText,
+                    $changes,
+                    (float) ($request->hours ?? 0),
+                );
+            });
+        } catch (SlashCommandException $e) {
+            $this->rejectNote($e->getMessage());
+        }
 
         $createdNote = $result['note'];
         $warnings = $result['warnings'];
@@ -762,10 +752,5 @@ class TicketController extends Controller
             ->toArray();
 
         return response()->json(['reactions' => $reactions]);
-    }
-
-    protected function extractMentionsFromText(string $text): array
-    {
-        return app(MentionService::class)->parseMentions($text);
     }
 }

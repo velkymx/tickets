@@ -2,9 +2,9 @@
 
 namespace App\Mcp\Tools;
 
+use App\Exceptions\SlashCommandException;
 use App\Mcp\Exceptions\ToolException;
 use App\Models\Status;
-use App\Services\MentionService;
 use App\Services\TicketService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type as JsonType;
@@ -68,29 +68,14 @@ class AddNoteTool extends TicketTool
                     return ['note' => null, 'changes' => [], 'warnings' => []];
                 }
 
-                if (preg_match('/^\/action\b/m', $bodyText)) {
-                    $mentions = app(MentionService::class)->parseMentions($bodyText);
-                    if (count($mentions) !== 1) {
-                        throw new ToolException('Actions require exactly one @assignee.');
-                    }
-                }
-
-                $result = $ticketService->notate(
+                return $ticketService->notate(
                     (int) $ticket->id,
                     $bodyText,
                     $changes,
                     (float) ($validated['hours'] ?? 0),
                 );
-
-                foreach ($result['changes'] as $change) {
-                    if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions') || str_contains($change, 'Decision requests require')) {
-                        throw new ToolException($change);
-                    }
-                }
-
-                return $result;
             });
-        } catch (ToolException $e) {
+        } catch (SlashCommandException|ToolException $e) {
             return Response::error($e->getMessage());
         }
 

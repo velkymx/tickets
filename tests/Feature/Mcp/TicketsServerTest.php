@@ -403,6 +403,11 @@ class TicketsServerTest extends TestCase
             'ticket_id' => $ticket->id,
             'body_markdown' => '/close',
         ]);
+        // Guard failures are errors, not changelog entries.
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
     }
 
     #[Test]
