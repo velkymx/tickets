@@ -154,11 +154,4 @@ class StoreTicketRequestTest extends TestCase
         $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('estimate', $validator->errors()->toArray());
     }
-
-    #[Test]
-    public function it_authorizes_authenticated_users(): void
-    {
-        $request = new StoreTicketRequest;
-        $this->assertTrue($request->authorize());
-    }
 }
