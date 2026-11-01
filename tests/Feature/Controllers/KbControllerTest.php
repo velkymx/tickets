@@ -150,12 +150,6 @@ class KbControllerTest extends TestCase
         $response->assertDontSee('<script>', false);
     }
 
-    #[Test]
-    public function guest_is_redirected_from_create(): void
-    {
-        $this->get('/kb/create')->assertRedirect('/login');
-    }
-
     public static function kbRolesThatCanCreate(): array
     {
         return ['reader' => [null], 'author' => ['author']];

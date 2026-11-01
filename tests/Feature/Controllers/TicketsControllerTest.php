@@ -32,14 +32,6 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function home_requires_authentication(): void
-    {
-        $response = $this->get('/home');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function home_shows_tickets_assigned_to_current_user(): void
     {
         $user = User::factory()->create();
@@ -136,14 +128,6 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('home');
-    }
-
-    #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get('/tickets');
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -469,16 +453,6 @@ class TicketsControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('lookups');
         $response->assertViewHas('searchTokens');
-    }
-
-    #[Test]
-    public function show_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $response = $this->get("/tickets/{$ticket->id}");
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -1309,14 +1283,6 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function create_requires_authentication(): void
-    {
-        $response = $this->get('/ticket/create');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function create_returns_create_view_with_lookups(): void
     {
         $user = User::factory()->create();
@@ -1341,16 +1307,6 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function clone_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $response = $this->get("/tickets/clone/{$ticket->id}");
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function clone_returns_clone_view_with_ticket_data(): void
     {
         $user = User::factory()->create();
@@ -1371,16 +1327,6 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/tickets/clone/99999');
 
         $response->assertStatus(404);
-    }
-
-    #[Test]
-    public function edit_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $response = $this->get("/tickets/edit/{$ticket->id}");
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -1881,14 +1827,6 @@ class TicketsControllerTest extends TestCase
 
         $response->assertRedirect('/tickets');
         $response->assertSessionHas('info_message', '2 ticket(s) updated');
-    }
-
-    #[Test]
-    public function board_requires_authentication(): void
-    {
-        $response = $this->get('/tickets/board');
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]

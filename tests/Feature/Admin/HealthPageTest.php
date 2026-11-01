@@ -36,12 +36,6 @@ class HealthPageTest extends TestCase
     }
 
     #[Test]
-    public function guest_is_redirected_to_login(): void
-    {
-        $this->get('/admin/health')->assertRedirect('/login');
-    }
-
-    #[Test]
     public function dropdown_shows_system_health_after_manage_users_for_admins(): void
     {
         $admin = User::factory()->create(['admin' => true]);

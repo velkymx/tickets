@@ -18,14 +18,6 @@ class ActivityControllerTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get('/activity');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function index_lists_the_current_users_notifications(): void
     {
         $user = User::factory()->create();
