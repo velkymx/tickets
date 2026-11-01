@@ -22,19 +22,12 @@ class ReleasePolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_any_user_to_view(): void
+    public function view_and_create_are_open_to_every_user(): void
     {
         $user = User::factory()->create();
         $release = Release::factory()->create();
 
         $this->assertTrue($this->policy->view($user, $release));
-    }
-
-    #[Test]
-    public function it_allows_any_user_to_create(): void
-    {
-        $user = User::factory()->create();
-
         $this->assertTrue($this->policy->create($user));
     }
 

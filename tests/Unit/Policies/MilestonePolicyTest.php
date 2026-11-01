@@ -22,28 +22,16 @@ class MilestonePolicyTest extends TestCase
     }
 
     #[Test]
-    public function it_allows_any_user_to_view(): void
+    public function read_and_create_abilities_are_open_to_every_user(): void
     {
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create();
 
-        $this->assertTrue($this->policy->view($user, $milestone));
-    }
-
-    #[Test]
-    public function it_allows_any_user_to_view_any(): void
-    {
-        $user = User::factory()->create();
-
         $this->assertTrue($this->policy->viewAny($user));
-    }
-
-    #[Test]
-    public function it_allows_any_user_to_create(): void
-    {
-        $user = User::factory()->create();
-
+        $this->assertTrue($this->policy->view($user, $milestone));
         $this->assertTrue($this->policy->create($user));
+        $this->assertTrue($this->policy->viewReport($user, $milestone));
+        $this->assertTrue($this->policy->watch($user, $milestone));
     }
 
     #[Test]
@@ -113,23 +101,5 @@ class MilestonePolicyTest extends TestCase
         $milestone = Milestone::factory()->create(['owner_user_id' => $user->id]);
 
         $this->assertTrue($this->policy->delete($user, $milestone));
-    }
-
-    #[Test]
-    public function it_allows_any_user_to_view_report(): void
-    {
-        $user = User::factory()->create();
-        $milestone = Milestone::factory()->create();
-
-        $this->assertTrue($this->policy->viewReport($user, $milestone));
-    }
-
-    #[Test]
-    public function it_allows_any_user_to_watch(): void
-    {
-        $user = User::factory()->create();
-        $milestone = Milestone::factory()->create();
-
-        $this->assertTrue($this->policy->watch($user, $milestone));
     }
 }
