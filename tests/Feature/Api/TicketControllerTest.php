@@ -1187,6 +1187,44 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function note_with_action_and_bracket_mention_with_space_creates_action(): void
+    {
+        $assignee = User::factory()->create(['name' => 'Sarah Connor']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => null,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/action @[Sarah Connor] verify fix on staging',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals('action', $response->json('note.notetype'));
+
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+        $this->assertSame($assignee->id, $ticket->fresh()->user_id2);
+    }
+
+    #[Test]
+    public function note_with_action_and_only_an_email_address_returns_422(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/action Contact support@example.com about the outage',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
+    }
+
+    #[Test]
     public function note_with_status_while_blocked_returns_422(): void
     {
         $status = Status::factory()->create(['name' => 'Testing']);

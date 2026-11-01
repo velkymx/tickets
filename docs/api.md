@@ -229,9 +229,9 @@ are notified of the write.
 | `/hours 2` | Log 2 hours |
 | `/pin` | Pin this note |
 | `/decision` | Mark note as a decision |
-| `/decide @user Question` | Ask exactly one user for a decision. They are notified at once. 422 without exactly one known `@user`. |
+| `/decide @user Question` | Ask exactly one user for a decision. They are notified at once. 422 without exactly one known `@user`. Names with spaces use `@[Full Name]`. |
 | `/blocker` | Mark note as a blocker |
-| `/action @user Task description` | Create an action item |
+| `/action @user Task description` | Create an action item. Names with spaces use `@[Full Name]`. |
 | `/update` | Mark as a status update |
 | `/milestone Milestone 2` | Move to milestone by name |
 

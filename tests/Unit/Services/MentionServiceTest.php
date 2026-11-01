@@ -63,6 +63,14 @@ class MentionServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_ignores_email_addresses(): void
+    {
+        $mentions = $this->service->parseMentions('Mail support@example.com about the outage');
+
+        $this->assertSame([], $mentions);
+    }
+
+    #[Test]
     public function it_parses_bare_mentions(): void
     {
         $mentions = $this->service->parseMentions('Hey @john check this');

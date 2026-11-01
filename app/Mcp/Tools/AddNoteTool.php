@@ -4,6 +4,7 @@ namespace App\Mcp\Tools;
 
 use App\Mcp\Exceptions\ToolException;
 use App\Models\Status;
+use App\Services\MentionService;
 use App\Services\TicketService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type as JsonType;
@@ -68,8 +69,7 @@ class AddNoteTool extends TicketTool
                 }
 
                 if (preg_match('/^\/action\b/m', $bodyText)) {
-                    preg_match_all('/@([\w.\-]+)/', $bodyText, $matches);
-                    $mentions = array_values(array_unique($matches[1] ?? []));
+                    $mentions = app(MentionService::class)->parseMentions($bodyText);
                     if (count($mentions) !== 1) {
                         throw new ToolException('Actions require exactly one @assignee.');
                     }

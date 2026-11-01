@@ -766,8 +766,6 @@ class TicketController extends Controller
 
     protected function extractMentionsFromText(string $text): array
     {
-        preg_match_all('/@([\w.\-]+)/', $text, $matches);
-
-        return array_values(array_unique($matches[1] ?? []));
+        return app(MentionService::class)->parseMentions($text);
     }
 }

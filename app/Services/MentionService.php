@@ -11,7 +11,10 @@ class MentionService
     public function parseMentions(string $markdown): array
     {
         preg_match_all('/@\[([^\]]+)\]/u', $markdown, $bracketMatches);
-        preg_match_all('/@([\w.\-]+)/u', $markdown, $bareMatches);
+
+        // The lookbehind keeps email addresses such as support@example.com
+        // from being read as a bare mention of "example.com".
+        preg_match_all('/(?<![\w.])@([\w.\-]+)/u', $markdown, $bareMatches);
 
         $bracketMentions = array_values(array_unique(array_map(
             fn (string $token) => preg_replace('/\s*\([^)]*\)$/', '', trim($token)),
