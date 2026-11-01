@@ -232,7 +232,7 @@ class SlashCommandService
                 break;
 
             case 'decide':
-                $decider = app(DecisionRequestService::class)->findDecider($args);
+                $decider = $this->mentionService->findMentionedUser($args);
 
                 if (! $decider) {
                     throw new SlashCommandException('Decision requests require exactly one @decider');

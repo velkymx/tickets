@@ -8,11 +8,6 @@ use App\Notifications\DecisionRequestNotification;
 
 class DecisionRequestService
 {
-    public function findDecider(string $text, ?string $assignee = null): ?User
-    {
-        return app(MentionService::class)->findMentionedUser($text, $assignee);
-    }
-
     public function promote(Note $note, User $decider): void
     {
         $note->notetype = 'decision_needed';
