@@ -67,13 +67,15 @@ class SendTicketDigestJobTest extends TestCase
     }
 
     #[Test]
-    public function it_handles_empty_entries_without_crashing(): void
+    public function it_builds_a_header_only_mail_for_empty_entries(): void
     {
         $notification = new TicketDigestNotification(142, []);
 
         $mail = $notification->toMail(User::factory()->make());
 
-        $this->assertNotNull($mail);
+        $this->assertSame('Ticket #142 activity digest', $mail->subject);
+        $this->assertCount(1, $mail->introLines, 'Only the header line should remain');
+        $this->assertSame(url('/tickets/142'), $mail->actionUrl);
     }
 
     #[Test]
