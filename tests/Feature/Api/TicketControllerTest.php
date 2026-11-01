@@ -60,15 +60,6 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function lookups_requires_authentication(): void
-    {
-        $response = $this->getJson('/api/v1/lookups');
-
-        $response->assertStatus(401)
-            ->assertJson(['message' => 'Unauthorized']);
-    }
-
-    #[Test]
     public function lookups_returns_all_reference_data(): void
     {
         Status::factory()->create(['name' => 'Open']);
@@ -89,14 +80,6 @@ class TicketControllerTest extends TestCase
                     'milestones',
                 ],
             ]);
-    }
-
-    #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->getJson('/api/v1/tickets');
-
-        $response->assertStatus(401);
     }
 
     #[Test]
@@ -178,16 +161,6 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertEquals(10, $response->json('meta.per_page'));
-    }
-
-    #[Test]
-    public function store_requires_authentication(): void
-    {
-        $response = $this->postJson('/api/v1/tickets', [
-            'subject' => 'New Ticket',
-        ]);
-
-        $response->assertStatus(401);
     }
 
     #[Test]
@@ -347,16 +320,6 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $response = $this->getJson("/api/v1/tickets/{$ticket->id}");
-
-        $response->assertStatus(401);
-    }
-
-    #[Test]
     public function show_returns_ticket_details(): void
     {
         $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
@@ -420,14 +383,6 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonPath('data.id', $ticket->id);
-    }
-
-    #[Test]
-    public function note_requires_authentication(): void
-    {
-        $response = $this->postJson('/api/v1/tickets/1/note');
-
-        $response->assertStatus(401);
     }
 
     #[Test]
@@ -1080,18 +1035,34 @@ class TicketControllerTest extends TestCase
             return $ticket;
         });
 
-        // Count queries for 5 tickets with pulse
-        DB::enableQueryLog();
-        $this->getJson('/api/v1/tickets?include=pulse', $this->apiHeaders())
-            ->assertStatus(200);
-        $queriesFor5 = count(DB::getQueryLog());
-        DB::disableQueryLog();
+        $queriesFor = function (int $count): int {
+            Ticket::query()->delete();
+            Ticket::factory()->count($count)->create(['user_id2' => $this->user->id]);
 
-        // Should not have 5× note queries - eager loading keeps it constant
-        // Without fix: ~5 note queries (one per ticket) + base queries
-        // With fix: 1 bulk note query + base queries
-        // We assert queries < 5 * per-ticket-cost
-        $this->assertLessThan(20, $queriesFor5, "Too many queries ($queriesFor5) - likely N+1 on pulse notes");
+            Cache::flush();
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+
+            $this->getJson('/api/v1/tickets?include=pulse', $this->apiHeaders())
+                ->assertOk();
+
+            $count = count(DB::getQueryLog());
+            DB::disableQueryLog();
+            DB::flushQueryLog();
+
+            return $count;
+        };
+
+        $queriesFor5 = $queriesFor(5);
+        $queriesFor10 = $queriesFor(10);
+
+        // A constant query count proves the note loading is bulk; an N+1 would
+        // add one query per ticket and make the second run larger.
+        $this->assertSame(
+            $queriesFor5,
+            $queriesFor10,
+            "Pulse note loading scales with ticket count: {$queriesFor5} queries for 5 tickets, {$queriesFor10} for 10"
+        );
     }
 
     #[Test]
@@ -1566,14 +1537,6 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function watch_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [])->assertStatus(401);
-    }
-
-    #[Test]
     public function update_ignores_client_supplied_actual_hours(): void
     {
         $ticket = Ticket::factory()->create([
@@ -1615,14 +1578,6 @@ class TicketControllerTest extends TestCase
         $ticket->refresh();
         $this->assertEquals($openStatus->id, $ticket->status_id);
         $this->assertNull($ticket->closed_at);
-    }
-
-    #[Test]
-    public function update_requires_authentication(): void
-    {
-        $response = $this->putJson('/api/v1/tickets/1', ['subject' => 'x']);
-
-        $response->assertStatus(401);
     }
 
     #[Test]

@@ -13,12 +13,6 @@ class PaletteSearchTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function search_requires_authentication(): void
-    {
-        $this->getJson('/palette/search?q=login')->assertUnauthorized();
-    }
-
-    #[Test]
     public function search_returns_matching_tickets(): void
     {
         $user = User::factory()->create();

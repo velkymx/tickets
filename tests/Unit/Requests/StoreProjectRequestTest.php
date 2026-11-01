@@ -6,12 +6,9 @@ use App\Http\Requests\StoreProjectRequest;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tests\Traits\SeedsDatabase;
 
 class StoreProjectRequestTest extends TestCase
 {
-    use SeedsDatabase;
-
     protected function makeValidator(array $data): \Illuminate\Validation\Validator
     {
         $request = new StoreProjectRequest;

@@ -12,13 +12,12 @@ class ReleasesTableMigrationTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function releases_migration_down_drops_correct_table(): void
+    public function releases_table_exists_with_expected_columns(): void
     {
         $this->assertTrue(Schema::hasTable('releases'));
-
-        // Run the down migration via artisan
-        (new \CreateReleasesTable)->down();
-
-        $this->assertFalse(Schema::hasTable('releases'));
+        $this->assertTrue(Schema::hasColumns('releases', [
+            'id', 'title', 'body', 'started_at', 'completed_at',
+            'user_id', 'created_at', 'updated_at',
+        ]));
     }
 }

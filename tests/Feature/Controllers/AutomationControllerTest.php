@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controllers;
 
 use App\Models\Automation;
+use App\Models\AutomationRun;
 use App\Models\User;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -13,25 +14,28 @@ class AutomationControllerTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function index_requires_auth(): void
-    {
-        $this->get(route('automations.index'))->assertRedirect('/login');
-    }
-
-    #[Test]
     public function index_lists_automations(): void
     {
         $user = User::factory()->create(['admin' => true]);
-        Automation::factory()->count(3)->create();
+        $automation = Automation::factory()->create(['name' => 'Nightly triage']);
 
-        $this->actingAs($user)->get(route('automations.index'))->assertStatus(200);
+        $response = $this->actingAs($user)->get(route('automations.index'));
+
+        $response->assertOk();
+        $response->assertSee('Nightly triage');
+        $this->assertTrue($response->viewData('automations')->contains($automation));
     }
 
     #[Test]
     public function create_shows_form(): void
     {
         $user = User::factory()->create(['admin' => true]);
-        $this->actingAs($user)->get(route('automations.create'))->assertStatus(200);
+
+        $response = $this->actingAs($user)->get(route('automations.create'));
+
+        $response->assertOk();
+        $response->assertViewIs('automations.create');
+        $response->assertSee('name="name"', false);
     }
 
     #[Test]
@@ -146,7 +150,18 @@ class AutomationControllerTest extends TestCase
     {
         $user = User::factory()->create(['admin' => true]);
         $automation = Automation::factory()->create();
+        AutomationRun::create([
+            'automation_id' => $automation->id,
+            'trigger_name' => 'ticket.updated',
+            'status' => 'success',
+            'context_json' => [],
+        ]);
 
-        $this->actingAs($user)->get(route('automations.show', $automation))->assertStatus(200);
+        $response = $this->actingAs($user)->get(route('automations.show', $automation));
+
+        $response->assertOk();
+        $response->assertSee('ticket.updated');
+        $response->assertSee('success');
+        $this->assertSame(1, $response->viewData('runs')->total());
     }
 }

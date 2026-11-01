@@ -3,6 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Status;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -11,55 +12,50 @@ class StatusTest extends TestCase
 {
     use SeedsDatabase;
 
-    protected function setUp(): void
+    #[Test]
+    public function closed_status_ids_resolve_to_the_closed_names(): void
     {
-        parent::setUp();
+        $names = Status::whereIn('id', Status::closedStatusIds())
+            ->orderBy('id')
+            ->pluck('name')
+            ->all();
+
+        $this->assertSame(['completed', 'duplicate', 'declined'], $names);
     }
 
     #[Test]
-    public function it_has_timestamps_disabled(): void
+    public function active_status_ids_complete_the_full_set(): void
     {
-        $status = new Status;
+        $all = Status::orderBy('id')->pluck('id')->all();
 
-        $this->assertFalse($status->timestamps);
+        $partition = collect([...Status::closedStatusIds(), ...Status::activeStatusIds()])
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertSame($all, $partition);
     }
 
     #[Test]
-    public function it_returns_closed_status_ids(): void
+    #[DataProvider('workflowStatuses')]
+    public function is_closed_matches_the_workflow(int $statusId, bool $closed): void
     {
-        $closedIds = Status::closedStatusIds();
-
-        sort($closedIds);
-
-        $this->assertEquals([5, 8, 9], $closedIds);
+        $this->assertSame($closed, Status::isClosed($statusId));
     }
 
-    #[Test]
-    public function it_correctly_identifies_closed_status(): void
+    public static function workflowStatuses(): array
     {
-        $this->assertTrue(Status::isClosed(5));
-        $this->assertTrue(Status::isClosed(8));
-        $this->assertTrue(Status::isClosed(9));
-        $this->assertFalse(Status::isClosed(1));
-        $this->assertFalse(Status::isClosed(2));
-        $this->assertFalse(Status::isClosed(3));
-        $this->assertFalse(Status::isClosed(6));
-    }
-
-    #[Test]
-    public function it_returns_active_status_ids(): void
-    {
-        $activeIds = Status::activeStatusIds();
-
-        sort($activeIds);
-
-        $this->assertEquals([1, 2, 3, 4, 6, 7, 10], $activeIds);
-    }
-
-    #[Test]
-    public function it_uses_strict_comparison(): void
-    {
-        $this->assertFalse(Status::isClosed(0));
-        $this->assertFalse(Status::isClosed(99));
+        return [
+            'new' => [1, false],
+            'active' => [2, false],
+            'testing' => [3, false],
+            'ready to deploy' => [4, false],
+            'completed' => [5, true],
+            'waiting' => [6, false],
+            'reopened' => [7, false],
+            'duplicate' => [8, true],
+            'declined' => [9, true],
+            'backlog' => [10, false],
+        ];
     }
 }

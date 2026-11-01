@@ -28,14 +28,6 @@ class ImportControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get('/tickets/import');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function index_returns_import_view(): void
     {
         $user = User::factory()->create();

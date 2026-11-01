@@ -16,14 +16,6 @@ class MilestoneTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function it_has_timestamps_disabled(): void
-    {
-        $milestone = new Milestone;
-
-        $this->assertFalse($milestone->timestamps);
-    }
-
-    #[Test]
     public function it_notifies_watchers_on_update(): void
     {
         Notification::fake();

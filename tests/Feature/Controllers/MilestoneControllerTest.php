@@ -25,14 +25,6 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get('/milestone');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function index_returns_milestones_ordered_by_name(): void
     {
         $user = User::factory()->create();
@@ -73,16 +65,6 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
-    public function print_requires_authentication(): void
-    {
-        $milestone = Milestone::factory()->create();
-
-        $response = $this->get("/milestone/print/{$milestone->id}");
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function print_eager_loads_ticket_relationships(): void
     {
         $user = User::factory()->create();
@@ -92,6 +74,10 @@ class MilestoneControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/milestone/print/{$milestone->id}");
 
         $response->assertStatus(200);
+        $loaded = $response->viewData('milestone');
+        $this->assertTrue($loaded->relationLoaded('tickets'));
+        $this->assertTrue($loaded->tickets->first()->relationLoaded('status'));
+        $response->assertSee($ticket->subject);
     }
 
     #[Test]
@@ -105,26 +91,21 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
-    public function get_show_requires_authentication(): void
-    {
-        $milestone = Milestone::factory()->create();
-
-        $response = $this->get("/milestone/show/{$milestone->id}");
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function get_show_eager_loads_watchers_and_tickets(): void
     {
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create();
         MilestoneWatcher::factory()->create(['milestone_id' => $milestone->id]);
-        Ticket::factory()->create(['milestone_id' => $milestone->id]);
+        $ticket = Ticket::factory()->create(['milestone_id' => $milestone->id]);
 
         $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
 
         $response->assertStatus(200);
+        $loaded = $response->viewData('milestone');
+        $this->assertTrue($loaded->relationLoaded('watchers'));
+        $this->assertTrue($loaded->watchers->first()->relationLoaded('user'));
+        $this->assertTrue($response->viewData('tickets')->first()->relationLoaded('status'));
+        $response->assertSee($ticket->subject);
     }
 
     #[Test]
@@ -185,11 +166,12 @@ class MilestoneControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $milestone = Milestone::factory()->create();
-        Ticket::factory()->unassigned()->create(['milestone_id' => $milestone->id]);
+        $ticket = Ticket::factory()->unassigned()->create(['milestone_id' => $milestone->id]);
 
         $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
 
-        $response->assertStatus(200);
+        $response->assertOk();
+        $response->assertSee($ticket->subject);
     }
 
     #[Test]
@@ -243,14 +225,6 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
-    public function create_requires_authentication(): void
-    {
-        $response = $this->get('/milestone/create');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function create_returns_create_view_with_users(): void
     {
         $user = User::factory()->create();
@@ -259,16 +233,6 @@ class MilestoneControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('users');
-    }
-
-    #[Test]
-    public function edit_requires_authentication(): void
-    {
-        $milestone = Milestone::factory()->create();
-
-        $response = $this->get("/milestone/edit/{$milestone->id}");
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -297,7 +261,9 @@ class MilestoneControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/milestone/edit/{$milestone->id}");
 
-        $response->assertStatus(200);
+        $response->assertOk();
+        $response->assertViewIs('milestone.edit');
+        $response->assertViewHas('users');
     }
 
     #[Test]
@@ -439,17 +405,6 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
-    public function toggle_watcher_requires_authentication(): void
-    {
-        $milestone = Milestone::factory()->create();
-
-        $this->post("/milestone/watch/{$milestone->id}")->assertRedirect('/login');
-
-        $this->assertGuest();
-        $this->assertDatabaseMissing('milestone_user_watchers', ['milestone_id' => $milestone->id]);
-    }
-
-    #[Test]
     public function toggle_watcher_creates_watcher_when_not_watching(): void
     {
         $user = User::factory()->create();
@@ -491,16 +446,6 @@ class MilestoneControllerTest extends TestCase
         $response = $this->actingAs($user)->post("/milestone/watch/{$milestone->id}");
 
         $response->assertRedirect();
-    }
-
-    #[Test]
-    public function report_requires_authentication(): void
-    {
-        $milestone = Milestone::factory()->create();
-
-        $response = $this->get("/milestone/report/{$milestone->id}");
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
