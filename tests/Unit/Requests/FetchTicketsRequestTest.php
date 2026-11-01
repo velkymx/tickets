@@ -6,12 +6,9 @@ use App\Http\Requests\FetchTicketsRequest;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tests\Traits\SeedsDatabase;
 
 class FetchTicketsRequestTest extends TestCase
 {
-    use SeedsDatabase;
-
     protected function makeValidator(array $data): \Illuminate\Validation\Validator
     {
         $request = new FetchTicketsRequest;
