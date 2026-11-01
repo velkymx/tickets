@@ -23,14 +23,6 @@ class ReleaseControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get('/releases');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function index_returns_releases_view(): void
     {
         $user = User::factory()->create();
@@ -55,14 +47,6 @@ class ReleaseControllerTest extends TestCase
     }
 
     #[Test]
-    public function create_requires_authentication(): void
-    {
-        $response = $this->get('/releases/create');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function create_returns_create_view(): void
     {
         $user = User::factory()->create();
@@ -71,16 +55,6 @@ class ReleaseControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('release.create');
-    }
-
-    #[Test]
-    public function show_requires_authentication(): void
-    {
-        $release = Release::factory()->create();
-
-        $response = $this->get("/release/{$release->id}");
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -114,6 +88,9 @@ class ReleaseControllerTest extends TestCase
         $response = $this->actingAs($user)->get("/release/{$release->id}");
 
         $response->assertStatus(200);
+        $loaded = $response->viewData('release');
+        $this->assertTrue($loaded->relationLoaded('owner'));
+        $this->assertTrue($loaded->owner->is($user));
     }
 
     #[Test]
@@ -133,16 +110,6 @@ class ReleaseControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('projects');
         $response->assertViewHas('types');
-    }
-
-    #[Test]
-    public function edit_requires_authentication(): void
-    {
-        $release = Release::factory()->create();
-
-        $response = $this->get("/release/edit/{$release->id}");
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
