@@ -29,8 +29,19 @@ class NotePromotionService
             return null;
         }
 
-        $markdown = $note->body_markdown ?: $note->body;
-        $mentionedUsers = $this->mentionService->resolveUsers($markdown);
+        $markdown = $note->body_markdown;
+        $mentionedUsers = null;
+
+        if ($markdown === null) {
+            $mentionedUsers = $note->mentions()->with('user')->get()->pluck('user')
+                ->filter()->unique('id')->values();
+            $markdown = trim(strip_tags($note->body));
+        }
+
+        if ($mentionedUsers === null) {
+            $mentionedUsers = $this->mentionService->resolveUsers($markdown);
+        }
+
         $user = $assignee !== null && trim($assignee) !== ''
             ? $this->mentionService->findUser(ltrim(trim($assignee), '@'))
             : ($mentionedUsers->count() === 1 ? $mentionedUsers->first() : null);

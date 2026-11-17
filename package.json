@@ -25,6 +25,7 @@
         "bootstrap": "^5.3.3",
         "bootswatch": "^5.3.8",
         "chart.js": "^4.4.1",
-        "easymde": "^2.20.0"
+        "easymde": "^2.20.0",
+        "sortablejs": "^1.15.7"
     }
 }

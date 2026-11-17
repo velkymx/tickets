@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Controllers;
 
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\PriorityMatrixService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -200,6 +202,56 @@ class ProjectsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('percent', 50);
+    }
+
+    #[Test]
+    public function show_counts_tickets_without_loading_their_notes(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $tickets = Ticket::factory()->count(15)->create(['project_id' => $project->id]);
+        foreach ($tickets as $ticket) {
+            Note::factory()->count(2)->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+        }
+
+        DB::enableQueryLog();
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $pageIds = $response->viewData('tickets')->pluck('id')->all();
+        $this->assertCount(10, $pageIds);
+        $overreaching = collect(DB::getQueryLog())->filter(function ($entry) use ($pageIds) {
+            if (! preg_match('/"ticket_id" in \(([\d,\s]+)\)/', $entry['query'], $matches)) {
+                return false;
+            }
+            $ids = array_map('intval', explode(',', $matches[1]));
+
+            return (bool) array_diff($ids, $pageIds);
+        });
+        // Notes may load for the rendered page only. The summary counts
+        // must come from aggregates instead of hydrating every ticket
+        // and note on the project.
+        $this->assertCount(0, $overreaching);
+    }
+
+    #[Test]
+    public function show_status_summary_matches_ticket_statuses(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $openStatus = Status::factory()->open()->create();
+        $closedStatus = Status::factory()->closed()->create();
+        cache()->forget('closed_status_ids');
+
+        Ticket::factory()->count(2)->create(['project_id' => $project->id, 'status_id' => $openStatus->id]);
+        Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $closedStatus->id]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Status Summary', false);
+        $response->assertViewHas('total', 3);
+        $response->assertViewHas('completed', 1);
     }
 
     #[Test]
