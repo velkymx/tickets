@@ -14,28 +14,30 @@ class KbArticleService
 
     public function create(array $data, User $author): KbArticle
     {
-        $html = $this->markdownService->parse($data['body_markdown']);
-        $slug = $this->generateUniqueSlug($data['title']);
+        return DB::transaction(function () use ($data, $author) {
+            $html = $this->markdownService->parse($data['body_markdown']);
+            $slug = $this->generateUniqueSlug($data['title']);
 
-        $article = KbArticle::create([
-            'title' => $data['title'],
-            'slug' => $slug,
-            'body_markdown' => $data['body_markdown'],
-            'body_html' => $html,
-            'category_id' => $data['category_id'],
-            'user_id' => $author->id,
-            'owner_id' => $author->id,
-            'status' => $data['status'] ?? 'draft',
-            'visibility' => $data['visibility'] ?? 'internal',
-        ]);
+            $article = KbArticle::create([
+                'title' => $data['title'],
+                'slug' => $slug,
+                'body_markdown' => $data['body_markdown'],
+                'body_html' => $html,
+                'category_id' => $data['category_id'],
+                'user_id' => $author->id,
+                'owner_id' => $author->id,
+                'status' => $data['status'] ?? 'draft',
+                'visibility' => $data['visibility'] ?? 'internal',
+            ]);
 
-        if (! empty($data['tags'])) {
-            $article->tags()->sync($data['tags']);
-        }
+            if (! empty($data['tags'])) {
+                $article->tags()->sync($data['tags']);
+            }
 
-        $this->createVersion($article, $author, $data['commit_message']);
+            $this->createVersion($article, $author, $data['commit_message']);
 
-        return $article->load(['tags', 'versions', 'category']);
+            return $article->load(['tags', 'versions', 'category']);
+        });
     }
 
     public function update(KbArticle $article, array $data, User $editor, string $commitMessage): KbArticle
@@ -45,24 +47,26 @@ class KbArticleService
             $data['status'] = $article->status;
         }
 
-        $html = $this->markdownService->parse($data['body_markdown']);
+        return DB::transaction(function () use ($article, $data, $editor, $commitMessage) {
+            $html = $this->markdownService->parse($data['body_markdown']);
 
-        $article->update([
-            'title' => $data['title'],
-            'body_markdown' => $data['body_markdown'],
-            'body_html' => $html,
-            'category_id' => $data['category_id'],
-            'visibility' => $data['visibility'] ?? $article->visibility,
-            'status' => $data['status'] ?? $article->status,
-        ]);
+            $article->update([
+                'title' => $data['title'],
+                'body_markdown' => $data['body_markdown'],
+                'body_html' => $html,
+                'category_id' => $data['category_id'],
+                'visibility' => $data['visibility'] ?? $article->visibility,
+                'status' => $data['status'] ?? $article->status,
+            ]);
 
-        if (array_key_exists('tags', $data)) {
-            $article->tags()->sync($data['tags'] ?? []);
-        }
+            if (array_key_exists('tags', $data)) {
+                $article->tags()->sync($data['tags'] ?? []);
+            }
 
-        $this->createVersion($article, $editor, $commitMessage);
+            $this->createVersion($article, $editor, $commitMessage);
 
-        return $article->fresh()->load(['tags', 'versions', 'category']);
+            return $article->fresh()->load(['tags', 'versions', 'category']);
+        });
     }
 
     public function createVersion(KbArticle $article, User $editor, string $commitMessage): KbArticleVersion

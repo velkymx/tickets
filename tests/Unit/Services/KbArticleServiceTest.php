@@ -7,6 +7,7 @@ use App\Models\KbCategory;
 use App\Models\KbTag;
 use App\Models\User;
 use App\Services\KbArticleService;
+use Illuminate\Database\QueryException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -21,6 +22,29 @@ class KbArticleServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = app(KbArticleService::class);
+    }
+
+    #[Test]
+    public function it_rolls_back_the_article_when_tag_sync_fails(): void
+    {
+        $user = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+
+        try {
+            $this->service->create([
+                'title' => 'Rolled Back',
+                'body_markdown' => '# Hi',
+                'category_id' => $category->id,
+                'visibility' => 'internal',
+                'tags' => [$tag->id, 999999],
+                'commit_message' => 'Rollback probe',
+            ], $user);
+            $this->fail('Expected tag sync to fail on the unknown tag id.');
+        } catch (QueryException $e) {
+            $this->assertDatabaseMissing('kb_articles', ['title' => 'Rolled Back']);
+            $this->assertDatabaseMissing('kb_article_versions', ['commit_message' => 'Rollback probe']);
+        }
     }
 
     #[Test]

@@ -159,6 +159,25 @@ class TicketTest extends TestCase
     }
 
     #[Test]
+    public function it_writes_one_reopen_note_for_repeated_reopens(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+            'status_id' => Status::factory()->closed()->create()->id,
+            'closed_at' => now(),
+        ]);
+        $ticket->status_id = Status::factory()->create()->id;
+
+        $ticket->recordReopenAuditNote();
+        $ticket->recordReopenAuditNote();
+
+        $this->assertSame(1, Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->count());
+    }
+
+    #[Test]
     public function it_clears_closed_at_and_audits_when_reopened(): void
     {
         $user = User::factory()->create();
