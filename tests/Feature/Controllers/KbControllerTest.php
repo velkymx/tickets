@@ -253,6 +253,38 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function cleared_grants_stay_cleared_through_a_validation_error(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")->assertOk();
+
+        $response = $this->actingAs($owner)->followingRedirects()->put("/kb/{$article->slug}", [
+            'title' => '',
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Edit content',
+            'tags' => [$tag->id],
+            'permitted_users_present' => '1',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('value="'.$granted->id.'"', false);
+        $response->assertDontSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
     public function forms_keep_string_old_input_selected(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);

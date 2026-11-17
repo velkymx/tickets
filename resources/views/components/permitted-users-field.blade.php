@@ -1,12 +1,15 @@
 @props(['users', 'selected' => []])
 
+<input type="hidden" name="permitted_users_present" value="1">
+
 @php
-    $selectedIds = array_map('intval', (array) old('permitted_users', $selected));
+    $oldPresent = (bool) old('permitted_users_present', false);
+    $selectedIds = array_map('intval', (array) old('permitted_users', $oldPresent ? [] : $selected));
 @endphp
 
 <div class="mb-3">
     <label for="permitted_users" class="form-label">Permitted Users</label>
-    <select name="permitted_users[]" id="permitted_users" class="form-select" multiple size="6">
+    <select name="permitted_users[]" id="permitted_users" class="form-select @error('permitted_users') is-invalid @enderror @error('permitted_users.*') is-invalid @enderror" multiple size="6">
         @foreach ($users as $user)
             <option value="{{ $user->id }}" @selected(in_array((int) $user->id, $selectedIds, true))>{{ $user->name }}</option>
         @endforeach
