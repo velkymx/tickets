@@ -188,7 +188,7 @@ class TicketsController extends Controller
 
         $ticketView->touch();
 
-        $ticketViews = TicketView::select('user_id', \DB::raw('max(created_at) as viewed_at'))
+        $ticketViews = TicketView::select('user_id', \DB::raw('max(updated_at) as viewed_at'))
             ->where('ticket_id', $ticket->id)
             ->whereHas('user')
             ->groupBy('user_id')
