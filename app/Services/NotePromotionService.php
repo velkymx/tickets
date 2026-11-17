@@ -30,7 +30,10 @@ class NotePromotionService
         }
 
         $markdown = $note->body_markdown ?: $note->body;
-        $user = $this->mentionService->findMentionedUser($markdown, $assignee);
+        $mentionedUsers = $this->mentionService->resolveUsers($markdown);
+        $user = $assignee !== null && trim($assignee) !== ''
+            ? $this->mentionService->findUser(ltrim(trim($assignee), '@'))
+            : ($mentionedUsers->count() === 1 ? $mentionedUsers->first() : null);
 
         if (! $user) {
             return $type === 'action'
@@ -44,7 +47,7 @@ class NotePromotionService
             return null;
         }
 
-        if (! $this->mentionService->resolveUsers($markdown)->contains('id', $user->id)) {
+        if (! $mentionedUsers->contains('id', $user->id)) {
             $markdown = rtrim($markdown).' @['.$user->name.']';
             $note->body_markdown = $markdown;
             $note->body = $this->markdownService->parse($markdown);
