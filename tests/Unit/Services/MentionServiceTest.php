@@ -85,7 +85,7 @@ class MentionServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_creates_mentions_for_non_watchers_only(): void
+    public function it_creates_mentions_for_watchers_and_non_watchers(): void
     {
         $author = User::factory()->create();
         $watcher = User::factory()->create();
@@ -106,7 +106,7 @@ class MentionServiceTest extends TestCase
 
         $this->service->createMentions($note, [$watcher->id, $mentioned->id, $mentioned->id]);
 
-        $this->assertDatabaseMissing('mentions', [
+        $this->assertDatabaseHas('mentions', [
             'note_id' => $note->id,
             'user_id' => $watcher->id,
         ]);

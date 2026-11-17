@@ -14,6 +14,7 @@ use App\Models\Type;
 use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
+use App\Notifications\WatcherDatabaseNotification;
 use App\Notifications\WatcherNotification;
 use App\Services\TicketService;
 use Illuminate\Support\Facades\Auth;
@@ -434,7 +435,7 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_skips_muted_watchers_when_note_activity_is_created(): void
+    public function it_sends_database_notifications_to_muted_watchers(): void
     {
         Notification::fake();
 
@@ -453,9 +454,35 @@ class TicketServiceTest extends TestCase
         ]);
 
         Auth::login($author);
-        $this->service->notate($ticket->id, 'Muted watcher should not be notified.', []);
+        $this->service->notate($ticket->id, 'Muted watcher gets a database notification.', []);
 
+        Notification::assertSentTo($watcher, WatcherDatabaseNotification::class);
         Notification::assertNotSentTo($watcher, WatcherNotification::class);
+    }
+
+    #[Test]
+    public function it_does_not_double_notify_mentioned_watchers(): void
+    {
+        Notification::fake();
+
+        $author = User::factory()->create(['name' => 'sarah']);
+        $mentioned = User::factory()->create(['name' => 'alex']);
+        $otherWatcher = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+            'subject' => 'Mentioned Watcher Ticket',
+        ]);
+
+        TicketUserWatcher::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $mentioned->id]);
+        TicketUserWatcher::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $otherWatcher->id]);
+
+        Auth::login($author);
+        $this->service->notate($ticket->id, 'Can you check the deploy, @alex?', []);
+
+        Notification::assertSentTo($mentioned, MentionNotification::class);
+        Notification::assertNotSentTo($mentioned, WatcherNotification::class);
+        Notification::assertSentTo($otherWatcher, WatcherNotification::class);
     }
 
     #[Test]

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\WatcherNotification;
+use App\Services\NotificationBatchService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,9 +51,15 @@ class Milestone extends Model
             $notifyUsers = $notifyUsers->merge($this->watchers->pluck('user'))->filter();
         }
 
-        $notifyUsers->each(function ($user) use ($type, $message, $url, $exceptUserId) {
+        $batch = app(NotificationBatchService::class);
+
+        $notifyUsers->unique('id')->each(function ($user) use ($type, $message, $url, $exceptUserId, $batch) {
             if ($user->id !== $exceptUserId && $user->email) {
-                $user->notify(new WatcherNotification($type, $message, $url));
+                $batch->dispatch(
+                    $user,
+                    new WatcherNotification($type, $message, $url),
+                    0
+                );
             }
         });
     }
