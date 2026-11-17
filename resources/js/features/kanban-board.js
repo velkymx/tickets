@@ -10,6 +10,11 @@ export function initKanbanBoard(root = document) {
     const alertDiv = root.querySelector('#update-alert') ?? document.querySelector('#update-alert');
     const alertMessage = root.querySelector('#update-message') ?? document.querySelector('#update-message');
     const closeAlertBtn = root.querySelector('#close-alert-btn') ?? document.querySelector('#close-alert-btn');
+
+    if (!alertDiv || !alertMessage || !closeAlertBtn) {
+        return;
+    }
+
     let suppressClick = false;
 
     const showAlert = (type, message) => {
@@ -28,7 +33,7 @@ export function initKanbanBoard(root = document) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                 Accept: 'application/json',
             },
             body: `status=${encodeURIComponent(newStatusId)}`,
