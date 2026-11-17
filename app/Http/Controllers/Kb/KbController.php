@@ -10,6 +10,7 @@ use App\Models\KbArticle;
 use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
+use App\Models\User;
 use App\Rules\UniqueKbSlug;
 use App\Services\AttachmentService;
 use App\Services\KbArticleService;
@@ -58,8 +59,9 @@ class KbController extends Controller
 
         $categories = KbCategory::orderBy('sort_order')->get();
         $tags = KbTag::orderBy('name')->get();
+        $users = User::orderBy('name')->get();
 
-        return view('kb.create', compact('categories', 'tags'));
+        return view('kb.create', compact('categories', 'tags', 'users'));
     }
 
     public function store(StoreArticleRequest $request)
@@ -85,8 +87,9 @@ class KbController extends Controller
         $article->load(['tags', 'permissions']);
         $categories = KbCategory::orderBy('sort_order')->get();
         $tags = KbTag::orderBy('name')->get();
+        $users = User::orderBy('name')->get();
 
-        return view('kb.edit', compact('article', 'categories', 'tags'));
+        return view('kb.edit', compact('article', 'categories', 'tags', 'users'));
     }
 
     public function update(UpdateArticleRequest $request, KbArticle $slug)

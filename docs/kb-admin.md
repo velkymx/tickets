@@ -55,7 +55,7 @@ Each article has a visibility level set during creation or editing:
 
 ### Granting restricted access
 
-Restricted access is granted per article. On the article edit page, add users to the **Allowed Users** list. Allowed users can both view and edit the article.
+Restricted access is granted per article through the permitted users field on the create and edit forms. Permitted users can both view and edit the article, and owners retain access without a grant row.
 
 ## Version history
 

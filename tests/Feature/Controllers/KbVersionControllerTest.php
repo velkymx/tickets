@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controllers;
 
 use App\Models\KbArticle;
+use App\Models\KbArticlePermission;
 use App\Models\KbArticleVersion;
 use App\Models\KbCategory;
 use App\Models\KbTag;
@@ -100,16 +101,37 @@ class KbVersionControllerTest extends TestCase
     #[Test]
     public function it_restores_a_version(): void
     {
-        $user = User::factory()->create(['kb_role' => 'author']);
-        $article = $this->createArticleWithVersions($user);
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $admin = User::factory()->create(['admin' => true]);
+        $article = $this->createArticleWithVersions($owner);
 
-        $this->actingAs($user)->post("/kb/{$article->slug}/restore/1")
+        $this->actingAs($admin)->post("/kb/{$article->slug}/restore/1")
             ->assertRedirect("/kb/{$article->slug}");
 
         $article->refresh();
         $this->assertSame('Version 1', $article->title);
         $this->assertSame('First content', $article->body_markdown);
         $this->assertDatabaseHas('kb_article_versions', ['article_id' => $article->id, 'version_number' => 3]);
+    }
+
+    #[Test]
+    public function it_denies_restore_to_the_owner(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $article = $this->createArticleWithVersions($owner);
+
+        $this->actingAs($owner)->post("/kb/{$article->slug}/restore/1")->assertForbidden();
+    }
+
+    #[Test]
+    public function it_denies_restore_to_a_permitted_user(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $permitted = User::factory()->create();
+        $article = $this->createArticleWithVersions($owner);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $permitted->id]);
+
+        $this->actingAs($permitted)->post("/kb/{$article->slug}/restore/1")->assertForbidden();
     }
 
     #[Test]

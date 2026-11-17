@@ -177,6 +177,52 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_and_edit_forms_offer_a_permitted_users_field(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        $this->actingAs($owner)->get('/kb/create')->assertOk()->assertSee('permitted_users', false);
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")->assertOk()->assertSee('permitted_users', false);
+    }
+
+    #[Test]
+    public function update_with_permitted_users_grants_restricted_access(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Grant access',
+            'tags' => [$tag->id],
+            'permitted_users' => [$granted->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseHas('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $granted->id,
+        ]);
+        $this->actingAs($granted)->get("/kb/{$article->slug}")->assertOk();
+    }
+
+    #[Test]
     public function edit_view_mounts_the_markdown_editor(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);

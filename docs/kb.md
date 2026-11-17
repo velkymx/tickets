@@ -172,19 +172,19 @@ interface SearchableRepository
 | Route | Controller Method | Access |
 |-------|------------------|--------|
 | `GET /kb` | `KbController@index` | Public (lists public + user's accessible articles) |
-| `GET /kb/create` | `KbController@create` | Author/Admin |
-| `POST /kb` | `KbController@store` | Author/Admin |
+| `GET /kb/create` | `KbController@create` | Any authenticated user |
+| `POST /kb` | `KbController@store` | Any authenticated user |
 | `GET /kb/search` | `KbController@search` | Public |
 | `GET /kb/category/{slug}` | `KbController@category` | Public |
 | `GET /kb/tag/{slug}` | `KbController@tag` | Public |
 | `GET /kb/{slug}` | `KbController@show` | Visibility-dependent |
-| `GET /kb/{slug}/edit` | `KbController@edit` | Author/Admin + owner/permission |
-| `PUT /kb/{slug}` | `KbController@update` | Author/Admin + owner/permission |
+| `GET /kb/{slug}/edit` | `KbController@edit` | Owner, permitted user, or KB admin |
+| `PUT /kb/{slug}` | `KbController@update` | Owner, permitted user, or KB admin |
 | `DELETE /kb/{slug}` | `KbController@destroy` | Admin only |
 | `GET /kb/{slug}/history` | `KbVersionController@index` | Same as show |
 | `GET /kb/{slug}/history/{version}` | `KbVersionController@show` | Same as show |
 | `GET /kb/{slug}/diff/{from}/{to}` | `KbVersionController@diff` | Same as show |
-| `POST /kb/{slug}/restore/{version}` | `KbVersionController@restore` | Author/Admin |
+| `POST /kb/{slug}/restore/{version}` | `KbVersionController@restore` | KB admin |
 | `POST /kb/{slug}/attachments` | `KbController@uploadAttachment` | Author/Admin + owner/permission |
 | `DELETE /kb/{slug}/attachments/{id}` | `KbController@deleteAttachment` | Author/Admin + owner/permission |
 
