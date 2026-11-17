@@ -144,6 +144,19 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function navbar_toggler_uses_an_empty_icon_span(): void
+    {
+        $user = User::factory()->create();
+
+        $content = $this->actingAs($user)->get('/tickets')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<span class="navbar-toggler-icon"><\/span>/',
+            $content
+        );
+    }
+
+    #[Test]
     public function index_wires_the_header_select_all_checkbox(): void
     {
         $user = User::factory()->create();
