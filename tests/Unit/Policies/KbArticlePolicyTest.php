@@ -33,6 +33,15 @@ class KbArticlePolicyTest extends TestCase
     }
 
     #[Test]
+    public function before_grants_nothing_to_guests_on_public_articles(): void
+    {
+        $article = KbArticle::factory()->verified()->public()->create();
+
+        $this->assertNull($this->policy->before(null, 'view'));
+        $this->assertTrue($this->policy->view(null, $article));
+    }
+
+    #[Test]
     public function anyone_can_view_public_verified_articles(): void
     {
         $article = KbArticle::factory()->verified()->public()->create();
