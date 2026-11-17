@@ -9,7 +9,9 @@ use App\Models\KbTag;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Notifications\WatcherNotification;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -532,6 +534,46 @@ class KbControllerTest extends TestCase
         $this->get('/kb/search?q=zzz-no-such-article')->assertOk()->assertSee('role="status"', false);
         $this->get("/kb/category/{$category->slug}")->assertOk()->assertSee('role="status"', false);
         $this->get("/kb/tag/{$tag->slug}")->assertOk()->assertSee('role="status"', false);
+    }
+
+    #[Test]
+    public function search_empty_state_escapes_the_query_once(): void
+    {
+        $this->get('/kb/search?q='.urlencode('R&D'))
+            ->assertOk()
+            ->assertSee('R&amp;D', false)
+            ->assertDontSee('R&amp;amp;D', false);
+    }
+
+    #[Test]
+    public function every_activity_timestamp_carries_datetime_and_title(): void
+    {
+        $user = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create([
+            'user_id' => $user->id,
+            'owner_id' => $user->id,
+            'category_id' => $category->id,
+        ]);
+
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        Notification::send($user, new WatcherNotification('Ticket', 'An update', '/tickets/'.$ticket->id));
+
+        $urls = ['/tickets/board', '/activity', '/kb', "/kb/category/{$category->slug}"];
+
+        foreach ($urls as $url) {
+            $html = $this->actingAs($user)->get($url)->assertOk()->getContent();
+
+            preg_match_all('/<time\b[^>]*>/', $html, $matches);
+            $this->assertNotEmpty($matches[0], "No relative timestamps on {$url}");
+
+            foreach ($matches[0] as $tag) {
+                $this->assertStringContainsString('datetime="', $tag, "Timestamp without datetime on {$url}");
+                $this->assertStringContainsString('title="', $tag, "Timestamp without title on {$url}");
+            }
+        }
+
+        $this->assertNotEmpty($article->id);
     }
 
     #[Test]

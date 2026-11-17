@@ -25,7 +25,7 @@
 @forelse($articles as $article)
     @include('kb.partials.article-card', ['article' => $article])
 @empty
-    <x-empty-state :message="'No articles found matching “' . e($query) . '”.'" />
+    <x-empty-state :message="'No articles found matching “'.$query.'”.'" />
 @endforelse
 
 @if($articles->hasPages())

@@ -131,7 +131,7 @@
                         <span>{{ $tick->assignee?->name ?? 'Unassigned' }}</span>
                     </span>
                     @if($showUpdated)
-                        <span title="{{ $tick->updated_at->format('M jS, Y g:ia') }}">{{ $tick->updated_at->diffForHumans() }}</span>
+                        <x-relative-time :value="$tick->updated_at" />
                     @endif
                 </div>
             </div>
