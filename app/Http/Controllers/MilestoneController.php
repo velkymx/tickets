@@ -276,14 +276,16 @@ class MilestoneController extends Controller
             $actualBurndown = [];
             $dates = [];
 
-            $daysInMilestone = $startDate->diffInDays($milestoneEnd) + 1;
-            $pointsPerDay = $totalStoryPoints / max($daysInMilestone, 1);
+            $daysInMilestone = (int) ($startDate->diffInDays($milestoneEnd) + 1);
+            $pointsPerDay = $totalStoryPoints / max($daysInMilestone - 1, 1);
             $pointsPerDay = $pointsPerDay > 0 ? $pointsPerDay : 0;
 
-            for ($i = 0; $i <= $daysInMilestone; $i++) {
+            for ($i = 0; $i < $daysInMilestone; $i++) {
                 $date = $startDate->copy()->addDays($i);
                 $dates[] = $date->format('M j');
-                $idealBurndown[] = max(0, $totalStoryPoints - ($pointsPerDay * $i));
+                $idealBurndown[] = $daysInMilestone === 1
+                    ? 0
+                    : max(0, $totalStoryPoints - ($pointsPerDay * $i));
             }
 
             $closedAtDates = $tickets->whereIn('status_id', $closedStatusIds)
@@ -304,7 +306,14 @@ class MilestoneController extends Controller
             }
 
             $lastClosed = 0;
-            for ($i = 0; $i <= $daysInMilestone; $i++) {
+            $startKey = $startDate->format('Y-m-d');
+            foreach ($runningDates as $dateStr => $cumulative) {
+                if ($dateStr >= $startKey) {
+                    break;
+                }
+                $lastClosed = $cumulative;
+            }
+            for ($i = 0; $i < $daysInMilestone; $i++) {
                 $date = $startDate->copy()->addDays($i)->format('Y-m-d');
                 if (isset($runningDates[$date])) {
                     $lastClosed = $runningDates[$date];
