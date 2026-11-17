@@ -10,6 +10,7 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SlashCommandService;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -149,6 +150,25 @@ class SlashCommandServiceTest extends TestCase
             ['action' => 'importance_changed', 'to' => 'Critical'],
             ['action' => 'milestone_changed', 'to' => 'Beta Release'],
         ], $result['actions']);
+    }
+
+    #[Test]
+    public function it_saves_the_ticket_once_for_multi_command_messages(): void
+    {
+        $ticket = Ticket::factory()->create();
+        $status = Status::factory()->create(['name' => 'Testing']);
+        User::factory()->create(['name' => 'john']);
+
+        DB::enableQueryLog();
+        $result = $this->service->handle($ticket, "/status Testing\n/estimate 5");
+
+        $updates = collect(DB::getQueryLog())->filter(
+            fn ($entry) => preg_match('/^\s*update\s*[\"`\[]?tickets[\"`\]]?/i', $entry['query'])
+        );
+        $this->assertCount(1, $updates);
+        $this->assertSame($status->id, $ticket->fresh()->status_id);
+        $this->assertEquals(5, $ticket->fresh()->estimate);
+        $this->assertContains(['action' => 'status_changed', 'to' => 'Testing'], $result['actions']);
     }
 
     #[Test]
