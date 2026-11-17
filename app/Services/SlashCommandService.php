@@ -82,6 +82,10 @@ class SlashCommandService
 
         $results['body'] = trim(implode("\n", $bodyLines));
 
+        if ($ticket->isDirty()) {
+            $ticket->save();
+        }
+
         if (count($results['actions']) > 0 || count($results['changes']) > 0) {
             (new TicketPulseService)->invalidatePulse($ticket->id);
         }
@@ -107,7 +111,6 @@ class SlashCommandService
                 $status = $this->findByName(Status::class, $args);
                 if ($status) {
                     $ticket->status_id = $status->id;
-                    $ticket->save();
                     $result['changes'][] = "Status changed to {$status->name}";
                     $result['actions'][] = ['action' => 'status_changed', 'to' => $status->name];
                 }
@@ -118,7 +121,6 @@ class SlashCommandService
                 $user = $this->findByName(User::class, $name);
                 if ($user) {
                     $ticket->user_id2 = $user->id;
-                    $ticket->save();
                     $result['changes'][] = "Assigned to {$user->name}";
                     $result['actions'][] = ['action' => 'assigned', 'to' => $user->name];
                 }
@@ -139,7 +141,6 @@ class SlashCommandService
 
                 $ticket->status_id = $closedStatusId;
                 $ticket->closed_at = now();
-                $ticket->save();
                 $result['changes'][] = 'Ticket closed';
                 $result['actions'][] = ['action' => 'closed'];
                 break;
@@ -152,7 +153,6 @@ class SlashCommandService
                         ->value('id') ?? $ticket->status_id;
                 }
                 $ticket->closed_at = null;
-                $ticket->save();
                 $result['changes'][] = 'Ticket reopened';
                 $result['actions'][] = ['action' => 'reopened'];
                 break;
@@ -163,7 +163,6 @@ class SlashCommandService
                     break;
                 }
                 $ticket->estimate = (int) $args;
-                $ticket->save();
                 $result['changes'][] = "Estimate changed to {$args}h";
                 $result['actions'][] = ['action' => 'estimate_changed', 'to' => (int) $args];
                 break;
@@ -182,7 +181,6 @@ class SlashCommandService
                 $importance = $this->findByName(Importance::class, $args);
                 if ($importance) {
                     $ticket->importance_id = $importance->id;
-                    $ticket->save();
                     $result['changes'][] = "Importance changed to {$importance->name}";
                     $result['actions'][] = ['action' => 'importance_changed', 'to' => $importance->name];
                 }
@@ -192,7 +190,6 @@ class SlashCommandService
                 $milestone = $this->findByName(Milestone::class, $args);
                 if ($milestone) {
                     $ticket->milestone_id = $milestone->id;
-                    $ticket->save();
                     $result['changes'][] = "Milestone changed to {$milestone->name}";
                     $result['actions'][] = ['action' => 'milestone_changed', 'to' => $milestone->name];
                 }
@@ -224,7 +221,6 @@ class SlashCommandService
 
                 if (! $ticket->assignee) {
                     $ticket->user_id2 = $assignee->id;
-                    $ticket->save();
                     $result['changes'][] = "Assigned to {$assignee->name}";
                     $result['actions'][] = ['action' => 'assigned', 'to' => $assignee->name];
                 }

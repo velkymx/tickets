@@ -133,6 +133,11 @@ class Ticket extends Model
             .($oldStatus->name ?? 'closed')
             .' to '.($this->status->name ?? 'open').').';
 
+        $latest = Note::where('ticket_id', $this->getKey())->latest('id')->first();
+        if ($latest !== null && $latest->body_markdown === $message) {
+            return;
+        }
+
         Note::create([
             'user_id' => $userId,
             'ticket_id' => $this->id,

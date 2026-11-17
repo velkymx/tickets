@@ -19,6 +19,7 @@ use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class TicketService
 {
@@ -149,50 +150,51 @@ class TicketService
             return ['note' => null, 'changes' => $changes, 'warnings' => $warnings];
         }
 
-        $insert = [
-            'user_id' => Auth::id(),
-            'ticket_id' => $ticketId,
-            'body' => $message,
-            'parent_id' => $parentId,
-            'hours' => $addHours,
-        ];
         $createdActivity = false;
         $note = null;
 
-        if (strlen($message) > 0) {
-            $insert['body_markdown'] = $message;
-            $insert['body'] = $this->markdownService->parse($message);
-            $insert['notetype'] = $noteType;
-            $insert = array_merge($insert, $noteAttributes);
+        DB::transaction(function () use ($ticketId, $message, $noteType, $noteAttributes, $addHours, $parentId, &$note, &$changes, &$createdActivity) {
+            if (strlen($message) > 0) {
+                $insert = [
+                    'user_id' => Auth::id(),
+                    'ticket_id' => $ticketId,
+                    'body' => $this->markdownService->parse($message),
+                    'body_markdown' => $message,
+                    'parent_id' => $parentId,
+                    'hours' => $addHours,
+                    'notetype' => $noteType,
+                ];
+                $insert = array_merge($insert, $noteAttributes);
 
-            $note = Note::create($insert);
-            app(DecisionRequestService::class)->closeWith($note);
-            $this->createMentions($note, $message);
-            app(DecisionRequestService::class)->notify($note);
-            $this->notifyMentionedUsers($note);
-            $this->notifyParentAuthor($note);
-            $createdActivity = true;
-        }
+                $note = Note::create($insert);
+                app(DecisionRequestService::class)->closeWith($note);
+                $this->createMentions($note, $message);
+                app(DecisionRequestService::class)->notify($note);
+                $this->notifyMentionedUsers($note);
+                $this->notifyParentAuthor($note);
+                $createdActivity = true;
+            }
 
-        if ($addHours > 0) {
-            $changes[] = 'Time or Quantity adjusted by '.$addHours;
-        }
+            if ($addHours > 0) {
+                $changes[] = 'Time or Quantity adjusted by '.$addHours;
+            }
 
-        if (is_array($changes) && count($changes) > 0) {
-            $changelogMarkdown = collect($changes)
-                ->map(fn (string $change) => '- '.$change)
-                ->implode("\n");
+            if (is_array($changes) && count($changes) > 0) {
+                $changelogMarkdown = collect($changes)
+                    ->map(fn (string $change) => '- '.$change)
+                    ->implode("\n");
 
-            Note::create([
-                'user_id' => Auth::id(),
-                'ticket_id' => $ticketId,
-                'body' => $this->markdownService->parse($changelogMarkdown),
-                'body_markdown' => $changelogMarkdown,
-                'notetype' => 'changelog',
-                'hours' => 0,
-            ]);
-            $createdActivity = true;
-        }
+                Note::create([
+                    'user_id' => Auth::id(),
+                    'ticket_id' => $ticketId,
+                    'body' => $this->markdownService->parse($changelogMarkdown),
+                    'body_markdown' => $changelogMarkdown,
+                    'notetype' => 'changelog',
+                    'hours' => 0,
+                ]);
+                $createdActivity = true;
+            }
+        });
 
         if ($createdActivity) {
             $this->notifyWatchers($ticket);
