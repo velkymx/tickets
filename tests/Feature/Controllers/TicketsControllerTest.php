@@ -1276,7 +1276,8 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('value="2026-09-20"', false);
-        $response->assertSee('value="2026-09-21"', false);
+        $response->assertSee('Sep 21st, 2026 2:30pm', false);
+        $response->assertDontSee('name="closed_at"', false);
     }
 
     #[Test]
@@ -1490,6 +1491,29 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_ignores_forged_closed_at(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+            'subject' => $ticket->subject,
+            'description' => $ticket->description ?? '',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'milestone_id' => $ticket->milestone_id,
+            'project_id' => $ticket->project_id,
+            'closed_at' => '2020-01-01 00:00:00',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
+        $this->assertNull($ticket->fresh()->closed_at);
+    }
+
+    #[Test]
     public function update_nullifies_empty_due_at(): void
     {
         $user = User::factory()->create();
@@ -1498,7 +1522,7 @@ class TicketsControllerTest extends TestCase
             'due_at' => '2024-01-01',
         ]);
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1508,6 +1532,9 @@ class TicketsControllerTest extends TestCase
             'project_id' => $ticket->project_id,
             'due_at' => '',
         ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
 
         $ticket->refresh();
         $this->assertNull($ticket->due_at);
@@ -1519,7 +1546,7 @@ class TicketsControllerTest extends TestCase
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1530,17 +1557,23 @@ class TicketsControllerTest extends TestCase
             'due_at' => '2024-06-15 10:30:00',
         ]);
 
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
         $ticket->refresh();
         $this->assertStringStartsWith('2024-06-15', $ticket->due_at);
     }
 
     #[Test]
-    public function update_formats_closed_at(): void
+    public function update_preserves_existing_closed_at(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'closed_at' => '2024-06-15 10:30:00',
+        ]);
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1548,23 +1581,25 @@ class TicketsControllerTest extends TestCase
             'importance_id' => $ticket->importance_id,
             'milestone_id' => $ticket->milestone_id,
             'project_id' => $ticket->project_id,
-            'closed_at' => '2024-06-15 10:30:00',
         ]);
 
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
         $ticket->refresh();
-        $this->assertStringStartsWith('2024-06-15', $ticket->closed_at);
+        $this->assertStringStartsWith('2024-06-15', (string) $ticket->closed_at);
     }
 
     #[Test]
-    public function update_nullifies_empty_closed_at(): void
+    public function update_ignores_empty_closed_at(): void
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create([
             'user_id' => $user->id,
-            'closed_at' => now(),
+            'closed_at' => '2024-06-15 10:30:00',
         ]);
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1575,8 +1610,43 @@ class TicketsControllerTest extends TestCase
             'closed_at' => '',
         ]);
 
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
         $ticket->refresh();
-        $this->assertNull($ticket->closed_at);
+        $this->assertStringStartsWith('2024-06-15', (string) $ticket->closed_at);
+    }
+
+    #[Test]
+    public function update_edits_a_closed_ticket_without_a_false_close_changelog(): void
+    {
+        $user = User::factory()->create();
+        $closed = Status::factory()->closed()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'status_id' => $closed->id,
+            'closed_at' => '2024-06-15 10:30:00',
+        ]);
+
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+            'subject' => 'Updated subject',
+            'description' => $ticket->description ?? '',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'milestone_id' => $ticket->milestone_id,
+            'project_id' => $ticket->project_id,
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
+        $this->assertSame('2024-06-15 10:30:00', $ticket->fresh()->closed_at->format('Y-m-d H:i:s'));
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+            'body_markdown' => 'Ticket closed on N/A',
+        ]);
     }
 
     #[Test]
@@ -1586,7 +1656,7 @@ class TicketsControllerTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $newStatus = Status::factory()->create();
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1595,6 +1665,9 @@ class TicketsControllerTest extends TestCase
             'milestone_id' => $ticket->milestone_id,
             'project_id' => $ticket->project_id,
         ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('notes', [
             'ticket_id' => $ticket->id,

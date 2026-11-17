@@ -24,6 +24,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class TicketController extends Controller
 {
@@ -430,24 +431,16 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::findOrFail($id);
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
-        switch ($validated['action']) {
-            case 'pin':
-                $note->pinned = true;
-                break;
-            case 'unpin':
-                $note->pinned = false;
-                break;
-            case 'hide':
-                $note->hide = true;
-                break;
-            case 'unhide':
-                $note->hide = false;
-                break;
+        $ability = in_array($validated['action'], ['pin', 'unpin'], true) ? 'pin' : 'hide';
+        Gate::forUser($user)->authorize($ability, $note);
+
+        if (in_array($validated['action'], ['pin', 'unpin'], true)) {
+            $note->pinned = $validated['action'] === 'pin';
+        } else {
+            $note->hide = $validated['action'] === 'hide';
         }
 
         $note->save();

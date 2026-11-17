@@ -93,16 +93,26 @@ class TicketService
             }
         }
 
-        $oldDueAt = $old['due_at'] ? Carbon::parse($old['due_at'])->timestamp : null;
-        $newDueAt = array_key_exists('due_at', $new) && $new['due_at'] ? Carbon::parse($new['due_at'])->timestamp : null;
-        if ($oldDueAt !== $newDueAt && ($oldDueAt !== null || $newDueAt !== null)) {
-            $change_list[] = 'Due date changed to '.($new['due_at'] ? Carbon::parse($new['due_at'])->format('M jS, Y') : 'N/A');
+        $oldDueAt = ! empty($old['due_at']) ? Carbon::parse($old['due_at'])->timestamp : null;
+        $newDueAt = array_key_exists('due_at', $new)
+            ? (! empty($new['due_at']) ? Carbon::parse($new['due_at'])->timestamp : null)
+            : $oldDueAt;
+
+        if ($oldDueAt !== $newDueAt) {
+            $change_list[] = $newDueAt !== null
+                ? 'Due date changed to '.Carbon::createFromTimestamp($newDueAt)->format('M jS, Y')
+                : 'Due date cleared';
         }
 
-        $oldClosedAt = $old['closed_at'] ? Carbon::parse($old['closed_at'])->timestamp : null;
-        $newClosedAt = array_key_exists('closed_at', $new) && $new['closed_at'] ? Carbon::parse($new['closed_at'])->timestamp : null;
-        if ($oldClosedAt !== $newClosedAt && ($oldClosedAt !== null || $newClosedAt !== null)) {
-            $change_list[] = 'Ticket closed on '.($new['closed_at'] ? Carbon::parse($new['closed_at'])->format('M jS, Y') : 'N/A');
+        $oldClosedAt = ! empty($old['closed_at']) ? Carbon::parse($old['closed_at'])->timestamp : null;
+        $newClosedAt = array_key_exists('closed_at', $new)
+            ? (! empty($new['closed_at']) ? Carbon::parse($new['closed_at'])->timestamp : null)
+            : $oldClosedAt;
+
+        if ($oldClosedAt !== $newClosedAt) {
+            $change_list[] = $newClosedAt !== null
+                ? 'Ticket closed on '.Carbon::createFromTimestamp($newClosedAt)->format('M jS, Y')
+                : 'Ticket reopened';
         }
 
         return $change_list;

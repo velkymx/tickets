@@ -250,12 +250,6 @@ class TicketsController extends Controller
             $data['due_at'] = null;
         }
 
-        if (! empty($data['closed_at'])) {
-            $data['closed_at'] = Carbon::parse($data['closed_at'])->format('Y-m-d H:i:s');
-        } else {
-            $data['closed_at'] = null;
-        }
-
         $change_list = $this->ticketService->changes($ticket->toArray(), $data);
 
         $ticket->update($data);

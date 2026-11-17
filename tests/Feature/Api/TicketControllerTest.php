@@ -1436,6 +1436,13 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function moderate_note_returns_not_found_for_a_missing_ticket(): void
+    {
+        $this->postJson('/api/v1/tickets/999999/notes/1/moderate', ['action' => 'pin'], $this->apiHeaders())
+            ->assertStatus(404);
+    }
+
+    #[Test]
     public function moderate_note_rejects_a_foreign_ticket(): void
     {
         $other = User::factory()->create();
@@ -1443,7 +1450,31 @@ class TicketControllerTest extends TestCase
         $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $other->id]);
 
         $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'pin'], $this->apiHeaders())
-            ->assertStatus(404);
+            ->assertStatus(403);
+    }
+
+    #[Test]
+    public function moderate_note_allows_the_note_author(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $owner->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $this->user->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'hide'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.hidden', true);
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'hide' => true]);
+    }
+
+    #[Test]
+    public function moderate_note_rejects_an_unrelated_user(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $owner->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $owner->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'pin'], $this->apiHeaders())
+            ->assertStatus(403);
     }
 
     #[Test]
