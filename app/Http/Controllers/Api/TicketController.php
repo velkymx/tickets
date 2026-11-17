@@ -60,9 +60,7 @@ class TicketController extends Controller
         if ($request->get('decision') === 'me') {
             $query->needsDecision($user->id);
         } elseif ($request->boolean('unassigned')) {
-            $query->where(function ($q) {
-                $q->whereNull('user_id2')->orWhere('user_id2', 0);
-            });
+            $query->whereNull('user_id2');
         } else {
             $query->where('user_id2', $user->id);
         }

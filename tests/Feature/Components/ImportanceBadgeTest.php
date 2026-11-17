@@ -59,12 +59,6 @@ class ImportanceBadgeTest extends TestCase
     #[Test]
     public function home_renders_ticket_with_missing_importance(): void
     {
-        // Legacy orphan rows need FK checks off, which SQLite forbids
-        // inside the test transaction. Covered on MySQL.
-        if (DB::getDriverName() === 'sqlite') {
-            $this->markTestSkipped('Requires disabling FK checks.');
-        }
-
         $user = User::factory()->create();
         $open = Status::factory()->create(['name' => 'Open Badge']);
         $ticket = Ticket::factory()->create([

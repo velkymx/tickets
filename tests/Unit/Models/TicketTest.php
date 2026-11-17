@@ -8,7 +8,6 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\User;
 use App\Notifications\WatcherNotification;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
@@ -122,12 +121,6 @@ class TicketTest extends TestCase
     #[Test]
     public function it_skips_watchers_with_no_user(): void
     {
-        // Legacy orphan rows need FK checks off, which SQLite forbids
-        // inside the test transaction. Covered on MySQL.
-        if (DB::getDriverName() === 'sqlite') {
-            $this->markTestSkipped('Requires disabling FK checks.');
-        }
-
         Notification::fake();
 
         $creator = User::factory()->create();

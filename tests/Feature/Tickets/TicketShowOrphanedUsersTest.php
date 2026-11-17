@@ -19,12 +19,6 @@ class TicketShowOrphanedUsersTest extends TestCase
     #[Test]
     public function show_renders_when_viewer_and_watcher_were_deleted(): void
     {
-        // Legacy orphan rows need FK checks off, which SQLite forbids
-        // inside the test transaction. Covered on MySQL.
-        if (DB::getDriverName() === 'sqlite') {
-            $this->markTestSkipped('Requires disabling FK checks.');
-        }
-
         $owner = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
         $viewer = User::factory()->create();
