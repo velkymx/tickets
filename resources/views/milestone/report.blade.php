@@ -174,7 +174,7 @@
                 <h5 class="mb-0">Burndown Chart</h5>
             </div>
             <div class="card-body">
-                <canvas id="burndownChart" height="100"></canvas>
+                <canvas id="burndownChart" data-burndown='{!! json_encode($burndownData, JSON_HEX_APOS) !!}' height="100"></canvas>
             </div>
         </div>
     </div>
@@ -256,15 +256,3 @@
 </div>
 
 @endsection
-
-@push('scripts')
-@if(!empty($burndownData) && count($burndownData['labels']) > 0)
-<script>
-    window.burndownChartData = {
-        labels: {!! json_encode($burndownData['labels']) !!},
-        ideal: {!! json_encode($burndownData['ideal']) !!},
-        actual: {!! json_encode($burndownData['actual']) !!}
-    };
-</script>
-@endif
-@endpush
