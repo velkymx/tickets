@@ -168,6 +168,17 @@ class ImportControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_shows_a_single_milestone_placeholder_with_old_input(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/tickets/import');
+
+        $response->assertOk();
+        $this->assertSame(1, substr_count($response->getContent(), '<option value="">Select</option>'));
+    }
+
+    #[Test]
     public function create_rejects_invalid_milestone(): void
     {
         $user = User::factory()->create();
