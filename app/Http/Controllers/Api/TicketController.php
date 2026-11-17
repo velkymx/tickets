@@ -43,7 +43,7 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         $user = $request->attributes->get('api_user');
-        $perPage = min((int) $request->get('per_page', 20), 100);
+        $perPage = min(max((int) $request->get('per_page', 20), 1), 100);
 
         $includePulse = $request->get('include') === 'pulse';
 
@@ -164,7 +164,7 @@ class TicketController extends Controller
             'ticket' => [
                 'id' => $ticket->id,
                 'subject' => $ticket->subject,
-                'status' => 'new',
+                'status' => $ticket->status->name ?? 'new',
                 'link' => "/api/v1/tickets/{$ticket->id}",
             ],
         ], 201);
