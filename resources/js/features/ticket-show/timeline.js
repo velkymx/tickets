@@ -1,7 +1,8 @@
 import { Modal } from 'bootstrap';
+import { withCsrf } from '../lib/csrf.js';
 
 function csrf() {
-    return document.querySelector('meta[name="csrf-token"]')?.content;
+    return withCsrf()['X-CSRF-TOKEN'];
 }
 
 function hideNote(noteid) {

@@ -1,3 +1,5 @@
+import { withCsrf } from '../lib/csrf.js';
+
 export async function pingWorker(postPing, getStatus, onUpdate, options = {}) {
     const interval = options.interval ?? 1000;
     const attempts = options.attempts ?? 10;
@@ -50,7 +52,7 @@ export function initHealthPing(root = document) {
         return;
     }
 
-    const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    const csrfHeaders = withCsrf({ 'Content-Type': 'application/json' });
     const statusUrl = box.dataset.statusUrl ?? '';
 
     button.addEventListener('click', async () => {
@@ -61,7 +63,7 @@ export function initHealthPing(root = document) {
             async () => {
                 const response = await fetch(box.dataset.pingUrl, {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+                    headers: csrfHeaders,
                 });
                 const data = await response.json();
 

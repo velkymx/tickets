@@ -1,4 +1,5 @@
 import Sortable from 'sortablejs';
+import { withCsrf } from '../lib/csrf.js';
 
 export function initKanbanBoard(root = document) {
     const ticketColumns = root.querySelectorAll('.ticket-column');
@@ -31,11 +32,7 @@ export function initKanbanBoard(root = document) {
     const updateTicketStatus = (ticketId, newStatusId, onSuccess, onFailure) => {
         fetch(`/tickets/api/${ticketId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                Accept: 'application/json',
-            },
+            headers: withCsrf({ 'Content-Type': 'application/x-www-form-urlencoded' }),
             body: `status=${encodeURIComponent(newStatusId)}`,
         })
             .then((response) => {
