@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\KbArticle;
 use App\Models\KbCategory;
 use App\Models\KbTag;
+use App\Rules\UniqueKbSlug;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -36,11 +37,7 @@ class KbAdminController extends Controller
                 'required',
                 'string',
                 'max:255',
-                function ($attribute, $value, $fail) {
-                    if (KbCategory::slugIsTaken(Str::slug($value))) {
-                        $fail('A category with a similar name already exists.');
-                    }
-                },
+                new UniqueKbSlug(KbCategory::class),
             ],
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
@@ -64,11 +61,7 @@ class KbAdminController extends Controller
                 'required',
                 'string',
                 'max:255',
-                function ($attribute, $value, $fail) use ($category) {
-                    if (KbCategory::slugIsTaken(Str::slug($value), $category->id)) {
-                        $fail('A category with a similar name already exists.');
-                    }
-                },
+                new UniqueKbSlug(KbCategory::class, $category->id),
             ],
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
@@ -124,11 +117,7 @@ class KbAdminController extends Controller
                 'required',
                 'string',
                 'max:255',
-                function ($attribute, $value, $fail) {
-                    if (KbTag::slugIsTaken(Str::slug($value))) {
-                        $fail('A tag with a similar name already exists.');
-                    }
-                },
+                new UniqueKbSlug(KbTag::class),
             ],
         ]);
 
@@ -148,11 +137,7 @@ class KbAdminController extends Controller
                 'required',
                 'string',
                 'max:255',
-                function ($attribute, $value, $fail) use ($tag) {
-                    if (KbTag::slugIsTaken(Str::slug($value), $tag->id)) {
-                        $fail('A tag with a similar name already exists.');
-                    }
-                },
+                new UniqueKbSlug(KbTag::class, $tag->id),
             ],
         ]);
 

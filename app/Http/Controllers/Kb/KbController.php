@@ -10,6 +10,7 @@ use App\Models\KbArticle;
 use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
+use App\Rules\UniqueKbSlug;
 use App\Services\AttachmentService;
 use App\Services\KbArticleService;
 use Illuminate\Http\Request;
@@ -194,11 +195,7 @@ class KbController extends Controller
                 'string',
                 'max:255',
                 'unique:kb_categories,name',
-                function ($attribute, $value, $fail) {
-                    if (KbCategory::slugIsTaken(Str::slug($value))) {
-                        $fail('A category with a similar name already exists.');
-                    }
-                },
+                new UniqueKbSlug(KbCategory::class),
             ],
         ]);
 
@@ -222,11 +219,7 @@ class KbController extends Controller
                 'string',
                 'max:255',
                 'unique:kb_tags,name',
-                function ($attribute, $value, $fail) {
-                    if (KbTag::slugIsTaken(Str::slug($value))) {
-                        $fail('A tag with a similar name already exists.');
-                    }
-                },
+                new UniqueKbSlug(KbTag::class),
             ],
         ]);
 

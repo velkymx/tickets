@@ -97,6 +97,20 @@ class KbAdminControllerTest extends TestCase
     }
 
     #[Test]
+    public function admin_cannot_update_tag_to_duplicate_slug(): void
+    {
+        $admin = User::factory()->create(['admin' => true]);
+        KbTag::factory()->create(['name' => 'php', 'slug' => 'php']);
+        $tag = KbTag::factory()->create(['name' => 'laravel', 'slug' => 'laravel']);
+
+        $this->actingAs($admin)->put("/kb/admin/tags/{$tag->id}", [
+            'name' => 'PHP!',
+        ])->assertSessionHasErrors('name');
+
+        $this->assertSame('laravel', $tag->fresh()->slug);
+    }
+
+    #[Test]
     public function admin_can_update_category(): void
     {
         $admin = User::factory()->create(['admin' => true]);

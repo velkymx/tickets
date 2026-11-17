@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class KbCategory extends Model
@@ -45,8 +46,20 @@ class KbCategory extends Model
         });
 
         static::saving(function (self $category): void {
-            if ($category->slug !== '' && self::slugIsTaken($category->slug, $category->exists ? $category->id : null)) {
-                throw ValidationException::withMessages(['name' => 'A category with a similar name already exists.']);
+            if (blank($category->slug) && filled($category->name)) {
+                $category->slug = Str::slug($category->name);
+            }
+
+            if (blank($category->slug)) {
+                throw ValidationException::withMessages([
+                    'name' => 'The category name must contain at least one letter or number.',
+                ]);
+            }
+
+            if (self::slugIsTaken($category->slug, $category->exists ? $category->id : null)) {
+                throw ValidationException::withMessages([
+                    'name' => 'A category with a similar name already exists.',
+                ]);
             }
         });
     }
