@@ -45,4 +45,22 @@ class LineDiffServiceTest extends TestCase
         $this->assertSame([], $diff['from']);
         $this->assertSame([['text' => 'a', 'changed' => true]], $diff['to']);
     }
+
+    #[Test]
+    public function it_completes_a_large_diff_within_memory_limits(): void
+    {
+        $from = [];
+        $to = [];
+
+        for ($i = 0; $i < 20000; $i++) {
+            $from[] = "line {$i}";
+            $to[] = $i % 2 === 0 ? "line {$i}" : "changed {$i}";
+        }
+
+        $diff = (new LineDiffService)->diff($from, $to);
+
+        $this->assertCount(20000, $diff['from']);
+        $this->assertCount(20000, $diff['to']);
+        $this->assertLessThan(512 * 1024 * 1024, memory_get_peak_usage(true));
+    }
 }

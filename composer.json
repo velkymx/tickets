@@ -14,6 +14,7 @@
         "laravel/tinker": "^3.0",
         "laravel/ui": "^4.6",
         "mustache/mustache": "^3.2",
+        "sebastian/diff": "^6.0",
         "socialiteproviders/microsoft-azure": "^5.0",
         "symfony/html-sanitizer": "^8.1",
         "symfony/yaml": "^8.0"
