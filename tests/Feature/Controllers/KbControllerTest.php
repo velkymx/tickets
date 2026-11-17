@@ -415,6 +415,28 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_clears_permissions_when_leaving_restricted(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $permitted = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create(['owner_id' => $owner->id]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $permitted->id]);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => 'Opened up',
+            'category_id' => $article->category_id,
+            'visibility' => 'internal',
+            'commit_message' => 'Open it up',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseMissing('kb_article_permissions', ['article_id' => $article->id]);
+    }
+
+    #[Test]
     public function destroy_requires_admin(): void
     {
         $author = User::factory()->create(['kb_role' => 'author']);
