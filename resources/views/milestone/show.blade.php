@@ -94,17 +94,12 @@
                 Team Members
             </div>
             <ul class="list-group list-group-flush">
-                @php $mem = []; @endphp
-                @foreach ($milestone->tickets as $tick)
-                    @continue (! $tick->assignee)
-                    @if (!in_array($tick->assignee->name, $mem))
-                        @php $mem[] = $tick->assignee->name; @endphp
-                        <li class="list-group-item">
-                            <a href="/users/{{ $tick->assignee->id }}" class="text-decoration-none text-body">
-                                <i class="fas fa-user me-2"></i> {{ $tick->assignee->name }}
-                            </a>
-                        </li>
-                    @endif
+                @foreach ($members as $member)
+                    <li class="list-group-item">
+                        <a href="/users/{{ $member->id }}" class="text-decoration-none text-body">
+                            <i class="fas fa-user me-2"></i> {{ $member->name }}
+                        </a>
+                    </li>
                 @endforeach
             </ul>
         </div>

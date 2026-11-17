@@ -113,7 +113,14 @@ class MilestoneController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'total', 'percent', 'searchQuery', 'searchTokens', 'blockers', 'planned', 'actualHours'));
+        $members = $milestone->tickets
+            ->pluck('assignee')
+            ->filter()
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+
+        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'total', 'percent', 'searchQuery', 'searchTokens', 'blockers', 'planned', 'actualHours', 'members'));
 
     }
 

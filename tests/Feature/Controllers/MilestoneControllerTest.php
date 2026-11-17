@@ -186,6 +186,27 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function get_show_lists_each_assignee_once_as_members(): void
+    {
+        $user = User::factory()->create();
+        $anna = User::factory()->create(['name' => 'Anna Member']);
+        $zep = User::factory()->create(['name' => 'Zep Member']);
+        $milestone = Milestone::factory()->create();
+
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'user_id2' => $anna->id]);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'user_id2' => $anna->id]);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'user_id2' => $zep->id]);
+        Ticket::factory()->unassigned()->create(['milestone_id' => $milestone->id]);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+
+        $response->assertOk();
+        $this->assertSame([$anna->id, $zep->id], $response->viewData('members')->pluck('id')->all());
+        $response->assertSee('Anna Member');
+        $response->assertSee('Zep Member');
+    }
+
+    #[Test]
     public function get_show_returns_100_percent_when_all_complete(): void
     {
         $user = User::factory()->create();

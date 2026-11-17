@@ -33,6 +33,8 @@ class Ticket extends Model
         return $query->with([
             'status', 'type', 'importance', 'project', 'assignee', 'openDecisionRequests',
             'notes' => fn ($q) => $q->where('hide', 0)->where('notetype', 'message'),
+        ])->withCount([
+            'notes as visible_notes_count' => fn ($q) => $q->where('hide', 0),
         ]);
     }
 
@@ -230,7 +232,7 @@ class Ticket extends Model
 
     public function openDecisionRequests(): HasMany
     {
-        return $this->hasMany(Note::class)->openDecisionRequests();
+        return $this->hasMany(Note::class)->openDecisionRequests()->oldest();
     }
 
     public function estimates(): HasMany
