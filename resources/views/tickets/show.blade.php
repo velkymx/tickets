@@ -312,7 +312,7 @@
                             @continue(! $view->user)
                             <li class="py-1 text-body-secondary">
                                 <i class="fas fa-user me-2"></i>
-                                <a href="/users/{{ $view->user->id }}" class="text-decoration-none">{{ $view->user->name }}</a> &mdash; {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}
+                                <a href="/users/{{ $view->user->id }}" class="text-decoration-none">{{ $view->user->name }}</a>, {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}
                             </li>
                         @endforeach
                     </ul>

@@ -23,8 +23,8 @@ Instead, report them through [GitHub's private vulnerability reporting](https://
 
 ### Response timeline
 
-- **48 hours** — Acknowledgment of your report
-- **30 days** — Patch or mitigation released (sooner when possible)
+- **48 hours**: Acknowledgment of your report
+- **30 days**: Patch or mitigation released (sooner when possible)
 
 ### After disclosure
 

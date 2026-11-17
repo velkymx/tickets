@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      # In-network service names — set literally so a developer's local .env
+      # In-network service names: set literally so a developer's local .env
       # (DB_HOST=127.0.0.1, QUEUE=sync, …) can't leak in via interpolation.
       DB_HOST: db
       DB_PORT: "3306"
