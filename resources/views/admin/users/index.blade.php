@@ -35,14 +35,14 @@
                         @if ($user->isAdmin())
                             <span class="badge text-bg-primary">Admin</span>
                         @else
-                            <span class="text-muted">&mdash;</span>
+                            <span class="text-muted">-</span>
                         @endif
                     </td>
                     <td>
                         @if ($user->kb_role)
                             <span class="badge text-bg-secondary">{{ ucfirst($user->kb_role) }}</span>
                         @else
-                            <span class="text-muted">&mdash;</span>
+                            <span class="text-muted">-</span>
                         @endif
                     </td>
                     <td class="text-center">

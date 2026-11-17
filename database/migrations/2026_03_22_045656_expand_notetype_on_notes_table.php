@@ -24,11 +24,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     * Migration is irreversible — expanding ENUM to string cannot be reversed
+     * Migration is irreversible: expanding ENUM to string cannot be reversed
      * without data loss. This is intentionally a no-op.
      */
     public function down(): void
     {
-        // Intentionally empty — expanding notetype column is irreversible
+        // Intentionally empty: expanding notetype column is irreversible
     }
 };

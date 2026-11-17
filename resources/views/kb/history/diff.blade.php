@@ -23,7 +23,7 @@
     <div class="col-md-6">
         <div class="card border-danger">
             <div class="card-header bg-danger-subtle">
-                <strong>v{{ $fromVersion->version_number }}</strong> &mdash; {{ $fromVersion->commit_message }}
+                <strong>v{{ $fromVersion->version_number }}</strong>: {{ $fromVersion->commit_message }}
                 <div class="small text-muted">{{ $fromVersion->created_at->format('M jS, Y g:ia') }}</div>
             </div>
         </div>
@@ -31,7 +31,7 @@
     <div class="col-md-6">
         <div class="card border-success">
             <div class="card-header bg-success-subtle">
-                <strong>v{{ $toVersion->version_number }}</strong> &mdash; {{ $toVersion->commit_message }}
+                <strong>v{{ $toVersion->version_number }}</strong>: {{ $toVersion->commit_message }}
                 <div class="small text-muted">{{ $toVersion->created_at->format('M jS, Y g:ia') }}</div>
             </div>
         </div>
