@@ -25,4 +25,24 @@ describe('composer guards', () => {
         expect(firstAdds).toBeGreaterThan(0);
         expect(secondAdds).toBe(firstAdds);
     });
+
+    it('wraps the selection once even after a double init', () => {
+        document.body.innerHTML = `
+            <div class="markdown-composer">
+                <textarea id="note-textarea"></textarea>
+                <div class="mention-autocomplete d-none"></div>
+                <button type="button" data-md="**">B</button>
+            </div>
+        `;
+        initComposer(document);
+        initComposer(document);
+
+        const textarea = document.querySelector('#note-textarea');
+        textarea.value = 'x';
+        textarea.selectionStart = 0;
+        textarea.selectionEnd = 1;
+        document.querySelector('[data-md]').click();
+
+        expect(textarea.value).toBe('**x**');
+    });
 });

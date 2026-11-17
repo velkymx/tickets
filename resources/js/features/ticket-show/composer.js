@@ -59,6 +59,11 @@ function wireSignalNudge(textarea) {
 
 function wireToolbar(root = document) {
     root.querySelectorAll('.markdown-composer [data-md]').forEach(btn => {
+        if (btn.dataset.wired) {
+            return;
+        }
+
+        btn.dataset.wired = 'true';
         btn.addEventListener('click', function () {
             const textarea = document.getElementById('note-textarea');
             if (!textarea) return;
