@@ -187,7 +187,7 @@ class TicketController extends Controller
                     $q->where('notetype', $request->notetype);
                 }
             },
-        ])->findOrFail($id);
+        ])->ownedBy($user->id)->findOrFail($id);
 
         $apiUserId = $user->id;
         $notes = $ticket->notes->map(fn ($note) => $this->formatNote($note, $apiUserId));
@@ -271,9 +271,7 @@ class TicketController extends Controller
         // explicit token user here rather than a session user.
         Auth::setUser($user);
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($id);
+        $ticket = Ticket::ownedBy($user->id)->findOrFail($id);
 
         $bodyText = (string) ($request->body ?? '');
 
@@ -368,9 +366,7 @@ class TicketController extends Controller
 
         Auth::setUser($user);
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($id);
+        $ticket = Ticket::ownedBy($user->id)->findOrFail($id);
 
         $old = $ticket->toArray();
 
@@ -463,9 +459,7 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         $error = $promotion->promote($note, $validated['type'], $validated['assignee'] ?? null);
@@ -489,9 +483,8 @@ class TicketController extends Controller
             'action' => 'nullable|in:watch,unwatch,mute,unmute',
         ]);
 
-        // Any ticket is viewable, so watching is not limited to owned tickets.
-        $ticket = Ticket::findOrFail($id);
         $user = $request->attributes->get('api_user');
+        $ticket = Ticket::ownedBy($user->id)->findOrFail($id);
         $action = $validated['action'] ?? 'watch';
 
         $watcher = TicketUserWatcher::where('ticket_id', $ticket->id)
@@ -531,7 +524,8 @@ class TicketController extends Controller
 
     public function pulse(Request $request, $id)
     {
-        $ticket = Ticket::findOrFail($id);
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::ownedBy($user->id)->findOrFail($id);
 
         $pulse = app(TicketPulseService::class)->getPulse($ticket)->toArray();
 
@@ -548,9 +542,7 @@ class TicketController extends Controller
 
         Auth::setUser($user);
 
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Only thread author or ticket assignee can resolve
@@ -591,9 +583,7 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Author-only
@@ -641,9 +631,7 @@ class TicketController extends Controller
 
         Auth::setUser($user);
 
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $parent = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Reject nested replies
@@ -685,9 +673,7 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         $existing = NoteReaction::where('note_id', $note->id)

@@ -118,7 +118,7 @@ curl -H "Authorization: Bearer <token>" \
 GET /tickets/{id}
 ```
 
-Returns full ticket detail: metadata, notes, reactions, attachments, mentions, and pulse summary.
+Returns full ticket detail: metadata, notes, reactions, attachments, mentions, and pulse summary. Only tickets you created or are assigned to are visible; others return 404.
 
 **Query parameters:**
 
@@ -375,7 +375,7 @@ curl -X POST \
 POST /tickets/{id}/watch
 ```
 
-Watch, unwatch, mute, or unmute a ticket for yourself. `action` is one of `watch` (default), `unwatch`, `mute`, `unmute`. Any ticket you can view may be watched.
+Watch, unwatch, mute, or unmute a ticket for yourself. `action` is one of `watch` (default), `unwatch`, `mute`, `unmute`. Only tickets you created or are assigned to may be watched; others return 404.
 
 ```bash
 curl -X POST \
@@ -393,7 +393,7 @@ curl -X POST \
 GET /tickets/{id}/pulse
 ```
 
-Returns execution state summary: blockers, open threads, next action, latest decision, staleness.
+Returns execution state summary: blockers, open threads, next action, latest decision, staleness. Only tickets you created or are assigned to are visible; others return 404.
 
 **Execution states:** `ON TRACK`, `AT RISK`, `BLOCKED`, `IDLE`.
 
