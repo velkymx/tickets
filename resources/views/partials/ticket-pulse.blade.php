@@ -52,7 +52,7 @@
                 <div class="d-flex justify-content-between align-items-center mt-1">
                     <span class="small text-muted" x-text="pulse.latest_blocker.author"></span>
                     <button type="button" class="btn btn-outline-danger btn-sm"
-                            x-show="resolving !== pulse.latest_blocker.id"
+                            x-show="resolving !== pulse.latest_blocker.id && resolvableIds.includes(pulse.latest_blocker.id)"
                             @click="resolve(pulse.latest_blocker.id)">Resolve</button>
                 </div>
                 <template x-if="resolving === pulse.latest_blocker.id">
@@ -81,7 +81,7 @@
                         </template>
                     </div>
                     <button type="button" class="btn btn-outline-secondary btn-sm ms-2 flex-shrink-0"
-                            x-show="resolving !== pulse.next_action.id"
+                            x-show="resolving !== pulse.next_action.id && resolvableIds.includes(pulse.next_action.id)"
                             @click="resolve(pulse.next_action.id)">Done</button>
                 </div>
                 <template x-if="resolving === pulse.next_action.id">
@@ -133,7 +133,7 @@
                                     x-text="`${thread.subject} (${thread.reply_count})`"
                                 ></a>
                                 <button type="button" class="btn btn-outline-secondary btn-sm"
-                                        x-show="resolving !== thread.id"
+                                        x-show="resolving !== thread.id && resolvableIds.includes(thread.id)"
                                         @click="resolve(thread.id)">Resolve</button>
                             </div>
                             <template x-if="resolving === thread.id">

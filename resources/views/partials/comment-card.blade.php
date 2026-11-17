@@ -137,26 +137,21 @@
 
     {{-- Blocker action bar --}}
     @if($note->notetype === 'blocker' && !$isResolved)
-        @php
-            $canResolve = auth()->id() === (int) $note->user_id
-                || auth()->id() === (int) ($ticket->user_id2 ?? null)
-                || auth()->id() === (int) ($ticket->user_id ?? null);
-        @endphp
         <div class="card-body border-top pt-2 pb-2"
              x-data="{ resolving: false, message: '', submitting: false }"
         >
             <div x-show="!resolving" class="d-flex align-items-center gap-2">
-                @if($canResolve)
+                @can('resolve', $note)
                     <button class="btn btn-sm btn-danger" @click="resolving = true">
                         <i class="fas fa-check-circle me-1"></i>Resolve Blocker
                     </button>
-                @endif
+                @endcan
                 <button class="btn btn-sm btn-outline-secondary"
                         onclick="(function(){var r=document.querySelector('#note_{{ $note->id }} .reply-composer textarea');if(r){r.placeholder='What\'s being done to unblock this?';r.focus();}})()">
                     <i class="fas fa-arrow-right me-1"></i>Next Step
                 </button>
             </div>
-            @if($canResolve)
+            @can('resolve', $note)
                 <div x-show="resolving" x-cloak>
                     <textarea x-model="message" class="form-control form-control-sm mb-2" rows="2"
                               placeholder="What resolved this blocker? (required)"
@@ -196,7 +191,7 @@
                         <button class="btn btn-sm btn-outline-secondary" @click="resolving = false; message = ''" :disabled="submitting">Cancel</button>
                     </div>
                 </div>
-            @endif
+            @endcan
         </div>
     @endif
 

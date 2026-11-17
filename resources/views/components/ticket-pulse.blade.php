@@ -1,8 +1,9 @@
-@props(['ticket', 'pulse'])
+@props(['ticket', 'pulse', 'resolvableIds' => []])
 
 <div
     x-data="{
         pulse: @js($pulse),
+        resolvableIds: @js($resolvableIds),
         csrf: document.querySelector('meta[name=csrf-token]')?.content,
         refresh() {
             fetch(`/tickets/${this.pulse.id}/pulse`)

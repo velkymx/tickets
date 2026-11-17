@@ -204,7 +204,7 @@
             </div>
 
             {{-- Ticket Pulse (Real-Time Decision Log) --}}
-            <x-ticket-pulse :ticket="$ticket" :pulse="$pulse->toArray()" />
+            <x-ticket-pulse :ticket="$ticket" :pulse="$pulse->toArray()" :resolvable-ids="$resolvableNoteIds ?? []" />
 
             {{-- Ticket Details --}}
             <section class="mb-4">

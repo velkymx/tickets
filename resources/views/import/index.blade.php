@@ -24,8 +24,8 @@ Import Tickets
         <label for="milestone_id" class="form-label">Ticket Milestone</label>
         <select name="milestone_id" id="milestone_id" class="form-select" required>
             <option value="">Select</option>
-            @foreach ([null=>'Select'] + $milestones->toArray() as $id => $name)
-                <option value="{{ $id }}">{{ $name }}</option>
+            @foreach ($milestones as $id => $name)
+                <option value="{{ $id }}" @selected(old('milestone_id') == $id)>{{ $name }}</option>
             @endforeach
         </select>
     </div>

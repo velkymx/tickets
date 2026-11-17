@@ -37,8 +37,9 @@
                 </li>
             </ul>
 
-            <form class="d-flex me-3" action="{{ route('kb.search') }}" method="GET">
-                <input class="form-control form-control-sm" type="search" name="q" placeholder="Search articles..." value="{{ request('q') }}">
+            <form class="d-flex me-3" action="{{ route('kb.search') }}" method="GET" role="search">
+                <input class="form-control form-control-sm me-2" type="search" name="q" placeholder="Search articles..." aria-label="Search articles" value="{{ request('q') }}">
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Search</button>
             </form>
 
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
