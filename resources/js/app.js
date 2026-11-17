@@ -24,3 +24,5 @@ import './features/ticket-show';
 import './features/bulk-select';
 
 import './features/health-ping';
+
+import './features/kanban-board';

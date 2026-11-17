@@ -173,6 +173,29 @@ class SlashCommandServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_resolves_code_tokens_away_for_action_assignees(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+
+        $result = $this->service->handle($ticket, '/action Fix @[Jane Doe] see @param docs');
+
+        $this->assertSame('action', $result['note_type']);
+        $this->assertSame($jane->id, $ticket->fresh()->user_id2);
+    }
+
+    #[Test]
+    public function it_rejects_action_commands_whose_only_mention_is_not_a_user(): void
+    {
+        $ticket = Ticket::factory()->create();
+
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Actions require exactly one @assignee');
+
+        $this->service->handle($ticket, '/action Check @media rules');
+    }
+
+    #[Test]
     public function it_requires_exactly_one_assignee_for_action_commands()
     {
         $ticket = Ticket::factory()->create();
@@ -230,6 +253,24 @@ class SlashCommandServiceTest extends TestCase
 
         $this->assertEquals($exact->id, $ticket->fresh()->user_id2);
         $this->assertContains(['action' => 'assigned', 'to' => 'John'], $result['actions']);
+    }
+
+    #[Test]
+    public function it_moves_the_ticket_to_an_open_status_on_reopen(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'status_id' => Status::factory()->closed()->create()->id,
+            'closed_at' => now(),
+        ]);
+        cache()->forget('closed_status_ids');
+        cache()->forget('active_status_ids');
+
+        $result = $this->service->handle($ticket, '/reopen');
+
+        $fresh = $ticket->fresh();
+        $this->assertNull($fresh->closed_at);
+        $this->assertFalse(Status::isClosed((int) $fresh->status_id));
+        $this->assertContains('Ticket reopened', $result['changes']);
     }
 
     #[Test]

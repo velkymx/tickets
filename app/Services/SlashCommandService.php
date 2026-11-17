@@ -145,6 +145,12 @@ class SlashCommandService
                 break;
 
             case 'reopen':
+                if (Status::isClosed((int) $ticket->status_id)) {
+                    $ticket->status_id = Status::query()
+                        ->whereNotIn('id', Status::closedStatusIds())
+                        ->orderBy('id')
+                        ->value('id') ?? $ticket->status_id;
+                }
                 $ticket->closed_at = null;
                 $ticket->save();
                 $result['changes'][] = 'Ticket reopened';
@@ -206,9 +212,9 @@ class SlashCommandService
                 break;
 
             case 'action':
-                $mentions = $this->extractMentions($args);
+                $assignee = $this->mentionService->findMentionedUser($args);
 
-                if (count($mentions) !== 1) {
+                if (! $assignee) {
                     throw new SlashCommandException('Actions require exactly one @assignee');
                 }
 
@@ -216,10 +222,7 @@ class SlashCommandService
                     throw new SlashCommandException('Too many open actions. Resolve or overwrite an existing action before creating a new one');
                 }
 
-                $assigneeName = $mentions[0];
-                $assignee = $this->findByName(User::class, $assigneeName);
-
-                if ($assignee && ! $ticket->assignee) {
+                if (! $ticket->assignee) {
                     $ticket->user_id2 = $assignee->id;
                     $ticket->save();
                     $result['changes'][] = "Assigned to {$assignee->name}";
@@ -256,11 +259,6 @@ class SlashCommandService
     protected function hasActiveBlocker(Ticket $ticket): bool
     {
         return $ticket->notes()->where('notetype', 'blocker')->where('resolved', false)->exists();
-    }
-
-    protected function extractMentions(string $text): array
-    {
-        return $this->mentionService->parseMentions($text);
     }
 
     protected function findByName(string $class, string $value): mixed

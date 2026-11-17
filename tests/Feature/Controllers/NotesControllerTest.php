@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use App\Models\TicketView;
 use App\Models\User;
 use App\Services\MarkdownService;
+use App\Services\MentionService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -315,6 +316,57 @@ class NotesControllerTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseMissing('mentions', ['note_id' => $note->id]);
+    }
+
+    #[Test]
+    public function it_promotes_a_legacy_note_to_action_using_its_recorded_mention(): void
+    {
+        $user = User::factory()->create();
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse('Ask @[Jane Doe] for the logs.'),
+            'body_markdown' => null,
+        ]);
+        app(MentionService::class)->createMentions($note, [$jane->id]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals('action', $note->fresh()->notetype);
+        $this->assertSame($jane->id, $note->fresh()->assignee_id);
+    }
+
+    #[Test]
+    public function it_promotes_a_legacy_note_with_a_prompted_assignee_into_clean_markdown(): void
+    {
+        $user = User::factory()->create();
+        $sarah = User::factory()->create(['name' => 'sarah']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse('Verify the staging deploy before release.'),
+            'body_markdown' => null,
+        ]);
+
+        $response = $this->actingAs($user)->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+            'assignee' => 'sarah',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $this->assertEquals('action', $note->fresh()->notetype);
+        $this->assertStringContainsString('@[sarah]', $note->fresh()->body_markdown);
+        $this->assertStringNotContainsString('<', $note->fresh()->body_markdown ?? '');
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id, 'user_id' => $sarah->id]);
     }
 
     // --- Reply Tests ---
