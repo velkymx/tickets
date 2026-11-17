@@ -780,6 +780,28 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_lists_viewers_by_last_view_time(): void
+    {
+        $user = User::factory()->create();
+        $viewer = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $ticketView = TicketView::create([
+            'user_id' => $viewer->id,
+            'ticket_id' => $ticket->id,
+        ]);
+        TicketView::where('id', $ticketView->id)->update([
+            'created_at' => now()->subDays(10),
+            'updated_at' => now()->subHour(),
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('1 hour ago');
+    }
+
+    #[Test]
     public function show_renders_filter_buttons_for_timeline(): void
     {
         $user = User::factory()->create();
