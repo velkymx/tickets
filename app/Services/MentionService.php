@@ -7,6 +7,7 @@ use App\Models\Note;
 use App\Models\TicketUserWatcher;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class MentionService
 {
@@ -31,6 +32,40 @@ class MentionService
             ->filter()
             ->unique('id')
             ->values();
+    }
+
+    /**
+     * @param  array<string, string>  $markdowns
+     * @return array<string, ?User>
+     */
+    public function resolveFirstUsers(array $markdowns): array
+    {
+        $tokens = [];
+        foreach ($markdowns as $key => $markdown) {
+            $tokens[$key] = $this->parseMentions($markdown);
+        }
+
+        $names = collect($tokens)->flatten()->unique()->values();
+        $users = $names->isEmpty() ? collect() : User::query()
+            ->whereIn(DB::raw('LOWER(name)'), $names->map(fn (string $name) => mb_strtolower($name))->all())
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn (User $user) => mb_strtolower($user->name));
+
+        $resolved = [];
+        foreach ($tokens as $key => $names) {
+            $resolved[$key] = null;
+            foreach ($names as $name) {
+                $candidates = $users->get(mb_strtolower($name), collect());
+                $user = $candidates->firstWhere('name', $name) ?? $candidates->first();
+                if ($user !== null) {
+                    $resolved[$key] = $user;
+                    break;
+                }
+            }
+        }
+
+        return $resolved;
     }
 
     public function findUser(string $name): ?User
