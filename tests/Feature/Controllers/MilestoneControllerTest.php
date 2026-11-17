@@ -572,6 +572,36 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function report_burndown_stays_within_the_milestone_range(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create([
+            'start_at' => '2024-01-01',
+            'due_at' => '2024-01-05',
+        ]);
+        $closed = Status::factory()->closed()->create();
+        cache()->forget('closed_status_ids');
+        Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'storypoints' => 10,
+            'status_id' => $closed->id,
+            'closed_at' => now()->parse('2023-12-20 10:00:00'),
+        ]);
+        Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'storypoints' => 10,
+        ]);
+
+        $response = $this->actingAs($user)->get("/milestone/report/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $burndown = $response->viewData('burndownData');
+        $this->assertSame(['Jan 1', 'Jan 2', 'Jan 3', 'Jan 4', 'Jan 5'], $burndown['labels']);
+        $this->assertEquals([20, 15, 10, 5, 0], $burndown['ideal']);
+        $this->assertEquals(10, $burndown['actual'][0]);
+    }
+
+    #[Test]
     public function report_returns_empty_burndown_when_no_dates(): void
     {
         $user = User::factory()->create();
