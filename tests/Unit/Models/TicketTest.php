@@ -9,6 +9,7 @@ use App\Models\TicketUserWatcher;
 use App\Models\User;
 use App\Notifications\WatcherNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -128,10 +129,12 @@ class TicketTest extends TestCase
             'user_id2' => $creator->id,
         ]);
 
+        Schema::disableForeignKeyConstraints();
         TicketUserWatcher::factory()->create([
             'ticket_id' => $ticket->id,
             'user_id' => 99999,
         ]);
+        Schema::enableForeignKeyConstraints();
 
         $ticket = $ticket->fresh()->load('watchers');
         $ticket->subject = 'Updated Subject';

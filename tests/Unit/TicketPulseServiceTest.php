@@ -126,7 +126,7 @@ class TicketPulseServiceTest extends TestCase
         $this->assertEquals('Owner: Sarah', $pulse->owner_label);
 
         // Unassigned
-        $unassignedTicket = Ticket::factory()->create(['user_id2' => 999999]);
+        $unassignedTicket = Ticket::factory()->create(['user_id2' => null]);
         $this->service->invalidatePulse($unassignedTicket->id);
         $pulse = $this->service->getPulse($unassignedTicket);
         $this->assertEquals('Unassigned', $pulse->owner_label);

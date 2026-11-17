@@ -47,9 +47,7 @@ class ListTicketsTool extends TicketTool
         if ($decision === 'me') {
             $query->needsDecision($user->id);
         } elseif (! empty($validated['unassigned'])) {
-            $query->where(function ($q) {
-                $q->whereNull('user_id2')->orWhere('user_id2', 0);
-            });
+            $query->whereNull('user_id2');
         } else {
             $query->where('user_id2', $user->id);
         }

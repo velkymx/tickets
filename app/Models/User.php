@@ -20,11 +20,6 @@ class User extends Authenticatable
         static::saving(function (User $user) {
             $user->name_lower = mb_strtolower(trim($user->name ?? ''));
         });
-
-        static::deleting(function (User $user) {
-            TicketView::where('user_id', $user->id)->delete();
-            TicketUserWatcher::where('user_id', $user->id)->delete();
-        });
     }
 
     public function scopeWithName(Builder $query, string $name): Builder

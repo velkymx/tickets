@@ -97,7 +97,7 @@ class TicketPolicyTest extends TestCase
     {
         $user = User::factory()->create();
         $owner = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => 0]);
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => null]);
 
         $this->assertTrue($this->policy->claim($user, $ticket));
     }

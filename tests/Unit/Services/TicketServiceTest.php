@@ -206,17 +206,18 @@ class TicketServiceTest extends TestCase
         Cache::flush();
         $user = User::factory()->create();
         $newAssignee = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->service->getLookups();
 
-        $old = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $user->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
-        $new = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $newAssignee->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $old = ['id' => $ticket->id, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $user->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $new = ['id' => $ticket->id, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $newAssignee->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
 
         $changes = $this->service->changes($old, $new);
 
         $this->assertNotEmpty(array_filter($changes, fn ($c) => str_contains($c, 'Assigned User changed to '.$newAssignee->name)));
         $this->assertDatabaseHas('ticket_user_watchers', [
-            'ticket_id' => 1,
+            'ticket_id' => $ticket->id,
             'user_id' => $newAssignee->id,
         ]);
     }
@@ -227,18 +228,19 @@ class TicketServiceTest extends TestCase
         Cache::flush();
         $user = User::factory()->create();
         $newAssignee = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         TicketUserWatcher::factory()->create([
-            'ticket_id' => 1,
+            'ticket_id' => $ticket->id,
             'user_id' => $newAssignee->id,
         ]);
 
-        $old = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $user->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
-        $new = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $newAssignee->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $old = ['id' => $ticket->id, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $user->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $new = ['id' => $ticket->id, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $newAssignee->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
 
         $this->service->changes($old, $new);
 
-        $this->assertEquals(1, TicketUserWatcher::where('ticket_id', 1)->where('user_id', $newAssignee->id)->count());
+        $this->assertEquals(1, TicketUserWatcher::where('ticket_id', $ticket->id)->where('user_id', $newAssignee->id)->count());
     }
 
     #[Test]

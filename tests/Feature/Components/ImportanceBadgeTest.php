@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -65,7 +66,9 @@ class ImportanceBadgeTest extends TestCase
             'status_id' => $open->id,
         ]);
 
+        Schema::disableForeignKeyConstraints();
         DB::table('importances')->where('id', $ticket->importance_id)->delete();
+        Schema::enableForeignKeyConstraints();
 
         $response = $this->actingAs($user)->get('/home');
 

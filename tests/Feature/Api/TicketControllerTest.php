@@ -150,7 +150,7 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function index_filters_unassigned_tickets(): void
     {
-        Ticket::factory()->create(['user_id2' => 0]);
+        Ticket::factory()->create(['user_id2' => null]);
         Ticket::factory()->create(['user_id2' => $this->user->id]);
 
         $response = $this->getJson('/api/v1/tickets?unassigned=true', $this->apiHeaders());

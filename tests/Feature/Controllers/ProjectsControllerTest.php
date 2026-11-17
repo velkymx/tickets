@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\PriorityMatrixService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -390,11 +391,13 @@ class ProjectsControllerTest extends TestCase
         $user = User::factory()->create();
         $project = Project::factory()->create();
         // A ticket with no matching importance row (created without a priority).
+        Schema::disableForeignKeyConstraints();
         Ticket::factory()->create([
             'project_id' => $project->id,
             'importance_id' => 0,
             'subject' => 'Priorityless ticket',
         ]);
+        Schema::enableForeignKeyConstraints();
 
         $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
 
