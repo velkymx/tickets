@@ -95,9 +95,9 @@ class KbController extends Controller
         $categories = KbCategory::orderBy('sort_order')->get();
         $tags = KbTag::orderBy('name')->get();
         $users = User::orderBy('name')->get(['id', 'name']);
-        $canManagePermissions = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
+        $canManageAccess = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
 
-        return view('kb.edit', compact('article', 'categories', 'tags', 'users', 'canManagePermissions'));
+        return view('kb.edit', compact('article', 'categories', 'tags', 'users', 'canManageAccess'));
     }
 
     public function update(UpdateArticleRequest $request, KbArticle $slug)
@@ -106,17 +106,17 @@ class KbController extends Controller
         $this->authorize('update', $article);
 
         $validated = $request->validated();
-        $canManagePermissions = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
+        $canManageAccess = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
 
-        if (! $canManagePermissions) {
+        if (! $canManageAccess) {
             $validated['visibility'] = $article->visibility;
             $validated['status'] = $article->status;
         }
 
-        DB::transaction(function () use ($article, $validated, $canManagePermissions) {
+        DB::transaction(function () use ($article, $validated, $canManageAccess) {
             $this->articleService->update($article, $validated, Auth::user(), $validated['commit_message']);
 
-            if (! $canManagePermissions) {
+            if (! $canManageAccess) {
                 return;
             }
 

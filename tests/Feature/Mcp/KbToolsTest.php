@@ -9,6 +9,7 @@ use App\Mcp\Tools\GetKbLookupsTool;
 use App\Mcp\Tools\KbSearchTool;
 use App\Mcp\Tools\UpdateKbArticleTool;
 use App\Models\KbArticle;
+use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
 use App\Models\User;
@@ -129,6 +130,37 @@ class KbToolsTest extends TestCase
         ]);
 
         $response->assertHasErrors(['You cannot edit this article.']);
+    }
+
+    #[Test]
+    public function update_article_tool_keeps_visibility_and_status_for_permitted_editors(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $editor = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->create([
+            'status' => 'draft', 'visibility' => 'restricted',
+            'user_id' => $owner->id, 'owner_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $editor->id]);
+
+        $response = TicketsServer::actingAs($editor)->tool(UpdateKbArticleTool::class, [
+            'id' => $article->id,
+            'title' => $article->title,
+            'body_markdown' => 'edited body',
+            'category_id' => $category->id,
+            'visibility' => 'public',
+            'status' => 'verified',
+            'commit_message' => 'Try to publish',
+            'tags' => [$tag->id],
+        ]);
+
+        $response->assertOk();
+        $this->assertSame('restricted', $article->fresh()->visibility);
+        $this->assertSame('draft', $article->fresh()->status);
     }
 
     #[Test]

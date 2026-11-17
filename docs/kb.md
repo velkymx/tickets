@@ -211,7 +211,7 @@ API routes (`/api/v1/kb`) mirror the web routes - added in a later iteration, no
 
 - **view** - Public verified articles: anyone, including guests (via `KbArticle::isVisibleTo`, not the `before()` gate). Internal non-draft articles: authenticated users. Restricted non-draft articles: owner, permitted users, admins. The policy's `before()` method returns `true` for KB admins on every ability and `null` for everyone else.
 - **create** - Any authenticated user.
-- **update** - Owner, permitted users, admins. Permitted users can edit content only; visibility, status, and grants stay with the owner or a KB admin.
+- **update** - Owner, permitted users, admins. Permitted users can edit content only; visibility, status, and grants stay with the owner or a KB admin. The API and MCP update paths enforce the same restriction.
 - **delete** - Admins only.
 - **restore** - Admins only.
 

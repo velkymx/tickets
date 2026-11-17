@@ -113,7 +113,7 @@
             </div>
 
             {{-- Status --}}
-            @if($canManagePermissions)
+            @if($canManageAccess)
                 <div class="mb-3">
                     <label for="status" class="form-label">Status</label>
                     <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
@@ -242,7 +242,7 @@
             </div>
 
             {{-- Permitted Users --}}
-            @if($canManagePermissions)
+            @if($canManageAccess)
                 <div class="mb-3">
                     <label for="permitted_users" class="form-label">Permitted Users</label>
                     <select name="permitted_users[]" id="permitted_users" class="form-select @error('permitted_users') is-invalid @enderror" multiple size="5">

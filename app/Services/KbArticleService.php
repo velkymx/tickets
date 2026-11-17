@@ -40,6 +40,11 @@ class KbArticleService
 
     public function update(KbArticle $article, array $data, User $editor, string $commitMessage): KbArticle
     {
+        if ($article->owner_id !== $editor->id && ! $editor->isKbAdmin()) {
+            $data['visibility'] = $article->visibility;
+            $data['status'] = $article->status;
+        }
+
         $html = $this->markdownService->parse($data['body_markdown']);
 
         $article->update([
