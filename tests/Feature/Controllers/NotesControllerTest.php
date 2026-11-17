@@ -11,6 +11,7 @@ use App\Services\MarkdownService;
 use App\Services\MentionService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -413,6 +414,32 @@ class NotesControllerTest extends TestCase
     }
 
     #[Test]
+    public function reply_authorizes_the_ticket_policy(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+        ]);
+
+        Gate::before(fn () => false);
+
+        $this->actingAs($user)->postJson('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body' => 'Blocked reply',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body_markdown' => 'Blocked reply',
+        ]);
+    }
+
+    #[Test]
     public function it_creates_a_reply_to_a_top_level_note(): void
     {
         $user = User::factory()->create();
@@ -732,6 +759,28 @@ class NotesControllerTest extends TestCase
 
         $this->assertGuest();
         $this->assertDatabaseMissing('note_reactions', ['note_id' => $note->id]);
+    }
+
+    #[Test]
+    public function reaction_authorizes_the_ticket_policy(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        Gate::before(fn () => false);
+
+        $this->actingAs($user)->postJson("/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('note_reactions', [
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+        ]);
     }
 
     #[Test]
