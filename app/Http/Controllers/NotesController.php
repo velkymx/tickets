@@ -154,6 +154,7 @@ class NotesController extends Controller
 
         $usernames = $mentions->parseMentions($validated['body']);
         $userIds = User::whereIn('name', $usernames)->pluck('id')->all();
+        $note->mentions()->delete();
         $mentions->createMentions($note, $userIds);
 
         return response()->json([

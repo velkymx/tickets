@@ -39,8 +39,11 @@ class MentionService
 
         $candidates = User::query()
             ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+            ->orderBy('id')
             ->get();
 
+        // Display names are not unique. Prefer the exact case, then the
+        // oldest account, so resolution never depends on load order.
         return $candidates->firstWhere('name', $name) ?? $candidates->first();
     }
 
