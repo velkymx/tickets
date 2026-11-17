@@ -86,6 +86,18 @@ class KbVersionControllerTest extends TestCase
     }
 
     #[Test]
+    public function it_highlights_changed_diff_lines(): void
+    {
+        $user = User::factory()->create(['kb_role' => 'author']);
+        $article = $this->createArticleWithVersions($user);
+
+        $this->actingAs($user)->get("/kb/{$article->slug}/diff/1/2")
+            ->assertOk()
+            ->assertSee('<span class="d-block bg-danger-subtle">First content</span>', false)
+            ->assertSee('<span class="d-block bg-success-subtle">Updated content</span>', false);
+    }
+
+    #[Test]
     public function it_restores_a_version(): void
     {
         $user = User::factory()->create(['kb_role' => 'author']);
