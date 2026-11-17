@@ -10,6 +10,7 @@
                 .then(res => res.json())
                 .then(data => {
                     this.pulse = data;
+                    this.resolvableIds = data.resolvable_note_ids ?? [];
                 });
         },
         resolving: null,

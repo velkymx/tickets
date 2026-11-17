@@ -24,7 +24,9 @@ class KbControllerTest extends TestCase
         $response = $this->get('/kb');
 
         $response->assertOk();
-        $this->assertSame(2, substr_count($response->getContent(), 'type="submit"'));
+        $response->assertSee('action="'.route('kb.search').'" method="GET" role="search"', false);
+        $response->assertSee('aria-label="Search articles"', false);
+        $response->assertSee('<button class="btn btn-sm btn-outline-secondary" type="submit">Search</button>', false);
     }
 
     #[Test]
