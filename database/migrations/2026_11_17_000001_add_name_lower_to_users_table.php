@@ -13,7 +13,13 @@ return new class extends Migration
             $table->string('name_lower')->nullable()->index();
         });
 
-        DB::statement('update users set name_lower = lower(name)');
+        DB::table('users')->chunkById(100, function ($users): void {
+            foreach ($users as $user) {
+                DB::table('users')->where('id', $user->id)->update([
+                    'name_lower' => mb_strtolower(trim($user->name ?? '')),
+                ]);
+            }
+        });
     }
 
     public function down(): void

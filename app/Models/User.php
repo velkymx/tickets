@@ -18,7 +18,7 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::saving(function (User $user) {
-            $user->name_lower = mb_strtolower($user->name ?? '');
+            $user->name_lower = mb_strtolower(trim($user->name ?? ''));
         });
 
         static::deleting(function (User $user) {

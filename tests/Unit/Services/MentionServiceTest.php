@@ -50,6 +50,16 @@ class MentionServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_resolves_an_accented_name_through_the_indexed_column(): void
+    {
+        $user = User::factory()->create(['name' => 'Émile Zola']);
+
+        $this->assertSame('émile zola', $user->fresh()->name_lower);
+        $this->assertSame($user->id, User::query()->withName('Émile Zola')->first()->id);
+        $this->assertSame($user->id, $this->service->findUser('émile zola')?->id);
+    }
+
+    #[Test]
     public function it_parses_unique_usernames_from_markdown(): void
     {
         $mentions = $this->service->parseMentions(
