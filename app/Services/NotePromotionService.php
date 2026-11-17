@@ -29,8 +29,23 @@ class NotePromotionService
             return null;
         }
 
-        $markdown = $note->body_markdown ?: $note->body;
-        $user = $this->mentionService->findMentionedUser($markdown, $assignee);
+        $markdown = $note->body_markdown;
+        $recordedMentions = null;
+
+        if ($markdown === null) {
+            // Legacy notes predate body_markdown and only store rendered
+            // HTML, which bare-mention parsing cannot resolve to full
+            // names. Their recorded mentions are the source of truth.
+            // Stripped body text keeps stored markdown free of HTML.
+            $recordedMentions = $note->mentions()->with('user')->get()->pluck('user')
+                ->filter()->unique('id')->values();
+            $markdown = trim(strip_tags($note->body));
+            $user = $assignee !== null && trim($assignee) !== ''
+                ? $this->mentionService->findUser(ltrim(trim($assignee), '@'))
+                : ($recordedMentions->count() === 1 ? $recordedMentions->first() : null);
+        } else {
+            $user = $this->mentionService->findMentionedUser($markdown, $assignee);
+        }
 
         if (! $user) {
             return $type === 'action'
@@ -44,7 +59,11 @@ class NotePromotionService
             return null;
         }
 
-        if (! $this->mentionService->resolveUsers($markdown)->contains('id', $user->id)) {
+        $alreadyMentioned = $recordedMentions !== null
+            ? $recordedMentions->contains('id', $user->id)
+            : $this->mentionService->resolveUsers($markdown)->contains('id', $user->id);
+
+        if (! $alreadyMentioned) {
             $markdown = rtrim($markdown).' @['.$user->name.']';
             $note->body_markdown = $markdown;
             $note->body = $this->markdownService->parse($markdown);
