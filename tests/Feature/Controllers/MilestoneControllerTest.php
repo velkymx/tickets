@@ -129,6 +129,22 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_reports_actual_hours_from_visible_notes(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
+        $ticket = Ticket::factory()->create(['milestone_id' => $milestone->id]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'hours' => 7.5]);
+        Note::factory()->hidden()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'hours' => 4]);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('7.5 Hrs');
+        $response->assertViewHas('actualHours', 7.5);
+    }
+
+    #[Test]
     public function get_show_eager_loads_watchers_and_tickets(): void
     {
         $user = User::factory()->create();
