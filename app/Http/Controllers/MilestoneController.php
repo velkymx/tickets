@@ -103,7 +103,7 @@ class MilestoneController extends Controller
         $planned = Ticket::where('milestone_id', $milestone->id)
             ->selectRaw('COALESCE(SUM(storypoints), 0) as storypoints, COALESCE(SUM(estimate), 0) as estimate')
             ->first();
-        $actualHours = Note::whereIn('ticket_id', Ticket::where('milestone_id', $milestone->id)->select('id'))
+        $actualHours = (float) Note::whereIn('ticket_id', Ticket::where('milestone_id', $milestone->id)->select('id'))
             ->where('hide', 0)
             ->sum('hours');
 
