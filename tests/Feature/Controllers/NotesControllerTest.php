@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -316,6 +317,34 @@ class NotesControllerTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseMissing('mentions', ['note_id' => $note->id]);
+    }
+
+    #[Test]
+    public function it_resolves_promote_mentions_once(): void
+    {
+        $user = User::factory()->create();
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Fix the @param docblock, @[Jane Doe]';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        DB::enableQueryLog();
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+        $lookups = collect(DB::getQueryLog())->filter(
+            fn ($entry) => str_contains($entry['query'], 'LOWER(name)')
+        );
+        $this->assertCount(2, $lookups);
     }
 
     #[Test]
