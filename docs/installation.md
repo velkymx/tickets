@@ -125,11 +125,20 @@ For production, use a process manager like Supervisor to keep the worker running
 
 ### 9. Run tests (optional)
 
+The suite uses its own MySQL database, `tickets_test` by default.
+Create it once, then run the suite:
+
 ```bash
-php artisan test
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS tickets_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+composer test
 ```
 
 All tests should pass on a clean install.
+
+The connection defaults to `127.0.0.1:3306`, database `tickets_test`,
+user `dbuser`, password `password`, matching `phpunit.xml`. Override
+with `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and
+`DB_PASSWORD` (CI overrides with its own MariaDB credentials).
 
 ---
 
