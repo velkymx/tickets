@@ -16,6 +16,7 @@ use App\Models\Type;
 use App\Models\User;
 use App\ValueObjects\TicketPulse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -453,6 +454,39 @@ class TicketsControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('lookups');
         $response->assertViewHas('searchTokens');
+    }
+
+    #[Test]
+    public function index_counts_visible_notes_and_orders_decisions_without_row_queries(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (range(1, 3) as $i) {
+            $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+            Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'message', 'hide' => false]);
+            Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'message', 'hide' => true]);
+            Note::factory()->changelog()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'hide' => false]);
+            Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'decision_needed', 'hide' => false, 'created_at' => now()->subDay()]);
+            Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'decision_needed', 'hide' => false, 'created_at' => now()->subDays(3)]);
+        }
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertOk();
+        $response->assertSee('title="1 notes"', false);
+
+        DB::enableQueryLog();
+        $tickets = Ticket::query()->withListRelations()->get();
+        $baseline = count(DB::getQueryLog());
+
+        foreach ($tickets as $ticket) {
+            $this->assertSame(1, $ticket->visible_notes_count);
+            $first = $ticket->openDecisionRequests->first();
+            $this->assertNotNull($first);
+            $this->assertTrue($ticket->openDecisionRequests->last()->created_at->greaterThan($first->created_at));
+        }
+
+        $this->assertCount($baseline, DB::getQueryLog());
     }
 
     #[Test]

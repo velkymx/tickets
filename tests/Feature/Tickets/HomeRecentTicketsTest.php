@@ -14,6 +14,17 @@ class HomeRecentTicketsTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
+    public function home_links_my_tickets_to_the_assignee_filter(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/home');
+
+        $response->assertStatus(200);
+        $response->assertSee('/tickets?q=assignee', false);
+    }
+
+    #[Test]
     public function home_shows_tickets_assigned_to_me(): void
     {
         $user = User::factory()->create();

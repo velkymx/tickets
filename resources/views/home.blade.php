@@ -83,7 +83,7 @@ Dashboard
                     <a href="/tickets" class="btn btn-outline-primary">
                         <i class="fas fa-list me-2"></i> All Tickets
                     </a>
-                    <a href="/tickets?user_id={{ auth()->id() }}" class="btn btn-outline-secondary">
+                    <a href="{{ url('tickets').'?q=assignee%3Ame' }}" class="btn btn-outline-secondary">
                         <i class="fas fa-user me-2"></i> My Tickets
                     </a>
                     <a href="/tickets/board" class="btn btn-outline-secondary">

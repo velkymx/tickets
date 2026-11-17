@@ -129,6 +129,22 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_reports_actual_hours_from_visible_notes(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
+        $ticket = Ticket::factory()->create(['milestone_id' => $milestone->id]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'hours' => 7.5]);
+        Note::factory()->hidden()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'hours' => 4]);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('7.5 Hrs');
+        $response->assertViewHas('actualHours', 7.5);
+    }
+
+    #[Test]
     public function get_show_eager_loads_watchers_and_tickets(): void
     {
         $user = User::factory()->create();
@@ -167,6 +183,27 @@ class MilestoneControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('percent', 50);
+    }
+
+    #[Test]
+    public function get_show_lists_each_assignee_once_as_members(): void
+    {
+        $user = User::factory()->create();
+        $anna = User::factory()->create(['name' => 'Anna Member']);
+        $zep = User::factory()->create(['name' => 'Zep Member']);
+        $milestone = Milestone::factory()->create();
+
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'user_id2' => $anna->id]);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'user_id2' => $anna->id]);
+        Ticket::factory()->create(['milestone_id' => $milestone->id, 'user_id2' => $zep->id]);
+        Ticket::factory()->unassigned()->create(['milestone_id' => $milestone->id]);
+
+        $response = $this->actingAs($user)->get("/milestone/show/{$milestone->id}");
+
+        $response->assertOk();
+        $this->assertSame([$anna->id, $zep->id], $response->viewData('members')->pluck('id')->all());
+        $response->assertSee('Anna Member');
+        $response->assertSee('Zep Member');
     }
 
     #[Test]

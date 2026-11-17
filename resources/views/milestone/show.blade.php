@@ -94,17 +94,12 @@
                 Team Members
             </div>
             <ul class="list-group list-group-flush">
-                @php $mem = []; @endphp
-                @foreach ($milestone->tickets as $tick)
-                    @continue (! $tick->assignee)
-                    @if (!in_array($tick->assignee->name, $mem))
-                        @php $mem[] = $tick->assignee->name; @endphp
-                        <li class="list-group-item">
-                            <a href="/users/{{ $tick->assignee->id }}" class="text-decoration-none text-body">
-                                <i class="fas fa-user me-2"></i> {{ $tick->assignee->name }}
-                            </a>
-                        </li>
-                    @endif
+                @foreach ($members as $member)
+                    <li class="list-group-item">
+                        <a href="/users/{{ $member->id }}" class="text-decoration-none text-body">
+                            <i class="fas fa-user me-2"></i> {{ $member->name }}
+                        </a>
+                    </li>
                 @endforeach
             </ul>
         </div>
@@ -114,9 +109,9 @@
                 Milestone Summary
             </div>
             <ul class="list-group list-group-flush">
-                <li class="list-group-item">Total Tickets: <span class="badge text-bg-primary">{{ $milestone->tickets->count() }}</span></li>
-                <li class="list-group-item">Est. Effort: <span class="badge text-bg-primary">{{ $milestone->tickets->sum('storypoints') }} SP</span></li>
-                <li class="list-group-item">Est. Time: <span class="badge text-bg-primary">{{ $milestone->tickets->sum('estimate') }} Hrs</span></li>
+                <li class="list-group-item">Total Tickets: <span class="badge text-bg-primary">{{ $total }}</span></li>
+                <li class="list-group-item">Est. Effort: <span class="badge text-bg-primary">{{ $planned->storypoints }} SP</span></li>
+                <li class="list-group-item">Est. Time: <span class="badge text-bg-primary">{{ $planned->estimate }} Hrs</span></li>
                 <li class="list-group-item text-success">
                     <strong>Progress: {{ $percent }}% Complete</strong>
                     {{-- Replaced old progress structure with B5 --}}
@@ -130,8 +125,8 @@
                          </div>
                      </div>
                 </li>
-                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $milestone->tickets->whereIn('status_id', \App\Models\Status::closedStatusIds())->count() }}</span></li>
-                <li class="list-group-item">Actual Time: <span class="badge text-bg-info">{{ $milestone->tickets->sum('actual') }} Hrs</span></li>
+                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $completed }}</span></li>
+                <li class="list-group-item">Actual Time: <span class="badge text-bg-info">{{ $actualHours }} Hrs</span></li>
             </ul>
         </div>
     </div>

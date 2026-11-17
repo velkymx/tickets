@@ -56,11 +56,10 @@
                         </td>
                     @endif
                     <td class="text-truncate" style="max-width: 280px;">
-                        @php $noteCount = $tick->notes->where('hide', '0')->count(); @endphp
-                        @if ($noteCount > 0)
-                            <span class="badge text-bg-info float-end ms-1" title="{{ $noteCount }} notes">{{ $noteCount }}</span>
+                        @if ($tick->visible_notes_count > 0)
+                            <span class="badge text-bg-info float-end ms-1" title="{{ $tick->visible_notes_count }} notes">{{ $tick->visible_notes_count }}</span>
                         @endif
-                        @if ($oldestRequest = $tick->openDecisionRequests->sortBy('created_at')->first())
+                        @if ($oldestRequest = $tick->openDecisionRequests->first())
                             <span class="badge text-bg-{{ $oldestRequest->decisionUrgency() }} float-end ms-1" data-decision-needed title="Decision needed, waiting {{ $oldestRequest->created_at->diffForHumans(null, true) }}"><i class="fa-solid fa-gavel" aria-hidden="true"></i><span class="visually-hidden">Decision needed</span></span>
                         @endif
                         @if(!$showType)
@@ -121,7 +120,7 @@
                     <a href="/tickets/{{ $tick->id }}" class="text-decoration-none text-body fw-semibold flex-grow-1">
                         <span class="text-muted">#{{ $tick->id }}</span> {{ $tick->subject }}
                     </a>
-                    @if ($oldestRequest = $tick->openDecisionRequests->sortBy('created_at')->first())
+                    @if ($oldestRequest = $tick->openDecisionRequests->first())
                         <span class="badge text-bg-{{ $oldestRequest->decisionUrgency() }}" data-decision-needed title="Decision needed, waiting {{ $oldestRequest->created_at->diffForHumans(null, true) }}"><i class="fa-solid fa-gavel" aria-hidden="true"></i><span class="visually-hidden">Decision needed</span></span>
                     @endif
                     <span class="badge text-bg-secondary text-nowrap">{{ $tick->status->name }}</span>
