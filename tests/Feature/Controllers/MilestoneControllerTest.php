@@ -602,6 +602,28 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function report_burndown_reaches_zero_for_single_day_milestone(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create([
+            'start_at' => '2024-01-01',
+            'due_at' => '2024-01-01',
+        ]);
+        Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'storypoints' => 8,
+        ]);
+
+        $response = $this->actingAs($user)->get("/milestone/report/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $burndown = $response->viewData('burndownData');
+        $this->assertSame(['Jan 1'], $burndown['labels']);
+        $this->assertEquals([0], $burndown['ideal']);
+        $this->assertEquals([8], $burndown['actual']);
+    }
+
+    #[Test]
     public function report_returns_empty_burndown_when_no_dates(): void
     {
         $user = User::factory()->create();
