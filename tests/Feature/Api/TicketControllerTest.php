@@ -413,15 +413,46 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_returns_ticket_for_any_authenticated_user(): void
+    public function show_returns_ticket_for_the_owner(): void
     {
         $otherUser = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id2' => $otherUser->id]);
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $otherUser->id]);
 
         $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
 
         $response->assertStatus(200);
         $response->assertJsonPath('data.id', $ticket->id);
+    }
+
+    #[Test]
+    public function show_rejects_a_ticket_the_user_does_not_own(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+
+        $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders())->assertStatus(404);
+    }
+
+    #[Test]
+    public function pulse_rejects_a_ticket_the_user_does_not_own(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+
+        $this->getJson("/api/v1/tickets/{$ticket->id}/pulse", $this->apiHeaders())->assertStatus(404);
+    }
+
+    #[Test]
+    public function watch_rejects_a_ticket_the_user_does_not_own(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [], $this->apiHeaders())->assertStatus(404);
+        $this->assertDatabaseMissing('ticket_user_watchers', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
     }
 
     #[Test]
@@ -1568,10 +1599,9 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function watch_starts_watching_a_ticket(): void
     {
-        $other = User::factory()->create();
         $ticket = Ticket::factory()->create([
-            'user_id' => $other->id,
-            'user_id2' => $other->id,
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
         ]);
 
         $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [], $this->apiHeaders())
@@ -1585,10 +1615,9 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function watch_mutes_an_existing_watcher(): void
     {
-        $other = User::factory()->create();
         $ticket = Ticket::factory()->create([
-            'user_id' => $other->id,
-            'user_id2' => $other->id,
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
         ]);
         TicketUserWatcher::factory()->create([
             'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => false,
@@ -1605,10 +1634,9 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function watch_removes_an_existing_watcher(): void
     {
-        $other = User::factory()->create();
         $ticket = Ticket::factory()->create([
-            'user_id' => $other->id,
-            'user_id2' => $other->id,
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
         ]);
         TicketUserWatcher::factory()->create([
             'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => true,
