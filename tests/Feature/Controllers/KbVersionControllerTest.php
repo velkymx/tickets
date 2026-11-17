@@ -135,6 +135,29 @@ class KbVersionControllerTest extends TestCase
     }
 
     #[Test]
+    public function it_hides_the_restore_button_from_the_owner(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $article = $this->createArticleWithVersions($owner);
+
+        $this->actingAs($owner)->get("/kb/{$article->slug}/history/1")
+            ->assertOk()
+            ->assertDontSee('Restore this Version');
+    }
+
+    #[Test]
+    public function it_shows_the_restore_button_to_an_admin(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $admin = User::factory()->create(['admin' => true]);
+        $article = $this->createArticleWithVersions($owner);
+
+        $this->actingAs($admin)->get("/kb/{$article->slug}/history/1")
+            ->assertOk()
+            ->assertSee('Restore this Version');
+    }
+
+    #[Test]
     public function it_returns_404_for_missing_version(): void
     {
         $user = User::factory()->create(['kb_role' => 'author']);

@@ -16,6 +16,7 @@ use App\Services\AttachmentService;
 use App\Services\KbArticleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class KbController extends Controller
@@ -68,13 +69,19 @@ class KbController extends Controller
     {
         $this->authorize('create', KbArticle::class);
 
-        $article = $this->articleService->create($request->validated(), Auth::user());
+        $validated = $request->validated();
 
-        if (! empty($request->permitted_users) && $request->visibility === 'restricted') {
-            foreach ($request->permitted_users as $userId) {
-                KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $userId]);
+        $article = DB::transaction(function () use ($validated) {
+            $article = $this->articleService->create($validated, Auth::user());
+
+            if (! empty($validated['permitted_users']) && $validated['visibility'] === 'restricted') {
+                foreach ($validated['permitted_users'] as $userId) {
+                    KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $userId]);
+                }
             }
-        }
+
+            return $article;
+        });
 
         return redirect("/kb/{$article->slug}")->with('success', 'Article created.');
     }
@@ -83,13 +90,14 @@ class KbController extends Controller
     {
         $article = $slug;
         $this->authorize('update', $article);
-
         $article->load(['tags', 'permissions']);
+
         $categories = KbCategory::orderBy('sort_order')->get();
         $tags = KbTag::orderBy('name')->get();
-        $users = User::orderBy('name')->get();
+        $users = User::orderBy('name')->get(['id', 'name']);
+        $canManagePermissions = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
 
-        return view('kb.edit', compact('article', 'categories', 'tags', 'users'));
+        return view('kb.edit', compact('article', 'categories', 'tags', 'users', 'canManagePermissions'));
     }
 
     public function update(UpdateArticleRequest $request, KbArticle $slug)
@@ -97,14 +105,29 @@ class KbController extends Controller
         $article = $slug;
         $this->authorize('update', $article);
 
-        $this->articleService->update($article, $request->validated(), Auth::user(), $request->commit_message);
+        $validated = $request->validated();
+        $canManagePermissions = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
 
-        if ($request->visibility === 'restricted') {
-            KbArticlePermission::where('article_id', $article->id)->delete();
-            foreach ($request->permitted_users ?? [] as $userId) {
-                KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $userId]);
+        DB::transaction(function () use ($article, $validated, $canManagePermissions) {
+            $this->articleService->update($article, $validated, Auth::user(), $validated['commit_message']);
+
+            if (! $canManagePermissions) {
+                return;
             }
-        }
+
+            KbArticlePermission::where('article_id', $article->id)->delete();
+
+            if ($validated['visibility'] !== 'restricted') {
+                return;
+            }
+
+            foreach ($validated['permitted_users'] ?? [] as $userId) {
+                KbArticlePermission::create([
+                    'article_id' => $article->id,
+                    'user_id' => $userId,
+                ]);
+            }
+        });
 
         return redirect("/kb/{$article->slug}")->with('success', 'Article updated.');
     }

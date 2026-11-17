@@ -185,8 +185,8 @@ interface SearchableRepository
 | `GET /kb/{slug}/history/{version}` | `KbVersionController@show` | Same as show |
 | `GET /kb/{slug}/diff/{from}/{to}` | `KbVersionController@diff` | Same as show |
 | `POST /kb/{slug}/restore/{version}` | `KbVersionController@restore` | KB admin |
-| `POST /kb/{slug}/attachments` | `KbController@uploadAttachment` | Author/Admin + owner/permission |
-| `DELETE /kb/{slug}/attachments/{id}` | `KbController@deleteAttachment` | Author/Admin + owner/permission |
+| `POST /kb/{slug}/attachments` | `KbController@uploadAttachment` | Owner, permitted user, or KB admin |
+| `DELETE /kb/{slug}/attachments/{id}` | `KbController@deleteAttachment` | Owner, permitted user, or KB admin |
 
 **Attachment constraints:** Max file size 10MB. Allowed MIME types: images (jpg, png, gif, svg, webp), documents (pdf, md, txt, csv), archives (zip). Max 20 attachments per article. Upload routes use `throttle:uploads` rate limiter.
 

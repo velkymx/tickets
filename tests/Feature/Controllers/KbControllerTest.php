@@ -223,6 +223,46 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function permitted_editor_cannot_change_grants(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $editor = User::factory()->create();
+        $stranger = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $editor->id]);
+
+        $response = $this->actingAs($editor)->put("/kb/{$article->slug}", [
+            'title' => 'Edited title',
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Edit content',
+            'tags' => [$tag->id],
+            'permitted_users' => [$stranger->id],
+        ]);
+
+        $response->assertRedirect("/kb/{$article->slug}");
+        $this->assertDatabaseHas('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $editor->id,
+        ]);
+        $this->assertDatabaseMissing('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $stranger->id,
+        ]);
+        $this->actingAs($editor)->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertDontSee('permitted_users', false);
+    }
+
+    #[Test]
     public function edit_view_mounts_the_markdown_editor(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);
