@@ -69,6 +69,13 @@ class Ticket extends Model
         return $query->whereIn('status_id', Status::closedStatusIds());
     }
 
+    public function scopeOwnedBy(Builder $query, int $userId): Builder
+    {
+        return $query->where(function (Builder $q) use ($userId) {
+            $q->where('user_id2', $userId)->orWhere('user_id', $userId);
+        });
+    }
+
     /**
      * Apply the shared ticket-list filters from a request-parameter array.
      * Used by every paginated ticket list (/tickets, projects, milestones) so

@@ -425,6 +425,44 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_returns_ticket_for_the_assignee(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $this->user->id]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.id', $ticket->id);
+    }
+
+    #[Test]
+    public function pulse_returns_ticket_for_the_assignee(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $this->user->id]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}/pulse", $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertArrayHasKey('execution_state', $response->json('data'));
+    }
+
+    #[Test]
+    public function watch_starts_watching_as_assignee(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $this->user->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('watching', true);
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => false,
+        ]);
+    }
+
+    #[Test]
     public function show_rejects_a_ticket_the_user_does_not_own(): void
     {
         $other = User::factory()->create();
