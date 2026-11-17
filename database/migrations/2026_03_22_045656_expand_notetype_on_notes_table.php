@@ -11,12 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // SQLite doesn't support ALTER COLUMN with ENUM, so we skip
-        // This migration only applies to MySQL/PostgreSQL
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
-            return;
-        }
-
         Schema::table('notes', function (Blueprint $table) {
             $table->string('notetype', 20)->default('message')->change();
         });

@@ -223,7 +223,6 @@ Tickets is a Laravel application and supports:
 * MariaDB 11.8+
 * MySQL 8.0+
 * PostgreSQL 12+
-* SQLite 3.35+
 * Node.js 24+ for building frontend assets
 
 Docker provides the complete application stack for a simpler deployment.

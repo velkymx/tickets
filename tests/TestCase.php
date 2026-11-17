@@ -10,7 +10,8 @@ abstract class TestCase extends BaseTestCase
     public function createApplication()
     {
         // Database comes from the environment: phpunit.xml defaults to
-        // in-memory SQLite, CI overrides with MariaDB. Never force one here.
+        // MySQL (tickets_test), CI overrides with its own credentials.
+        // Never force one here.
         return parent::createApplication();
     }
 

@@ -21,7 +21,6 @@ storage/logs/*
 storage/framework/cache/data/*
 storage/framework/sessions/*
 storage/framework/views/*
-storage/*.sqlite
 storage/framework/.seeded
 
 # Not needed at build/runtime

@@ -8,10 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
-            return;
-        }
-
         Schema::table('tickets', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->change();
             $table->unsignedBigInteger('user_id2')->change();
@@ -44,10 +40,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
-            return;
-        }
-
         Schema::table('tickets', function (Blueprint $table) {
             $table->integer('user_id')->unsigned()->change();
             $table->integer('user_id2')->unsigned()->change();
