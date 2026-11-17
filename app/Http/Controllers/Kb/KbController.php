@@ -120,13 +120,6 @@ class KbController extends Controller
                 return;
             }
 
-            $shouldRebuild = $validated['visibility'] !== 'restricted'
-                || array_key_exists('permitted_users', $validated);
-
-            if (! $shouldRebuild) {
-                return;
-            }
-
             KbArticlePermission::where('article_id', $article->id)->delete();
 
             if ($validated['visibility'] !== 'restricted') {

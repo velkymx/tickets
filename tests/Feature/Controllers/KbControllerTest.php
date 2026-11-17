@@ -223,7 +223,7 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
-    public function update_keeps_grants_when_restricted_and_field_absent(): void
+    public function owner_can_revoke_all_grants_while_staying_restricted(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);
         $granted = User::factory()->create();
@@ -238,15 +238,15 @@ class KbControllerTest extends TestCase
         KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
 
         $this->actingAs($owner)->put("/kb/{$article->slug}", [
-            'title' => 'Edited title',
+            'title' => $article->title,
             'body_markdown' => $article->body_markdown,
             'category_id' => $category->id,
             'visibility' => 'restricted',
-            'commit_message' => 'Edit content',
+            'commit_message' => 'Revoke all',
             'tags' => [$tag->id],
         ])->assertRedirect("/kb/{$article->slug}");
 
-        $this->assertDatabaseHas('kb_article_permissions', [
+        $this->assertDatabaseMissing('kb_article_permissions', [
             'article_id' => $article->id,
             'user_id' => $granted->id,
         ]);
