@@ -302,11 +302,14 @@ class TicketsController extends Controller
 
                 Gate::authorize('update', $ticket);
 
+                $applied = false;
+
                 if (! empty($validated['release_id']) && $validated['release_id'] > 0) {
                     ReleaseTicket::firstOrCreate([
                         'release_id' => $validated['release_id'],
                         'ticket_id' => $ticketId,
                     ]);
+                    $applied = true;
                 }
 
                 if (! empty($updateFields)) {
@@ -315,9 +318,12 @@ class TicketsController extends Controller
                     $ticket->update($updateFields);
 
                     $this->ticketService->notate((int) $ticket->id, '', $changes);
+                    $applied = true;
                 }
 
-                $i++;
+                if ($applied) {
+                    $i++;
+                }
             }
         });
 
