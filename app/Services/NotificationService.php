@@ -20,6 +20,7 @@ class NotificationService
     {
         $watchers = $ticket->watchers()->with('user')->get();
         $mentionedUserIds = $note->mentions()->pluck('user_id')->toArray();
+        $activeViewerIds = $this->activeViewerIds($ticket, $watchers->pluck('user_id'));
         $notifiedUserIds = [];
 
         foreach ($watchers as $watcher) {
@@ -42,7 +43,7 @@ class NotificationService
             $message = "New activity on Ticket #{$ticket->id}: {$ticket->subject}";
             $url = url("/tickets/{$ticket->id}");
 
-            if ($watcher->muted || $this->isActiveViewer($user->id, $ticket->id)) {
+            if ($watcher->muted || in_array($user->id, $activeViewerIds, true)) {
                 $this->batchService->dispatch(
                     $user,
                     new WatcherDatabaseNotification('Ticket', $message, $url),
@@ -63,6 +64,7 @@ class NotificationService
     public function notifyTicketUpdate(Ticket $ticket, ?int $exceptUserId = null): void
     {
         $watchers = $ticket->watchers()->with('user')->get();
+        $activeViewerIds = $this->activeViewerIds($ticket, $watchers->pluck('user_id'));
         $notifiedUserIds = [];
 
         foreach ($watchers as $watcher) {
@@ -81,7 +83,7 @@ class NotificationService
             $message = "The Ticket '{$ticket->subject}' has been updated.";
             $url = url("/tickets/{$ticket->id}");
 
-            if ($watcher->muted || $this->isActiveViewer($user->id, $ticket->id)) {
+            if ($watcher->muted || in_array($user->id, $activeViewerIds, true)) {
                 $this->batchService->dispatch(
                     $user,
                     new WatcherDatabaseNotification('Ticket', $message, $url),
@@ -99,16 +101,13 @@ class NotificationService
         }
     }
 
-    private function isActiveViewer(int $userId, int $ticketId): bool
+    private function activeViewerIds(Ticket $ticket, $watcherUserIds): array
     {
-        $view = TicketView::where('user_id', $userId)
-            ->where('ticket_id', $ticketId)
-            ->first();
-
-        if (! $view) {
-            return false;
-        }
-
-        return $view->updated_at->diffInMinutes(now()) < 2;
+        return TicketView::query()
+            ->where('ticket_id', $ticket->id)
+            ->whereIn('user_id', $watcherUserIds)
+            ->where('updated_at', '>=', now()->subMinutes(2))
+            ->pluck('user_id')
+            ->all();
     }
 }
