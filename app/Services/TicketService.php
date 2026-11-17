@@ -131,29 +131,24 @@ class TicketService
      */
     public function notate(int $ticketId, string $message, array $changes, float $addHours = 0, ?int $parentId = null): array
     {
-        $ticket = Ticket::findOrFail($ticketId);
-        $commandResults = $this->slashCommandService->handle($ticket, $message);
+        return DB::transaction(function () use ($ticketId, $message, $changes, $addHours, $parentId) {
+            $ticket = Ticket::findOrFail($ticketId);
+            $commandResults = $this->slashCommandService->handle($ticket, $message);
 
-        $message = $commandResults['body'] ?? trim($message);
-        $changes = array_merge($changes, $commandResults['changes'] ?? []);
-        $changes = array_values(array_unique($changes));
-        $addHours += (float) ($commandResults['hours'] ?? 0);
-        $noteType = $commandResults['note_type'] ?? 'message';
-        $noteAttributes = $commandResults['note_attributes'] ?? [];
-        $warnings = $commandResults['warnings'] ?? [];
+            $message = $commandResults['body'] ?? trim($message);
+            $changes = array_values(array_unique(array_merge($changes, $commandResults['changes'] ?? [])));
+            $addHours += (float) ($commandResults['hours'] ?? 0);
+            $noteType = $commandResults['note_type'] ?? 'message';
+            $noteAttributes = $commandResults['note_attributes'] ?? [];
+            $warnings = $commandResults['warnings'] ?? [];
 
-        $hasMessage = strlen($message) > 0;
-        $hasHours = $addHours > 0;
-        $hasChanges = is_array($changes) && count($changes) > 0;
+            if (strlen($message) === 0 && $addHours <= 0 && count($changes) === 0) {
+                return ['note' => null, 'changes' => $changes, 'warnings' => $warnings];
+            }
 
-        if (! $hasMessage && ! $hasHours && ! $hasChanges) {
-            return ['note' => null, 'changes' => $changes, 'warnings' => $warnings];
-        }
+            $createdActivity = false;
+            $note = null;
 
-        $createdActivity = false;
-        $note = null;
-
-        DB::transaction(function () use ($ticketId, $message, $noteType, $noteAttributes, $addHours, $parentId, &$note, &$changes, &$createdActivity) {
             if (strlen($message) > 0) {
                 $insert = [
                     'user_id' => Auth::id(),
@@ -169,10 +164,13 @@ class TicketService
                 $note = Note::create($insert);
                 app(DecisionRequestService::class)->closeWith($note);
                 $this->createMentions($note, $message);
-                app(DecisionRequestService::class)->notify($note);
-                $this->notifyMentionedUsers($note);
-                $this->notifyParentAuthor($note);
                 $createdActivity = true;
+
+                DB::afterCommit(function () use ($note) {
+                    app(DecisionRequestService::class)->notify($note);
+                    $this->notifyMentionedUsers($note);
+                    $this->notifyParentAuthor($note);
+                });
             }
 
             if ($addHours > 0) {
@@ -194,13 +192,13 @@ class TicketService
                 ]);
                 $createdActivity = true;
             }
+
+            if ($createdActivity) {
+                DB::afterCommit(fn () => $this->notifyWatchers($ticket));
+            }
+
+            return ['note' => $note, 'changes' => $changes, 'warnings' => $warnings];
         });
-
-        if ($createdActivity) {
-            $this->notifyWatchers($ticket);
-        }
-
-        return ['note' => $note, 'changes' => $changes, 'warnings' => $warnings];
     }
 
     private function createMentions(Note $note, string $markdown): void

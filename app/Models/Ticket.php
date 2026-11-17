@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 #[ObservedBy(TicketObserver::class)]
 class Ticket extends Model
@@ -133,18 +134,19 @@ class Ticket extends Model
             .($oldStatus->name ?? 'closed')
             .' to '.($this->status->name ?? 'open').').';
 
-        $latest = Note::where('ticket_id', $this->getKey())->latest('id')->first();
-        if ($latest !== null && $latest->body_markdown === $message) {
-            return;
-        }
-
-        Note::create([
-            'user_id' => $userId,
-            'ticket_id' => $this->id,
-            'body' => $message,
-            'body_markdown' => $message,
-            'notetype' => 'changelog',
-        ]);
+        Cache::lock("ticket-reopen-audit:{$this->getKey()}", 5)->block(2, function () use ($userId, $message) {
+            Note::firstOrCreate(
+                [
+                    'ticket_id' => $this->getKey(),
+                    'notetype' => 'changelog',
+                    'body_markdown' => $message,
+                ],
+                [
+                    'user_id' => $userId,
+                    'body' => $message,
+                ]
+            );
+        });
     }
 
     public function notifyWatchers(string $type, ?int $exceptUserId = null): void

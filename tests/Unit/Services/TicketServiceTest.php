@@ -36,6 +36,42 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_rolls_back_slash_changes_when_the_changelog_insert_fails(): void
+    {
+        $author = User::factory()->create();
+        $status = Status::factory()->create(['name' => 'Testing']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+        ]);
+        $originalStatusId = $ticket->status_id;
+
+        Note::creating(function ($note): void {
+            static $fired = false;
+
+            if ($fired || $note->notetype !== 'changelog') {
+                return;
+            }
+
+            $fired = true;
+
+            throw new \RuntimeException('changelog insert failed');
+        });
+
+        Auth::login($author);
+
+        try {
+            $this->service->notate($ticket->id, "/status Testing\nhello", []);
+            $this->fail('Expected changelog failure was not thrown.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('changelog insert failed', $exception->getMessage());
+        }
+
+        $this->assertSame($originalStatusId, $ticket->fresh()->status_id);
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->count());
+    }
+
+    #[Test]
     public function it_detects_subject_change(): void
     {
         $old = ['id' => 1, 'subject' => 'Old Subject', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => 1, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
