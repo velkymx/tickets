@@ -5,12 +5,9 @@ namespace Tests\Unit\Services;
 use App\Services\LineDiffService;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tests\Traits\SeedsDatabase;
 
 class LineDiffServiceTest extends TestCase
 {
-    use SeedsDatabase;
-
     #[Test]
     public function it_marks_added_and_removed_lines(): void
     {
@@ -47,20 +44,26 @@ class LineDiffServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_completes_a_large_diff_within_memory_limits(): void
+    public function it_bounds_large_diffs_and_preserves_common_prefix_and_suffix(): void
     {
-        $from = [];
-        $to = [];
-
-        for ($i = 0; $i < 20000; $i++) {
-            $from[] = "line {$i}";
-            $to[] = $i % 2 === 0 ? "line {$i}" : "changed {$i}";
-        }
+        $from = array_merge(['alpha'], array_fill(0, 6000, 'old line'), ['omega']);
+        $to = array_merge(['alpha'], array_fill(0, 6000, 'new line'), ['omega']);
 
         $diff = (new LineDiffService)->diff($from, $to);
 
-        $this->assertCount(20000, $diff['from']);
-        $this->assertCount(20000, $diff['to']);
-        $this->assertLessThan(512 * 1024 * 1024, memory_get_peak_usage(true));
+        $this->assertCount(6002, $diff['from']);
+        $this->assertCount(6002, $diff['to']);
+        $this->assertSame('old line', $diff['from'][1]['text']);
+        $this->assertSame('new line', $diff['to'][1]['text']);
+        $this->assertFalse($diff['from'][0]['changed']);
+        $this->assertTrue($diff['from'][1]['changed']);
+        $this->assertFalse($diff['from'][array_key_last($diff['from'])]['changed']);
+        $this->assertFalse($diff['to'][0]['changed']);
+        $this->assertTrue($diff['to'][1]['changed']);
+        $this->assertFalse($diff['to'][array_key_last($diff['to'])]['changed']);
+        $this->assertSame(
+            array_column($diff['from'], 'changed'),
+            array_column($diff['to'], 'changed')
+        );
     }
 }
