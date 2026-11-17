@@ -241,20 +241,8 @@
                 </div>
             </div>
 
-            {{-- Permitted Users --}}
             @if($canManageAccess)
-                <div class="mb-3">
-                    <label for="permitted_users" class="form-label">Permitted Users</label>
-                    <select name="permitted_users[]" id="permitted_users" class="form-select @error('permitted_users') is-invalid @enderror" multiple size="5">
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}" @selected(in_array($user->id, old('permitted_users', $article->permissions->pluck('user_id')->all())))>{{ $user->name }}</option>
-                        @endforeach
-                    </select>
-                    <div class="form-text">Only applies to restricted articles.</div>
-                    @error('permitted_users')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                <x-permitted-users-field :users="$users" :selected="$article->permissions->pluck('user_id')->all()" />
             @endif
 
             {{-- Commit Message & Submit --}}

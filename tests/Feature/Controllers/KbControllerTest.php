@@ -223,6 +223,111 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function owner_can_revoke_all_grants_while_staying_restricted(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Revoke all',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseMissing('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $granted->id,
+        ]);
+    }
+
+    #[Test]
+    public function cleared_grants_stay_cleared_through_a_validation_error(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")->assertOk();
+
+        $response = $this->actingAs($owner)->followingRedirects()->put("/kb/{$article->slug}", [
+            'title' => '',
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Edit content',
+            'tags' => [$tag->id],
+            'permitted_users_present' => '1',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('value="'.$granted->id.'"', false);
+        $response->assertDontSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
+    public function forms_keep_string_old_input_selected(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        $this->actingAs($owner)
+            ->withSession(['_old_input' => ['permitted_users' => [(string) $granted->id]]])
+            ->get('/kb/create')
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+
+        $this->actingAs($owner)
+            ->withSession(['_old_input' => ['permitted_users' => [(string) $granted->id]]])
+            ->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
+    public function edit_form_marks_granted_users_selected(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
     public function permitted_editor_cannot_change_grants(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);
@@ -412,6 +517,28 @@ class KbControllerTest extends TestCase
         ])->assertForbidden();
 
         $this->assertDatabaseHas('kb_articles', ['id' => $article->id, 'title' => $article->title]);
+    }
+
+    #[Test]
+    public function update_clears_permissions_when_leaving_restricted(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $permitted = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create(['owner_id' => $owner->id]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $permitted->id]);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => 'Opened up',
+            'category_id' => $article->category_id,
+            'visibility' => 'internal',
+            'commit_message' => 'Open it up',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseMissing('kb_article_permissions', ['article_id' => $article->id]);
     }
 
     #[Test]
