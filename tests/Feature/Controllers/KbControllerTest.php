@@ -215,6 +215,34 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function quick_create_rejects_duplicate_category_slug(): void
+    {
+        $user = User::factory()->create();
+        KbCategory::factory()->create(['name' => 'Billing', 'slug' => 'billing']);
+
+        $response = $this->actingAs($user)->postJson('/kb/categories/quick', [
+            'name' => 'Billing!',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('name');
+    }
+
+    #[Test]
+    public function quick_create_rejects_duplicate_tag_slug(): void
+    {
+        $user = User::factory()->create();
+        KbTag::factory()->create(['name' => 'php', 'slug' => 'php']);
+
+        $response = $this->actingAs($user)->postJson('/kb/tags/quick', [
+            'name' => 'PHP!',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('name');
+    }
+
+    #[Test]
     public function update_requires_ownership_or_permission(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);

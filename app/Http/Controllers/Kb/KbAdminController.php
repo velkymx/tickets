@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\KbArticle;
 use App\Models\KbCategory;
 use App\Models\KbTag;
+use App\Rules\UniqueKbSlug;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -32,7 +33,12 @@ class KbAdminController extends Controller
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                new UniqueKbSlug(KbCategory::class),
+            ],
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
             'parent_id' => 'nullable|exists:kb_categories,id',
@@ -51,7 +57,12 @@ class KbAdminController extends Controller
     {
         $category = KbCategory::findOrFail($id);
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                new UniqueKbSlug(KbCategory::class, $category->id),
+            ],
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
             'parent_id' => [
@@ -101,7 +112,14 @@ class KbAdminController extends Controller
 
     public function storeTag(Request $request)
     {
-        $validated = $request->validate(['name' => 'required|string|max:255']);
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                new UniqueKbSlug(KbTag::class),
+            ],
+        ]);
 
         KbTag::create([
             'name' => $validated['name'],
@@ -114,7 +132,14 @@ class KbAdminController extends Controller
     public function updateTag(Request $request, int $id)
     {
         $tag = KbTag::findOrFail($id);
-        $validated = $request->validate(['name' => 'required|string|max:255']);
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                new UniqueKbSlug(KbTag::class, $tag->id),
+            ],
+        ]);
 
         $tag->update([
             'name' => $validated['name'],

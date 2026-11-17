@@ -10,6 +10,7 @@ use App\Models\KbArticle;
 use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
+use App\Rules\UniqueKbSlug;
 use App\Services\AttachmentService;
 use App\Services\KbArticleService;
 use Illuminate\Http\Request;
@@ -189,7 +190,13 @@ class KbController extends Controller
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:kb_categories,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:kb_categories,name',
+                new UniqueKbSlug(KbCategory::class),
+            ],
         ]);
 
         $category = KbCategory::create([
@@ -207,7 +214,13 @@ class KbController extends Controller
     public function storeTag(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:kb_tags,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:kb_tags,name',
+                new UniqueKbSlug(KbTag::class),
+            ],
         ]);
 
         $tag = KbTag::create([
