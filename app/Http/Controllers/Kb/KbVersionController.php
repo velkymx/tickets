@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Kb;
 use App\Http\Controllers\Controller;
 use App\Models\KbArticle;
 use App\Services\KbArticleService;
+use App\Services\LineDiffService;
 use Illuminate\Support\Facades\Auth;
 
 class KbVersionController extends Controller
@@ -37,7 +38,12 @@ class KbVersionController extends Controller
         $fromVersion = $article->versions()->where('version_number', $from)->firstOrFail();
         $toVersion = $article->versions()->where('version_number', $to)->firstOrFail();
 
-        return view('kb.history.diff', compact('article', 'fromVersion', 'toVersion'));
+        $diff = app(LineDiffService::class)->diff(
+            explode("\n", $fromVersion->body_markdown ?? ''),
+            explode("\n", $toVersion->body_markdown ?? ''),
+        );
+
+        return view('kb.history.diff', compact('article', 'fromVersion', 'toVersion', 'diff'));
     }
 
     public function restore(KbArticle $slug, int $version, KbArticleService $articleService)

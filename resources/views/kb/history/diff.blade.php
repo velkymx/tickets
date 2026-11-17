@@ -39,8 +39,7 @@
 </div>
 
 @php
-    $fromLines = explode("\n", $fromVersion->body_markdown);
-    $toLines = explode("\n", $toVersion->body_markdown);
+    $emptyLine = "\u{00a0}";
 @endphp
 
 <div class="row">
@@ -50,7 +49,7 @@
                 <strong>v{{ $fromVersion->version_number }}</strong>
             </div>
             <div class="card-body">
-                <pre class="mb-0" style="white-space: pre-wrap; word-wrap: break-word;"><code>{{ $fromVersion->body_markdown }}</code></pre>
+                <pre class="mb-0" style="white-space: pre-wrap; word-wrap: break-word;"><code>@foreach ($diff['from'] as $line)<span class="{{ $line['changed'] ? 'd-block bg-danger-subtle' : 'd-block' }}">{{ $line['text'] === '' ? $emptyLine : $line['text'] }}</span>@endforeach</code></pre>
             </div>
         </div>
     </div>
@@ -60,7 +59,7 @@
                 <strong>v{{ $toVersion->version_number }}</strong>
             </div>
             <div class="card-body">
-                <pre class="mb-0" style="white-space: pre-wrap; word-wrap: break-word;"><code>{{ $toVersion->body_markdown }}</code></pre>
+                <pre class="mb-0" style="white-space: pre-wrap; word-wrap: break-word;"><code>@foreach ($diff['to'] as $line)<span class="{{ $line['changed'] ? 'd-block bg-success-subtle' : 'd-block' }}">{{ $line['text'] === '' ? $emptyLine : $line['text'] }}</span>@endforeach</code></pre>
             </div>
         </div>
     </div>
