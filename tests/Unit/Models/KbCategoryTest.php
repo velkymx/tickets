@@ -3,6 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\KbCategory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -31,5 +32,42 @@ class KbCategoryTest extends TestCase
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('name', $exception->errors());
         }
+    }
+
+    #[Test]
+    public function punctuation_only_names_rejected_by_the_backstop(): void
+    {
+        try {
+            KbCategory::create(['name' => '!!!']);
+            $this->fail('Expected ValidationException was not thrown.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('name', $exception->errors());
+        }
+    }
+
+    #[Test]
+    public function concurrent_slug_collision_returns_a_validation_error(): void
+    {
+        KbCategory::creating(function (): void {
+            static $fired = false;
+
+            if ($fired) {
+                return;
+            }
+
+            $fired = true;
+
+            DB::table('kb_categories')->insert([
+                'name' => 'Billing',
+                'slug' => 'billing',
+                'sort_order' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        $this->expectException(ValidationException::class);
+
+        KbCategory::create(['name' => 'Billing']);
     }
 }

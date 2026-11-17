@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ReportsUniqueSlugCollisions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,15 +13,13 @@ use Illuminate\Validation\ValidationException;
 class KbCategory extends Model
 {
     use HasFactory;
+    use ReportsUniqueSlugCollisions;
 
     protected $fillable = ['name', 'slug', 'description', 'sort_order', 'parent_id'];
 
-    public static function slugIsTaken(string $slug, ?int $ignoreId = null): bool
+    protected function slugCollisionMessage(): string
     {
-        return static::query()
-            ->where('slug', $slug)
-            ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
-            ->exists();
+        return 'A category with a similar name already exists.';
     }
 
     protected static function booted(): void
