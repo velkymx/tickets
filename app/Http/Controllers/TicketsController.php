@@ -127,14 +127,6 @@ class TicketsController extends Controller
 
         $lookups = $this->ticketService->getLookups();
 
-        $lookups['types'][0] = 'No Change';
-        $lookups['milestones'][0] = 'No Change';
-        $lookups['importances'][0] = 'No Change';
-        $lookups['projects'][0] = 'No Change';
-        $lookups['statuses'][0] = 'No Change';
-        $lookups['users'][0] = 'No Change';
-        $lookups['releases'][0] = 'No Change';
-
         $pendingDecisions = Note::query()->awaitingDecisionFrom(Auth::id())->count();
 
         return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens', 'pendingDecisions'));

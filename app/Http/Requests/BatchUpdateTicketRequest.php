@@ -47,6 +47,14 @@ class BatchUpdateTicketRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            $ticketsInput = $this->input('tickets', []);
+
+            if (is_array($ticketsInput) && array_is_list($ticketsInput)) {
+                $validator->errors()->add('tickets', 'Tickets must be keyed by ticket id.');
+
+                return;
+            }
+
             $ticketKeys = array_keys($this->input('tickets', []));
             $existingTickets = Ticket::whereIn('id', $ticketKeys)->pluck('id')->toArray();
             $missingTickets = array_diff($ticketKeys, array_map('strval', $existingTickets));
