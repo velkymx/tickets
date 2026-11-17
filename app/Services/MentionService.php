@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Mention;
 use App\Models\Note;
-use App\Models\TicketUserWatcher;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -73,18 +72,6 @@ class MentionService
             return;
         }
 
-        $watcherIds = TicketUserWatcher::query()
-            ->where('ticket_id', $note->ticket_id)
-            ->whereIn('user_id', $userIds)
-            ->pluck('user_id')
-            ->all();
-
-        $mentionIds = array_values(array_diff($userIds, $watcherIds));
-
-        if ($mentionIds === []) {
-            return;
-        }
-
         Mention::query()->insertOrIgnore(array_map(
             fn (int $userId) => [
                 'note_id' => $note->id,
@@ -92,7 +79,7 @@ class MentionService
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            $mentionIds
+            $userIds
         ));
     }
 }

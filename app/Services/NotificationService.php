@@ -7,63 +7,107 @@ use App\Models\Ticket;
 use App\Models\TicketView;
 use App\Notifications\WatcherDatabaseNotification;
 use App\Notifications\WatcherNotification;
-use Illuminate\Support\Facades\Notification;
 
 class NotificationService
 {
+    public function __construct(
+        private ?NotificationBatchService $batchService = null,
+    ) {
+        $this->batchService ??= app(NotificationBatchService::class);
+    }
+
     public function notifyWatchers(Ticket $ticket, Note $note): void
     {
         $watchers = $ticket->watchers()->with('user')->get();
         $mentionedUserIds = $note->mentions()->pluck('user_id')->toArray();
+        $activeViewerIds = $this->activeViewerIds($ticket, $watchers->pluck('user_id'));
         $notifiedUserIds = [];
 
         foreach ($watchers as $watcher) {
             $user = $watcher->user;
 
-            // Don't notify the comment author about their own comment
-            if ($user->id === $note->user_id) {
+            if (! $user || $user->id === $note->user_id) {
                 continue;
             }
 
-            // Skip mentioned users - they already receive a MentionNotification
             if (in_array($user->id, $mentionedUserIds)) {
                 continue;
             }
 
-            // Skip if already notified (deduplication)
             if (in_array($user->id, $notifiedUserIds)) {
                 continue;
             }
 
-            // In-app delivery is never gated; WatcherNotification::via()
-            // drops the mail channel when the category or master switch
-            // is off. Muted still forces database-only below.
             $notifiedUserIds[] = $user->id;
 
             $message = "New activity on Ticket #{$ticket->id}: {$ticket->subject}";
-            $url = url("tickets/{$ticket->id}");
+            $url = url("/tickets/{$ticket->id}");
 
-            // Muted watchers or active viewers get database-only notification
-            if ($watcher->muted || $this->isActiveViewer($user->id, $ticket->id)) {
-                $user->notify(new WatcherDatabaseNotification('Ticket', $message, $url));
+            if ($watcher->muted || in_array($user->id, $activeViewerIds, true)) {
+                $this->batchService->dispatch(
+                    $user,
+                    new WatcherDatabaseNotification('Ticket', $message, $url),
+                    $ticket->id
+                );
 
                 continue;
             }
 
-            $user->notify(new WatcherNotification('Ticket', $message, $url));
+            $this->batchService->dispatch(
+                $user,
+                new WatcherNotification('Ticket', $message, $url),
+                $ticket->id
+            );
         }
     }
 
-    private function isActiveViewer(int $userId, int $ticketId): bool
+    public function notifyTicketUpdate(Ticket $ticket, ?int $exceptUserId = null): void
     {
-        $view = TicketView::where('user_id', $userId)
-            ->where('ticket_id', $ticketId)
-            ->first();
+        $watchers = $ticket->watchers()->with('user')->get();
+        $activeViewerIds = $this->activeViewerIds($ticket, $watchers->pluck('user_id'));
+        $notifiedUserIds = [];
 
-        if (! $view) {
-            return false;
+        foreach ($watchers as $watcher) {
+            $user = $watcher->user;
+
+            if (! $user || $user->id === $exceptUserId) {
+                continue;
+            }
+
+            if (in_array($user->id, $notifiedUserIds)) {
+                continue;
+            }
+
+            $notifiedUserIds[] = $user->id;
+
+            $message = "The Ticket '{$ticket->subject}' has been updated.";
+            $url = url("/tickets/{$ticket->id}");
+
+            if ($watcher->muted || in_array($user->id, $activeViewerIds, true)) {
+                $this->batchService->dispatch(
+                    $user,
+                    new WatcherDatabaseNotification('Ticket', $message, $url),
+                    $ticket->id
+                );
+
+                continue;
+            }
+
+            $this->batchService->dispatch(
+                $user,
+                new WatcherNotification('Ticket', $message, $url),
+                $ticket->id
+            );
         }
+    }
 
-        return $view->updated_at->diffInMinutes(now()) < 2;
+    private function activeViewerIds(Ticket $ticket, $watcherUserIds): array
+    {
+        return TicketView::query()
+            ->where('ticket_id', $ticket->id)
+            ->whereIn('user_id', $watcherUserIds)
+            ->where('updated_at', '>=', now()->subMinutes(2))
+            ->pluck('user_id')
+            ->all();
     }
 }

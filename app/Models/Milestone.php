@@ -50,7 +50,7 @@ class Milestone extends Model
             $notifyUsers = $notifyUsers->merge($this->watchers->pluck('user'))->filter();
         }
 
-        $notifyUsers->each(function ($user) use ($type, $message, $url, $exceptUserId) {
+        $notifyUsers->unique('id')->each(function ($user) use ($type, $message, $url, $exceptUserId) {
             if ($user->id !== $exceptUserId && $user->email) {
                 $user->notify(new WatcherNotification($type, $message, $url));
             }

@@ -15,7 +15,6 @@ use App\Models\Type;
 use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
-use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -28,11 +27,13 @@ class TicketService
         private ?MarkdownService $markdownService = null,
         private ?MentionService $mentionService = null,
         private ?NotificationBatchService $notificationBatchService = null,
+        private ?NotificationService $notificationService = null,
     ) {
         $this->slashCommandService ??= app(SlashCommandService::class);
         $this->markdownService ??= app(MarkdownService::class);
         $this->mentionService ??= app(MentionService::class);
         $this->notificationBatchService ??= app(NotificationBatchService::class);
+        $this->notificationService ??= app(NotificationService::class);
     }
 
     public function changes(array $old, array $new): array
@@ -194,7 +195,7 @@ class TicketService
             }
 
             if ($createdActivity) {
-                DB::afterCommit(fn () => $this->notifyWatchers($ticket));
+                DB::afterCommit(fn () => $this->notifyWatchers($ticket, $note));
             }
 
             return ['note' => $note, 'changes' => $changes, 'warnings' => $warnings];
@@ -217,23 +218,15 @@ class TicketService
         $this->mentionService->createMentions($note, $userIds);
     }
 
-    private function notifyWatchers(Ticket $ticket): void
+    private function notifyWatchers(Ticket $ticket, ?Note $note = null): void
     {
-        $url = url("/tickets/{$ticket->id}");
-        $message = "The Ticket '{$ticket->subject}' has been updated.";
-        $exceptUserId = Auth::id();
+        if ($note) {
+            $this->notificationService->notifyWatchers($ticket, $note);
 
-        $ticket->load('watchers.user');
+            return;
+        }
 
-        $ticket->watchers->each(function ($watcher) use ($message, $url, $exceptUserId) {
-            if ($watcher->user_id !== $exceptUserId && ! $watcher->muted && $watcher->user?->email) {
-                $this->notificationBatchService->dispatch(
-                    $watcher->user,
-                    new WatcherNotification('Ticket', $message, $url),
-                    $watcher->ticket_id
-                );
-            }
-        });
+        $this->notificationService->notifyTicketUpdate($ticket, Auth::id());
     }
 
     private function notifyMentionedUsers(Note $note): void

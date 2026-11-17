@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Notifications\WatcherNotification;
 use App\Observers\TicketObserver;
-use App\Services\NotificationBatchService;
+use App\Services\NotificationService;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -153,20 +152,7 @@ class Ticket extends Model
 
     public function notifyWatchers(string $type, ?int $exceptUserId = null): void
     {
-        $url = url("/tickets/{$this->id}");
-        $message = "The {$type} '{$this->subject}' has been updated.";
-
-        $this->load('watchers.user');
-
-        $this->watchers->each(function ($watcher) use ($type, $message, $url, $exceptUserId) {
-            if ($watcher->user_id !== $exceptUserId && ! $watcher->muted && $watcher->user?->email) {
-                app(NotificationBatchService::class)->dispatch(
-                    $watcher->user,
-                    new WatcherNotification($type, $message, $url),
-                    $this->id
-                );
-            }
-        });
+        app(NotificationService::class)->notifyTicketUpdate($this, $exceptUserId);
     }
 
     protected $fillable = [
