@@ -18,10 +18,12 @@ vi.mock('@tiptap/core', async (importOriginal) => {
 });
 
 describe('rich text underline', () => {
-    it('underlines the selected text instead of throwing', () => {
+    it('underlines the selected text instead of throwing', async () => {
         document.body.innerHTML =
             '<textarea id="body"></textarea><div data-rich-text data-target="#body"></div>';
         initRichTextEditors(document);
+
+        await vi.waitFor(() => expect(created.length).toBe(1));
 
         const editor = created.at(-1);
         editor.commands.setContent('Hello');
