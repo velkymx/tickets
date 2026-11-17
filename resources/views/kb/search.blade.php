@@ -25,7 +25,7 @@
 @forelse($articles as $article)
     @include('kb.partials.article-card', ['article' => $article])
 @empty
-    <div class="alert alert-info">No articles found matching "{{ $query }}".</div>
+    <x-empty-state :message="'No articles found matching “' . e($query) . '”.'" />
 @endforelse
 
 @if($articles->hasPages())

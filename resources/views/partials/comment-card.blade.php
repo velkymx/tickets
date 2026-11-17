@@ -40,7 +40,7 @@
             @if($note->hours > 0)
                 <span class="badge text-bg-info">{{ $note->hours }}h</span>
             @endif
-            <span class="text-muted small">{{ $note->created_at->diffForHumans() }}</span>
+            <span class="text-muted small"><x-relative-time :value="$note->created_at" /></span>
         </div>
 
         {{-- Kebab Menu --}}

@@ -6,6 +6,8 @@ use App\Models\KbArticle;
 use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
+use App\Models\Note;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -501,6 +503,35 @@ class KbControllerTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('name');
+    }
+
+    #[Test]
+    public function relative_timestamps_carry_titles_and_empty_states_share_a_component(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'parent_id' => $note->id]);
+
+        foreach (['/home', "/tickets/{$ticket->id}"] as $url) {
+            $html = $this->actingAs($user)->get($url)->assertOk()->getContent();
+
+            preg_match_all('/<time\b[^>]*>/', $html, $matches);
+            $this->assertNotEmpty($matches[0], "No relative timestamps on {$url}");
+
+            foreach ($matches[0] as $tag) {
+                $this->assertStringContainsString('datetime="', $tag, "Timestamp without datetime on {$url}");
+                $this->assertStringContainsString('title="', $tag, "Timestamp without title on {$url}");
+            }
+        }
+
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+
+        $this->get('/kb')->assertOk()->assertSee('role="status"', false);
+        $this->get('/kb/search?q=zzz-no-such-article')->assertOk()->assertSee('role="status"', false);
+        $this->get("/kb/category/{$category->slug}")->assertOk()->assertSee('role="status"', false);
+        $this->get("/kb/tag/{$tag->slug}")->assertOk()->assertSee('role="status"', false);
     }
 
     #[Test]

@@ -18,7 +18,7 @@
 @forelse($articles as $article)
     @include('kb.partials.article-card', ['article' => $article])
 @empty
-    <div class="alert alert-info">No articles in this category.</div>
+    <x-empty-state message="No articles in this category." />
 @endforelse
 
 @if($articles->hasPages())
