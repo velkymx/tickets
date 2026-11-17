@@ -149,6 +149,7 @@ class MilestoneController extends Controller
         $validated = $request->validated();
 
         if ($request->id === 'new') {
+            $this->authorize('create', Milestone::class);
             $validated['active'] = 1;
 
             Milestone::create($validated);

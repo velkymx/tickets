@@ -25,6 +25,9 @@ class ImportController extends Controller
             'csv' => 'required|file|mimes:csv,txt|max:10240',
         ]);
 
+        $milestone = Milestone::findOrFail($request->milestone_id);
+        $this->authorize('update', $milestone);
+
         $csv = $request->file('csv');
 
         try {
