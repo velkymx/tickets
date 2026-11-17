@@ -173,6 +173,29 @@ class SlashCommandServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_resolves_code_tokens_away_for_action_assignees(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+
+        $result = $this->service->handle($ticket, '/action Fix @[Jane Doe] see @param docs');
+
+        $this->assertSame('action', $result['note_type']);
+        $this->assertSame($jane->id, $ticket->fresh()->user_id2);
+    }
+
+    #[Test]
+    public function it_rejects_action_commands_whose_only_mention_is_not_a_user(): void
+    {
+        $ticket = Ticket::factory()->create();
+
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Actions require exactly one @assignee');
+
+        $this->service->handle($ticket, '/action Check @media rules');
+    }
+
+    #[Test]
     public function it_requires_exactly_one_assignee_for_action_commands()
     {
         $ticket = Ticket::factory()->create();
