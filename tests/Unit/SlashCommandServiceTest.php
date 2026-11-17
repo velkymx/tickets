@@ -233,6 +233,24 @@ class SlashCommandServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_moves_the_ticket_to_an_open_status_on_reopen(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'status_id' => Status::factory()->closed()->create()->id,
+            'closed_at' => now(),
+        ]);
+        cache()->forget('closed_status_ids');
+        cache()->forget('active_status_ids');
+
+        $result = $this->service->handle($ticket, '/reopen');
+
+        $fresh = $ticket->fresh();
+        $this->assertNull($fresh->closed_at);
+        $this->assertFalse(Status::isClosed((int) $fresh->status_id));
+        $this->assertContains('Ticket reopened', $result['changes']);
+    }
+
+    #[Test]
     public function it_can_mark_a_note_as_pinned_via_slash_command()
     {
         $ticket = Ticket::factory()->create();
