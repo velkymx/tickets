@@ -49,13 +49,13 @@ Each article has a visibility level set during creation or editing:
 
 | Visibility | Who can read |
 |------------|--------------|
-| `public` | All authenticated users |
-| `internal` | All authenticated users |
-| `restricted` | Only users explicitly granted access |
+| `public` | Everyone, including guests (verified articles) |
+| `internal` | All authenticated users (non-draft articles) |
+| `restricted` | Owner and explicitly granted users (non-draft articles) |
 
 ### Granting restricted access
 
-Restricted access is granted per article. On the article edit page, add users to the **Allowed Users** list.
+Restricted access is granted per article through the permitted users field on the create and edit forms. Permitted users can both view and edit article content, and owners retain access without a grant row. Only the owner or a KB admin can change visibility, status, and grants, including through the API and MCP tools.
 
 ## Version history
 

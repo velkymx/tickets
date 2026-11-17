@@ -113,30 +113,45 @@
             </div>
 
             {{-- Status --}}
-            <div class="mb-3">
-                <label for="status" class="form-label">Status</label>
-                <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
-                    <option value="draft" @selected(old('status', $article->status) === 'draft')>Draft</option>
-                    <option value="verified" @selected(old('status', $article->status) === 'verified')>Verified</option>
-                    <option value="deprecated" @selected(old('status', $article->status) === 'deprecated')>Deprecated</option>
-                </select>
-                @error('status')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+            @if($canManageAccess)
+                <div class="mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
+                        <option value="draft" @selected(old('status', $article->status) === 'draft')>Draft</option>
+                        <option value="verified" @selected(old('status', $article->status) === 'verified')>Verified</option>
+                        <option value="deprecated" @selected(old('status', $article->status) === 'deprecated')>Deprecated</option>
+                    </select>
+                    @error('status')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
 
-            {{-- Visibility --}}
-            <div class="mb-3">
-                <label for="visibility" class="form-label">Visibility</label>
-                <select name="visibility" id="visibility" class="form-select @error('visibility') is-invalid @enderror" required>
-                    <option value="internal" @selected(old('visibility', $article->visibility) === 'internal')>Internal</option>
-                    <option value="public" @selected(old('visibility', $article->visibility) === 'public')>Public</option>
-                    <option value="restricted" @selected(old('visibility', $article->visibility) === 'restricted')>Restricted</option>
-                </select>
-                @error('visibility')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+                {{-- Visibility --}}
+                <div class="mb-3">
+                    <label for="visibility" class="form-label">Visibility</label>
+                    <select name="visibility" id="visibility" class="form-select @error('visibility') is-invalid @enderror" required>
+                        <option value="internal" @selected(old('visibility', $article->visibility) === 'internal')>Internal</option>
+                        <option value="public" @selected(old('visibility', $article->visibility) === 'public')>Public</option>
+                        <option value="restricted" @selected(old('visibility', $article->visibility) === 'restricted')>Restricted</option>
+                    </select>
+                    @error('visibility')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            @else
+                <input type="hidden" name="status" value="{{ $article->status }}">
+                <input type="hidden" name="visibility" value="{{ $article->visibility }}">
+
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <p class="form-control-plaintext mb-0">{{ ucfirst($article->status) }}</p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Visibility</label>
+                    <p class="form-control-plaintext mb-0">{{ ucfirst($article->visibility) }}</p>
+                </div>
+            @endif
 
             {{-- Tags --}}
             <div class="mb-3" x-data="{ adding: false, name: '', error: '', saving: false }">
@@ -225,6 +240,22 @@
                     <div class="text-danger small mt-1" x-show="error" x-text="error"></div>
                 </div>
             </div>
+
+            {{-- Permitted Users --}}
+            @if($canManageAccess)
+                <div class="mb-3">
+                    <label for="permitted_users" class="form-label">Permitted Users</label>
+                    <select name="permitted_users[]" id="permitted_users" class="form-select @error('permitted_users') is-invalid @enderror" multiple size="5">
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" @selected(in_array($user->id, old('permitted_users', $article->permissions->pluck('user_id')->all())))>{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                    <div class="form-text">Only applies to restricted articles.</div>
+                    @error('permitted_users')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            @endif
 
             {{-- Commit Message & Submit --}}
             <div class="mb-3">

@@ -177,6 +177,152 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_and_edit_forms_offer_a_permitted_users_field(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        $this->actingAs($owner)->get('/kb/create')->assertOk()->assertSee('permitted_users', false);
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")->assertOk()->assertSee('permitted_users', false);
+    }
+
+    #[Test]
+    public function update_with_permitted_users_grants_restricted_access(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Grant access',
+            'tags' => [$tag->id],
+            'permitted_users' => [$granted->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseHas('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $granted->id,
+        ]);
+        $this->actingAs($granted)->get("/kb/{$article->slug}")->assertOk();
+    }
+
+    #[Test]
+    public function permitted_editor_cannot_change_grants(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $editor = User::factory()->create();
+        $stranger = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $editor->id]);
+
+        $response = $this->actingAs($editor)->put("/kb/{$article->slug}", [
+            'title' => 'Edited title',
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Edit content',
+            'tags' => [$tag->id],
+            'permitted_users' => [$stranger->id],
+        ]);
+
+        $response->assertRedirect("/kb/{$article->slug}");
+        $this->assertDatabaseHas('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $editor->id,
+        ]);
+        $this->assertDatabaseMissing('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $stranger->id,
+        ]);
+        $this->actingAs($editor)->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertDontSee('permitted_users', false);
+    }
+
+    #[Test]
+    public function permitted_editor_cannot_change_visibility_or_status(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $editor = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'status' => 'draft',
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $editor->id]);
+
+        $this->actingAs($editor)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'public',
+            'status' => 'verified',
+            'commit_message' => 'Try to publish',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertSame('restricted', $article->fresh()->visibility);
+        $this->assertSame('draft', $article->fresh()->status);
+    }
+
+    #[Test]
+    public function owner_can_change_visibility_and_status(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'status' => 'draft',
+        ]);
+        $article->tags()->attach($tag);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'public',
+            'status' => 'verified',
+            'commit_message' => 'Publish it',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertSame('public', $article->fresh()->visibility);
+        $this->assertSame('verified', $article->fresh()->status);
+    }
+
+    #[Test]
     public function edit_view_mounts_the_markdown_editor(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);

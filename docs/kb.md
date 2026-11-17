@@ -172,21 +172,21 @@ interface SearchableRepository
 | Route | Controller Method | Access |
 |-------|------------------|--------|
 | `GET /kb` | `KbController@index` | Public (lists public + user's accessible articles) |
-| `GET /kb/create` | `KbController@create` | Author/Admin |
-| `POST /kb` | `KbController@store` | Author/Admin |
+| `GET /kb/create` | `KbController@create` | Any authenticated user |
+| `POST /kb` | `KbController@store` | Any authenticated user |
 | `GET /kb/search` | `KbController@search` | Public |
 | `GET /kb/category/{slug}` | `KbController@category` | Public |
 | `GET /kb/tag/{slug}` | `KbController@tag` | Public |
 | `GET /kb/{slug}` | `KbController@show` | Visibility-dependent |
-| `GET /kb/{slug}/edit` | `KbController@edit` | Author/Admin + owner/permission |
-| `PUT /kb/{slug}` | `KbController@update` | Author/Admin + owner/permission |
+| `GET /kb/{slug}/edit` | `KbController@edit` | Owner, permitted user, or KB admin |
+| `PUT /kb/{slug}` | `KbController@update` | Owner, permitted user, or KB admin |
 | `DELETE /kb/{slug}` | `KbController@destroy` | Admin only |
 | `GET /kb/{slug}/history` | `KbVersionController@index` | Same as show |
 | `GET /kb/{slug}/history/{version}` | `KbVersionController@show` | Same as show |
 | `GET /kb/{slug}/diff/{from}/{to}` | `KbVersionController@diff` | Same as show |
-| `POST /kb/{slug}/restore/{version}` | `KbVersionController@restore` | Author/Admin |
-| `POST /kb/{slug}/attachments` | `KbController@uploadAttachment` | Author/Admin + owner/permission |
-| `DELETE /kb/{slug}/attachments/{id}` | `KbController@deleteAttachment` | Author/Admin + owner/permission |
+| `POST /kb/{slug}/restore/{version}` | `KbVersionController@restore` | KB admin |
+| `POST /kb/{slug}/attachments` | `KbController@uploadAttachment` | Owner, permitted user, or KB admin |
+| `DELETE /kb/{slug}/attachments/{id}` | `KbController@deleteAttachment` | Owner, permitted user, or KB admin |
 
 **Attachment constraints:** Max file size 10MB. Allowed MIME types: images (jpg, png, gif, svg, webp), documents (pdf, md, txt, csv), archives (zip). Max 20 attachments per article. Upload routes use `throttle:uploads` rate limiter.
 
@@ -209,11 +209,11 @@ API routes (`/api/v1/kb`) mirror the web routes - added in a later iteration, no
 
 ### Authorization (KbArticlePolicy)
 
-- **view** - Public articles: anyone (policy uses `?User $user` nullable parameter). Internal: authenticated users. Restricted: owner, permitted users, admins. The policy's `before()` method returns `true` for public articles when `$user` is null.
-- **create** - Users with Author or Admin KB role.
-- **update** - Owner, permitted authors, admins.
+- **view** - Public verified articles: anyone, including guests (via `KbArticle::isVisibleTo`, not the `before()` gate). Internal non-draft articles: authenticated users. Restricted non-draft articles: owner, permitted users, admins. The policy's `before()` method returns `true` for KB admins on every ability and `null` for everyone else.
+- **create** - Any authenticated user.
+- **update** - Owner, permitted users, admins. Permitted users can edit content only; visibility, status, and grants stay with the owner or a KB admin. The API and MCP update paths enforce the same restriction.
 - **delete** - Admins only.
-- **restore** - Same as update.
+- **restore** - Admins only.
 
 ### Roles
 

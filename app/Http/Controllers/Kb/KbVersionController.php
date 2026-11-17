@@ -51,7 +51,7 @@ class KbVersionController extends Controller
     public function restore(KbArticle $slug, int $version, KbArticleService $articleService)
     {
         $article = $slug;
-        $this->authorize('update', $article);
+        $this->authorize('restore', $article);
 
         $versionModel = $article->versions()->where('version_number', $version)->firstOrFail();
 

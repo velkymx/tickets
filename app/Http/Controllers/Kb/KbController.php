@@ -10,11 +10,13 @@ use App\Models\KbArticle;
 use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
+use App\Models\User;
 use App\Rules\UniqueKbSlug;
 use App\Services\AttachmentService;
 use App\Services\KbArticleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class KbController extends Controller
@@ -58,21 +60,28 @@ class KbController extends Controller
 
         $categories = KbCategory::orderBy('sort_order')->get();
         $tags = KbTag::orderBy('name')->get();
+        $users = User::orderBy('name')->get();
 
-        return view('kb.create', compact('categories', 'tags'));
+        return view('kb.create', compact('categories', 'tags', 'users'));
     }
 
     public function store(StoreArticleRequest $request)
     {
         $this->authorize('create', KbArticle::class);
 
-        $article = $this->articleService->create($request->validated(), Auth::user());
+        $validated = $request->validated();
 
-        if (! empty($request->permitted_users) && $request->visibility === 'restricted') {
-            foreach ($request->permitted_users as $userId) {
-                KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $userId]);
+        $article = DB::transaction(function () use ($validated) {
+            $article = $this->articleService->create($validated, Auth::user());
+
+            if (! empty($validated['permitted_users']) && $validated['visibility'] === 'restricted') {
+                foreach ($validated['permitted_users'] as $userId) {
+                    KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $userId]);
+                }
             }
-        }
+
+            return $article;
+        });
 
         return redirect("/kb/{$article->slug}")->with('success', 'Article created.');
     }
@@ -81,12 +90,14 @@ class KbController extends Controller
     {
         $article = $slug;
         $this->authorize('update', $article);
-
         $article->load(['tags', 'permissions']);
+
         $categories = KbCategory::orderBy('sort_order')->get();
         $tags = KbTag::orderBy('name')->get();
+        $users = User::orderBy('name')->get(['id', 'name']);
+        $canManageAccess = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
 
-        return view('kb.edit', compact('article', 'categories', 'tags'));
+        return view('kb.edit', compact('article', 'categories', 'tags', 'users', 'canManageAccess'));
     }
 
     public function update(UpdateArticleRequest $request, KbArticle $slug)
@@ -94,14 +105,34 @@ class KbController extends Controller
         $article = $slug;
         $this->authorize('update', $article);
 
-        $this->articleService->update($article, $request->validated(), Auth::user(), $request->commit_message);
+        $validated = $request->validated();
+        $canManageAccess = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
 
-        if ($request->visibility === 'restricted') {
-            KbArticlePermission::where('article_id', $article->id)->delete();
-            foreach ($request->permitted_users ?? [] as $userId) {
-                KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $userId]);
-            }
+        if (! $canManageAccess) {
+            $validated['visibility'] = $article->visibility;
+            $validated['status'] = $article->status;
         }
+
+        DB::transaction(function () use ($article, $validated, $canManageAccess) {
+            $this->articleService->update($article, $validated, Auth::user(), $validated['commit_message']);
+
+            if (! $canManageAccess) {
+                return;
+            }
+
+            KbArticlePermission::where('article_id', $article->id)->delete();
+
+            if ($validated['visibility'] !== 'restricted') {
+                return;
+            }
+
+            foreach ($validated['permitted_users'] ?? [] as $userId) {
+                KbArticlePermission::create([
+                    'article_id' => $article->id,
+                    'user_id' => $userId,
+                ]);
+            }
+        });
 
         return redirect("/kb/{$article->slug}")->with('success', 'Article updated.');
     }
