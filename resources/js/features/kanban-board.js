@@ -70,15 +70,16 @@ export function initKanbanBoard(root = document) {
         }
     };
 
-    // Suppress link navigation when a drag just ended (click vs drag fight).
-    document.addEventListener('click', (event) => {
-        if (suppressClick && event.target.closest('.ticket-column a')) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    }, true);
+    let wiredAny = false;
 
     ticketColumns.forEach((column) => {
+        if (column.dataset.sortableWired) {
+            return;
+        }
+
+        column.dataset.sortableWired = 'true';
+        wiredAny = true;
+
         new Sortable(column, {
             group: 'tickets-board',
             animation: 150,
@@ -138,9 +139,21 @@ export function initKanbanBoard(root = document) {
         });
     });
 
-    closeAlertBtn.addEventListener('click', () => {
-        hideAlert();
-    });
+    if (wiredAny) {
+        document.addEventListener('click', (event) => {
+            if (suppressClick && event.target.closest('.ticket-column a')) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }, true);
+    }
+
+    if (!closeAlertBtn.dataset.wired) {
+        closeAlertBtn.dataset.wired = 'true';
+        closeAlertBtn.addEventListener('click', () => {
+            hideAlert();
+        });
+    }
 
     ticketColumns.forEach(checkEmptyColumn);
 }

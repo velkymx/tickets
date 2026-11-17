@@ -57,8 +57,8 @@ function wireSignalNudge(textarea) {
     });
 }
 
-function wireToolbar() {
-    document.querySelectorAll('.markdown-composer [data-md]').forEach(btn => {
+function wireToolbar(root = document) {
+    root.querySelectorAll('.markdown-composer [data-md]').forEach(btn => {
         btn.addEventListener('click', function () {
             const textarea = document.getElementById('note-textarea');
             if (!textarea) return;
@@ -197,12 +197,13 @@ function wireMentions(textarea) {
     });
 }
 
-export default function initComposer() {
-    wireToolbar();
+export default function initComposer(root = document) {
+    wireToolbar(root);
 
-    const textarea = document.getElementById('note-textarea');
-    if (!textarea) return;
+    const textarea = root.querySelector('#note-textarea');
+    if (!textarea || textarea.dataset.mentionsWired) return;
 
+    textarea.dataset.mentionsWired = 'true';
     wireSubmitShortcut(textarea);
     wireSmartPaste(textarea);
     wireSignalNudge(textarea);
