@@ -20,8 +20,10 @@ class Status extends Model
     protected static function booted(): void
     {
         $flush = function (): void {
-            cache()->forget('closed_status_ids');
-            cache()->forget('active_status_ids');
+            DB::afterCommit(function (): void {
+                cache()->forget('closed_status_ids');
+                cache()->forget('active_status_ids');
+            });
         };
 
         static::saved($flush);

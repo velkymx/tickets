@@ -24,20 +24,22 @@ class StatusTest extends TestCase
     }
 
     #[Test]
-    public function closed_status_ids_refresh_after_status_changes(): void
+    public function closed_and_active_status_caches_refresh_on_create_update_and_delete(): void
     {
-        $this->assertSame([], Status::where('name', 'resolved')->pluck('id')->all());
-        $before = Status::closedStatusIds();
-        $this->assertNotEmpty($before);
+        $status = Status::factory()->create(['name' => 'in progress']);
+        $this->assertNotContains($status->id, Status::closedStatusIds());
+        $this->assertContains($status->id, Status::activeStatusIds());
 
-        $status = Status::factory()->create(['name' => 'resolved']);
+        $status->update(['name' => 'resolved']);
         $this->assertContains($status->id, Status::closedStatusIds());
+        $this->assertNotContains($status->id, Status::activeStatusIds());
 
-        $status->update(['name' => 'done']);
-        $this->assertContains($status->id, Status::closedStatusIds());
+        $status->update(['name' => 'in progress']);
+        $this->assertNotContains($status->id, Status::closedStatusIds());
+        $this->assertContains($status->id, Status::activeStatusIds());
 
-        $open = Status::factory()->create(['name' => 'fresh']);
-        $this->assertContains($open->id, Status::activeStatusIds());
+        $status->delete();
+        $this->assertNotContains($status->id, Status::activeStatusIds());
     }
 
     #[Test]
