@@ -6,6 +6,7 @@ use App\Http\Requests\StoreMilestoneRequest;
 use App\Http\Requests\UpdateMilestoneRequest;
 use App\Models\Milestone;
 use App\Models\MilestoneWatcher;
+use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
@@ -99,13 +100,20 @@ class MilestoneController extends Controller
         $total = $milestone->tickets()->count();
         $percent = $total > 0 ? min(100, (int) round($completed / $total * 100)) : 0;
 
+        $planned = Ticket::where('milestone_id', $milestone->id)
+            ->selectRaw('COALESCE(SUM(storypoints), 0) as storypoints, COALESCE(SUM(estimate), 0) as estimate')
+            ->first();
+        $actualHours = Note::whereIn('ticket_id', Ticket::where('milestone_id', $milestone->id)->select('id'))
+            ->where('hide', 0)
+            ->sum('hours');
+
         $blockers = Ticket::where('milestone_id', $milestone->id)
             ->blockers()
             ->with(['importance', 'status'])
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'percent', 'searchQuery', 'searchTokens', 'blockers'));
+        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'total', 'percent', 'searchQuery', 'searchTokens', 'blockers', 'planned', 'actualHours'));
 
     }
 

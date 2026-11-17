@@ -56,7 +56,7 @@
                         </td>
                     @endif
                     <td class="text-truncate" style="max-width: 280px;">
-                        @php $noteCount = $tick->notes->where('hide', '0')->count(); @endphp
+                        @php $noteCount = $tick->notes->where('hide', 0)->count(); @endphp
                         @if ($noteCount > 0)
                             <span class="badge text-bg-info float-end ms-1" title="{{ $noteCount }} notes">{{ $noteCount }}</span>
                         @endif

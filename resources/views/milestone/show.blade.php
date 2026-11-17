@@ -114,9 +114,9 @@
                 Milestone Summary
             </div>
             <ul class="list-group list-group-flush">
-                <li class="list-group-item">Total Tickets: <span class="badge text-bg-primary">{{ $milestone->tickets->count() }}</span></li>
-                <li class="list-group-item">Est. Effort: <span class="badge text-bg-primary">{{ $milestone->tickets->sum('storypoints') }} SP</span></li>
-                <li class="list-group-item">Est. Time: <span class="badge text-bg-primary">{{ $milestone->tickets->sum('estimate') }} Hrs</span></li>
+                <li class="list-group-item">Total Tickets: <span class="badge text-bg-primary">{{ $total }}</span></li>
+                <li class="list-group-item">Est. Effort: <span class="badge text-bg-primary">{{ $planned->storypoints }} SP</span></li>
+                <li class="list-group-item">Est. Time: <span class="badge text-bg-primary">{{ $planned->estimate }} Hrs</span></li>
                 <li class="list-group-item text-success">
                     <strong>Progress: {{ $percent }}% Complete</strong>
                     {{-- Replaced old progress structure with B5 --}}
@@ -130,8 +130,8 @@
                          </div>
                      </div>
                 </li>
-                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $milestone->tickets->whereIn('status_id', \App\Models\Status::closedStatusIds())->count() }}</span></li>
-                <li class="list-group-item">Actual Time: <span class="badge text-bg-info">{{ $milestone->tickets->sum('actual') }} Hrs</span></li>
+                <li class="list-group-item">Closed Tickets: <span class="badge text-bg-success">{{ $completed }}</span></li>
+                <li class="list-group-item">Actual Time: <span class="badge text-bg-info">{{ $actualHours }} Hrs</span></li>
             </ul>
         </div>
     </div>
