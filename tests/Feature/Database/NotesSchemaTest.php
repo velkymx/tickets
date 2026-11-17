@@ -104,16 +104,17 @@ class NotesSchemaTest extends TestCase
     #[Test]
     public function deleting_related_records_sets_resolved_by_and_supersedes_id_to_null(): void
     {
+        $author = User::factory()->create();
         $resolver = User::factory()->create();
         $ticket = Ticket::factory()->create();
         $originalDecision = Note::factory()->create([
-            'user_id' => $resolver->id,
+            'user_id' => $author->id,
             'ticket_id' => $ticket->id,
             'notetype' => 'decision',
         ]);
 
         $note = Note::factory()->create([
-            'user_id' => $resolver->id,
+            'user_id' => $author->id,
             'ticket_id' => $ticket->id,
             'resolved_by' => $resolver->id,
             'supersedes_id' => $originalDecision->id,

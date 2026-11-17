@@ -7,6 +7,7 @@ use App\Models\TicketUserWatcher;
 use App\Models\TicketView;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -18,6 +19,12 @@ class TicketShowOrphanedUsersTest extends TestCase
     #[Test]
     public function show_renders_when_viewer_and_watcher_were_deleted(): void
     {
+        // Legacy orphan rows need FK checks off, which SQLite forbids
+        // inside the test transaction. Covered on MySQL.
+        if (DB::getDriverName() === 'sqlite') {
+            $this->markTestSkipped('Requires disabling FK checks.');
+        }
+
         $owner = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
         $viewer = User::factory()->create();
@@ -25,7 +32,9 @@ class TicketShowOrphanedUsersTest extends TestCase
         TicketView::create(['user_id' => $viewer->id, 'ticket_id' => $ticket->id]);
         TicketUserWatcher::create(['user_id' => $viewer->id, 'ticket_id' => $ticket->id]);
 
+        Schema::disableForeignKeyConstraints();
         DB::table('users')->where('id', $viewer->id)->delete();
+        Schema::enableForeignKeyConstraints();
         $this->assertDatabaseHas('ticket_views', ['user_id' => $viewer->id]);
 
         $this->actingAs($owner)->get("/tickets/{$ticket->id}")

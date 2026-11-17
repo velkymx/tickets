@@ -253,7 +253,7 @@ class SlashCommandServiceTest extends TestCase
     #[Test]
     public function it_auto_assigns_unassigned_tickets_to_the_action_assignee()
     {
-        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
         $assignee = User::factory()->create(['name' => 'sarah']);
 
         $result = $this->service->handle($ticket, '/action Verify fix @[sarah]');
@@ -265,7 +265,7 @@ class SlashCommandServiceTest extends TestCase
     #[Test]
     public function it_prefers_exact_case_for_action_assignees(): void
     {
-        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
         User::factory()->create(['name' => 'john']);
         $exact = User::factory()->create(['name' => 'John']);
 
@@ -333,7 +333,7 @@ class SlashCommandServiceTest extends TestCase
     #[Test]
     public function it_extracts_bracket_mentions_in_action_commands(): void
     {
-        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
         $assignee = User::factory()->create(['name' => 'Sarah Lee']);
 
         $result = $this->service->handle($ticket, '/action Verify fix @[Sarah Lee (QA)]');
