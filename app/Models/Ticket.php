@@ -34,7 +34,7 @@ class Ticket extends Model
             'status', 'type', 'importance', 'project', 'assignee', 'openDecisionRequests',
             'notes' => fn ($q) => $q->where('hide', 0)->where('notetype', 'message'),
         ])->withCount([
-            'notes as visible_notes_count' => fn ($q) => $q->where('hide', 0),
+            'notes as visible_notes_count' => fn ($q) => $q->where('hide', 0)->where('notetype', 'message'),
         ]);
     }
 

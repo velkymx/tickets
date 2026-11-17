@@ -473,14 +473,14 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/tickets');
 
         $response->assertOk();
-        $response->assertSee('title="4 notes"', false);
+        $response->assertSee('title="1 notes"', false);
 
         DB::enableQueryLog();
         $tickets = Ticket::query()->withListRelations()->get();
         $baseline = count(DB::getQueryLog());
 
         foreach ($tickets as $ticket) {
-            $this->assertSame(4, $ticket->visible_notes_count);
+            $this->assertSame(1, $ticket->visible_notes_count);
             $first = $ticket->openDecisionRequests->first();
             $this->assertNotNull($first);
             $this->assertTrue($ticket->openDecisionRequests->last()->created_at->greaterThan($first->created_at));
