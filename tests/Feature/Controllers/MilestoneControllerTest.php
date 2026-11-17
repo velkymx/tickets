@@ -662,6 +662,22 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function report_carries_burndown_data_on_the_canvas(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create([
+            'start_at' => '2024-01-01',
+            'due_at' => '2024-01-10',
+        ]);
+        Ticket::factory()->create(['milestone_id' => $milestone->id]);
+
+        $content = $this->actingAs($user)->get("/milestone/report/{$milestone->id}")->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/<canvas id="burndownChart" data-burndown=\'[^\']+\'/', $content);
+        $this->assertStringNotContainsString('window.burndownChartData', $content);
+    }
+
+    #[Test]
     public function report_burndown_stays_within_the_milestone_range(): void
     {
         $user = User::factory()->create();

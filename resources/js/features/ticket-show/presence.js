@@ -1,3 +1,5 @@
+import { withCsrf } from '../../lib/csrf.js';
+
 function escapeHtml(s) {
     return String(s)
         .replace(/&/g, '&amp;')
@@ -35,13 +37,13 @@ export default function initPresence() {
     const ticketId = document.querySelector('.presence-indicator')?.dataset.ticketId;
     if (!ticketId) return;
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const csrfHeaders = withCsrf({ 'Content-Type': 'application/json' });
 
     function sendHeartbeat() {
         const composing = document.activeElement?.id === 'note-textarea';
         fetch(`/tickets/${ticketId}/presence`, {
             method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: csrfHeaders,
             body: JSON.stringify({ composing }),
         })
             .then(r => r.json())

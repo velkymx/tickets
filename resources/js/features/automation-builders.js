@@ -35,6 +35,10 @@ export function conditionBuilder() {
         },
 
         toggleType(item) {
+            if (!this.isGroup(item)) {
+                return;
+            }
+
             if (item.all !== undefined) {
                 item.any = item.all;
                 delete item.all;

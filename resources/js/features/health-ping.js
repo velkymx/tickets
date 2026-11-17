@@ -1,6 +1,9 @@
+import { withCsrf } from '../lib/csrf.js';
+
 export async function pingWorker(postPing, getStatus, onUpdate, options = {}) {
     const interval = options.interval ?? 1000;
     const attempts = options.attempts ?? 10;
+    const signal = options.signal;
 
     let token;
 
@@ -17,7 +20,15 @@ export async function pingWorker(postPing, getStatus, onUpdate, options = {}) {
     }
 
     for (let i = 0; i < attempts; i += 1) {
+        if (signal?.aborted) {
+            return;
+        }
+
         await new Promise((resolve) => { setTimeout(resolve, interval); });
+
+        if (signal?.aborted) {
+            return;
+        }
 
         let status;
 
@@ -50,10 +61,20 @@ export function initHealthPing(root = document) {
         return;
     }
 
-    const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    const csrfHeaders = withCsrf({ 'Content-Type': 'application/json' });
     const statusUrl = box.dataset.statusUrl ?? '';
+    let currentRun = null;
 
     button.addEventListener('click', async () => {
+        currentRun?.abort();
+        const controller = new AbortController();
+        currentRun = controller;
+
+        if (!statusUrl) {
+            result.textContent = 'Status URL is not configured.';
+            return;
+        }
+
         button.disabled = true;
         result.textContent = 'Pinging worker…';
 
@@ -61,7 +82,8 @@ export function initHealthPing(root = document) {
             async () => {
                 const response = await fetch(box.dataset.pingUrl, {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+                    headers: csrfHeaders,
+                    signal: controller.signal,
                 });
                 const data = await response.json();
 
@@ -74,6 +96,7 @@ export function initHealthPing(root = document) {
             async (token) => {
                 const response = await fetch(statusUrl.replace('TOKEN', token), {
                     headers: { Accept: 'application/json' },
+                    signal: controller.signal,
                 });
                 return response.json();
             },
@@ -87,10 +110,9 @@ export function initHealthPing(root = document) {
                 }
                 button.disabled = false;
             },
+            { signal: controller.signal },
         );
     });
-
-    button.click();
 }
 
 document.addEventListener('DOMContentLoaded', () => initHealthPing());

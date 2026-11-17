@@ -1,4 +1,5 @@
 import Sortable from 'sortablejs';
+import { withCsrf } from '../lib/csrf.js';
 
 export function initKanbanBoard(root = document) {
     const ticketColumns = root.querySelectorAll('.ticket-column');
@@ -31,11 +32,7 @@ export function initKanbanBoard(root = document) {
     const updateTicketStatus = (ticketId, newStatusId, onSuccess, onFailure) => {
         fetch(`/tickets/api/${ticketId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                Accept: 'application/json',
-            },
+            headers: withCsrf({ 'Content-Type': 'application/x-www-form-urlencoded' }),
             body: `status=${encodeURIComponent(newStatusId)}`,
         })
             .then((response) => {
@@ -73,15 +70,16 @@ export function initKanbanBoard(root = document) {
         }
     };
 
-    // Suppress link navigation when a drag just ended (click vs drag fight).
-    document.addEventListener('click', (event) => {
-        if (suppressClick && event.target.closest('.ticket-column a')) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    }, true);
+    let wiredAny = false;
 
     ticketColumns.forEach((column) => {
+        if (column.dataset.sortableWired) {
+            return;
+        }
+
+        column.dataset.sortableWired = 'true';
+        wiredAny = true;
+
         new Sortable(column, {
             group: 'tickets-board',
             animation: 150,
@@ -141,9 +139,21 @@ export function initKanbanBoard(root = document) {
         });
     });
 
-    closeAlertBtn.addEventListener('click', () => {
-        hideAlert();
-    });
+    if (wiredAny) {
+        document.addEventListener('click', (event) => {
+            if (suppressClick && event.target.closest('.ticket-column a')) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }, true);
+    }
+
+    if (!closeAlertBtn.dataset.wired) {
+        closeAlertBtn.dataset.wired = 'true';
+        closeAlertBtn.addEventListener('click', () => {
+            hideAlert();
+        });
+    }
 
     ticketColumns.forEach(checkEmptyColumn);
 }

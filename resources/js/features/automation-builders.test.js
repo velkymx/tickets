@@ -21,6 +21,15 @@ describe('conditionBuilder', () => {
 
         expect(builder.serialize()).toBe(JSON.stringify({ all: [{ all: [] }] }));
     });
+
+    it('leaves leaves untouched when toggling type', () => {
+        const builder = conditionBuilder();
+        builder.addLeaf(builder.root);
+        builder.toggleType(builder.root.all[0]);
+
+        expect('all' in builder.root.all[0]).toBe(false);
+        expect('any' in builder.root.all[0]).toBe(false);
+    });
 });
 
 describe('actionBuilder', () => {

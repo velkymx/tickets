@@ -147,6 +147,16 @@ describe('kanban-board guards', () => {
         expect(() => initKanbanBoard(document)).not.toThrow();
         expect(seen).toHaveLength(0);
     });
+
+    it('wires each board only once', () => {
+        mount();
+        const wired = seen.length;
+        expect(wired).toBeGreaterThan(0);
+
+        initKanbanBoard(document);
+
+        expect(seen).toHaveLength(wired);
+    });
 });
 
 describe('kanban-board placeholders', () => {
