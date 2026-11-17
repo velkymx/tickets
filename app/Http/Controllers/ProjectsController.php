@@ -33,11 +33,7 @@ class ProjectsController extends Controller
 
     public function show(Request $request, $id)
     {
-        $project = Project::with(['tickets' => function ($q) {
-            $q->with(['notes' => function ($noteQ) {
-                $noteQ->where('hide', 0)->where('notetype', 'message');
-            }]);
-        }])->findOrFail($id);
+        $project = Project::findOrFail($id);
 
         $this->authorize('view', $project);
 
@@ -61,8 +57,15 @@ class ProjectsController extends Controller
 
         $percent = 0;
 
-        $total = $project->tickets()->count();
-        $completed = $project->tickets()->closed()->count();
+        // Summary counts come from aggregates. Hydrating every ticket
+        // and note on the project just to count them does not scale.
+        $statusCounts = Ticket::where('project_id', $project->id)
+            ->selectRaw('status_id, COUNT(*) AS aggregate')
+            ->groupBy('status_id')
+            ->pluck('aggregate', 'status_id');
+
+        $total = (int) $statusCounts->sum();
+        $completed = (int) $statusCounts->only(Status::closedStatusIds())->sum();
 
         if ($total !== 0) {
             $percent = round($completed / $total, 2) * 100;
@@ -82,7 +85,7 @@ class ProjectsController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('projects.show', compact('project', 'tickets', 'total', 'completed', 'percent', 'statuscodes', 'matrix', 'searchQuery', 'searchTokens', 'blockers'));
+        return view('projects.show', compact('project', 'tickets', 'total', 'completed', 'percent', 'statuscodes', 'statusCounts', 'matrix', 'searchQuery', 'searchTokens', 'blockers'));
     }
 
     public function create()
