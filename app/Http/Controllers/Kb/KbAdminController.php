@@ -32,7 +32,16 @@ class KbAdminController extends Controller
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if (KbCategory::slugIsTaken(Str::slug($value))) {
+                        $fail('A category with a similar name already exists.');
+                    }
+                },
+            ],
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
             'parent_id' => 'nullable|exists:kb_categories,id',
@@ -51,7 +60,16 @@ class KbAdminController extends Controller
     {
         $category = KbCategory::findOrFail($id);
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($category) {
+                    if (KbCategory::slugIsTaken(Str::slug($value), $category->id)) {
+                        $fail('A category with a similar name already exists.');
+                    }
+                },
+            ],
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
             'parent_id' => [
@@ -101,7 +119,18 @@ class KbAdminController extends Controller
 
     public function storeTag(Request $request)
     {
-        $validated = $request->validate(['name' => 'required|string|max:255']);
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if (KbTag::slugIsTaken(Str::slug($value))) {
+                        $fail('A tag with a similar name already exists.');
+                    }
+                },
+            ],
+        ]);
 
         KbTag::create([
             'name' => $validated['name'],
@@ -114,7 +143,18 @@ class KbAdminController extends Controller
     public function updateTag(Request $request, int $id)
     {
         $tag = KbTag::findOrFail($id);
-        $validated = $request->validate(['name' => 'required|string|max:255']);
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($tag) {
+                    if (KbTag::slugIsTaken(Str::slug($value), $tag->id)) {
+                        $fail('A tag with a similar name already exists.');
+                    }
+                },
+            ],
+        ]);
 
         $tag->update([
             'name' => $validated['name'],

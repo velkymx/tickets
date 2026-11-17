@@ -14,6 +14,14 @@ class KbCategory extends Model
 
     protected $fillable = ['name', 'slug', 'description', 'sort_order', 'parent_id'];
 
+    public static function slugIsTaken(string $slug, ?int $ignoreId = null): bool
+    {
+        return static::query()
+            ->where('slug', $slug)
+            ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->exists();
+    }
+
     protected static function booted(): void
     {
         // Backstop for every write path (controller, factory, seeder,
@@ -33,6 +41,12 @@ class KbCategory extends Model
 
             if (self::find($parentId)?->isDescendantOf($category)) {
                 throw ValidationException::withMessages(['parent_id' => 'A category cannot move under its own child.']);
+            }
+        });
+
+        static::saving(function (self $category): void {
+            if ($category->slug !== '' && self::slugIsTaken($category->slug, $category->exists ? $category->id : null)) {
+                throw ValidationException::withMessages(['name' => 'A category with a similar name already exists.']);
             }
         });
     }

@@ -189,7 +189,17 @@ class KbController extends Controller
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:kb_categories,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:kb_categories,name',
+                function ($attribute, $value, $fail) {
+                    if (KbCategory::slugIsTaken(Str::slug($value))) {
+                        $fail('A category with a similar name already exists.');
+                    }
+                },
+            ],
         ]);
 
         $category = KbCategory::create([
@@ -207,7 +217,17 @@ class KbController extends Controller
     public function storeTag(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:kb_tags,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:kb_tags,name',
+                function ($attribute, $value, $fail) {
+                    if (KbTag::slugIsTaken(Str::slug($value))) {
+                        $fail('A tag with a similar name already exists.');
+                    }
+                },
+            ],
         ]);
 
         $tag = KbTag::create([
