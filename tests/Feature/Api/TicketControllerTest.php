@@ -171,6 +171,18 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_clamps_negative_per_page_to_one(): void
+    {
+        Ticket::factory()->count(3)->create(['user_id2' => $this->user->id]);
+
+        $response = $this->getJson('/api/v1/tickets?per_page=-5', $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals(1, $response->json('meta.per_page'));
+        $this->assertEquals(3, $response->json('meta.total'));
+    }
+
+    #[Test]
     public function store_validates_required_subject(): void
     {
         $response = $this->postJson('/api/v1/tickets', [], $this->apiHeaders());
@@ -253,6 +265,24 @@ class TicketControllerTest extends TestCase
         $this->postJson('/api/v1/tickets', $payload + ['storypoints' => 100000], $this->apiHeaders())
             ->assertStatus(422)
             ->assertJsonValidationErrors('storypoints');
+    }
+
+    #[Test]
+    public function store_returns_the_actual_status_name(): void
+    {
+        $status = Status::factory()->closed()->create();
+
+        $response = $this->postJson('/api/v1/tickets', [
+            'subject' => 'Closed Ticket',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
+            'status_id' => $status->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(201);
+        $response->assertJsonPath('ticket.status', $status->name);
     }
 
     #[Test]
