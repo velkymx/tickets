@@ -30,6 +30,16 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_shows_an_alert_when_no_articles_exist(): void
+    {
+        $response = $this->get('/kb');
+
+        $response->assertOk();
+        $response->assertSee('alert alert-info', false);
+        $response->assertSee('No articles found.');
+    }
+
+    #[Test]
     public function index_shows_only_public_verified_for_guests(): void
     {
         KbArticle::factory()->verified()->public()->create(['title' => 'Public Article']);
