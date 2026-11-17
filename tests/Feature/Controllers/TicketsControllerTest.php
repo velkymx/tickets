@@ -2602,4 +2602,70 @@ class TicketsControllerTest extends TestCase
                 && $loaded->description === $ticket->description;
         });
     }
+
+    #[Test]
+    public function clone_carries_story_points(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'storypoints' => 21]);
+
+        $response = $this->actingAs($user)->get("/tickets/clone/{$ticket->id}");
+
+        $response->assertOk();
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="storypoints"[^>]*value="21"/',
+            $response->getContent()
+        );
+    }
+
+    #[Test]
+    public function clone_persists_story_points(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'storypoints' => 21]);
+
+        $response = $this->actingAs($user)->post('/tickets', [
+            'subject' => 'Cloned from #'.$ticket->id,
+            'description' => $ticket->description,
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'project_id' => $ticket->project_id,
+            'milestone_id' => $ticket->milestone_id,
+            'user_id2' => $user->id,
+            'storypoints' => $ticket->storypoints,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Cloned from #'.$ticket->id,
+            'storypoints' => 21,
+        ]);
+    }
+
+    #[Test]
+    public function clone_shows_validation_errors(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+
+        $cloneUrl = "/tickets/clone/{$ticket->id}";
+        $response = $this->actingAs($user)->from($cloneUrl)->post('/tickets', [
+            'subject' => '',
+            'description' => 'Cloned description',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'project_id' => $ticket->project_id,
+            'milestone_id' => $ticket->milestone_id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response->assertRedirect($cloneUrl);
+        $content = $this->get($cloneUrl)->assertOk()->getContent();
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="subject"[^>]*class="[^"]*is-invalid/',
+            $content
+        );
+    }
 }
