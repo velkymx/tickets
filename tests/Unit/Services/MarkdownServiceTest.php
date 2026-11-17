@@ -45,6 +45,20 @@ class MarkdownServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_links_duplicate_names_to_the_oldest_account(): void
+    {
+        $first = User::factory()->create(['name' => 'Sam Same']);
+        User::factory()->create(['name' => 'Sam Same']);
+
+        $output = $this->service->parse('Hey @[Sam Same] check this');
+
+        $this->assertStringContainsString(
+            '<a class="mention" href="/users/'.$first->id.'">@Sam Same</a>',
+            $output
+        );
+    }
+
+    #[Test]
     public function it_converts_bracket_mentions_to_links(): void
     {
         $user = User::factory()->create(['name' => 'John Smith']);

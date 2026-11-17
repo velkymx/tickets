@@ -293,6 +293,30 @@ class NotesControllerTest extends TestCase
             ->assertJsonPath('next_action.assignee', '@sarah');
     }
 
+    #[Test]
+    public function editing_a_note_removes_deleted_mentions(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+        ]);
+
+        $this->actingAs($user)->putJson("/notes/{$note->id}", [
+            'body' => 'Ask @[Jane Doe] for the logs.',
+        ])->assertOk();
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id]);
+
+        $this->actingAs($user)->putJson("/notes/{$note->id}", [
+            'body' => 'No mentions here anymore.',
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('mentions', ['note_id' => $note->id]);
+    }
+
     // --- Reply Tests ---
 
     #[Test]
