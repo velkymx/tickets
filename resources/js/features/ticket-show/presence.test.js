@@ -10,6 +10,17 @@ beforeEach(() => {
 });
 
 describe('presence avatars', () => {
+    it('ignores pages without a presence indicator', async () => {
+        document.body.innerHTML = '<p>No presence here</p>';
+        const fetchSpy = vi.fn();
+        vi.stubGlobal('fetch', fetchSpy);
+
+        initPresence();
+
+        await new Promise((resolve) => { setTimeout(resolve, 10); });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it('renders the server-provided avatar instead of an empty hash', async () => {
         vi.mocked(fetch).mockResolvedValue({
             json: async () => ({ viewers: [
