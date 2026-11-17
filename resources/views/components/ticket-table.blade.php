@@ -73,7 +73,7 @@
                         <td><span class="badge text-bg-secondary">{{ $tick->type->name }}</span></td>
                     @endif
                     <td class="text-nowrap">
-                        <x-importance-badge :importance="$tick->importance" />
+                        <x-importance-badge :importance="$tick->importance" show-label />
                     </td>
                     <td class="text-nowrap"><span class="badge text-bg-secondary">{{ $tick->status->name }}</span></td>
                     <td class="text-truncate d-none d-lg-table-cell" style="max-width: 280px;">{{ $tick->project->name }}</td>
@@ -127,7 +127,7 @@
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
                     <span class="d-inline-flex align-items-center gap-2">
-                        <x-importance-badge :importance="$tick->importance" />
+                        <x-importance-badge :importance="$tick->importance" show-label />
                         <span>{{ $tick->assignee?->name ?? 'Unassigned' }}</span>
                     </span>
                     @if($showUpdated)

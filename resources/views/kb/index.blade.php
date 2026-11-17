@@ -48,15 +48,7 @@
 @forelse($articles as $article)
     @include('kb.partials.article-card', ['article' => $article])
 @empty
-    <table class="table table-striped">
-        <tbody>
-            <tr>
-                <td class="text-center py-5">
-                    <p class="text-muted mb-0">No articles found.</p>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="alert alert-info">No articles found.</div>
 @endforelse
 
 @if($articles->hasPages())

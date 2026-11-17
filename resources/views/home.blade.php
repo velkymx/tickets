@@ -111,7 +111,7 @@ Dashboard
                                     <div class="flex-grow-1" style="min-width:0;">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
                                             <span class="badge text-bg-secondary">#{{ $note->ticket->id }}</span>
-                                            <small class="text-muted text-nowrap flex-shrink-0">{{ $note->created_at->diffForHumans(['short' => true]) }}</small>
+                                            <small class="text-muted text-nowrap flex-shrink-0" title="{{ $note->created_at->toDateTimeString() }}">{{ $note->created_at->diffForHumans(['short' => true]) }}</small>
                                         </div>
                                         <p class="mb-0 mt-1 small text-body-secondary text-truncate">{{ Str::words(strip_tags($note->body), 12) }}</p>
                                     </div>
