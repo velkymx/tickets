@@ -5,11 +5,13 @@ namespace Tests\Feature\Controllers;
 use App\Models\Milestone;
 use App\Models\MilestoneWatcher;
 use App\Models\Note;
+use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -78,6 +80,41 @@ class MilestoneControllerTest extends TestCase
         $this->assertTrue($loaded->relationLoaded('tickets'));
         $this->assertTrue($loaded->tickets->first()->relationLoaded('status'));
         $response->assertSee($ticket->subject);
+    }
+
+    #[Test]
+    public function print_groups_tickets_without_querying_per_group(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create();
+        $project = Project::factory()->create();
+        $types = Type::query()->take(2)->get();
+        $this->assertCount(2, $types);
+        $closed = Status::factory()->closed()->create();
+        cache()->forget('closed_status_ids');
+
+        $openTicket = Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'project_id' => $project->id,
+            'type_id' => $types[0]->id,
+        ]);
+        $closedTicket = Ticket::factory()->create([
+            'milestone_id' => $milestone->id,
+            'project_id' => $project->id,
+            'type_id' => $types[1]->id,
+            'status_id' => $closed->id,
+        ]);
+
+        DB::enableQueryLog();
+        $response = $this->actingAs($user)->get("/milestone/print/{$milestone->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee($openTicket->subject);
+        $response->assertDontSee($closedTicket->subject);
+        $ticketSelects = collect(DB::getQueryLog())->filter(
+            fn ($entry) => preg_match('/^\s*select\s+\*\s+from\s*[\"`\[]?tickets[\"`\]]?/i', $entry['query'])
+        );
+        $this->assertCount(1, $ticketSelects);
     }
 
     #[Test]

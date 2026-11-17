@@ -62,7 +62,13 @@ class MilestoneController extends Controller
 
         $types = Type::all();
 
-        return view('milestone.print', compact('milestone', 'types', 'projects'));
+        $closedIds = Status::closedStatusIds();
+        $groupedTickets = $milestone->tickets
+            ->filter(fn ($ticket) => ! in_array($ticket->status_id, $closedIds, true) && $ticket->project)
+            ->sortBy('subject')
+            ->groupBy(['project_id', 'type_id']);
+
+        return view('milestone.print', compact('milestone', 'types', 'projects', 'groupedTickets'));
 
     }
 
