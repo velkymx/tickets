@@ -15,6 +15,10 @@ class WebhookActionDriver implements AutomationActionDriverInterface
     /** HTTP verbs a webhook may use - prevents dynamic dispatch to arbitrary PendingRequest methods. */
     private const ALLOWED_METHODS = ['get', 'post', 'put', 'patch', 'delete'];
 
+    private const MAX_REDIRECTS = 5;
+
+    private const REDIRECT_STATUSES = [301, 302, 307, 308];
+
     public function __construct(
         private readonly SsrfGuard $ssrfGuard,
         private readonly PayloadRenderer $renderer,
@@ -41,21 +45,65 @@ class WebhookActionDriver implements AutomationActionDriverInterface
         }
 
         $headers = $config['headers'] ?? [];
+        $currentUrl = $url;
 
-        $response = Http::timeout(10)
-            ->withHeaders($headers)
-            ->$method($url, $payload);
+        $this->ssrfGuard->validate($currentUrl);
+
+        $response = null;
+
+        for ($hop = 0; $hop <= self::MAX_REDIRECTS; $hop++) {
+            $response = Http::timeout(10)
+                ->withoutRedirecting()
+                ->withHeaders($headers)
+                ->$method($currentUrl, $payload);
+
+            $location = $response->header('Location');
+
+            if (! in_array($response->status(), self::REDIRECT_STATUSES, true) || ! $location) {
+                break;
+            }
+
+            $nextUrl = $this->resolveRedirectUrl($currentUrl, $location);
+            $this->ssrfGuard->validate($nextUrl);
+
+            if (! $this->ssrfGuard->sameOrigin($currentUrl, $nextUrl)) {
+                $headers = $this->ssrfGuard->stripSensitiveHeaders($headers);
+            }
+
+            $currentUrl = $nextUrl;
+        }
 
         AutomationActionLog::create([
             'automation_run_id' => $run->id,
             'automation_action_id' => $action->id,
             'status' => $response->successful() ? 'success' : 'failed',
-            'request_url' => $url,
+            'request_url' => $currentUrl,
             'request_payload' => $payloadJson,
             'response_code' => $response->status(),
             'response_body' => substr((string) $response->body(), 0, 65535),
             'attempts' => 1,
             'executed_at' => now(),
         ]);
+    }
+
+    private function resolveRedirectUrl(string $currentUrl, string $location): string
+    {
+        if (parse_url($location, PHP_URL_HOST) !== null) {
+            return $location;
+        }
+
+        $current = parse_url($currentUrl);
+        $base = ($current['scheme'] ?? 'https').'://'.($current['host'] ?? '');
+
+        if (isset($current['port'])) {
+            $base .= ':'.$current['port'];
+        }
+
+        if (! str_starts_with($location, '/')) {
+            $path = $current['path'] ?? '/';
+            $location = substr($path, 0, strrpos($path, '/') + 1).$location;
+        }
+
+        return $base.$location;
     }
 }
