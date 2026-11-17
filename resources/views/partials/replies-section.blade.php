@@ -4,7 +4,7 @@
             <div class="flex-grow-1">
                 <div class="d-flex align-items-center gap-2">
                     <strong class="small"><a href="/users/{{ $reply->user->id }}" class="text-decoration-none">{{ $reply->user->name }}</a></strong>
-                    <span class="text-muted small">{{ $reply->created_at->diffForHumans() }}</span>
+                    <span class="text-muted small"><x-relative-time :value="$reply->created_at" /></span>
                 </div>
                 <div class="small">
                     {!! clean($reply->body) !!}

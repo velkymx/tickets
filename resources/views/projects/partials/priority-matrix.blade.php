@@ -27,7 +27,7 @@
                 @forelse ($matrix[$key] as $tick)
                     <div class="d-flex justify-content-between align-items-center border-bottom py-1">
                         <span class="text-truncate me-2">
-                            <x-importance-badge :importance="$tick->importance" />
+                            <x-importance-badge :importance="$tick->importance" show-label />
                             <a href="/tickets/{{ $tick->id }}" class="text-decoration-none">#{{ $tick->id }} {{ $tick->subject }}</a>
                         </span>
                         @php($points = (int) ($tick->storypoints ?? 0))

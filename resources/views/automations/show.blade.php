@@ -62,7 +62,7 @@
                             <span class="badge {{ $badge }}">{{ $run->status }}</span>
                         </td>
                         <td>{{ $run->trigger_name }}</td>
-                        <td>{{ $run->started_at?->diffForHumans() ?? $run->created_at->diffForHumans() }}</td>
+                        <td><x-relative-time :value="$run->started_at ?? $run->created_at" /></td>
                         <td>
                             @if($run->started_at && $run->finished_at)
                                 {{ $run->started_at->diffInMilliseconds($run->finished_at) }}ms

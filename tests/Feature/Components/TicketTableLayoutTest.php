@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Components;
 
+use App\Models\Importance;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
@@ -125,6 +126,22 @@ class TicketTableLayoutTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($ticket->updated_at->format('M jS, Y g:ia'), false);
+    }
+
+    #[Test]
+    public function importance_cell_shows_a_text_label(): void
+    {
+        $user = User::factory()->create();
+        $importance = Importance::factory()->create(['name' => 'VeryUrgent']);
+        $ticket = Ticket::factory()->create(['importance_id' => $importance->id]);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertOk();
+        $this->assertStringContainsString(
+            'VeryUrgent</span>',
+            $this->rowFor($response->getContent(), $ticket->subject)
+        );
     }
 
     #[Test]

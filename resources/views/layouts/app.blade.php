@@ -82,7 +82,7 @@
                                     <div class="d-flex justify-content-between gap-3">
                                         <div class="small">
                                             <div class="fw-semibold">{{ $notification->data['excerpt'] ?? $notification->data['message'] ?? 'Activity update' }}</div>
-                                            <div class="text-muted">{{ $notification->created_at->diffForHumans() }}</div>
+                                            <div class="text-muted"><x-relative-time :value="$notification->created_at" /></div>
                                         </div>
                                         @if (! $notification->read_at)
                                             <span class="text-danger">●</span>

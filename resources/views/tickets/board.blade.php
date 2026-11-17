@@ -107,7 +107,7 @@
                                             @endif
                                             <span title="{{ $ticket->open_notes_count }} visible notes"><i class="fa-regular fa-comment"></i> {{ $ticket->open_notes_count }}</span>
                                         </span>
-                                        <span title="{{ $ticket->updated_at->toDateTimeString() }}">{{ $ticket->updated_at->diffForHumans() }}</span>
+                                        <x-relative-time :value="$ticket->updated_at" />
                                     </div>
                                 </li>
                             @endforeach

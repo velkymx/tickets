@@ -3,7 +3,7 @@
     <i class="fas fa-history mt-1"></i>
     <div>
         <strong><a href="/users/{{ $note->user->id }}" class="text-decoration-none text-reset">{{ $note->user->name }}</a></strong> changed ticket
-        <span class="ms-1">{{ $note->created_at->diffForHumans() }}</span>
+        <span class="ms-1"><x-relative-time :value="$note->created_at" /></span>
         <div class="mt-1">{!! clean($note->body) !!}</div>
     </div>
 </div>
