@@ -5,7 +5,7 @@
 .gitignore
 .github
 
-# Secrets / local env — provided at runtime via compose env_file, never baked in
+# Secrets / local env: provided at runtime via compose env_file, never baked in
 .env
 .env.*
 !.env.example
