@@ -57,6 +57,46 @@ class KbAdminControllerTest extends TestCase
     }
 
     #[Test]
+    public function admin_cannot_create_category_with_duplicate_slug(): void
+    {
+        $admin = User::factory()->create(['admin' => true]);
+        KbCategory::factory()->create(['name' => 'Billing', 'slug' => 'billing']);
+
+        $this->actingAs($admin)->post('/kb/admin/categories', [
+            'name' => 'Billing!',
+        ])->assertSessionHasErrors('name');
+
+        $this->assertSame(1, KbCategory::where('slug', 'billing')->count());
+    }
+
+    #[Test]
+    public function admin_cannot_update_category_to_duplicate_slug(): void
+    {
+        $admin = User::factory()->create(['admin' => true]);
+        KbCategory::factory()->create(['name' => 'Billing', 'slug' => 'billing']);
+        $category = KbCategory::factory()->create(['name' => 'Ops', 'slug' => 'ops']);
+
+        $this->actingAs($admin)->put("/kb/admin/categories/{$category->id}", [
+            'name' => 'Billing!',
+        ])->assertSessionHasErrors('name');
+
+        $this->assertSame('ops', $category->fresh()->slug);
+    }
+
+    #[Test]
+    public function admin_cannot_create_tag_with_duplicate_slug(): void
+    {
+        $admin = User::factory()->create(['admin' => true]);
+        KbTag::factory()->create(['name' => 'php', 'slug' => 'php']);
+
+        $this->actingAs($admin)->post('/kb/admin/tags', [
+            'name' => 'PHP!',
+        ])->assertSessionHasErrors('name');
+
+        $this->assertSame(1, KbTag::where('slug', 'php')->count());
+    }
+
+    #[Test]
     public function admin_can_update_category(): void
     {
         $admin = User::factory()->create(['admin' => true]);
