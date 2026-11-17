@@ -3,6 +3,8 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Status;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -40,6 +42,33 @@ class StatusTest extends TestCase
 
         $status->delete();
         $this->assertNotContains($status->id, Status::activeStatusIds());
+    }
+
+    #[Test]
+    public function cache_bust_waits_for_the_transaction_to_commit(): void
+    {
+        Cache::flush();
+        $status = Status::factory()->create(['name' => 'in progress']);
+        Status::activeStatusIds();
+
+        DB::transaction(function () use ($status): void {
+            $status->update(['name' => 'resolved']);
+            $this->assertContains($status->id, Status::activeStatusIds());
+        });
+
+        $this->assertContains($status->id, Status::closedStatusIds());
+        $this->assertNotContains($status->id, Status::activeStatusIds());
+    }
+
+    #[Test]
+    public function deleting_a_closed_status_leaves_the_closed_bucket(): void
+    {
+        $status = Status::factory()->create(['name' => 'resolved']);
+        $this->assertContains($status->id, Status::closedStatusIds());
+
+        $status->delete();
+
+        $this->assertNotContains($status->id, Status::closedStatusIds());
     }
 
     #[Test]
