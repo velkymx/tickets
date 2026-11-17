@@ -145,6 +145,12 @@ class SlashCommandService
                 break;
 
             case 'reopen':
+                if (Status::isClosed((int) $ticket->status_id)) {
+                    $ticket->status_id = Status::query()
+                        ->whereNotIn('id', Status::closedStatusIds())
+                        ->orderBy('id')
+                        ->value('id') ?? $ticket->status_id;
+                }
                 $ticket->closed_at = null;
                 $ticket->save();
                 $result['changes'][] = 'Ticket reopened';
