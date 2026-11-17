@@ -24,6 +24,23 @@ class StatusTest extends TestCase
     }
 
     #[Test]
+    public function closed_status_ids_refresh_after_status_changes(): void
+    {
+        $this->assertSame([], Status::where('name', 'resolved')->pluck('id')->all());
+        $before = Status::closedStatusIds();
+        $this->assertNotEmpty($before);
+
+        $status = Status::factory()->create(['name' => 'resolved']);
+        $this->assertContains($status->id, Status::closedStatusIds());
+
+        $status->update(['name' => 'done']);
+        $this->assertContains($status->id, Status::closedStatusIds());
+
+        $open = Status::factory()->create(['name' => 'fresh']);
+        $this->assertContains($open->id, Status::activeStatusIds());
+    }
+
+    #[Test]
     public function active_status_ids_complete_the_full_set(): void
     {
         $all = Status::orderBy('id')->pluck('id')->all();
