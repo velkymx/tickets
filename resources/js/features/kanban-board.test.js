@@ -116,6 +116,39 @@ describe('kanban-board drop', () => {
     });
 });
 
+describe('kanban-board guards', () => {
+    it('posts without a CSRF token when the meta tag is missing', async () => {
+        document.body.innerHTML = `
+            <div id="update-alert" class="alert alert-success alert-dismissible fade d-none" role="alert">
+                <span id="update-message"></span>
+                <button type="button" class="btn-close" aria-label="Close" id="close-alert-btn"></button>
+            </div>
+            <ol class="ticket-column" data-status-id="1">
+                <li data-ticket-id="7"><a href="/tickets/7">Ticket seven</a></li>
+            </ol>
+            <ol class="ticket-column" data-status-id="2">
+                <li data-empty-placeholder>Drop tickets here</li>
+            </ol>`;
+        initKanbanBoard(document);
+        const columns = [...document.querySelectorAll('.ticket-column')];
+
+        drop(columns[0], columns[1], '7');
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+        expect(fetch.mock.calls[0][1].headers['X-CSRF-TOKEN']).toBe('');
+    });
+
+    it('ignores boards without alert nodes', () => {
+        document.body.innerHTML = `
+            <ol class="ticket-column" data-status-id="1">
+                <li data-ticket-id="7">Ticket seven</li>
+            </ol>`;
+
+        expect(() => initKanbanBoard(document)).not.toThrow();
+        expect(seen).toHaveLength(0);
+    });
+});
+
 describe('kanban-board placeholders', () => {
     it('adds a prompt to the emptied column and clears the filled one', () => {
         const { from, to } = mount();
