@@ -208,7 +208,7 @@
                 </div>
             </div>
 
-            @include('kb.partials.permitted-users', ['users' => $users, 'selected' => []])
+            <x-permitted-users-field :users="$users" :selected="[]" />
 
             {{-- Commit Message & Submit --}}
             <div class="mb-3">

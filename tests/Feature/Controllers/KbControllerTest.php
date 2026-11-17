@@ -253,6 +253,31 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function forms_keep_string_old_input_selected(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        $this->actingAs($owner)
+            ->withSession(['_old_input' => ['permitted_users' => [(string) $granted->id]]])
+            ->get('/kb/create')
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+
+        $this->actingAs($owner)
+            ->withSession(['_old_input' => ['permitted_users' => [(string) $granted->id]]])
+            ->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
     public function edit_form_marks_granted_users_selected(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);

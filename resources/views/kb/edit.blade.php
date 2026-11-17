@@ -242,7 +242,7 @@
             </div>
 
             @if($canManageAccess)
-                @include('kb.partials.permitted-users', ['users' => $users, 'selected' => $article->permissions->pluck('user_id')->all()])
+                <x-permitted-users-field :users="$users" :selected="$article->permissions->pluck('user_id')->all()" />
             @endif
 
             {{-- Commit Message & Submit --}}
