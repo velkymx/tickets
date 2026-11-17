@@ -9,7 +9,7 @@ This guide covers installing Tickets on a fresh server or local machine. For Doc
 | PHP | 8.4 |
 | Composer | 2.x |
 | Node.js | 24 |
-| MariaDB | 11.8 (or MySQL 8.0 / PostgreSQL 12 / SQLite 3.35) |
+| MariaDB | 11.8 (or MySQL 8.0 / PostgreSQL 12) |
 
 ## Quick setup
 

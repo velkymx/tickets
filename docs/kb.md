@@ -277,7 +277,7 @@ KB gets its own sub-layout extending `layouts/app.blade.php` - adds a sidebar fo
 
 - Full-text search against `title`, `body_markdown`, and tag names
 - MySQL: `FULLTEXT` index on `kb_articles(title, body_markdown)`
-- SQLite (local dev): `LIKE`-based fallback
+- Other drivers: `LIKE`-based fallback
 - Results ranked by relevance, filtered by user's access level
 
 ### Discovery Features

@@ -69,13 +69,13 @@ class SystemHealthTest extends TestCase
         $original = (string) config('database.default');
 
         config([
-            'database.connections.primary' => ['driver' => 'sqlite', 'database' => ':memory:'],
+            'database.connections.primary' => ['driver' => 'mysql', 'database' => 'tickets'],
             'database.default' => 'primary',
         ]);
 
         $labels = array_map(fn ($r) => $r->label, (new RequirementsCheck)->run());
 
-        $this->assertContains('PHP extension: pdo_sqlite', $labels);
+        $this->assertContains('PHP extension: pdo_mysql', $labels);
         $this->assertNotContains('PHP extension for primary', $labels);
 
         config(['database.default' => $original]);
