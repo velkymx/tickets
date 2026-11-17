@@ -6,6 +6,7 @@ use App\Exceptions\SlashCommandException;
 use App\Models\Note;
 use App\Models\NoteAttachment;
 use App\Models\NoteReaction;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Services\AttachmentService;
 use App\Services\MarkdownService;
@@ -59,6 +60,9 @@ class NotesController extends Controller
             'parent_id' => 'required|exists:notes,id',
             'body' => 'required|string|min:1',
         ]);
+
+        $ticket = Ticket::findOrFail($validated['ticket_id']);
+        $this->authorize('addNote', $ticket);
 
         $parent = Note::findOrFail($validated['parent_id']);
 
@@ -228,7 +232,9 @@ class NotesController extends Controller
             'emoji' => 'required|in:'.implode(',', NoteReaction::ALLOWED_EMOJIS),
         ]);
 
-        $note = Note::findOrFail($id);
+        $note = Note::with('ticket')->findOrFail($id);
+
+        $this->authorize('hide', $note);
 
         DB::transaction(function () use ($note, $validated) {
             $reaction = NoteReaction::query()

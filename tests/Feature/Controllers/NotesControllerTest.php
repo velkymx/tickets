@@ -11,6 +11,7 @@ use App\Services\MarkdownService;
 use App\Services\MentionService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -410,6 +411,50 @@ class NotesControllerTest extends TestCase
         ]);
 
         $response->assertStatus(401);
+    }
+
+    #[Test]
+    public function reply_authorizes_the_add_note_policy(): void
+    {
+        $owner = User::factory()->create();
+        $stranger = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $owner->id]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $owner->id,
+            'parent_id' => null,
+        ]);
+
+        Gate::before(fn () => false);
+
+        $this->actingAs($stranger)->postJson('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body' => 'Blocked reply',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('notes', ['body_markdown' => 'Blocked reply']);
+    }
+
+    #[Test]
+    public function toggle_reaction_authorizes_the_note_policy(): void
+    {
+        $owner = User::factory()->create();
+        $stranger = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $owner->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $owner->id,
+        ]);
+
+        $this->actingAs($stranger)->postJson("/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('note_reactions', [
+            'note_id' => $note->id,
+            'user_id' => $stranger->id,
+        ]);
     }
 
     #[Test]
