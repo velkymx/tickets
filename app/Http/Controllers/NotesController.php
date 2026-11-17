@@ -64,7 +64,7 @@ class NotesController extends Controller
         $ticket = Ticket::findOrFail($validated['ticket_id']);
         $this->authorize('addNote', $ticket);
 
-        $parent = Note::findOrFail($validated['parent_id']);
+        $parent = Note::with('ticket')->findOrFail($validated['parent_id']);
 
         if ((int) $parent->ticket_id !== (int) $validated['ticket_id']) {
             if (! ($request->expectsJson() || $request->ajax())) {
@@ -75,6 +75,8 @@ class NotesController extends Controller
 
             return response()->json(['errors' => ['parent_id' => ['Parent note does not belong to this ticket.']]], 422);
         }
+
+        $this->authorize('reply', $parent);
 
         if ($parent->parent_id !== null) {
             if (! ($request->expectsJson() || $request->ajax())) {
@@ -232,10 +234,9 @@ class NotesController extends Controller
             'emoji' => 'required|in:'.implode(',', NoteReaction::ALLOWED_EMOJIS),
         ]);
 
-        $note = Note::findOrFail($id);
-        $ticket = $note->ticket()->firstOrFail();
+        $note = Note::with('ticket')->findOrFail($id);
 
-        $this->authorize('view', $ticket);
+        $this->authorize('react', $note);
 
         DB::transaction(function () use ($note, $validated) {
             $reaction = NoteReaction::query()

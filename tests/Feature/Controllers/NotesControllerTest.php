@@ -417,7 +417,7 @@ class NotesControllerTest extends TestCase
     }
 
     #[Test]
-    public function reply_authorizes_the_ticket_policy(): void
+    public function reply_authorizes_the_note_policy(): void
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
@@ -427,7 +427,7 @@ class NotesControllerTest extends TestCase
             'parent_id' => null,
         ]);
 
-        Gate::before(fn () => false);
+        Gate::before(fn ($user, $ability) => $ability === 'reply' ? false : null);
 
         $this->actingAs($user)->postJson('/notes/reply', [
             'ticket_id' => $ticket->id,
@@ -765,7 +765,7 @@ class NotesControllerTest extends TestCase
     }
 
     #[Test]
-    public function reaction_authorizes_the_ticket_policy(): void
+    public function reaction_authorizes_the_note_policy(): void
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
@@ -774,7 +774,7 @@ class NotesControllerTest extends TestCase
             'user_id' => $user->id,
         ]);
 
-        Gate::before(fn () => false);
+        Gate::before(fn ($user, $ability) => $ability === 'react' ? false : null);
 
         $this->actingAs($user)->postJson("/notes/{$note->id}/react", [
             'emoji' => 'thumbsup',
