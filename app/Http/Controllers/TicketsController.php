@@ -127,14 +127,6 @@ class TicketsController extends Controller
 
         $lookups = $this->ticketService->getLookups();
 
-        $lookups['types'][0] = 'No Change';
-        $lookups['milestones'][0] = 'No Change';
-        $lookups['importances'][0] = 'No Change';
-        $lookups['projects'][0] = 'No Change';
-        $lookups['statuses'][0] = 'No Change';
-        $lookups['users'][0] = 'No Change';
-        $lookups['releases'][0] = 'No Change';
-
         $pendingDecisions = Note::query()->awaitingDecisionFrom(Auth::id())->count();
 
         return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens', 'pendingDecisions'));
@@ -310,11 +302,14 @@ class TicketsController extends Controller
 
                 Gate::authorize('update', $ticket);
 
+                $applied = false;
+
                 if (! empty($validated['release_id']) && $validated['release_id'] > 0) {
                     ReleaseTicket::firstOrCreate([
                         'release_id' => $validated['release_id'],
                         'ticket_id' => $ticketId,
                     ]);
+                    $applied = true;
                 }
 
                 if (! empty($updateFields)) {
@@ -323,9 +318,12 @@ class TicketsController extends Controller
                     $ticket->update($updateFields);
 
                     $this->ticketService->notate((int) $ticket->id, '', $changes);
+                    $applied = true;
                 }
 
-                $i++;
+                if ($applied) {
+                    $i++;
+                }
             }
         });
 
