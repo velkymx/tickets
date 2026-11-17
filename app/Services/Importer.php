@@ -106,7 +106,9 @@ class Importer
             return $this->models[$key]->id;
         }
 
-        $candidates = $class::whereRaw('LOWER(name) = ?', [mb_strtolower(trim($value))])->get();
+        $candidates = $class === User::class
+            ? User::query()->withName($value)->get()
+            : $class::whereRaw('LOWER(name) = ?', [mb_strtolower(trim($value))])->get();
         $model = $candidates->firstWhere('name', trim($value));
 
         if (! $model) {

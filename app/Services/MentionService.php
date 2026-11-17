@@ -7,7 +7,6 @@ use App\Models\Note;
 use App\Models\TicketUserWatcher;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class MentionService
 {
@@ -47,10 +46,10 @@ class MentionService
 
         $names = collect($tokens)->flatten()->unique()->values();
         $users = $names->isEmpty() ? collect() : User::query()
-            ->whereIn(DB::raw('LOWER(name)'), $names->map(fn (string $name) => mb_strtolower($name))->all())
+            ->whereIn('name_lower', $names->map(fn (string $name) => mb_strtolower($name))->all())
             ->orderBy('id')
             ->get()
-            ->groupBy(fn (User $user) => mb_strtolower($user->name));
+            ->groupBy('name_lower');
 
         $resolved = [];
         foreach ($tokens as $key => $names) {
@@ -72,10 +71,7 @@ class MentionService
     {
         $name = preg_replace('/\s*\([^)]*\)$/', '', trim($name));
 
-        $candidates = User::query()
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
-            ->orderBy('id')
-            ->get();
+        $candidates = User::query()->withName($name)->get();
 
         // Display names are not unique. Prefer the exact case, then the
         // oldest account, so resolution never depends on load order.

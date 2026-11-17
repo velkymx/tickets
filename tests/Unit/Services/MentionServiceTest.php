@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\User;
 use App\Services\MentionService;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -23,6 +24,29 @@ class MentionServiceTest extends TestCase
         parent::setUp();
 
         $this->service = new MentionService;
+    }
+
+    #[Test]
+    public function it_resolves_first_users_with_a_single_indexed_lookup(): void
+    {
+        $alex = User::factory()->create(['name' => 'Alex']);
+        $sarah = User::factory()->create(['name' => 'Sarah']);
+
+        DB::enableQueryLog();
+        $resolved = $this->service->resolveFirstUsers([
+            'first' => 'Can you check the deploy, @alex?',
+            'second' => 'Loop in @Sarah too.',
+        ]);
+
+        $userQueries = collect(DB::getQueryLog())
+            ->pluck('query')
+            ->filter(fn (string $sql) => str_contains($sql, '"users"'))
+            ->values();
+
+        $this->assertSame($alex->id, $resolved['first']?->id);
+        $this->assertSame($sarah->id, $resolved['second']?->id);
+        $this->assertCount(1, $userQueries);
+        $this->assertStringNotContainsStringIgnoringCase('lower(', (string) $userQueries->first());
     }
 
     #[Test]

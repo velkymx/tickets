@@ -63,9 +63,14 @@ class TicketPulseControllerTest extends TestCase
         $this->actingAs($user)->getJson("/tickets/{$ticket->id}/pulse")->assertOk();
 
         $lookups = collect(DB::getQueryLog())->filter(
-            fn ($entry) => preg_match('/from\s*[\"`\[]?users[\"`\]]?/i', $entry['query']) && str_contains($entry['query'], 'LOWER(name)')
+            fn ($entry) => preg_match('/from\s*[\"`\[]?users[\"`\]]?/i', $entry['query'])
         );
-        $this->assertCount(1, $lookups);
+        $this->assertCount(1, $lookups->filter(
+            fn ($entry) => str_contains($entry['query'], 'name_lower')
+        ));
+        $this->assertTrue($lookups->every(
+            fn ($entry) => ! str_contains($entry['query'], 'LOWER(name)')
+        ));
     }
 
     #[Test]

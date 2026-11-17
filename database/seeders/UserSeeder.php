@@ -14,6 +14,7 @@ class UserSeeder extends Seeder
             ['email' => 'noreply@ajbapps.com'],
             [
                 'name' => 'Unassigned',
+                'name_lower' => 'unassigned',
                 'email' => 'noreply@ajbapps.com',
                 'password' => Hash::make(str()->random(40)),
                 'active' => 1,
@@ -29,6 +30,7 @@ class UserSeeder extends Seeder
             ['email' => 'support@ajbapps.com'],
             [
                 'name' => 'administrator',
+                'name_lower' => 'administrator',
                 'email' => 'support@ajbapps.com',
                 'password' => Hash::make('password123'),
                 'active' => 1,
