@@ -17,6 +17,19 @@ class Status extends Model
         'name',
     ];
 
+    protected static function booted(): void
+    {
+        $flush = function (): void {
+            DB::afterCommit(function (): void {
+                cache()->forget('closed_status_ids');
+                cache()->forget('active_status_ids');
+            });
+        };
+
+        static::saved($flush);
+        static::deleted($flush);
+    }
+
     protected const CLOSED_STATUS_NAMES = [
         'completed',
         'duplicate',
