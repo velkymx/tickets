@@ -96,6 +96,30 @@ class ImportControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_denies_import_into_unowned_milestone(): void
+    {
+        $owner = User::factory()->create();
+        $user = User::factory()->create(['name' => 'Test User']);
+        $milestone = Milestone::factory()->create(['owner_user_id' => $owner->id]);
+        Type::factory()->create(['name' => 'Bug']);
+        Importance::factory()->create(['name' => 'High']);
+        Status::factory()->create(['name' => 'Open']);
+        Project::factory()->create(['name' => 'Test Project']);
+
+        $csv = 'Bug,Test Ticket,Description,High,Open,Test Project,Test User';
+        $file = UploadedFile::fake()->createWithContent('import.csv', $csv);
+
+        $response = $this->actingAs($user)->post('/tickets/import', [
+            'milestone_id' => $milestone->id,
+            'csv' => $file,
+            'hasHeader' => false,
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('tickets', 0);
+    }
+
+    #[Test]
     public function create_rolls_back_on_import_failure(): void
     {
         $user = User::factory()->create();

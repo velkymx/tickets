@@ -12,6 +12,7 @@ use App\Models\Type;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -382,6 +383,21 @@ class MilestoneControllerTest extends TestCase
 
         $response->assertRedirect('/milestone');
         $this->assertDatabaseHas('milestones', ['name' => 'New Milestone']);
+    }
+
+    #[Test]
+    public function store_create_goes_through_authorization(): void
+    {
+        $user = User::factory()->create();
+        Gate::before(fn () => false);
+
+        $response = $this->actingAs($user)->post('/milestone/store/new', [
+            'id' => 'new',
+            'name' => 'Blocked Milestone',
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseMissing('milestones', ['name' => 'Blocked Milestone']);
     }
 
     #[Test]
