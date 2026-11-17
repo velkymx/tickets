@@ -223,6 +223,54 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_keeps_grants_when_restricted_and_field_absent(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => 'Edited title',
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Edit content',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseHas('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $granted->id,
+        ]);
+    }
+
+    #[Test]
+    public function edit_form_marks_granted_users_selected(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
     public function permitted_editor_cannot_change_grants(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);
