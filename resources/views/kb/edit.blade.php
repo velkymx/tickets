@@ -113,30 +113,45 @@
             </div>
 
             {{-- Status --}}
-            <div class="mb-3">
-                <label for="status" class="form-label">Status</label>
-                <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
-                    <option value="draft" @selected(old('status', $article->status) === 'draft')>Draft</option>
-                    <option value="verified" @selected(old('status', $article->status) === 'verified')>Verified</option>
-                    <option value="deprecated" @selected(old('status', $article->status) === 'deprecated')>Deprecated</option>
-                </select>
-                @error('status')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+            @if($canManagePermissions)
+                <div class="mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
+                        <option value="draft" @selected(old('status', $article->status) === 'draft')>Draft</option>
+                        <option value="verified" @selected(old('status', $article->status) === 'verified')>Verified</option>
+                        <option value="deprecated" @selected(old('status', $article->status) === 'deprecated')>Deprecated</option>
+                    </select>
+                    @error('status')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
 
-            {{-- Visibility --}}
-            <div class="mb-3">
-                <label for="visibility" class="form-label">Visibility</label>
-                <select name="visibility" id="visibility" class="form-select @error('visibility') is-invalid @enderror" required>
-                    <option value="internal" @selected(old('visibility', $article->visibility) === 'internal')>Internal</option>
-                    <option value="public" @selected(old('visibility', $article->visibility) === 'public')>Public</option>
-                    <option value="restricted" @selected(old('visibility', $article->visibility) === 'restricted')>Restricted</option>
-                </select>
-                @error('visibility')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+                {{-- Visibility --}}
+                <div class="mb-3">
+                    <label for="visibility" class="form-label">Visibility</label>
+                    <select name="visibility" id="visibility" class="form-select @error('visibility') is-invalid @enderror" required>
+                        <option value="internal" @selected(old('visibility', $article->visibility) === 'internal')>Internal</option>
+                        <option value="public" @selected(old('visibility', $article->visibility) === 'public')>Public</option>
+                        <option value="restricted" @selected(old('visibility', $article->visibility) === 'restricted')>Restricted</option>
+                    </select>
+                    @error('visibility')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            @else
+                <input type="hidden" name="status" value="{{ $article->status }}">
+                <input type="hidden" name="visibility" value="{{ $article->visibility }}">
+
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <p class="form-control-plaintext mb-0">{{ ucfirst($article->status) }}</p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Visibility</label>
+                    <p class="form-control-plaintext mb-0">{{ ucfirst($article->visibility) }}</p>
+                </div>
+            @endif
 
             {{-- Tags --}}
             <div class="mb-3" x-data="{ adding: false, name: '', error: '', saving: false }">

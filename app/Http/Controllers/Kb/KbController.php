@@ -108,6 +108,11 @@ class KbController extends Controller
         $validated = $request->validated();
         $canManagePermissions = $article->owner_id === Auth::id() || Auth::user()->isKbAdmin();
 
+        if (! $canManagePermissions) {
+            $validated['visibility'] = $article->visibility;
+            $validated['status'] = $article->status;
+        }
+
         DB::transaction(function () use ($article, $validated, $canManagePermissions) {
             $this->articleService->update($article, $validated, Auth::user(), $validated['commit_message']);
 
