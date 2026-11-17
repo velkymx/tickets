@@ -38,13 +38,21 @@ class TicketServiceTest extends TestCase
     #[Test]
     public function it_rolls_back_slash_changes_when_the_changelog_insert_fails(): void
     {
+        Notification::fake();
+
         $author = User::factory()->create();
+        $watcher = User::factory()->create();
         $status = Status::factory()->create(['name' => 'Testing']);
         $ticket = Ticket::factory()->create([
             'user_id' => $author->id,
             'user_id2' => $author->id,
         ]);
         $originalStatusId = $ticket->status_id;
+
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $watcher->id,
+        ]);
 
         Note::creating(function ($note): void {
             static $fired = false;
@@ -69,6 +77,7 @@ class TicketServiceTest extends TestCase
 
         $this->assertSame($originalStatusId, $ticket->fresh()->status_id);
         $this->assertSame(0, Note::where('ticket_id', $ticket->id)->count());
+        Notification::assertNotSentTo($watcher, WatcherNotification::class);
     }
 
     #[Test]
