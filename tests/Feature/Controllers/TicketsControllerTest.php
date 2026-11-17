@@ -553,6 +553,44 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_shows_resolve_blocker_to_involved_users_and_deciders(): void
+    {
+        $author = User::factory()->create();
+        $decider = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+        Note::where('id', $note->id)->update(['decider_id' => $decider->id]);
+
+        $this->actingAs($author)->get("/tickets/{$ticket->id}")->assertSee('Resolve Blocker', false);
+        $this->actingAs($decider)->get("/tickets/{$ticket->id}")->assertSee('Resolve Blocker', false);
+    }
+
+    #[Test]
+    public function show_hides_resolve_ui_from_strangers(): void
+    {
+        $author = User::factory()->create();
+        $stranger = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = $this->actingAs($stranger)->get("/tickets/{$ticket->id}");
+
+        $response->assertOk();
+        $response->assertDontSee('Resolve Blocker', false);
+        $this->assertNotContains($note->id, $response->viewData('resolvableNoteIds'));
+    }
+
+    #[Test]
     public function show_creates_ticket_view_record(): void
     {
         $user = User::factory()->create();

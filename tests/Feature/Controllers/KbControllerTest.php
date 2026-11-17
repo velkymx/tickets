@@ -23,6 +23,17 @@ class KbControllerTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
+    public function public_search_has_a_visible_submit_control(): void
+    {
+        $response = $this->get('/kb');
+
+        $response->assertOk();
+        $response->assertSee('action="'.route('kb.search').'" method="GET" role="search"', false);
+        $response->assertSee('aria-label="Search articles"', false);
+        $response->assertSee('<button class="btn btn-sm btn-outline-secondary" type="submit">Search</button>', false);
+    }
+
+    #[Test]
     public function index_is_accessible_without_auth(): void
     {
         $article = KbArticle::factory()->verified()->public()->create(['title' => 'Public Runbook']);

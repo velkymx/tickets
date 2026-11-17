@@ -168,6 +168,35 @@ class ImportControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_shows_a_single_milestone_placeholder_with_old_input(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/tickets/import');
+
+        $response->assertOk();
+        $this->assertSame(1, substr_count($response->getContent(), '<option value="">Select</option>'));
+    }
+
+    #[Test]
+    public function create_restores_the_selected_milestone_after_a_failed_import(): void
+    {
+        $user = User::factory()->create();
+        $milestone = Milestone::factory()->create(['name' => 'Sprint 1']);
+        $file = UploadedFile::fake()->createWithContent('import.csv', 'not-a-valid-row');
+
+        $response = $this->actingAs($user)->from('/tickets/import')->post('/tickets/import', [
+            'milestone_id' => $milestone->id,
+            'csv' => $file,
+        ]);
+
+        $response->assertRedirect('/tickets/import');
+        $response->assertSessionHasInput('milestone_id', $milestone->id);
+
+        $this->actingAs($user)->get('/tickets/import')->assertSee('value="'.$milestone->id.'" selected', false);
+    }
+
+    #[Test]
     public function create_rejects_invalid_milestone(): void
     {
         $user = User::factory()->create();
