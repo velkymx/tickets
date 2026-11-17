@@ -14,15 +14,17 @@ class KbSearchService implements SearchableRepository
         $builder = KbArticle::query()
             ->with(['category', 'tags', 'owner']);
 
-        // Search by keyword (LIKE fallback - works on SQLite and MySQL)
+        // Escape char is deliberately !, not backslash: backslash breaks
+        // MySQL/MariaDB string literals, while ! is inert on all drivers.
+        // Keep escape-first ordering in str_replace.
         if ($query !== '') {
-            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $query);
+            $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query);
 
             $builder->where(function ($q) use ($escaped) {
-                $q->where('title', 'like', "%{$escaped}%")
-                    ->orWhere('body_markdown', 'like', "%{$escaped}%")
+                $q->whereRaw("title like ? escape '!'", ["%{$escaped}%"])
+                    ->orWhereRaw("body_markdown like ? escape '!'", ["%{$escaped}%"])
                     ->orWhereHas('tags', function ($tagQuery) use ($escaped) {
-                        $tagQuery->where('name', 'like', "%{$escaped}%");
+                        $tagQuery->whereRaw("name like ? escape '!'", ["%{$escaped}%"]);
                     });
             });
         }

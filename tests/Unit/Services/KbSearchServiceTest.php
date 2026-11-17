@@ -78,6 +78,42 @@ class KbSearchServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_matches_literal_percent_signs(): void
+    {
+        KbArticle::factory()->verified()->public()->create(['title' => '100% Coverage Guide']);
+        KbArticle::factory()->verified()->public()->create(['title' => 'Unrelated Runbook']);
+
+        $results = $this->service->search('100%', null);
+
+        $this->assertCount(1, $results);
+        $this->assertSame('100% Coverage Guide', $results->first()->title);
+    }
+
+    #[Test]
+    public function it_matches_literal_underscores(): void
+    {
+        KbArticle::factory()->verified()->public()->create(['title' => 'release_notes_v2']);
+        KbArticle::factory()->verified()->public()->create(['title' => 'Unrelated Runbook']);
+
+        $results = $this->service->search('release_notes', null);
+
+        $this->assertCount(1, $results);
+        $this->assertSame('release_notes_v2', $results->first()->title);
+    }
+
+    #[Test]
+    public function it_matches_literal_underscores_and_exclamation_marks(): void
+    {
+        KbArticle::factory()->verified()->public()->create(['title' => 'Deploy_v2! checklist']);
+        KbArticle::factory()->verified()->public()->create(['title' => 'Unrelated Runbook']);
+
+        $results = $this->service->search('Deploy_v2!', null);
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Deploy_v2! checklist', $results->first()->title);
+    }
+
+    #[Test]
     public function it_filters_by_keyword(): void
     {
         KbArticle::factory()->verified()->public()->create(['title' => 'Laravel Authentication']);

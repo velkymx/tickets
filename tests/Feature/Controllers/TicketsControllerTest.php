@@ -502,14 +502,12 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_status_time_dropdown_renders_all_available_statuses_even_with_stale_cache(): void
+    public function show_status_time_dropdown_rebuilds_after_status_changes(): void
     {
         Cache::flush();
 
         $user = User::factory()->create();
         $openStatus = Status::factory()->create(['name' => 'Open']);
-        $inProgressStatus = Status::factory()->create(['name' => 'In Progress']);
-        $closedStatus = Status::factory()->create(['name' => 'Closed']);
         $ticket = Ticket::factory()->create([
             'user_id' => $user->id,
             'user_id2' => $user->id,
@@ -526,13 +524,16 @@ class TicketsControllerTest extends TestCase
             'users' => collect([$user->id => $user->name]),
         ], now()->addMinutes(60));
 
+        Status::factory()->create(['name' => 'In Progress']);
+        Status::factory()->closed()->create();
+
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
         $response->assertOk();
         $response->assertSee('name="status_id"', false);
         $response->assertSee('>Open</option>', false);
         $response->assertSee('>In Progress</option>', false);
-        $response->assertSee('>Closed</option>', false);
+        $response->assertSee('>completed</option>', false);
     }
 
     #[Test]

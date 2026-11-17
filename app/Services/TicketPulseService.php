@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
+use App\Models\User;
 use App\ValueObjects\TicketPulse;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,11 @@ use Illuminate\Support\Str;
 
 class TicketPulseService
 {
+    public function __construct(private ?MentionService $mentionService = null)
+    {
+        $this->mentionService ??= app(MentionService::class);
+    }
+
     public function getPulse(Ticket $ticket): TicketPulse
     {
         $pulse = Cache::remember("ticket_pulse:{$ticket->id}", now()->addHour(), function () use ($ticket) {
@@ -99,6 +105,15 @@ class TicketPulseService
             ->sortByDesc(fn (Note $note) => $note->created_at?->timestamp ?? 0)
             ->first()?->created_at;
 
+        $mentionTexts = [];
+        if ($activeBlocker) {
+            $mentionTexts['blocker'] = $activeBlocker->body_markdown ?: strip_tags($activeBlocker->body);
+        }
+        if ($latestAction) {
+            $mentionTexts['action'] = $latestAction->body_markdown ?: strip_tags($latestAction->body);
+        }
+        $firstMentions = $this->mentionService->resolveFirstUsers($mentionTexts);
+
         $isClosed = $ticket->closed_at !== null || Status::isClosed($ticket->status_id);
         $isStale = $lastActivity !== null && $lastActivity->lt(now()->subHours(48));
 
@@ -108,8 +123,8 @@ class TicketPulseService
             is_blocked: $activeBlocker !== null,
             blocker_reason: $activeBlocker ? strip_tags($activeBlocker->body) : null,
             owner_id: $ticket->user_id2,
-            owner_label: $this->deriveOwnerLabel($ticket, $activeBlocker),
-            next_action: $this->buildNextAction($latestAction),
+            owner_label: $this->deriveOwnerLabel($ticket, $activeBlocker, $firstMentions['blocker'] ?? null),
+            next_action: $this->buildNextAction($latestAction, $firstMentions['action'] ?? null),
             latest_decision: $this->buildLatestDecision($latestDecision, $latestDecision ? $notes->firstWhere('id', $latestDecision->parent_id) : null),
             open_threads: $openThreads,
             decision_requests: $decisionRequests,
@@ -142,13 +157,10 @@ class TicketPulseService
         return 'ON TRACK';
     }
 
-    protected function deriveOwnerLabel(Ticket $ticket, ?Note $activeBlocker): string
+    protected function deriveOwnerLabel(Ticket $ticket, ?Note $activeBlocker, ?User $mentionedUser): string
     {
-        if ($activeBlocker) {
-            $mention = $this->extractMention($activeBlocker);
-            if ($mention) {
-                return "Waiting on: {$mention}";
-            }
+        if ($activeBlocker && $mentionedUser) {
+            return "Waiting on: @{$mentionedUser->name}";
         }
 
         $assigneeName = $ticket->assignee->name ?? 'Unassigned';
@@ -156,7 +168,7 @@ class TicketPulseService
         return $assigneeName === 'Unassigned' ? 'Unassigned' : "Owner: {$assigneeName}";
     }
 
-    protected function buildNextAction(?Note $latestAction): array
+    protected function buildNextAction(?Note $latestAction, ?User $mentionedUser): array
     {
         if (! $latestAction) {
             return [
@@ -172,7 +184,7 @@ class TicketPulseService
             'body' => $latestAction->body,
             'assignee' => $latestAction->loadMissing('assignee')->assignee
                 ? '@'.$latestAction->assignee->name
-                : $this->extractMention($latestAction),
+                : ($mentionedUser ? '@'.$mentionedUser->name : null),
             'created_at' => $latestAction->created_at?->toISOString(),
         ];
     }
@@ -205,14 +217,5 @@ class TicketPulseService
             'author' => $activeBlocker->user?->name,
             'created_at' => $activeBlocker->created_at?->toISOString(),
         ];
-    }
-
-    protected function extractMention(Note $note): ?string
-    {
-        $user = app(MentionService::class)
-            ->resolveUsers($note->body_markdown ?: strip_tags($note->body))
-            ->first();
-
-        return $user ? '@'.$user->name : null;
     }
 }

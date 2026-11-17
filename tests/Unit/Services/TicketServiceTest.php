@@ -19,6 +19,7 @@ use App\Notifications\WatcherNotification;
 use App\Services\TicketService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -582,6 +583,32 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
+    public function warmed_lookups_issue_no_queries(): void
+    {
+        Cache::flush();
+        $this->service->getLookups();
+
+        DB::enableQueryLog();
+        $this->service->getLookups();
+
+        $this->assertCount(0, DB::getQueryLog());
+    }
+
+    #[Test]
+    public function lookups_bust_when_lookup_models_change(): void
+    {
+        Cache::flush();
+        $type = Type::factory()->create(['name' => 'Original']);
+        $this->assertContains('Original', $this->service->getLookups()['types']);
+
+        $type->update(['name' => 'Renamed']);
+
+        $lookups = $this->service->getLookups();
+        $this->assertNotContains('Original', $lookups['types']);
+        $this->assertContains('Renamed', $lookups['types']);
+    }
+
+    #[Test]
     public function lookups_are_cached_for_sixty_minutes(): void
     {
         Cache::flush();
@@ -637,27 +664,17 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_rebuilds_stale_cached_status_lookups(): void
+    public function stale_lookups_rebuild_after_ttl_expiry(): void
     {
         Cache::flush();
-
         $open = Status::factory()->create(['name' => 'Open']);
-        $closed = Status::factory()->create(['name' => 'Closed']);
+        $closed = Status::factory()->closed()->create();
 
-        Cache::put('ticket_lookups', [
-            'types' => [],
-            'milestones' => [],
-            'importances' => [],
-            'projects' => [],
-            'statuses' => [$open->id => $open->name],
-            'releases' => [],
-            'users' => [],
-        ], now()->addMinutes(60));
+        Cache::put('ticket_lookups', ['statuses' => []], now()->addMinutes(60));
 
+        $this->travel(61)->minutes();
         $lookups = $this->service->getLookups();
 
-        // 10 seeded statuses + 2 created by test = 12
-        $this->assertCount(12, $lookups['statuses']);
         $this->assertContains($open->name, $lookups['statuses']);
         $this->assertContains($closed->name, $lookups['statuses']);
     }

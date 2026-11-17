@@ -32,14 +32,45 @@ class MentionService
             ->values();
     }
 
+    /**
+     * @param  array<string, string>  $markdowns
+     * @return array<string, ?User>
+     */
+    public function resolveFirstUsers(array $markdowns): array
+    {
+        $tokens = [];
+        foreach ($markdowns as $key => $markdown) {
+            $tokens[$key] = $this->parseMentions($markdown);
+        }
+
+        $names = collect($tokens)->flatten()->unique()->values();
+        $users = $names->isEmpty() ? collect() : User::query()
+            ->whereIn('name_lower', $names->map(fn (string $name) => mb_strtolower($name))->all())
+            ->orderBy('id')
+            ->get()
+            ->groupBy('name_lower');
+
+        $resolved = [];
+        foreach ($tokens as $key => $names) {
+            $resolved[$key] = null;
+            foreach ($names as $name) {
+                $candidates = $users->get(mb_strtolower($name), collect());
+                $user = $candidates->firstWhere('name', $name) ?? $candidates->first();
+                if ($user !== null) {
+                    $resolved[$key] = $user;
+                    break;
+                }
+            }
+        }
+
+        return $resolved;
+    }
+
     public function findUser(string $name): ?User
     {
         $name = preg_replace('/\s*\([^)]*\)$/', '', trim($name));
 
-        $candidates = User::query()
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
-            ->orderBy('id')
-            ->get();
+        $candidates = User::query()->withName($name)->get();
 
         // Display names are not unique. Prefer the exact case, then the
         // oldest account, so resolution never depends on load order.

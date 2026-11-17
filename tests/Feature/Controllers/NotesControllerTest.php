@@ -343,9 +343,12 @@ class NotesControllerTest extends TestCase
         $response->assertRedirect("/tickets/{$ticket->id}");
         $response->assertSessionHasNoErrors();
         $lookups = collect(DB::getQueryLog())->filter(
-            fn ($entry) => str_contains($entry['query'], 'LOWER(name)')
+            fn ($entry) => preg_match('/from\s*[\"`\[]?users[\"`\]]?/i', $entry['query'])
         );
         $this->assertCount(2, $lookups);
+        $this->assertTrue($lookups->every(
+            fn ($entry) => ! str_contains($entry['query'], 'LOWER(name)')
+        ));
     }
 
     #[Test]

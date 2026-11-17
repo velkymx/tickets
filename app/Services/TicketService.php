@@ -297,25 +297,7 @@ class TicketService
 
     public function getLookups(): array
     {
-        $lookups = Cache::remember('ticket_lookups', now()->addMinutes(60), fn () => $this->buildLookups());
-
-        $cachedCounts = $lookups['_counts'] ?? [];
-        $currentCounts = [
-            'types' => Type::count(),
-            'milestones' => Milestone::whereNull('end_at')->count(),
-            'importances' => Importance::count(),
-            'projects' => Project::where('active', 1)->count(),
-            'statuses' => Status::count(),
-            'releases' => Release::count(),
-            'users' => User::count(),
-        ];
-
-        if ($cachedCounts !== $currentCounts) {
-            Cache::forget('ticket_lookups');
-            $lookups = Cache::remember('ticket_lookups', now()->addMinutes(60), fn () => $this->buildLookups());
-        }
-
-        return $lookups;
+        return Cache::remember('ticket_lookups', now()->addMinutes(60), fn () => $this->buildLookups());
     }
 
     private function buildLookups(): array
@@ -328,15 +310,6 @@ class TicketService
             'statuses' => Status::orderBy('id')->pluck('name', 'id')->all(),
             'releases' => Release::orderBy('id')->pluck('title', 'id')->all(),
             'users' => User::orderBy('id')->pluck('name', 'id')->all(),
-            '_counts' => [
-                'types' => Type::count(),
-                'milestones' => Milestone::whereNull('end_at')->count(),
-                'importances' => Importance::count(),
-                'projects' => Project::where('active', 1)->count(),
-                'statuses' => Status::count(),
-                'releases' => Release::count(),
-                'users' => User::count(),
-            ],
         ];
     }
 }

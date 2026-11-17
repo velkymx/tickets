@@ -261,9 +261,9 @@ class SlashCommandService
         // LOWER() match is portable, but MySQL collations compare
         // case-insensitively, so an exact-case row must win in PHP.
         // Otherwise 'Testing' resolves to seeded 'testing' on MySQL.
-        $candidates = $class::query()
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
-            ->get();
+        $candidates = $class === User::class
+            ? User::query()->withName($trimmed)->get()
+            : $class::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])->get();
 
         return $candidates->firstWhere('name', $trimmed) ?? $candidates->first();
     }
