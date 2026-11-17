@@ -40,7 +40,7 @@ class MentionServiceTest extends TestCase
 
         $userQueries = collect(DB::getQueryLog())
             ->pluck('query')
-            ->filter(fn (string $sql) => str_contains($sql, '"users"'))
+            ->filter(fn (string $sql) => preg_match('/from\s*[\"`\[]?users[\"`\]]?/i', $sql))
             ->values();
 
         $this->assertSame($alex->id, $resolved['first']?->id);
