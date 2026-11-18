@@ -14,15 +14,8 @@ class FetchTicketsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'milestone_id' => 'nullable|integer|exists:milestones,id',
-            'project_id' => 'nullable|integer|exists:projects,id',
-            'status_id' => 'nullable|integer|exists:statuses,id',
-            'type_id' => 'nullable|integer|exists:types,id',
-            'user_id' => 'nullable|integer|exists:users,id',
-            'user_id2' => 'nullable|integer|exists:users,id',
-            'importance_id' => 'nullable|integer|exists:importances,id',
-            'q' => 'nullable|string|max:255',
-            'perpage' => 'nullable|integer|in:10,20,30,40,50',
+            'started_at' => 'required|date',
+            'completed_at' => 'required|date|after_or_equal:started_at',
         ];
     }
 }

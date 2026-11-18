@@ -17,26 +17,33 @@ class FetchTicketsRequestTest extends TestCase
     }
 
     #[Test]
-    public function it_accepts_dropdown_perpage_values(): void
+    public function it_requires_a_date_range(): void
     {
-        foreach ([10, 20, 30, 40, 50] as $value) {
-            $validator = $this->makeValidator(['perpage' => $value]);
-            $this->assertFalse(
-                $validator->errors()->has('perpage'),
-                "perpage={$value} should be accepted"
-            );
-        }
+        $validator = $this->makeValidator([]);
+
+        $this->assertTrue($validator->errors()->has('started_at'));
+        $this->assertTrue($validator->errors()->has('completed_at'));
     }
 
     #[Test]
-    public function it_rejects_perpage_values_not_in_dropdown(): void
+    public function it_rejects_a_completed_at_before_started_at(): void
     {
-        foreach ([25, 100, 15, 999] as $value) {
-            $validator = $this->makeValidator(['perpage' => $value]);
-            $this->assertTrue(
-                $validator->errors()->has('perpage'),
-                "perpage={$value} should be rejected"
-            );
-        }
+        $validator = $this->makeValidator([
+            'started_at' => '2024-06-30',
+            'completed_at' => '2024-06-01',
+        ]);
+
+        $this->assertTrue($validator->errors()->has('completed_at'));
+    }
+
+    #[Test]
+    public function it_accepts_a_valid_date_range(): void
+    {
+        $validator = $this->makeValidator([
+            'started_at' => '2024-06-01',
+            'completed_at' => '2024-06-30',
+        ]);
+
+        $this->assertFalse($validator->fails());
     }
 }
