@@ -39,7 +39,7 @@ export async function pingWorker(postPing, getStatus, onUpdate, options = {}) {
         }
 
         if (status && status.status === 'answered') {
-            onUpdate({ state: 'answered', duration: status.duration, connection: status.connection, queue: status.queue });
+            onUpdate({ state: 'answered' });
             return;
         }
     }
@@ -102,7 +102,7 @@ export function initHealthPing(root = document) {
             },
             (update) => {
                 if (update.state === 'answered') {
-                    result.textContent = `Worker answered in ${update.duration} s (${update.connection}, queue ${update.queue}).`;
+                    result.textContent = 'Worker answered.';
                 } else if (update.state === 'unanswered') {
                     result.textContent = 'No worker picked up the ping in 10 s. Run `php artisan queue:work`.';
                 } else {

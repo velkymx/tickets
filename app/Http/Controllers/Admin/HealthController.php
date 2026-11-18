@@ -37,13 +37,11 @@ class HealthController extends Controller
 
             $token = Str::random(32);
             Cache::put('health-ping-pending', $token, 30);
-            Cache::put("health-ping-sent:{$token}", microtime(true), 30);
 
             try {
                 HealthPingJob::dispatch($token);
             } catch (\Throwable $e) {
                 Cache::forget('health-ping-pending');
-                Cache::forget("health-ping-sent:{$token}");
 
                 return response()->json(['error' => $e->getMessage()], 500);
             }
@@ -62,14 +60,6 @@ class HealthController extends Controller
             return response()->json(['status' => 'pending']);
         }
 
-        $sent = Cache::get("health-ping-sent:{$token}", $ran['at']);
-        $connection = (string) config('queue.default');
-
-        return response()->json([
-            'status' => 'answered',
-            'duration' => round(max(0, $ran['at'] - $sent), 1),
-            'connection' => $connection,
-            'queue' => (string) config("queue.connections.{$connection}.queue", 'default'),
-        ]);
+        return response()->json(['status' => 'answered']);
     }
 }
