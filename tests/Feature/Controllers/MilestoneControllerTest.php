@@ -80,6 +80,7 @@ class MilestoneControllerTest extends TestCase
             '#/milestone/edit/'.$released->id.'[^"]*"[^>]*>Edit#',
             $content
         );
+        $this->assertSame(2, substr_count($content, '<div class="table-responsive">'));
     }
 
     #[Test]

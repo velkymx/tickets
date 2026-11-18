@@ -13,7 +13,7 @@
                     <span class="d-block small">{{ \Illuminate\Support\Str::of(strip_tags($request->body))->before("\n")->trim()->limit(140) }}</span>
                     <span class="d-block small text-muted">Asked by {{ $request->user?->name ?? 'Unknown' }}</span>
                 </span>
-                <span class="badge text-bg-{{ $urgency }} flex-shrink-0" title="Waiting since {{ $request->created_at->format('M jS, Y') }}">{{ $request->created_at->diffForHumans(null, true) }}</span>
+                <span class="badge text-bg-{{ $urgency }} flex-shrink-0" title="Waiting since {{ $request->created_at->format('M jS, Y g:ia') }}">{{ $request->created_at->diffForHumans(null, true) }}</span>
             </div>
         </a>
     @endforeach

@@ -8,9 +8,7 @@
         <a href="/milestone/create" class="btn btn-sm btn-primary">Create Milestone</a>
     </div>
 
-    <div class="table-responsive">
-        @include('milestone.partials.milestone-table', ['milestones' => $active, 'released' => false, 'emptyMessage' => 'No active milestones.'])
-    </div>
+    @include('milestone.partials.milestone-table', ['milestones' => $active, 'released' => false, 'emptyMessage' => 'No active milestones.'])
 
     @if ($released->isNotEmpty())
         <div class="mt-4 mb-2">
