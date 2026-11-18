@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\SlashCommandException;
 use App\Http\Requests\BatchUpdateTicketRequest;
 use App\Http\Requests\EstimateTicketRequest;
+use App\Http\Requests\FetchTicketsRequest;
 use App\Http\Requests\NoteTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
@@ -281,6 +282,12 @@ class TicketsController extends Controller
 
         $tickets = Ticket::whereIn('id', $ticketIds)->get()->keyBy('id');
 
+        foreach ($ticketIds as $ticketId) {
+            if ($tickets->has($ticketId) && Gate::denies('update', $tickets->get($ticketId))) {
+                abort(403, "Cannot update ticket #{$ticketId}.");
+            }
+        }
+
         $updateFields = array_filter([
             'type_id' => $validated['type_id'] ?? null,
             'status_id' => $validated['status_id'] ?? null,
@@ -299,8 +306,6 @@ class TicketsController extends Controller
                 }
 
                 $ticket = $tickets->get($ticketId);
-
-                Gate::authorize('update', $ticket);
 
                 $applied = false;
 
@@ -464,18 +469,15 @@ class TicketsController extends Controller
         return redirect('tickets/'.$ticket_id);
     }
 
-    public function fetch(Request $request)
+    public function fetch(FetchTicketsRequest $request)
     {
-        $request->validate([
-            'started_at' => 'required|date',
-            'completed_at' => 'required|date|after_or_equal:started_at',
-        ]);
+        $validated = $request->validated();
 
         return TicketResource::collection(
             Ticket::with(['status', 'assignee', 'notes'])
                 ->withCount('notes')
                 ->where('user_id2', Auth::id())
-                ->whereBetween('closed_at', [$request->started_at, $request->completed_at])
+                ->whereBetween('closed_at', [$validated['started_at'], $validated['completed_at']])
                 ->get()
         );
     }

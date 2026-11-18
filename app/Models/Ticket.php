@@ -18,7 +18,7 @@ class Ticket extends Model
     use HasFactory;
 
     /** Request keys accepted by the filter scope (also used to repopulate the filter UI). */
-    public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q', 'assignee', 'decision'];
+    public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'user_id2', 'importance_id', 'q', 'assignee', 'decision'];
 
     /** Sortable column whitelist shared by every paginated ticket list. */
     public const LIST_SORTABLE = ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'];
@@ -181,11 +181,6 @@ class Ticket extends Model
     public function type(): BelongsTo
     {
         return $this->belongsTo(Type::class);
-    }
-
-    public function getActualHoursAttribute()
-    {
-        return (int) ($this->attributes['notes_sum_hours'] ?? 0);
     }
 
     public function milestone(): BelongsTo

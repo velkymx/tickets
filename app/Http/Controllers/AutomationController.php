@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Automation;
 use App\Models\AutomationAction;
 use App\Models\AutomationRule;
+use App\Rules\ValidAutomationActions;
+use App\Rules\ValidAutomationConditions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,8 +50,8 @@ class AutomationController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'trigger' => 'required|string|in:'.implode(',', array_keys(config('automations.triggers'))),
-            'conditions_json' => 'nullable|string|json',
-            'actions_json' => 'nullable|string|json',
+            'conditions_json' => ['nullable', 'string', 'json', new ValidAutomationConditions],
+            'actions_json' => ['nullable', 'string', 'json', new ValidAutomationActions],
         ]);
 
         $automation = Automation::create([
@@ -84,8 +86,8 @@ class AutomationController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'trigger' => 'required|string|in:'.implode(',', array_keys(config('automations.triggers'))),
-            'conditions_json' => 'nullable|string|json',
-            'actions_json' => 'nullable|string|json',
+            'conditions_json' => ['nullable', 'string', 'json', new ValidAutomationConditions],
+            'actions_json' => ['nullable', 'string', 'json', new ValidAutomationActions],
         ]);
 
         $automation->update([
@@ -147,7 +149,9 @@ class AutomationController extends Controller
             ],
         ];
 
-        return response()->json($fields[$trigger] ?? []);
+        abort_unless(array_key_exists($trigger, $fields), 404);
+
+        return response()->json($fields[$trigger]);
     }
 
     private function syncRules(Automation $automation, array $conditions, array $actions): void
