@@ -66,7 +66,6 @@ class HealthPingTest extends TestCase
         Cache::flush();
         $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertOk()->assertJson(['status' => 'pending']);
 
-        Cache::put('health-ping-sent:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', now()->timestamp - 2, 30);
         (new HealthPingJob('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))->handle();
 
         $response = $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertOk();
@@ -140,7 +139,6 @@ class HealthPingTest extends TestCase
     public function answered_status_reports_no_internals(): void
     {
         $token = str_repeat('b', 32);
-        Cache::put("health-ping-sent:{$token}", microtime(true) - 1.5, 30);
         (new HealthPingJob($token))->handle();
 
         $this->actingAs($this->admin())->getJson("/admin/health/queue-ping/{$token}")
