@@ -53,64 +53,18 @@
 
         <div class="col-lg-3">
             {{-- Category --}}
-            <div class="mb-3" x-data="{ adding: false, name: '', error: '', saving: false }">
-                <label for="category_id" class="form-label">Category</label>
-                <div class="d-flex gap-2">
-                    <select name="category_id" id="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
-                        <option value="">Select category...</option>
-                        @include('kb.partials.category-options', ['parentId' => null, 'depth' => 0, 'selectedId' => old('category_id', $article->category_id)])
-                    </select>
-                    <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" @click="adding = !adding">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                @error('category_id')
-                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                @enderror
-
-                <div x-show="adding" x-cloak class="mt-2">
-                    <div class="input-group input-group-sm">
-                        <input type="text" class="form-control" placeholder="New category name..." x-model="name" @keydown.enter.prevent="
-                            if (!name.trim() || saving) return;
-                            saving = true; error = '';
-                            fetch('{{ route('kb.categories.quick-store') }}', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                body: JSON.stringify({ name: name.trim() })
-                            }).then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)))
-                            .then(cat => {
-                                let sel = document.getElementById('category_id');
-                                let opt = new Option(cat.name, cat.id, true, true);
-                                sel.add(opt);
-                                name = ''; adding = false;
-                            })
-                            .catch(e => { error = e.errors?.name?.[0] || e.message || 'Failed to create category'; })
-                            .finally(() => { saving = false; });
-                        ">
-                        <button type="button" class="btn btn-success" :disabled="!name.trim() || saving" @click="
-                            if (!name.trim() || saving) return;
-                            saving = true; error = '';
-                            fetch('{{ route('kb.categories.quick-store') }}', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                body: JSON.stringify({ name: name.trim() })
-                            }).then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)))
-                            .then(cat => {
-                                let sel = document.getElementById('category_id');
-                                let opt = new Option(cat.name, cat.id, true, true);
-                                sel.add(opt);
-                                name = ''; adding = false;
-                            })
-                            .catch(e => { error = e.errors?.name?.[0] || e.message || 'Failed to create category'; })
-                            .finally(() => { saving = false; });
-                        ">
-                            <span x-show="!saving">Add</span>
-                            <span x-show="saving">...</span>
-                        </button>
-                    </div>
-                    <div class="text-danger small mt-1" x-show="error" x-text="error"></div>
-                </div>
-            </div>
+            @include('kb.partials.quick-store-field', [
+                'label' => 'Category',
+                'mode' => 'select',
+                'storeUrl' => route('kb.categories.quick-store'),
+                'errorLabel' => 'Failed to create category',
+                'inputPlaceholder' => 'New category name...',
+                'selectId' => 'category_id',
+                'fieldName' => 'category_id',
+                'selectRequired' => true,
+                'placeholderOption' => 'Select category...',
+                'selectedId' => old('category_id', $article->category_id),
+            ])
 
             {{-- Status --}}
             @if($canManageAccess)
@@ -154,92 +108,16 @@
             @endif
 
             {{-- Tags --}}
-            <div class="mb-3" x-data="{ adding: false, name: '', error: '', saving: false }">
-                <label class="form-label">Tags</label>
-                <div class="card card-body bg-body-tertiary" style="max-height: 200px; overflow-y: auto;" id="tags-container">
-                    @foreach($tags as $tag)
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="tags[]"
-                                   value="{{ $tag->id }}" id="tag_{{ $tag->id }}"
-                                   @checked(old('tags') ? in_array($tag->id, old('tags')) : $article->tags->contains($tag))>
-                            <label class="form-check-label" for="tag_{{ $tag->id }}">{{ $tag->name }}</label>
-                        </div>
-                    @endforeach
-                </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm mt-1" @click="adding = !adding">
-                    <i class="fas fa-plus"></i> Add Tag
-                </button>
-                <div x-show="adding" x-cloak class="mt-2">
-                    <div class="input-group input-group-sm">
-                        <input type="text" class="form-control" placeholder="New tag name..." x-model="name" @keydown.enter.prevent="
-                            if (!name.trim() || saving) return;
-                            saving = true; error = '';
-                            fetch('{{ route('kb.tags.quick-store') }}', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                body: JSON.stringify({ name: name.trim() })
-                            }).then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)))
-                            .then(tag => {
-                                let container = document.getElementById('tags-container');
-                                let div = document.createElement('div');
-                                div.className = 'form-check';
-                                let cb = document.createElement('input');
-                                cb.className = 'form-check-input';
-                                cb.type = 'checkbox';
-                                cb.name = 'tags[]';
-                                cb.value = tag.id;
-                                cb.id = 'tag_' + tag.id;
-                                cb.checked = true;
-                                let lbl = document.createElement('label');
-                                lbl.className = 'form-check-label';
-                                lbl.htmlFor = 'tag_' + tag.id;
-                                lbl.textContent = tag.name;
-                                div.appendChild(cb);
-                                div.appendChild(lbl);
-                                container.appendChild(div);
-                                name = ''; adding = false;
-                            })
-                            .catch(e => { error = e.errors?.name?.[0] || e.message || 'Failed to create tag'; })
-                            .finally(() => { saving = false; });
-                        ">
-                        <button type="button" class="btn btn-success" :disabled="!name.trim() || saving" @click="
-                            if (!name.trim() || saving) return;
-                            saving = true; error = '';
-                            fetch('{{ route('kb.tags.quick-store') }}', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                body: JSON.stringify({ name: name.trim() })
-                            }).then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)))
-                            .then(tag => {
-                                let container = document.getElementById('tags-container');
-                                let div = document.createElement('div');
-                                div.className = 'form-check';
-                                let cb = document.createElement('input');
-                                cb.className = 'form-check-input';
-                                cb.type = 'checkbox';
-                                cb.name = 'tags[]';
-                                cb.value = tag.id;
-                                cb.id = 'tag_' + tag.id;
-                                cb.checked = true;
-                                let lbl = document.createElement('label');
-                                lbl.className = 'form-check-label';
-                                lbl.htmlFor = 'tag_' + tag.id;
-                                lbl.textContent = tag.name;
-                                div.appendChild(cb);
-                                div.appendChild(lbl);
-                                container.appendChild(div);
-                                name = ''; adding = false;
-                            })
-                            .catch(e => { error = e.errors?.name?.[0] || e.message || 'Failed to create tag'; })
-                            .finally(() => { saving = false; });
-                        ">
-                            <span x-show="!saving">Add</span>
-                            <span x-show="saving">...</span>
-                        </button>
-                    </div>
-                    <div class="text-danger small mt-1" x-show="error" x-text="error"></div>
-                </div>
-            </div>
+            @include('kb.partials.quick-store-field', [
+                'label' => 'Tags',
+                'mode' => 'checklist',
+                'storeUrl' => route('kb.tags.quick-store'),
+                'errorLabel' => 'Failed to create tag',
+                'inputPlaceholder' => 'New tag name...',
+                'inviteLabel' => 'Add Tag',
+                'tags' => $tags,
+                'checkedIds' => old('tags', $article->tags->pluck('id')->toArray()),
+            ])
 
             @if($canManageAccess)
                 <x-permitted-users-field :users="$users" :selected="$article->permissions->pluck('user_id')->all()" />

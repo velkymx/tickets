@@ -202,6 +202,52 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function create_and_edit_forms_offer_quick_store_fields(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        foreach (['/kb/create', "/kb/{$article->slug}/edit"] as $path) {
+            $content = $this->actingAs($owner)->get($path)->assertOk()->getContent();
+
+            $this->assertStringContainsString('New category name...', $content);
+            $this->assertStringContainsString('New tag name...', $content);
+            $this->assertStringContainsString('/kb/categories/quick', $content);
+            $this->assertStringContainsString('/kb/tags/quick', $content);
+        }
+    }
+
+    #[Test]
+    public function edit_form_preselects_the_article_category_and_tags(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag->id);
+
+        $content = $this->actingAs($owner)->get("/kb/{$article->slug}/edit")->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<option value="'.$category->id.'"[^>]*selected/',
+            $content
+        );
+        $this->assertMatchesRegularExpression(
+            '/id="tag_'.$tag->id.'"[^>]*checked/',
+            $content
+        );
+    }
+
+    #[Test]
     public function create_and_edit_forms_offer_a_permitted_users_field(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);
