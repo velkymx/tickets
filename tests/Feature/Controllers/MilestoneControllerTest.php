@@ -68,6 +68,22 @@ class MilestoneControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_keeps_released_milestones_editable(): void
+    {
+        $user = User::factory()->create();
+        $released = Milestone::factory()->completed()->create(['name' => 'Released Editable']);
+
+        $content = $this->actingAs($user)->get('/milestone')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Released Editable', $content);
+        $this->assertMatchesRegularExpression(
+            '#/milestone/edit/'.$released->id.'[^"]*"[^>]*>Edit#',
+            $content
+        );
+        $this->assertSame(2, substr_count($content, '<div class="table-responsive">'));
+    }
+
+    #[Test]
     public function print_eager_loads_ticket_relationships(): void
     {
         $user = User::factory()->create();

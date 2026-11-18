@@ -6,6 +6,7 @@ use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -19,6 +20,34 @@ class DecisionRequestSurfacesTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+    }
+
+    #[Test]
+    public function home_decision_tooltip_carries_the_full_timestamp(): void
+    {
+        $asker = User::factory()->create(['name' => 'asker']);
+        $decider = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $asker->id]);
+        $request = $this->decisionRequest($ticket, $asker, $decider);
+        $request->forceFill(['created_at' => Carbon::parse('2024-03-05 14:30:00')])->save();
+
+        $content = $this->actingAs($decider)->get('/home')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/title="Waiting since Mar 5th, 2024 2:30pm"/', $content);
+    }
+
+    #[Test]
+    public function home_renders_both_red_cards_from_the_shared_shell(): void
+    {
+        $asker = User::factory()->create(['name' => 'asker']);
+        $decider = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $asker->id]);
+        $this->decisionRequest($ticket, $asker, $decider);
+        Ticket::factory()->create(['user_id2' => $decider->id, 'importance_id' => 5]);
+
+        $content = $this->actingAs($decider)->get('/home')->assertOk()->getContent();
+
+        $this->assertSame(2, substr_count($content, 'card-header bg-danger text-white'));
     }
 
     #[Test]
