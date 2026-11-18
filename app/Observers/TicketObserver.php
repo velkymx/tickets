@@ -7,6 +7,7 @@ use App\Events\TicketUpdated;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Services\TicketPulseService;
+use Illuminate\Support\Facades\DB;
 
 class TicketObserver
 {
@@ -49,10 +50,14 @@ class TicketObserver
         }
 
         if ($ticket->wasChanged(['subject', 'description', 'status_id', 'user_id2', 'milestone_id', 'project_id', 'importance_id', 'due_at', 'closed_at', 'estimate', 'storypoints', 'actual'])) {
-            $ticket->notifyWatchers('Ticket', auth()->id() ?? 0);
+            DB::afterCommit(function () use ($ticket) {
+                $ticket->notifyWatchers('Ticket', auth()->id() ?? 0);
+            });
         }
 
-        event(new TicketUpdated($ticket, $ticket->getChanges(), auth()->id()));
+        DB::afterCommit(function () use ($ticket) {
+            event(new TicketUpdated($ticket, $ticket->getChanges(), auth()->id()));
+        });
     }
 
     public function deleted(Ticket $ticket): void

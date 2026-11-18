@@ -63,6 +63,7 @@ class GetTicketTool extends TicketTool
                 'blocker_reason' => $pulse['blocker_reason'] ?? null,
                 'next_action' => $pulse['next_action'] ?? null,
                 'latest_decision' => $pulse['latest_decision'] ?? null,
+                'decision_requests' => $pulse['decision_requests'] ?? [],
             ],
             'notes' => $ticket->notes->map(fn ($note) => [
                 'id' => $note->id,

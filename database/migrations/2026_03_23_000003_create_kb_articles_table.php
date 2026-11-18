@@ -35,10 +35,8 @@ return new class extends Migration
             $table->index('owner_id');
         });
 
-        // Add FULLTEXT index for MySQL search (ignored by SQLite)
-        if (DB::getDriverName() !== 'sqlite') {
-            DB::statement('ALTER TABLE kb_articles ADD FULLTEXT fulltext_search (title, body_markdown)');
-        }
+        // Add FULLTEXT index for search
+        DB::statement('ALTER TABLE kb_articles ADD FULLTEXT fulltext_search (title, body_markdown)');
     }
 
     public function down(): void

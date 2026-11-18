@@ -6,12 +6,9 @@ use App\Http\Requests\EstimateTicketRequest;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Tests\Traits\SeedsDatabase;
 
 class EstimateTicketRequestTest extends TestCase
 {
-    use SeedsDatabase;
-
     protected function makeValidator(array $data): \Illuminate\Validation\Validator
     {
         $request = new EstimateTicketRequest;
@@ -47,12 +44,5 @@ class EstimateTicketRequestTest extends TestCase
 
         $validator = $this->makeValidator(['storypoints' => 5]);
         $this->assertFalse($validator->fails());
-    }
-
-    #[Test]
-    public function it_authorizes_authenticated_users(): void
-    {
-        $request = new EstimateTicketRequest;
-        $this->assertTrue($request->authorize());
     }
 }

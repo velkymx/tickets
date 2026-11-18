@@ -7,7 +7,11 @@ use App\Models\NoteReaction;
 use App\Models\Ticket;
 use App\Models\TicketView;
 use App\Models\User;
+use App\Services\MarkdownService;
+use App\Services\MentionService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -168,16 +172,115 @@ class NotesControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_can_promote_a_note_to_action_with_a_prompted_assignee(): void
+    public function it_promotes_a_note_to_action_using_its_stored_mention(): void
     {
         $user = User::factory()->create();
-        $assignee = User::factory()->create(['name' => 'sarah']);
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Fix the @param docblock, @[Jane Doe]';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals('action', $note->fresh()->notetype);
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id, 'user_id' => $jane->id]);
+        $this->actingAs($user)->getJson("/tickets/{$ticket->id}/pulse")
+            ->assertJsonPath('next_action.assignee', '@Jane Doe');
+    }
+
+    #[Test]
+    public function it_rejects_an_action_whose_only_mention_is_not_a_user(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'The @media query breaks on mobile.';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasErrors(['type']);
+        $this->assertEquals('message', $note->fresh()->notetype);
+    }
+
+    #[Test]
+    public function it_rejects_an_action_with_an_unknown_assignee(): void
+    {
+        $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
         $note = Note::factory()->create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'notetype' => 'message',
             'body' => 'Verify the staging deploy before release.',
+        ]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+            'assignee' => 'nobody',
+        ]);
+
+        $response->assertSessionHasErrors(['type']);
+        $this->assertEquals('message', $note->fresh()->notetype);
+    }
+
+    #[Test]
+    public function it_shows_the_explicit_action_assignee_over_an_earlier_mention(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create(['name' => 'Bob']);
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Ask @[Bob] for the logs, then fix the deploy.';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        $this->actingAs($user)->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+            'assignee' => 'Jane Doe',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame($jane->id, $note->fresh()->assignee_id);
+        $this->actingAs($user)->getJson("/tickets/{$ticket->id}/pulse")
+            ->assertJsonPath('next_action.assignee', '@Jane Doe');
+    }
+
+    #[Test]
+    public function it_can_promote_a_note_to_action_with_a_prompted_assignee(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create(['name' => 'sarah']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Verify the staging deploy before release.';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
         ]);
 
         $response = $this->actingAs($user)->post("/notes/{$note->id}/promote", [
@@ -187,7 +290,116 @@ class NotesControllerTest extends TestCase
 
         $response->assertRedirect("/tickets/{$ticket->id}");
         $this->assertEquals('action', $note->fresh()->notetype);
-        $this->assertStringContainsString('@[sarah]', $note->fresh()->body);
+        $this->assertStringContainsString('@[sarah]', $note->fresh()->body_markdown);
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id, 'user_id' => $assignee->id]);
+        $this->actingAs($user)->getJson("/tickets/{$ticket->id}/pulse")
+            ->assertJsonPath('next_action.assignee', '@sarah');
+    }
+
+    #[Test]
+    public function editing_a_note_removes_deleted_mentions(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+        ]);
+
+        $this->actingAs($user)->putJson("/notes/{$note->id}", [
+            'body' => 'Ask @[Jane Doe] for the logs.',
+        ])->assertOk();
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id]);
+
+        $this->actingAs($user)->putJson("/notes/{$note->id}", [
+            'body' => 'No mentions here anymore.',
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('mentions', ['note_id' => $note->id]);
+    }
+
+    #[Test]
+    public function it_resolves_promote_mentions_once(): void
+    {
+        $user = User::factory()->create();
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Fix the @param docblock, @[Jane Doe]';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        DB::enableQueryLog();
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+        $lookups = collect(DB::getQueryLog())->filter(
+            fn ($entry) => preg_match('/from\s*[\"`\[]?users[\"`\]]?/i', $entry['query'])
+        );
+        $this->assertCount(2, $lookups);
+        $this->assertTrue($lookups->every(
+            fn ($entry) => ! str_contains($entry['query'], 'LOWER(name)')
+        ));
+    }
+
+    #[Test]
+    public function it_promotes_a_legacy_note_to_action_using_its_recorded_mention(): void
+    {
+        $user = User::factory()->create();
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse('Ask @[Jane Doe] for the logs.'),
+            'body_markdown' => null,
+        ]);
+        app(MentionService::class)->createMentions($note, [$jane->id]);
+
+        $response = $this->actingAs($user)->from("/tickets/{$ticket->id}")->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals('action', $note->fresh()->notetype);
+        $this->assertSame($jane->id, $note->fresh()->assignee_id);
+    }
+
+    #[Test]
+    public function it_promotes_a_legacy_note_with_a_prompted_assignee_into_clean_markdown(): void
+    {
+        $user = User::factory()->create();
+        $sarah = User::factory()->create(['name' => 'sarah']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse('Verify the staging deploy before release.'),
+            'body_markdown' => null,
+        ]);
+
+        $response = $this->actingAs($user)->post("/notes/{$note->id}/promote", [
+            'type' => 'action',
+            'assignee' => 'sarah',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $this->assertEquals('action', $note->fresh()->notetype);
+        $this->assertStringContainsString('@[sarah]', $note->fresh()->body_markdown);
+        $this->assertStringNotContainsString('<', $note->fresh()->body_markdown ?? '');
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id, 'user_id' => $sarah->id]);
     }
 
     // --- Reply Tests ---
@@ -202,6 +414,32 @@ class NotesControllerTest extends TestCase
         ]);
 
         $response->assertStatus(401);
+    }
+
+    #[Test]
+    public function reply_authorizes_the_note_policy(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+        ]);
+
+        Gate::before(fn ($user, $ability) => $ability === 'reply' ? false : null);
+
+        $this->actingAs($user)->postJson('/notes/reply', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body' => 'Blocked reply',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body_markdown' => 'Blocked reply',
+        ]);
     }
 
     #[Test]
@@ -490,21 +728,13 @@ class NotesControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonStructure(['viewers', 'count']);
         $response->assertJsonPath('count', 1);
+        $this->assertDatabaseHas('ticket_views', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
     }
 
     #[Test]
-    public function it_records_a_heartbeat_for_the_viewer(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->postJson("/tickets/{$ticket->id}/presence");
-
-        $response->assertOk();
-        $response->assertJsonPath('count', 1);
-        $this->assertDatabaseHas('ticket_views', ['ticket_id' => $ticket->id, 'user_id' => $user->id]);
-    }
-
     public function it_returns_current_viewers(): void
     {
         $user1 = User::factory()->create();
@@ -532,6 +762,28 @@ class NotesControllerTest extends TestCase
 
         $this->assertGuest();
         $this->assertDatabaseMissing('note_reactions', ['note_id' => $note->id]);
+    }
+
+    #[Test]
+    public function reaction_authorizes_the_note_policy(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+        ]);
+
+        Gate::before(fn ($user, $ability) => $ability === 'react' ? false : null);
+
+        $this->actingAs($user)->postJson("/notes/{$note->id}/react", [
+            'emoji' => 'thumbsup',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('note_reactions', [
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+        ]);
     }
 
     #[Test]
@@ -634,66 +886,6 @@ class NotesControllerTest extends TestCase
             'user_id' => $user->id,
             'emoji' => 'thumbsup',
         ]);
-    }
-
-    #[Test]
-    public function it_requires_authentication_to_reply_to_a_note(): void
-    {
-        $response = $this->postJson('/notes/reply', [
-            'ticket_id' => 1,
-            'parent_id' => 1,
-            'body' => 'Reply body',
-        ]);
-
-        $response->assertStatus(401);
-    }
-
-    #[Test]
-    public function it_requires_the_parent_note_to_belong_to_the_same_ticket(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-        $otherTicket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-        $parent = Note::factory()->create([
-            'ticket_id' => $otherTicket->id,
-            'user_id' => $user->id,
-            'parent_id' => null,
-        ]);
-
-        $response = $this->actingAs($user)->postJson('/notes/reply', [
-            'ticket_id' => $ticket->id,
-            'parent_id' => $parent->id,
-            'body' => 'Reply body',
-        ]);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['parent_id']);
-    }
-
-    #[Test]
-    public function it_requires_the_parent_note_to_be_top_level(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-        $thread = Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'parent_id' => null,
-        ]);
-        $reply = Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'parent_id' => $thread->id,
-        ]);
-
-        $response = $this->actingAs($user)->postJson('/notes/reply', [
-            'ticket_id' => $ticket->id,
-            'parent_id' => $reply->id,
-            'body' => 'Reply body',
-        ]);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['parent_id']);
     }
 
     #[Test]

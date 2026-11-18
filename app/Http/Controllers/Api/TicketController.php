@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\SlashCommandException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexTicketsRequest;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -13,14 +15,17 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\DecisionRequestService;
 use App\Services\MarkdownService;
 use App\Services\MentionService;
-use App\Services\SlashCommandService;
+use App\Services\NotePromotionService;
 use App\Services\TicketPulseService;
+use App\Services\TicketService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class TicketController extends Controller
 {
@@ -37,30 +42,36 @@ class TicketController extends Controller
         ]);
     }
 
-    public function index(Request $request)
+    public function index(IndexTicketsRequest $request)
     {
+        $validated = $request->validated();
+
         $user = $request->attributes->get('api_user');
-        $perPage = min((int) $request->get('per_page', 20), 100);
+        $perPage = $validated['per_page'] ?? 20;
 
         $includePulse = $request->get('include') === 'pulse';
 
-        $eagerLoads = ['status', 'importance'];
+        $eagerLoads = ['status', 'importance', 'openDecisionRequests'];
         if ($includePulse) {
-            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'assignee']);
+            $eagerLoads = array_merge($eagerLoads, ['notes.user', 'notes.supersedes', 'notes.replies', 'notes.decider', 'assignee']);
         }
 
         $query = Ticket::with($eagerLoads);
 
-        if ($request->boolean('unassigned')) {
-            $query->where(function ($q) {
-                $q->whereNull('user_id2')->orWhere('user_id2', 0);
-            });
+        if (($validated['decision'] ?? null) === 'me') {
+            $query->needsDecision($user->id);
+        } elseif ($request->boolean('unassigned')) {
+            $query->whereNull('user_id2');
         } else {
             $query->where('user_id2', $user->id);
         }
 
-        if ($request->has('status')) {
-            $query->where('status_id', $request->status);
+        if (($validated['decision'] ?? null) === 'any') {
+            $query->needsDecision();
+        }
+
+        if (isset($validated['status'])) {
+            $query->where('status_id', $validated['status']);
         }
 
         $tickets = $query->orderBy('created_at', 'DESC')->paginate($perPage);
@@ -77,6 +88,8 @@ class TicketController extends Controller
                 'closed_at' => $ticket->closed_at,
                 'created_at' => $ticket->created_at->toDateString(),
                 'link' => "/api/v1/tickets/{$ticket->id}",
+                'decision_needed' => $ticket->openDecisionRequests->isNotEmpty(),
+                'decision_needed_from' => $ticket->openDecisionRequests->sortBy('id')->first()?->decider_id,
             ];
 
             if ($includePulse) {
@@ -151,7 +164,7 @@ class TicketController extends Controller
             'ticket' => [
                 'id' => $ticket->id,
                 'subject' => $ticket->subject,
-                'status' => 'new',
+                'status' => $ticket->status->name ?? 'new',
                 'link' => "/api/v1/tickets/{$ticket->id}",
             ],
         ], 201);
@@ -173,7 +186,7 @@ class TicketController extends Controller
                     $q->where('notetype', $request->notetype);
                 }
             },
-        ])->findOrFail($id);
+        ])->ownedBy($user->id)->findOrFail($id);
 
         $apiUserId = $user->id;
         $notes = $ticket->notes->map(fn ($note) => $this->formatNote($note, $apiUserId));
@@ -243,7 +256,7 @@ class TicketController extends Controller
         ];
     }
 
-    public function note(Request $request, $id)
+    public function note(Request $request, $id, TicketService $ticketService)
     {
         $request->validate([
             'status_id' => 'nullable|integer|exists:statuses,id',
@@ -253,81 +266,56 @@ class TicketController extends Controller
 
         $user = $request->attributes->get('api_user');
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($id);
+        // notate() records the author from the auth context, which is an
+        // explicit token user here rather than a session user.
+        Auth::setUser($user);
+
+        $ticket = Ticket::ownedBy($user->id)->findOrFail($id);
+
+        $bodyText = (string) ($request->body ?? '');
 
         // All writes run in one transaction so a failed slash-command guard
-        // rolls back the claim/status changes too. Guard failures throw an
-        // HttpResponseException, which unwinds the transaction and renders the
+        // rolls back the claim/status changes too. Guard failures throw
+        // SlashCommandException, which unwinds the transaction and renders the
         // 422 directly.
-        [$createdNote, $warnings] = DB::transaction(function () use ($request, $user, $ticket) {
-            if ($request->boolean('claim')) {
-                $ticket->user_id2 = $user->id;
-                $ticket->save();
-            }
+        try {
+            $result = DB::transaction(function () use ($request, $user, $ticket, $bodyText, $ticketService) {
+                $old = $ticket->toArray();
 
-            if ($request->has('status_id') && $request->status_id != $ticket->status_id) {
-                $ticket->status_id = $request->status_id;
-                $ticket->closed_at = Status::isClosed($request->status_id) ? now() : null;
-                $ticket->save();
-            }
-
-            $createdNote = null;
-            $warnings = [];
-
-            if ($request->has('body') || $request->has('hours')) {
-                $slashService = app(SlashCommandService::class);
-                $markdownService = app(MarkdownService::class);
-                $mentionService = app(MentionService::class);
-
-                // Check for action constraint violations before running commands
-                $bodyText = $request->body ?? '';
-                if (preg_match('/^\/action\b/m', $bodyText)) {
-                    $mentions = $this->extractMentionsFromText($bodyText);
-                    if (count($mentions) !== 1) {
-                        $this->rejectNote('Actions require exactly one @assignee');
-                    }
+                if ($request->boolean('claim')) {
+                    $ticket->user_id2 = $user->id;
+                    $ticket->save();
                 }
 
-                $commandResult = $slashService->handle($ticket, $bodyText);
-                $warnings = $commandResult['warnings'] ?? [];
-
-                // Check for blocker/action constraints from the slash service
-                $noteType = $commandResult['note_type'] ?? 'message';
-                foreach ($commandResult['changes'] ?? [] as $change) {
-                    if (str_contains($change, 'Resolve blocker before') || str_contains($change, 'Too many open actions')) {
-                        $this->rejectNote($change);
-                    }
+                if ($request->has('status_id') && (int) $request->status_id !== (int) $ticket->status_id) {
+                    $ticket->status_id = $request->status_id;
+                    $ticket->closed_at = Status::isClosed($request->status_id) ? now() : null;
+                    $ticket->save();
                 }
 
-                $bodyText = $commandResult['body'] ?? '';
-                $bodyHtml = $markdownService->parse($bodyText);
-                $totalHours = ($request->hours ?? 0) + ($commandResult['hours'] ?? 0);
+                $changes = $ticketService->changes($old, $ticket->fresh()->toArray());
 
-                // Skip commands that leave no text behind (e.g. /estimate, /close).
-                if (trim(strip_tags($bodyHtml)) !== '' || $totalHours > 0) {
-                    $createdNote = Note::create([
-                        'user_id' => $user->id,
-                        'ticket_id' => $ticket->id,
-                        'body' => $bodyHtml,
-                        'body_markdown' => $bodyText,
-                        'hours' => $totalHours,
-                        'notetype' => $noteType,
-                        'pinned' => $commandResult['note_attributes']['pinned'] ?? false,
-                    ]);
-
-                    // Create mention records
-                    $mentionUsernames = $mentionService->parseMentions($bodyText);
-                    $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-                    $mentionService->createMentions($createdNote, $mentionUserIds);
-
-                    $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+                if ($bodyText === '' && ! $request->has('hours') && $changes === []) {
+                    return ['note' => null, 'changes' => [], 'warnings' => []];
                 }
-            }
 
-            return [$createdNote, $warnings];
-        });
+                return $ticketService->notate(
+                    (int) $ticket->id,
+                    $bodyText,
+                    $changes,
+                    (float) ($request->hours ?? 0),
+                );
+            });
+        } catch (SlashCommandException $e) {
+            $this->rejectNote($e->getMessage());
+        }
+
+        $createdNote = $result['note'];
+        $warnings = $result['warnings'];
+
+        if ($createdNote) {
+            $createdNote->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
+        }
 
         $ticket->load(['status', 'assignee']);
 
@@ -357,7 +345,7 @@ class TicketController extends Controller
         throw new HttpResponseException(response()->json(['message' => $message], 422));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, TicketService $ticketService)
     {
         $validated = $request->validate([
             'subject' => 'sometimes|required|string|max:255',
@@ -375,9 +363,11 @@ class TicketController extends Controller
 
         $user = $request->attributes->get('api_user');
 
-        $ticket = Ticket::where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->findOrFail($id);
+        Auth::setUser($user);
+
+        $ticket = Ticket::ownedBy($user->id)->findOrFail($id);
+
+        $old = $ticket->toArray();
 
         if ($request->has('subject')) {
             $ticket->subject = $request->subject;
@@ -387,7 +377,7 @@ class TicketController extends Controller
             $ticket->description = $request->description ?? '';
         }
 
-        if ($request->has('status_id') && $request->status_id != $ticket->status_id) {
+        if ($request->has('status_id') && (int) $request->status_id !== (int) $ticket->status_id) {
             $ticket->status_id = $request->status_id;
             $ticket->closed_at = Status::isClosed($request->status_id) ? now() : null;
         }
@@ -411,6 +401,10 @@ class TicketController extends Controller
         }
 
         $ticket->save();
+        $changes = $ticketService->changes($old, $ticket->fresh()->toArray());
+        if (! empty($changes)) {
+            $ticketService->notate((int) $ticket->id, '', $changes);
+        }
         $ticket->load(['status', 'assignee']);
 
         return response()->json([
@@ -432,24 +426,16 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::findOrFail($id);
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
-        switch ($validated['action']) {
-            case 'pin':
-                $note->pinned = true;
-                break;
-            case 'unpin':
-                $note->pinned = false;
-                break;
-            case 'hide':
-                $note->hide = true;
-                break;
-            case 'unhide':
-                $note->hide = false;
-                break;
+        $ability = in_array($validated['action'], ['pin', 'unpin'], true) ? 'pin' : 'hide';
+        Gate::forUser($user)->authorize($ability, $note);
+
+        if (in_array($validated['action'], ['pin', 'unpin'], true)) {
+            $note->pinned = $validated['action'] === 'pin';
+        } else {
+            $note->hide = $validated['action'] === 'hide';
         }
 
         $note->save();
@@ -464,47 +450,29 @@ class TicketController extends Controller
         ]);
     }
 
-    public function promoteNote(Request $request, $id, $noteId)
+    public function promoteNote(Request $request, $id, $noteId, NotePromotionService $promotion)
     {
         $validated = $request->validate([
-            'type' => 'required|in:decision,blocker,action',
+            'type' => 'required|in:decision,blocker,action,decision_needed',
             'assignee' => 'nullable|string',
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
-        if ($note->notetype !== 'message') {
-            return response()->json(['message' => 'Only message notes can be promoted'], 422);
+        $error = $promotion->promote($note, $validated['type'], $validated['assignee'] ?? null);
+
+        if ($error) {
+            return response()->json(['message' => $error], 422);
         }
-
-        $type = $validated['type'];
-        $body = strip_tags($note->body);
-        $hasMention = (bool) preg_match('/@\[([^\]]+)\]/u', $note->body);
-
-        if ($type === 'decision' && mb_strlen(trim($body)) < 20) {
-            return response()->json(['message' => 'Decision notes must be at least 20 characters'], 422);
-        }
-
-        if ($type === 'action' && ! $hasMention && empty($validated['assignee'])) {
-            return response()->json(['message' => 'Actions require exactly one @assignee'], 422);
-        }
-
-        // Append the assignee mention when supplied and not already present.
-        if ($type === 'action' && ! empty($validated['assignee']) && ! $hasMention) {
-            $assigneeName = ltrim((string) $validated['assignee'], '@');
-            $note->body = rtrim($note->body).' @['.$assigneeName.']';
-        }
-
-        $note->notetype = $type;
-        $note->save();
 
         return response()->json([
             'message' => 'Note promoted successfully',
-            'note' => ['id' => $note->id, 'notetype' => $note->notetype],
+            'note' => array_filter(
+                ['id' => $note->id, 'notetype' => $note->notetype, 'decider_id' => $note->decider_id],
+                fn ($value) => $value !== null,
+            ),
         ]);
     }
 
@@ -514,9 +482,8 @@ class TicketController extends Controller
             'action' => 'nullable|in:watch,unwatch,mute,unmute',
         ]);
 
-        // Any ticket is viewable, so watching is not limited to owned tickets.
-        $ticket = Ticket::findOrFail($id);
         $user = $request->attributes->get('api_user');
+        $ticket = Ticket::ownedBy($user->id)->findOrFail($id);
         $action = $validated['action'] ?? 'watch';
 
         $watcher = TicketUserWatcher::where('ticket_id', $ticket->id)
@@ -556,23 +523,25 @@ class TicketController extends Controller
 
     public function pulse(Request $request, $id)
     {
-        $ticket = Ticket::findOrFail($id);
+        $user = $request->attributes->get('api_user');
+        $ticket = Ticket::ownedBy($user->id)->findOrFail($id);
 
         $pulse = app(TicketPulseService::class)->getPulse($ticket)->toArray();
 
         return response()->json(['data' => $pulse]);
     }
 
-    public function resolveNote(Request $request, $id, $noteId)
+    public function resolveNote(Request $request, $id, $noteId, TicketService $ticketService)
     {
         $request->validate([
             'resolution_message' => 'required|string|max:65535',
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+
+        Auth::setUser($user);
+
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Only thread author or ticket assignee can resolve
@@ -594,15 +563,7 @@ class TicketController extends Controller
         ]);
 
         // Create resolution reply
-        $markdownService = app(MarkdownService::class);
-        Note::create([
-            'user_id' => $user->id,
-            'ticket_id' => $ticket->id,
-            'parent_id' => $note->id,
-            'body' => $markdownService->parse($request->resolution_message),
-            'body_markdown' => $request->resolution_message,
-            'notetype' => 'message',
-        ]);
+        $ticketService->notate((int) $ticket->id, (string) $request->resolution_message, [], 0, (int) $note->id);
 
         app(TicketPulseService::class)->invalidatePulse($ticket->id);
 
@@ -621,9 +582,7 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Author-only
@@ -661,16 +620,17 @@ class TicketController extends Controller
         ]);
     }
 
-    public function reply(Request $request, $id, $noteId)
+    public function reply(Request $request, $id, $noteId, TicketService $ticketService)
     {
         $request->validate([
             'body' => 'required|string|max:65535',
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+
+        Auth::setUser($user);
+
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $parent = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         // Reject nested replies
@@ -680,23 +640,22 @@ class TicketController extends Controller
             ], 422);
         }
 
-        $markdownService = app(MarkdownService::class);
-        $mentionService = app(MentionService::class);
+        $isDecision = (bool) preg_match('/^\/decision\s+(.+)$/s', trim($request->body), $decision);
+        $body = $isDecision ? trim($decision[1]) : $request->body;
 
-        $bodyHtml = $markdownService->parse($request->body);
+        $ticketService->notate((int) $ticket->id, $body, [], 0, (int) $parent->id);
 
-        $reply = Note::create([
-            'user_id' => $user->id,
-            'ticket_id' => $ticket->id,
-            'parent_id' => $parent->id,
-            'body' => $bodyHtml,
-            'body_markdown' => $request->body,
-            'notetype' => 'message',
-        ]);
+        $reply = Note::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('parent_id', $parent->id)
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->firstOrFail();
 
-        $mentionUsernames = $mentionService->parseMentions($request->body);
-        $mentionUserIds = User::whereIn('name', $mentionUsernames)->pluck('id')->toArray();
-        $mentionService->createMentions($reply, $mentionUserIds);
+        if ($isDecision) {
+            $reply->update(['notetype' => 'decision']);
+            app(DecisionRequestService::class)->closeWith($reply);
+        }
 
         $reply->load(['user', 'replies.user', 'reactions', 'attachments', 'mentions.user']);
 
@@ -713,9 +672,7 @@ class TicketController extends Controller
         ]);
 
         $user = $request->attributes->get('api_user');
-        $ticket = Ticket::where('id', $id)->where(function ($q) use ($user) {
-            $q->where('user_id2', $user->id)->orWhere('user_id', $user->id);
-        })->firstOrFail();
+        $ticket = Ticket::where('id', $id)->ownedBy($user->id)->firstOrFail();
         $note = Note::where('ticket_id', $ticket->id)->findOrFail($noteId);
 
         $existing = NoteReaction::where('note_id', $note->id)
@@ -743,12 +700,5 @@ class TicketController extends Controller
             ->toArray();
 
         return response()->json(['reactions' => $reactions]);
-    }
-
-    protected function extractMentionsFromText(string $text): array
-    {
-        preg_match_all('/@([\w.\-]+)/', $text, $matches);
-
-        return array_values(array_unique($matches[1] ?? []));
     }
 }

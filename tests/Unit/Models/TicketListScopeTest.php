@@ -28,13 +28,4 @@ class TicketListScopeTest extends TestCase
         $this->assertTrue($loaded->relationLoaded('notes'));
         $this->assertEquals([$visible->id], $loaded->notes->pluck('id')->all());
     }
-
-    #[Test]
-    public function list_sortable_is_shared(): void
-    {
-        $this->assertSame(
-            ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'],
-            Ticket::LIST_SORTABLE
-        );
-    }
 }

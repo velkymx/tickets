@@ -37,7 +37,6 @@ class HealthController extends Controller
 
             $token = Str::random(32);
             Cache::put('health-ping-pending', $token, 30);
-            Cache::put("health-ping-sent:{$token}", now()->timestamp, 30);
 
             try {
                 HealthPingJob::dispatch($token);
@@ -61,11 +60,6 @@ class HealthController extends Controller
             return response()->json(['status' => 'pending']);
         }
 
-        $sent = Cache::get("health-ping-sent:{$token}", $ran['at']);
-
-        return response()->json([
-            'status' => 'answered',
-            'duration' => max(0, $ran['at'] - $sent),
-        ]);
+        return response()->json(['status' => 'answered']);
     }
 }

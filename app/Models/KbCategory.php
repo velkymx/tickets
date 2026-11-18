@@ -2,17 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ReportsUniqueSlugCollisions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class KbCategory extends Model
 {
     use HasFactory;
+    use ReportsUniqueSlugCollisions;
 
     protected $fillable = ['name', 'slug', 'description', 'sort_order', 'parent_id'];
+
+    protected function slugCollisionMessage(): string
+    {
+        return 'A category with a similar name already exists.';
+    }
 
     protected static function booted(): void
     {
@@ -33,6 +41,24 @@ class KbCategory extends Model
 
             if (self::find($parentId)?->isDescendantOf($category)) {
                 throw ValidationException::withMessages(['parent_id' => 'A category cannot move under its own child.']);
+            }
+        });
+
+        static::saving(function (self $category): void {
+            if (blank($category->slug) && filled($category->name)) {
+                $category->slug = Str::slug($category->name);
+            }
+
+            if (blank($category->slug)) {
+                throw ValidationException::withMessages([
+                    'name' => 'The category name must contain at least one letter or number.',
+                ]);
+            }
+
+            if (self::slugIsTaken($category->slug, $category->exists ? $category->id : null)) {
+                throw ValidationException::withMessages([
+                    'name' => 'A category with a similar name already exists.',
+                ]);
             }
         });
     }

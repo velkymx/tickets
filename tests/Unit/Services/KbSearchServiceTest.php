@@ -36,6 +36,17 @@ class KbSearchServiceTest extends TestCase
     }
 
     #[Test]
+    public function authenticated_users_do_not_see_unverified_public_articles(): void
+    {
+        $user = User::factory()->create();
+        KbArticle::factory()->deprecated()->public()->create(['title' => 'Deprecated Public']);
+
+        $results = $this->service->search('', $user);
+
+        $this->assertNotContains('Deprecated Public', $results->pluck('title')->all());
+    }
+
+    #[Test]
     public function authenticated_user_sees_internal_and_own_drafts(): void
     {
         $user = User::factory()->create();
@@ -64,6 +75,42 @@ class KbSearchServiceTest extends TestCase
         $this->assertCount(1, $this->service->search('', $owner));
         $this->assertCount(1, $this->service->search('', $permitted));
         $this->assertCount(0, $this->service->search('', $stranger));
+    }
+
+    #[Test]
+    public function it_matches_literal_percent_signs(): void
+    {
+        KbArticle::factory()->verified()->public()->create(['title' => '100% Coverage Guide']);
+        KbArticle::factory()->verified()->public()->create(['title' => 'Unrelated Runbook']);
+
+        $results = $this->service->search('100%', null);
+
+        $this->assertCount(1, $results);
+        $this->assertSame('100% Coverage Guide', $results->first()->title);
+    }
+
+    #[Test]
+    public function it_matches_literal_underscores(): void
+    {
+        KbArticle::factory()->verified()->public()->create(['title' => 'release_notes_v2']);
+        KbArticle::factory()->verified()->public()->create(['title' => 'Unrelated Runbook']);
+
+        $results = $this->service->search('release_notes', null);
+
+        $this->assertCount(1, $results);
+        $this->assertSame('release_notes_v2', $results->first()->title);
+    }
+
+    #[Test]
+    public function it_matches_literal_underscores_and_exclamation_marks(): void
+    {
+        KbArticle::factory()->verified()->public()->create(['title' => 'Deploy_v2! checklist']);
+        KbArticle::factory()->verified()->public()->create(['title' => 'Unrelated Runbook']);
+
+        $results = $this->service->search('Deploy_v2!', null);
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Deploy_v2! checklist', $results->first()->title);
     }
 
     #[Test]

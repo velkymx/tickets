@@ -89,21 +89,4 @@ class BatchUpdateTicketRequestTest extends TestCase
         $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('release_id', $validator->errors()->toArray());
     }
-
-    #[Test]
-    public function it_authorizes_authenticated_users(): void
-    {
-        $request = new BatchUpdateTicketRequest;
-        $this->assertTrue($request->authorize());
-    }
-
-    #[Test]
-    public function it_returns_custom_error_messages(): void
-    {
-        $request = new BatchUpdateTicketRequest;
-        $messages = $request->messages();
-
-        $this->assertEquals('At least one ticket must be selected.', $messages['tickets.required']);
-        $this->assertEquals('One or more selected tickets do not exist.', $messages['tickets.*.exists']);
-    }
 }

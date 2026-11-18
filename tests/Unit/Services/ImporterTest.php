@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Importer;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -407,24 +408,44 @@ class ImporterTest extends TestCase
             ['Bug', 'Ticket 3', 'Desc', 'High', 'Open', 'Test Project', 'Assignee'],
         ]);
 
-        $importer = new class extends Importer
-        {
-            public array $models = [];
+        DB::flushQueryLog();
+        DB::enableQueryLog();
 
-            public function getModels(): array
-            {
-                return $this->models;
-            }
-        };
+        $this->importer->call($milestone->id, $this->tempFile, false);
 
-        $reflection = new \ReflectionClass(Importer::class);
-        $property = $reflection->getProperty('models');
-        $property->setAccessible(true);
+        $typeQueries = collect(DB::getQueryLog())->pluck('query')
+            ->filter(fn ($query) => str_contains($query, 'types') && str_contains($query, 'LOWER(name)'))
+            ->values();
 
-        $importer->call($milestone->id, $this->tempFile, false);
+        DB::disableQueryLog();
+        DB::flushQueryLog();
 
-        $models = $property->getValue($importer);
-        $this->assertArrayHasKey('App\Models\Type|Bug', $models);
+        $this->assertSame(1, $typeQueries->count(), 'Type lookups should be cached across rows: '.$typeQueries->implode("\n"));
+    }
+
+    #[Test]
+    public function it_imports_the_fixture_header_row_with_quoted_commas(): void
+    {
+        $user = User::factory()->create(['name' => 'Assignee']);
+        $milestone = Milestone::factory()->create();
+        Type::factory()->create(['name' => 'Regression']);
+        foreach (['Blocker', 'Critical', 'Major'] as $importance) {
+            Importance::factory()->create(['name' => $importance]);
+        }
+        foreach (['New', 'Active'] as $status) {
+            Status::factory()->create(['name' => $status]);
+        }
+        Project::factory()->create(['name' => 'Platform', 'active' => true]);
+
+        copy(base_path('tests/Fixtures/import.csv'), $this->tempFile);
+
+        $this->importer->call($milestone->id, $this->tempFile, true, $user->id);
+
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'FOUR-3722',
+            'description' => 'Select list with dropdown type data connectors in web entry, it is not displayed correctly',
+        ]);
+        $this->assertSame(6, Ticket::where('milestone_id', $milestone->id)->count());
     }
 
     #[Test]

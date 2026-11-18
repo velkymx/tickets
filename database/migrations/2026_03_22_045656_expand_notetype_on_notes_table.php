@@ -11,12 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // SQLite doesn't support ALTER COLUMN with ENUM, so we skip
-        // This migration only applies to MySQL/PostgreSQL
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
-            return;
-        }
-
         Schema::table('notes', function (Blueprint $table) {
             $table->string('notetype', 20)->default('message')->change();
         });
@@ -24,11 +18,11 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     * Migration is irreversible — expanding ENUM to string cannot be reversed
+     * Migration is irreversible: expanding ENUM to string cannot be reversed
      * without data loss. This is intentionally a no-op.
      */
     public function down(): void
     {
-        // Intentionally empty — expanding notetype column is irreversible
+        // Intentionally empty: expanding notetype column is irreversible
     }
 };

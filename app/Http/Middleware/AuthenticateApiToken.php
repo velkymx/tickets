@@ -25,7 +25,7 @@ class AuthenticateApiToken
         $hashed = hash('sha256', $token);
         $user = User::where('api_token', $hashed)->first();
 
-        if (! $user) {
+        if (! $user || ! $user->active) {
             return response()->json(['message' => 'Invalid token'], 401);
         }
 

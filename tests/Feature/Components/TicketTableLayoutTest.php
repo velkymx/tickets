@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Components;
 
+use App\Models\Importance;
 use App\Models\Note;
 use App\Models\Ticket;
 use App\Models\User;
@@ -27,25 +28,28 @@ class TicketTableLayoutTest extends TestCase
     }
 
     #[Test]
-    public function note_count_floats_right_on_subject(): void
+    public function note_count_floats_right_on_the_subject_row(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create();
+        $ticket = Ticket::factory()->create(['subject' => 'Row with note count']);
         Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get('/tickets');
 
         $response->assertStatus(200);
-        $response->assertSee('float-end', false);
+
+        $row = $this->rowFor($response->getContent(), $ticket->subject);
+
+        $this->assertStringContainsString('float-end', $row, 'Note count should float in its own row');
     }
 
     #[Test]
     public function estimate_cell_prefers_points_then_hours_then_dash(): void
     {
         $user = User::factory()->create();
-        Ticket::factory()->create(['subject' => 'Points row ticket', 'storypoints' => 5]);
-        Ticket::factory()->create(['subject' => 'Hours row ticket', 'storypoints' => 0, 'estimate' => 2.5]);
-        Ticket::factory()->create(['subject' => 'Bare row ticket', 'storypoints' => 0, 'estimate' => 0]);
+        $points = Ticket::factory()->create(['subject' => 'Points row ticket', 'storypoints' => 5]);
+        $hours = Ticket::factory()->create(['subject' => 'Hours row ticket', 'storypoints' => 0, 'estimate' => 2.5]);
+        $bare = Ticket::factory()->create(['subject' => 'Bare row ticket', 'storypoints' => 0, 'estimate' => 0]);
 
         $response = $this->actingAs($user)->get('/tickets');
 
@@ -53,8 +57,13 @@ class TicketTableLayoutTest extends TestCase
         $response->assertSee('5SP', false);
         $response->assertSee('2.5h', false);
         $response->assertDontSee('0SP', false);
+
+        $this->assertStringContainsString('5SP', $this->rowFor($response->getContent(), $points->subject));
+        $this->assertStringContainsString('2.5h', $this->rowFor($response->getContent(), $hours->subject));
+        $this->assertStringContainsString('<span class="text-muted">-</span>', $this->rowFor($response->getContent(), $bare->subject));
     }
 
+    #[Test]
     public function list_renders_stacked_cards_for_small_screens(): void
     {
         $user = User::factory()->create();
@@ -76,7 +85,14 @@ class TicketTableLayoutTest extends TestCase
         $response = $this->actingAs($user)->get('/tickets');
 
         $response->assertOk();
-        $response->assertSee('d-none d-lg-table-cell', false);
+
+        preg_match('/<thead\b.*?<\/thead>/s', $response->getContent(), $thead);
+
+        $this->assertMatchesRegularExpression(
+            '/<th[^>]*\bd-none d-lg-table-cell\b/',
+            $thead[0] ?? '',
+            'Responsive header cells should carry the small-screen hiding class'
+        );
     }
 
     #[Test]
@@ -88,7 +104,14 @@ class TicketTableLayoutTest extends TestCase
         $response = $this->actingAs($user)->get('/tickets');
 
         $response->assertOk();
-        $response->assertSee('text-truncate', false);
+
+        preg_match('/<tbody\b.*?<\/tbody>/s', $response->getContent(), $tbody);
+
+        $this->assertMatchesRegularExpression(
+            '/<td[^>]*\btext-truncate\b/',
+            $tbody[0] ?? '',
+            'Table body cells should carry the truncation class'
+        );
     }
 
     #[Test]
@@ -106,6 +129,22 @@ class TicketTableLayoutTest extends TestCase
     }
 
     #[Test]
+    public function importance_cell_shows_a_text_label(): void
+    {
+        $user = User::factory()->create();
+        $importance = Importance::factory()->create(['name' => 'VeryUrgent']);
+        $ticket = Ticket::factory()->create(['importance_id' => $importance->id]);
+
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertOk();
+        $this->assertStringContainsString(
+            'VeryUrgent</span>',
+            $this->rowFor($response->getContent(), $ticket->subject)
+        );
+    }
+
+    #[Test]
     public function panes_are_marked_for_bulk_select(): void
     {
         // bulk-select.js matches checkboxes to panes by data-pane, not by
@@ -118,5 +157,16 @@ class TicketTableLayoutTest extends TestCase
         $response->assertOk();
         $response->assertSee('data-pane="table"', false);
         $response->assertSee('data-pane="cards"', false);
+    }
+
+    private function rowFor(string $html, string $needle): string
+    {
+        preg_match(
+            '/<tr\b[^>]*>(?:(?!<\/tr>).)*'.preg_quote($needle, '/').'(?:(?!<\/tr>).)*<\/tr>/s',
+            $html,
+            $match
+        );
+
+        return $match[0] ?? '';
     }
 }

@@ -23,19 +23,22 @@ class KbArticlePolicyTest extends TestCase
     }
 
     #[Test]
-    public function admin_can_do_everything(): void
+    public function admin_roles_bypass_every_ability(): void
     {
         $admin = User::factory()->create(['admin' => true]);
+        $kbAdmin = User::factory()->create(['kb_role' => 'admin']);
 
         $this->assertTrue($this->policy->before($admin, 'view'));
+        $this->assertTrue($this->policy->before($kbAdmin, 'view'));
     }
 
     #[Test]
-    public function kb_admin_can_do_everything(): void
+    public function before_grants_nothing_to_guests_on_public_articles(): void
     {
-        $kbAdmin = User::factory()->create(['kb_role' => 'admin']);
+        $article = KbArticle::factory()->verified()->public()->create();
 
-        $this->assertTrue($this->policy->before($kbAdmin, 'view'));
+        $this->assertNull($this->policy->before(null, 'view'));
+        $this->assertTrue($this->policy->view(null, $article));
     }
 
     #[Test]

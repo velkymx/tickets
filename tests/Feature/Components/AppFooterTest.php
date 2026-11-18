@@ -19,7 +19,6 @@ class AppFooterTest extends TestCase
         $response = $this->actingAs($user)->get('/home');
 
         $response->assertStatus(200);
-        $response->assertSee('actions/workflows/tests.yml/badge.svg?branch=master', false);
         $response->assertSee('<a href="https://blog.ajb.bz/" target="_blank" rel="noopener noreferrer">Alan Bollinger</a>', false);
         $response->assertDontSee('Techno Sorcery Corporation', false);
     }

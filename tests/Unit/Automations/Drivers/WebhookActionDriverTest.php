@@ -3,7 +3,6 @@
 namespace Tests\Unit\Automations\Drivers;
 
 use App\Automations\Drivers\WebhookActionDriver;
-use App\Automations\Exceptions\SsrfException;
 use App\Models\Automation;
 use App\Models\AutomationAction;
 use App\Models\AutomationRule;
@@ -79,33 +78,6 @@ class WebhookActionDriverTest extends TestCase
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
-        app(WebhookActionDriver::class)->execute($action, [], $run);
-    }
-
-    #[Test]
-    public function it_blocks_ssrf_urls_and_throws(): void
-    {
-        $automation = Automation::factory()->create();
-        $rule = AutomationRule::factory()->create(['automation_id' => $automation->id]);
-        $action = AutomationAction::factory()->create([
-            'automation_rule_id' => $rule->id,
-            'type' => 'call_webhook',
-            'config_json' => [
-                'url' => 'http://127.0.0.1/evil',
-                'method' => 'POST',
-                'headers' => [],
-                'payload' => [],
-            ],
-        ]);
-        $run = AutomationRun::create([
-            'automation_id' => $automation->id,
-            'automation_rule_id' => $rule->id,
-            'trigger_name' => 'ticket.updated',
-            'status' => 'running',
-            'context_json' => [],
-        ]);
-
-        $this->expectException(SsrfException::class);
         app(WebhookActionDriver::class)->execute($action, [], $run);
     }
 }

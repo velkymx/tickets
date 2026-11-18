@@ -1,8 +1,3 @@
-import { Editor } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import Placeholder from '@tiptap/extension-placeholder';
-
 const BUTTONS = [
     { command: 'toggleBold', icon: 'fa-bold', title: 'Bold', active: 'bold' },
     { command: 'toggleItalic', icon: 'fa-italic', title: 'Italic', active: 'italic' },
@@ -41,6 +36,10 @@ function buildButton(spec) {
 }
 
 function runButton(editor, spec) {
+    if (!editor) {
+        return;
+    }
+
     const chain = editor.chain().focus();
 
     if (spec.command) {
@@ -108,22 +107,7 @@ function initEditor(element) {
     element.appendChild(toolbar);
     element.appendChild(mount);
 
-    const editor = new Editor({
-        element: mount,
-        extensions: [
-            StarterKit.configure({
-                link: { openOnClick: false },
-            }),
-            Image,
-            Placeholder.configure({
-                placeholder: element.dataset.placeholder || '',
-            }),
-        ],
-        content: target.value || '',
-        onUpdate: ({ editor }) => {
-            target.value = editor.isEmpty ? '' : editor.getHTML();
-        },
-    });
+    let editor = null;
 
     const controls = [];
 
@@ -144,19 +128,57 @@ function initEditor(element) {
     });
 
     const syncActive = () => {
+        if (!editor) {
+            return;
+        }
+
         controls.forEach(({ button, spec }) => {
             button.classList.toggle('active', isActive(editor, spec));
         });
     };
 
-    editor.on('selectionUpdate', syncActive);
-    editor.on('transaction', syncActive);
-    syncActive();
+    const start = async () => {
+        const [{ Editor }, { default: StarterKit }, { default: Image }, { default: Placeholder }] = await Promise.all([
+            import('@tiptap/core'),
+            import('@tiptap/starter-kit'),
+            import('@tiptap/extension-image'),
+            import('@tiptap/extension-placeholder'),
+        ]);
+
+        editor = new Editor({
+            element: mount,
+            extensions: [
+                StarterKit.configure({
+                    link: { openOnClick: false },
+                }),
+                Image,
+                Placeholder.configure({
+                    placeholder: element.dataset.placeholder || '',
+                }),
+            ],
+            content: target.value || '',
+            onUpdate: ({ editor }) => {
+                target.value = editor.isEmpty ? '' : editor.getHTML();
+            },
+        });
+
+        editor.on('selectionUpdate', syncActive);
+        editor.on('transaction', syncActive);
+        syncActive();
+    };
+
+    start().catch((error) => {
+        console.error('Error initializing rich text editor:', error);
+    });
 
     const form = element.closest('form');
 
     if (form) {
         form.addEventListener('submit', () => {
+            if (!editor) {
+                return;
+            }
+
             target.value = editor.isEmpty ? '' : editor.getHTML();
         });
     }

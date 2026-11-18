@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use App\Notifications\WatcherNotification;
 use App\Observers\TicketObserver;
-use App\Services\NotificationBatchService;
+use App\Services\NotificationService;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 #[ObservedBy(TicketObserver::class)]
 class Ticket extends Model
@@ -18,7 +18,7 @@ class Ticket extends Model
     use HasFactory;
 
     /** Request keys accepted by the filter scope (also used to repopulate the filter UI). */
-    public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'importance_id', 'q', 'assignee'];
+    public const FILTER_KEYS = ['milestone_id', 'project_id', 'status_id', 'type_id', 'user_id', 'user_id2', 'importance_id', 'q', 'assignee', 'decision'];
 
     /** Sortable column whitelist shared by every paginated ticket list. */
     public const LIST_SORTABLE = ['subject', 'importance_id', 'status_id', 'project_id', 'created_at', 'updated_at'];
@@ -30,9 +30,19 @@ class Ticket extends Model
     public function scopeWithListRelations(Builder $query): Builder
     {
         return $query->with([
-            'status', 'type', 'importance', 'project', 'assignee',
+            'status', 'type', 'importance', 'project', 'assignee', 'openDecisionRequests',
             'notes' => fn ($q) => $q->where('hide', 0)->where('notetype', 'message'),
+        ])->withCount([
+            'notes as visible_notes_count' => fn ($q) => $q->where('hide', 0)->where('notetype', 'message'),
         ]);
+    }
+
+    public function scopeNeedsDecision(Builder $query, ?int $deciderId = null): Builder
+    {
+        return $query->whereHas('openDecisionRequests', fn ($q) => $q->when(
+            $deciderId !== null,
+            fn ($q) => $q->where('decider_id', $deciderId)
+        ));
     }
 
     /** Importance level id for "blocker" (seeded by DefaultsSeeder). */
@@ -57,6 +67,13 @@ class Ticket extends Model
     public function scopeClosed(Builder $query): Builder
     {
         return $query->whereIn('status_id', Status::closedStatusIds());
+    }
+
+    public function scopeOwnedBy(Builder $query, int $userId): Builder
+    {
+        return $query->where(function (Builder $q) use ($userId) {
+            $q->where('user_id2', $userId)->orWhere('user_id', $userId);
+        });
     }
 
     /**
@@ -98,6 +115,14 @@ class Ticket extends Model
             $query->where('user_id2', auth()->id());
         }
 
+        if (($params['decision'] ?? null) === 'me' && auth()->check()) {
+            $query->needsDecision(auth()->id());
+        }
+
+        if (($params['decision'] ?? null) === 'any') {
+            $query->needsDecision();
+        }
+
         return $query;
     }
 
@@ -117,31 +142,24 @@ class Ticket extends Model
             .($oldStatus->name ?? 'closed')
             .' to '.($this->status->name ?? 'open').').';
 
-        Note::create([
-            'user_id' => $userId,
-            'ticket_id' => $this->id,
-            'body' => $message,
-            'body_markdown' => $message,
-            'notetype' => 'changelog',
-        ]);
+        Cache::lock("ticket-reopen-audit:{$this->getKey()}", 5)->block(2, function () use ($userId, $message) {
+            Note::firstOrCreate(
+                [
+                    'ticket_id' => $this->getKey(),
+                    'notetype' => 'changelog',
+                    'body_markdown' => $message,
+                ],
+                [
+                    'user_id' => $userId,
+                    'body' => $message,
+                ]
+            );
+        });
     }
 
     public function notifyWatchers(string $type, ?int $exceptUserId = null): void
     {
-        $url = url("/tickets/{$this->id}");
-        $message = "The {$type} '{$this->subject}' has been updated.";
-
-        $this->load('watchers.user');
-
-        $this->watchers->each(function ($watcher) use ($type, $message, $url, $exceptUserId) {
-            if ($watcher->user_id !== $exceptUserId && ! $watcher->muted && $watcher->user?->email) {
-                app(NotificationBatchService::class)->dispatch(
-                    $watcher->user,
-                    new WatcherNotification($type, $message, $url),
-                    $this->id
-                );
-            }
-        });
+        app(NotificationService::class)->notifyTicketUpdate($this, $exceptUserId);
     }
 
     protected $fillable = [
@@ -163,11 +181,6 @@ class Ticket extends Model
     public function type(): BelongsTo
     {
         return $this->belongsTo(Type::class);
-    }
-
-    public function getActualHoursAttribute()
-    {
-        return (int) ($this->attributes['notes_sum_hours'] ?? 0);
     }
 
     public function milestone(): BelongsTo
@@ -203,6 +216,11 @@ class Ticket extends Model
     public function notes(): HasMany
     {
         return $this->hasMany(Note::class);
+    }
+
+    public function openDecisionRequests(): HasMany
+    {
+        return $this->hasMany(Note::class)->openDecisionRequests()->oldest();
     }
 
     public function estimates(): HasMany

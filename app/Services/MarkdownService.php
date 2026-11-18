@@ -54,10 +54,15 @@ class MarkdownService
         }
 
         $names = array_unique(array_values($namesByPlaceholder));
-        $users = User::whereIn('name', $names)->get()->keyBy('name');
+        // Display names are not unique. The oldest account wins so the
+        // link target is deterministic instead of load order.
+        $usersByName = [];
+        foreach (User::whereIn('name', $names)->orderBy('id')->get() as $user) {
+            $usersByName[$user->name] ??= $user;
+        }
 
         foreach ($namesByPlaceholder as $placeholder => $name) {
-            $user = $users[$name] ?? null;
+            $user = $usersByName[$name] ?? null;
             if ($user) {
                 $replacement = '<a class="mention" href="/users/'.$user->id.'">@'.e($name).'</a>';
             } else {

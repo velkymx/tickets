@@ -11,6 +11,10 @@ Dashboard
     </a>
 </div>
 
+@if ($decisionRequests->isNotEmpty())
+    <x-decision-box :requests="$decisionRequests" />
+@endif
+
 {{-- Quick Stats --}}
 <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
     <div class="col">
@@ -79,7 +83,7 @@ Dashboard
                     <a href="/tickets" class="btn btn-outline-primary">
                         <i class="fas fa-list me-2"></i> All Tickets
                     </a>
-                    <a href="/tickets?user_id={{ auth()->id() }}" class="btn btn-outline-secondary">
+                    <a href="{{ url('tickets').'?q=assignee%3Ame' }}" class="btn btn-outline-secondary">
                         <i class="fas fa-user me-2"></i> My Tickets
                     </a>
                     <a href="/tickets/board" class="btn btn-outline-secondary">
@@ -107,7 +111,7 @@ Dashboard
                                     <div class="flex-grow-1" style="min-width:0;">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
                                             <span class="badge text-bg-secondary">#{{ $note->ticket->id }}</span>
-                                            <small class="text-muted text-nowrap flex-shrink-0">{{ $note->created_at->diffForHumans(['short' => true]) }}</small>
+                                            <small class="text-muted text-nowrap flex-shrink-0"><x-relative-time :value="$note->created_at" short /></small>
                                         </div>
                                         <p class="mb-0 mt-1 small text-body-secondary text-truncate">{{ Str::words(strip_tags($note->body), 12) }}</p>
                                     </div>
@@ -124,7 +128,7 @@ Dashboard
                                     <div class="flex-grow-1" style="min-width:0;">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
                                             <x-importance-badge :importance="$ticket->importance" pill />
-                                            <small class="text-muted text-nowrap flex-shrink-0">{{ $ticket->updated_at->diffForHumans(['short' => true]) }}</small>
+                                            <small class="text-muted text-nowrap flex-shrink-0"><x-relative-time :value="$ticket->updated_at" short /></small>
                                         </div>
                                         <p class="mb-0 mt-1 small text-truncate">#{{ $ticket->id }} {{ $ticket->subject }}</p>
                                     </div>

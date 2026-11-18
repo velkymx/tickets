@@ -29,8 +29,8 @@ class StandupDigestPrompt extends Prompt
         return Response::text(
             "Write a standup digest for milestone {$milestoneId}:\n".
             "1. Call list-milestones-tool to confirm scope, then get-milestone-tool for its tickets.\n".
-            "2. Call get-pulse-tool per open ticket and group results: BLOCKED (with blocker reason and owner), AT RISK (with why), ON TRACK.\n".
-            '3. Keep it short: one line per ticket, owners named, decisions needed listed last so they stand out. Notes attach to tickets, not milestones, so record follow-ups on the relevant ticket.'
+            "2. Call get-pulse-tool per open ticket and group results: DECISIONS NEEDED first (each decision_requests entry with its question, decider, and wait), then BLOCKED (with blocker reason and owner), AT RISK (with why), ON TRACK.\n".
+            '3. Keep it short: one line per ticket, owners named, decisions needed at the top so nobody misses them. Notes attach to tickets, not milestones, so record follow-ups on the relevant ticket.'
         );
     }
 }

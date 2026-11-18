@@ -130,13 +130,12 @@
             
             {{-- Completed Date --}}
             <div class="col-md-6">
-                <label for="closed_at" class="form-label">Completed Date</label>
-                <input type="date" name="closed_at" id="closed_at" 
-                       class="form-control @error('closed_at') is-invalid @enderror" 
-                       value="{{ old('closed_at', $ticket->closed_at?->format('Y-m-d')) }}">
-                @error('closed_at')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <label class="form-label">Completed Date</label>
+                <input type="text"
+                       class="form-control"
+                       value="{{ $ticket->closed_at?->format('M jS, Y g:ia') ?? 'Not closed' }}"
+                       readonly
+                       disabled>
             </div>
 
             {{-- Time Estimate (Replaces Form::text) --}}

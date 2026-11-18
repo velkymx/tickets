@@ -21,16 +21,6 @@ class UsersControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_requires_authentication(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->get("/users/{$user->id}");
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function show_returns_user_view(): void
     {
         $user = User::factory()->create();
@@ -203,14 +193,6 @@ class UsersControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('currenttime');
-    }
-
-    #[Test]
-    public function edit_requires_authentication(): void
-    {
-        $response = $this->get('/user/edit');
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]

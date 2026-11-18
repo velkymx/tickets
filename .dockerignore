@@ -5,7 +5,7 @@
 .gitignore
 .github
 
-# Secrets / local env — provided at runtime via compose env_file, never baked in
+# Secrets / local env: provided at runtime via compose env_file, never baked in
 .env
 .env.*
 !.env.example
@@ -21,7 +21,6 @@ storage/logs/*
 storage/framework/cache/data/*
 storage/framework/sessions/*
 storage/framework/views/*
-storage/*.sqlite
 storage/framework/.seeded
 
 # Not needed at build/runtime

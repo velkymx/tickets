@@ -69,6 +69,14 @@ class TicketQueryParserTest extends TestCase
     }
 
     #[Test]
+    public function decision_tokens_set_the_decision_filter(): void
+    {
+        $this->assertSame(['decision' => 'me'], $this->parser()->parse('decision:me'));
+        $this->assertSame(['decision' => 'any'], $this->parser()->parse('decision:any'));
+        $this->assertSame([], $this->parser()->parse('decision:maybe'));
+    }
+
+    #[Test]
     public function project_accepts_id_or_quoted_name(): void
     {
         $project = Project::factory()->create(['name' => 'Big Thing']);

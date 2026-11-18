@@ -2,20 +2,23 @@
 
 namespace App\Services;
 
+use App\Exceptions\SlashCommandException;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 
 class SlashCommandService
 {
+    public function __construct(private ?MentionService $mentionService = null)
+    {
+        $this->mentionService ??= app(MentionService::class);
+    }
+
     public function handle(Ticket $ticket, string $text): array
     {
-        return DB::transaction(function () use ($ticket, $text) {
-            return $this->processCommands($ticket, $text);
-        });
+        return $this->processCommands($ticket, $text);
     }
 
     protected function processCommands(Ticket $ticket, string $text): array
@@ -76,6 +79,10 @@ class SlashCommandService
 
         $results['body'] = trim(implode("\n", $bodyLines));
 
+        if ($ticket->isDirty()) {
+            $ticket->save();
+        }
+
         if (count($results['actions']) > 0 || count($results['changes']) > 0) {
             (new TicketPulseService)->invalidatePulse($ticket->id);
         }
@@ -95,14 +102,12 @@ class SlashCommandService
         switch ($command) {
             case 'status':
                 if ($this->hasActiveBlocker($ticket)) {
-                    $result['changes'][] = 'Resolve blocker before changing status';
-                    break;
+                    throw new SlashCommandException('Resolve blocker before changing status');
                 }
 
                 $status = $this->findByName(Status::class, $args);
                 if ($status) {
                     $ticket->status_id = $status->id;
-                    $ticket->save();
                     $result['changes'][] = "Status changed to {$status->name}";
                     $result['actions'][] = ['action' => 'status_changed', 'to' => $status->name];
                 }
@@ -113,7 +118,6 @@ class SlashCommandService
                 $user = $this->findByName(User::class, $name);
                 if ($user) {
                     $ticket->user_id2 = $user->id;
-                    $ticket->save();
                     $result['changes'][] = "Assigned to {$user->name}";
                     $result['actions'][] = ['action' => 'assigned', 'to' => $user->name];
                 }
@@ -121,8 +125,7 @@ class SlashCommandService
 
             case 'close':
                 if ($this->hasActiveBlocker($ticket)) {
-                    $result['changes'][] = 'Resolve blocker before changing status';
-                    break;
+                    throw new SlashCommandException('Resolve blocker before changing status');
                 }
 
                 $closedStatusId = Status::byName('closed')->value('id')
@@ -135,14 +138,18 @@ class SlashCommandService
 
                 $ticket->status_id = $closedStatusId;
                 $ticket->closed_at = now();
-                $ticket->save();
                 $result['changes'][] = 'Ticket closed';
                 $result['actions'][] = ['action' => 'closed'];
                 break;
 
             case 'reopen':
+                if (Status::isClosed((int) $ticket->status_id)) {
+                    $ticket->status_id = Status::query()
+                        ->whereNotIn('id', Status::closedStatusIds())
+                        ->orderBy('id')
+                        ->value('id') ?? $ticket->status_id;
+                }
                 $ticket->closed_at = null;
-                $ticket->save();
                 $result['changes'][] = 'Ticket reopened';
                 $result['actions'][] = ['action' => 'reopened'];
                 break;
@@ -153,7 +160,6 @@ class SlashCommandService
                     break;
                 }
                 $ticket->estimate = (int) $args;
-                $ticket->save();
                 $result['changes'][] = "Estimate changed to {$args}h";
                 $result['actions'][] = ['action' => 'estimate_changed', 'to' => (int) $args];
                 break;
@@ -172,7 +178,6 @@ class SlashCommandService
                 $importance = $this->findByName(Importance::class, $args);
                 if ($importance) {
                     $ticket->importance_id = $importance->id;
-                    $ticket->save();
                     $result['changes'][] = "Importance changed to {$importance->name}";
                     $result['actions'][] = ['action' => 'importance_changed', 'to' => $importance->name];
                 }
@@ -182,7 +187,6 @@ class SlashCommandService
                 $milestone = $this->findByName(Milestone::class, $args);
                 if ($milestone) {
                     $ticket->milestone_id = $milestone->id;
-                    $ticket->save();
                     $result['changes'][] = "Milestone changed to {$milestone->name}";
                     $result['actions'][] = ['action' => 'milestone_changed', 'to' => $milestone->name];
                 }
@@ -202,24 +206,18 @@ class SlashCommandService
                 break;
 
             case 'action':
-                $mentions = $this->extractMentions($args);
+                $assignee = $this->mentionService->findMentionedUser($args);
 
-                if (count($mentions) !== 1) {
-                    $result['changes'][] = 'Actions require exactly one @assignee';
-                    break;
+                if (! $assignee) {
+                    throw new SlashCommandException('Actions require exactly one @assignee');
                 }
 
                 if ($ticket->notes()->where('notetype', 'action')->where('resolved', false)->count() >= 3) {
-                    $result['changes'][] = 'Too many open actions. Resolve or overwrite an existing action before creating a new one';
-                    break;
+                    throw new SlashCommandException('Too many open actions. Resolve or overwrite an existing action before creating a new one');
                 }
 
-                $assigneeName = $mentions[0];
-                $assignee = $this->findByName(User::class, $assigneeName);
-
-                if ($assignee && ! $ticket->assignee) {
+                if (! $ticket->assignee) {
                     $ticket->user_id2 = $assignee->id;
-                    $ticket->save();
                     $result['changes'][] = "Assigned to {$assignee->name}";
                     $result['actions'][] = ['action' => 'assigned', 'to' => $assignee->name];
                 }
@@ -227,6 +225,19 @@ class SlashCommandService
                 $result['note_type'] = 'action';
                 $result['body_lines'][] = $args;
                 $result['actions'][] = ['action' => 'signal_set', 'to' => 'action'];
+                break;
+
+            case 'decide':
+                $decider = $this->mentionService->findMentionedUser($args);
+
+                if (! $decider) {
+                    throw new SlashCommandException('Decision requests require exactly one @decider');
+                }
+
+                $result['note_type'] = 'decision_needed';
+                $result['note_attributes'] = ['decider_id' => $decider->id];
+                $result['body_lines'][] = $args;
+                $result['actions'][] = ['action' => 'signal_set', 'to' => 'decision_needed'];
                 break;
 
             default:
@@ -243,21 +254,6 @@ class SlashCommandService
         return $ticket->notes()->where('notetype', 'blocker')->where('resolved', false)->exists();
     }
 
-    protected function extractMentions(string $text): array
-    {
-        preg_match_all('/@\[([^\]]+)\]/u', $text, $bracketMatches);
-        preg_match_all('/@([\w.\-]+)/u', $text, $bareMatches);
-
-        $bracketMentions = array_values(array_unique(array_map(
-            fn (string $token) => preg_replace('/\s*\([^)]*\)$/', '', trim($token)),
-            $bracketMatches[1] ?? []
-        )));
-
-        $bareMentions = array_values(array_unique($bareMatches[1] ?? []));
-
-        return array_unique(array_merge($bracketMentions, $bareMentions));
-    }
-
     protected function findByName(string $class, string $value): mixed
     {
         $trimmed = trim($value);
@@ -265,9 +261,9 @@ class SlashCommandService
         // LOWER() match is portable, but MySQL collations compare
         // case-insensitively, so an exact-case row must win in PHP.
         // Otherwise 'Testing' resolves to seeded 'testing' on MySQL.
-        $candidates = $class::query()
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])
-            ->get();
+        $candidates = $class === User::class
+            ? User::query()->withName($trimmed)->get()
+            : $class::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($trimmed)])->get();
 
         return $candidates->firstWhere('name', $trimmed) ?? $candidates->first();
     }

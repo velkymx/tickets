@@ -131,11 +131,4 @@ class UpdateTicketRequestTest extends TestCase
         $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('subject', $validator->errors()->toArray());
     }
-
-    #[Test]
-    public function it_authorizes_authenticated_users(): void
-    {
-        $request = new UpdateTicketRequest;
-        $this->assertTrue($request->authorize());
-    }
 }

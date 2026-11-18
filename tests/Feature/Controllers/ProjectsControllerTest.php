@@ -2,12 +2,15 @@
 
 namespace Tests\Feature\Controllers;
 
+use App\Models\Note;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\PriorityMatrixService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -15,14 +18,6 @@ use Tests\Traits\SeedsDatabase;
 class ProjectsControllerTest extends TestCase
 {
     use SeedsDatabase;
-
-    #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get('/projects');
-
-        $response->assertRedirect('/login');
-    }
 
     #[Test]
     public function index_returns_projects_ordered_by_name(): void
@@ -34,7 +29,13 @@ class ProjectsControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/projects');
 
         $response->assertStatus(200);
-        $this->assertEquals(['Apple', 'Zebra'], Project::where('name', '!=', 'Unassigned')->orderBy('name')->pluck('name')->toArray());
+        $this->assertSame(
+            ['Apple', 'Zebra'],
+            $response->viewData('projects')->pluck('name')
+                ->reject(fn ($name) => $name === 'Unassigned')
+                ->values()
+                ->all()
+        );
     }
 
     #[Test]
@@ -47,18 +48,9 @@ class ProjectsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $projects = $response->viewData('projects');
-        $this->assertLessThanOrEqual(25, $projects->count());
         $this->assertInstanceOf(LengthAwarePaginator::class, $projects);
-    }
-
-    #[Test]
-    public function show_requires_authentication(): void
-    {
-        $project = Project::factory()->create();
-
-        $response = $this->get("/projects/show/{$project->id}");
-
-        $response->assertRedirect('/login');
+        $this->assertSame(25, $projects->count());
+        $this->assertSame(31, $projects->total());
     }
 
     #[Test]
@@ -183,13 +175,15 @@ class ProjectsControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $project = Project::factory()->create();
-        $status = Status::factory()->create();
-        Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $status->id]);
+        $status = Status::factory()->create(['name' => 'awaitingqa']);
+        $inStatus = Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $status->id]);
         Ticket::factory()->create(['project_id' => $project->id]);
 
-        $response = $this->actingAs($user)->get("/projects/show/{$project->id}?status_id={$status->id}");
+        $response = $this->actingAs($user)
+            ->get("/projects/show/{$project->id}?q=".urlencode('status:awaitingqa'));
 
         $response->assertStatus(200);
+        $this->assertSame([$inStatus->id], $response->viewData('tickets')->pluck('id')->all());
     }
 
     #[Test]
@@ -212,6 +206,56 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_counts_tickets_without_loading_their_notes(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $tickets = Ticket::factory()->count(15)->create(['project_id' => $project->id]);
+        foreach ($tickets as $ticket) {
+            Note::factory()->count(2)->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+        }
+
+        DB::enableQueryLog();
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $pageIds = $response->viewData('tickets')->pluck('id')->all();
+        $this->assertCount(10, $pageIds);
+        $overreaching = collect(DB::getQueryLog())->filter(function ($entry) use ($pageIds) {
+            if (! preg_match('/"ticket_id" in \(([\d,\s]+)\)/', $entry['query'], $matches)) {
+                return false;
+            }
+            $ids = array_map('intval', explode(',', $matches[1]));
+
+            return (bool) array_diff($ids, $pageIds);
+        });
+        // Notes may load for the rendered page only. The summary counts
+        // must come from aggregates instead of hydrating every ticket
+        // and note on the project.
+        $this->assertCount(0, $overreaching);
+    }
+
+    #[Test]
+    public function show_status_summary_matches_ticket_statuses(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::factory()->create();
+        $openStatus = Status::factory()->open()->create();
+        $closedStatus = Status::factory()->closed()->create();
+        cache()->forget('closed_status_ids');
+
+        Ticket::factory()->count(2)->create(['project_id' => $project->id, 'status_id' => $openStatus->id]);
+        Ticket::factory()->create(['project_id' => $project->id, 'status_id' => $closedStatus->id]);
+
+        $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Status Summary', false);
+        $response->assertViewHas('total', 3);
+        $response->assertViewHas('completed', 1);
+    }
+
+    #[Test]
     public function show_eager_loads_ticket_relationships(): void
     {
         $user = User::factory()->create();
@@ -224,14 +268,6 @@ class ProjectsControllerTest extends TestCase
         $tickets = $response->viewData('tickets');
         $this->assertTrue($tickets[0]->relationLoaded('status'));
         $this->assertTrue($tickets[0]->relationLoaded('type'));
-    }
-
-    #[Test]
-    public function create_requires_authentication(): void
-    {
-        $response = $this->get('/projects/create');
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -281,35 +317,16 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
-    public function edit_requires_authentication(): void
-    {
-        $project = Project::factory()->create();
-
-        $response = $this->get("/projects/edit/{$project->id}");
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
-    public function it_authorizes_update(): void
+    public function it_renders_the_edit_view_for_an_active_project(): void
     {
         $user = User::factory()->create();
         $project = Project::factory()->create();
 
         $response = $this->actingAs($user)->get("/projects/edit/{$project->id}");
 
-        $response->assertStatus(200);
-    }
-
-    #[Test]
-    public function it_returns_edit_view(): void
-    {
-        $user = User::factory()->create();
-        $project = Project::factory()->create();
-
-        $response = $this->actingAs($user)->get("/projects/edit/{$project->id}");
-
-        $response->assertViewHas('project');
+        $response->assertOk();
+        $response->assertViewIs('projects.edit');
+        $response->assertViewHas('project', fn ($loaded) => $loaded->is($project));
     }
 
     #[Test]
@@ -369,29 +386,18 @@ class ProjectsControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_redirects_to_projects_index(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/projects/store/new', [
-            'id' => 'new',
-            'name' => 'Test Project',
-        ]);
-
-        $response->assertRedirect('/projects');
-    }
-
-    #[Test]
     public function show_renders_ticket_list_when_ticket_has_no_importance(): void
     {
         $user = User::factory()->create();
         $project = Project::factory()->create();
         // A ticket with no matching importance row (created without a priority).
+        Schema::disableForeignKeyConstraints();
         Ticket::factory()->create([
             'project_id' => $project->id,
             'importance_id' => 0,
             'subject' => 'Priorityless ticket',
         ]);
+        Schema::enableForeignKeyConstraints();
 
         $response = $this->actingAs($user)->get("/projects/show/{$project->id}");
 

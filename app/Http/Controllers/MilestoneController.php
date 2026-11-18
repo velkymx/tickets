@@ -6,6 +6,7 @@ use App\Http\Requests\StoreMilestoneRequest;
 use App\Http\Requests\UpdateMilestoneRequest;
 use App\Models\Milestone;
 use App\Models\MilestoneWatcher;
+use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
@@ -62,7 +63,13 @@ class MilestoneController extends Controller
 
         $types = Type::all();
 
-        return view('milestone.print', compact('milestone', 'types', 'projects'));
+        $closedIds = Status::closedStatusIds();
+        $groupedTickets = $milestone->tickets
+            ->filter(fn ($ticket) => ! in_array($ticket->status_id, $closedIds, true) && $ticket->project)
+            ->sortBy('subject')
+            ->groupBy(['project_id', 'type_id']);
+
+        return view('milestone.print', compact('milestone', 'types', 'projects', 'groupedTickets'));
 
     }
 
@@ -93,13 +100,27 @@ class MilestoneController extends Controller
         $total = $milestone->tickets()->count();
         $percent = $total > 0 ? min(100, (int) round($completed / $total * 100)) : 0;
 
+        $planned = Ticket::where('milestone_id', $milestone->id)
+            ->selectRaw('COALESCE(SUM(storypoints), 0) as storypoints, COALESCE(SUM(estimate), 0) as estimate')
+            ->first();
+        $actualHours = (float) Note::whereIn('ticket_id', Ticket::where('milestone_id', $milestone->id)->select('id'))
+            ->where('hide', 0)
+            ->sum('hours');
+
         $blockers = Ticket::where('milestone_id', $milestone->id)
             ->blockers()
             ->with(['importance', 'status'])
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'percent', 'searchQuery', 'searchTokens', 'blockers'));
+        $members = $milestone->tickets
+            ->pluck('assignee')
+            ->filter()
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+
+        return view('milestone.show', compact('milestone', 'tickets', 'completed', 'total', 'percent', 'searchQuery', 'searchTokens', 'blockers', 'planned', 'actualHours', 'members'));
 
     }
 
@@ -143,6 +164,7 @@ class MilestoneController extends Controller
         $validated = $request->validated();
 
         if ($request->id === 'new') {
+            $this->authorize('create', Milestone::class);
             $validated['active'] = 1;
 
             Milestone::create($validated);
@@ -270,14 +292,16 @@ class MilestoneController extends Controller
             $actualBurndown = [];
             $dates = [];
 
-            $daysInMilestone = $startDate->diffInDays($milestoneEnd) + 1;
-            $pointsPerDay = $totalStoryPoints / max($daysInMilestone, 1);
+            $daysInMilestone = (int) ($startDate->diffInDays($milestoneEnd) + 1);
+            $pointsPerDay = $totalStoryPoints / max($daysInMilestone - 1, 1);
             $pointsPerDay = $pointsPerDay > 0 ? $pointsPerDay : 0;
 
-            for ($i = 0; $i <= $daysInMilestone; $i++) {
+            for ($i = 0; $i < $daysInMilestone; $i++) {
                 $date = $startDate->copy()->addDays($i);
                 $dates[] = $date->format('M j');
-                $idealBurndown[] = max(0, $totalStoryPoints - ($pointsPerDay * $i));
+                $idealBurndown[] = $daysInMilestone === 1
+                    ? 0
+                    : max(0, $totalStoryPoints - ($pointsPerDay * $i));
             }
 
             $closedAtDates = $tickets->whereIn('status_id', $closedStatusIds)
@@ -298,7 +322,14 @@ class MilestoneController extends Controller
             }
 
             $lastClosed = 0;
-            for ($i = 0; $i <= $daysInMilestone; $i++) {
+            $startKey = $startDate->format('Y-m-d');
+            foreach ($runningDates as $dateStr => $cumulative) {
+                if ($dateStr >= $startKey) {
+                    break;
+                }
+                $lastClosed = $cumulative;
+            }
+            for ($i = 0; $i < $daysInMilestone; $i++) {
                 $date = $startDate->copy()->addDays($i)->format('Y-m-d');
                 if (isset($runningDates[$date])) {
                     $lastClosed = $runningDates[$date];

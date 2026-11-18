@@ -7,6 +7,7 @@
         $filters = [
             'all' => 'All',
             'mentions' => 'Mentions',
+            'decisions' => 'Decisions',
             'watching' => 'Watching',
             'replies' => 'Replies',
         ];
@@ -74,7 +75,7 @@
                                 <h2 class="h6 mb-1">@if($titleSuffix && $actorLabel)@if($actorId)<a href="/users/{{ $actorId }}" class="text-decoration-none">{{ $actorLabel }}</a>@else{{ $actorLabel }}@endif{{ $titleSuffix }}@else{{ $title }}@endif</h2>
                                 <p class="mb-0 text-muted">{{ $excerpt }}</p>
                             </div>
-                            <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>
+                            <small class="text-muted"><x-relative-time :value="$notification->created_at" /></small>
                         </div>
 
                         <div class="d-flex flex-wrap gap-2">

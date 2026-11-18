@@ -23,14 +23,6 @@ class SearchTicketsToolTest extends TestCase
     }
 
     #[Test]
-    public function search_tool_rejects_unauthenticated_calls(): void
-    {
-        $response = TicketsServer::tool(SearchTicketsTool::class, ['query' => 'login']);
-
-        $response->assertHasErrors(['Unauthenticated']);
-    }
-
-    #[Test]
     public function search_tool_finds_tickets_by_free_text(): void
     {
         $user = User::factory()->create();
@@ -70,7 +62,7 @@ class SearchTicketsToolTest extends TestCase
         ]);
 
         $response->assertOk();
-        $response->assertSee('total');
+        $response->assertSee(['"total":5', '"per_page":2', '"last_page":3']);
     }
 
     #[Test]

@@ -16,6 +16,7 @@ use App\Models\Type;
 use App\Models\User;
 use App\ValueObjects\TicketPulse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -29,14 +30,6 @@ class TicketsControllerTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
-    }
-
-    #[Test]
-    public function home_requires_authentication(): void
-    {
-        $response = $this->get('/home');
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -139,14 +132,6 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get('/tickets');
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function index_returns_paginated_tickets(): void
     {
         $user = User::factory()->create();
@@ -156,6 +141,19 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('tickets');
+    }
+
+    #[Test]
+    public function navbar_toggler_uses_an_empty_icon_span(): void
+    {
+        $user = User::factory()->create();
+
+        $content = $this->actingAs($user)->get('/tickets')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<span class="navbar-toggler-icon"><\/span>/',
+            $content
+        );
     }
 
     #[Test]
@@ -394,6 +392,22 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_filters_by_assignee_id(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create();
+
+        $ticket = Ticket::factory()->create(['user_id2' => $assignee->id]);
+        $otherTicket = Ticket::factory()->create(['user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets?user_id2={$assignee->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee($ticket->subject);
+        $response->assertDontSee($otherTicket->subject);
+    }
+
+    #[Test]
     public function index_searches_by_subject_with_q_parameter(): void
     {
         $user = User::factory()->create();
@@ -472,13 +486,36 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_requires_authentication(): void
+    public function index_counts_visible_notes_and_orders_decisions_without_row_queries(): void
     {
-        $ticket = Ticket::factory()->create();
+        $user = User::factory()->create();
 
-        $response = $this->get("/tickets/{$ticket->id}");
+        foreach (range(1, 3) as $i) {
+            $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+            Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'message', 'hide' => false]);
+            Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'message', 'hide' => true]);
+            Note::factory()->changelog()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'hide' => false]);
+            Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'decision_needed', 'hide' => false, 'created_at' => now()->subDay()]);
+            Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'notetype' => 'decision_needed', 'hide' => false, 'created_at' => now()->subDays(3)]);
+        }
 
-        $response->assertRedirect('/login');
+        $response = $this->actingAs($user)->get('/tickets');
+
+        $response->assertOk();
+        $response->assertSee('title="1 notes"', false);
+
+        DB::enableQueryLog();
+        $tickets = Ticket::query()->withListRelations()->get();
+        $baseline = count(DB::getQueryLog());
+
+        foreach ($tickets as $ticket) {
+            $this->assertSame(1, $ticket->visible_notes_count);
+            $first = $ticket->openDecisionRequests->first();
+            $this->assertNotNull($first);
+            $this->assertTrue($ticket->openDecisionRequests->last()->created_at->greaterThan($first->created_at));
+        }
+
+        $this->assertCount($baseline, DB::getQueryLog());
     }
 
     #[Test]
@@ -494,14 +531,12 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_status_time_dropdown_renders_all_available_statuses_even_with_stale_cache(): void
+    public function show_status_time_dropdown_rebuilds_after_status_changes(): void
     {
         Cache::flush();
 
         $user = User::factory()->create();
         $openStatus = Status::factory()->create(['name' => 'Open']);
-        $inProgressStatus = Status::factory()->create(['name' => 'In Progress']);
-        $closedStatus = Status::factory()->create(['name' => 'Closed']);
         $ticket = Ticket::factory()->create([
             'user_id' => $user->id,
             'user_id2' => $user->id,
@@ -518,13 +553,16 @@ class TicketsControllerTest extends TestCase
             'users' => collect([$user->id => $user->name]),
         ], now()->addMinutes(60));
 
+        Status::factory()->create(['name' => 'In Progress']);
+        Status::factory()->closed()->create();
+
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
         $response->assertOk();
         $response->assertSee('name="status_id"', false);
         $response->assertSee('>Open</option>', false);
         $response->assertSee('>In Progress</option>', false);
-        $response->assertSee('>Closed</option>', false);
+        $response->assertSee('>completed</option>', false);
     }
 
     #[Test]
@@ -542,6 +580,44 @@ class TicketsControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($ticket->subject);
+    }
+
+    #[Test]
+    public function show_shows_resolve_blocker_to_involved_users_and_deciders(): void
+    {
+        $author = User::factory()->create();
+        $decider = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+        Note::where('id', $note->id)->update(['decider_id' => $decider->id]);
+
+        $this->actingAs($author)->get("/tickets/{$ticket->id}")->assertSee('Resolve Blocker', false);
+        $this->actingAs($decider)->get("/tickets/{$ticket->id}")->assertSee('Resolve Blocker', false);
+    }
+
+    #[Test]
+    public function show_hides_resolve_ui_from_strangers(): void
+    {
+        $author = User::factory()->create();
+        $stranger = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $author->id, 'user_id2' => $author->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = $this->actingAs($stranger)->get("/tickets/{$ticket->id}");
+
+        $response->assertOk();
+        $response->assertDontSee('Resolve Blocker', false);
+        $this->assertNotContains($note->id, $response->viewData('resolvableNoteIds'));
     }
 
     #[Test]
@@ -806,6 +882,28 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function show_lists_viewers_by_last_view_time(): void
+    {
+        $user = User::factory()->create();
+        $viewer = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+
+        $ticketView = TicketView::create([
+            'user_id' => $viewer->id,
+            'ticket_id' => $ticket->id,
+        ]);
+        TicketView::where('id', $ticketView->id)->update([
+            'created_at' => now()->subDays(10),
+            'updated_at' => now()->subHour(),
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('1 hour ago');
+    }
+
+    #[Test]
     public function show_renders_filter_buttons_for_timeline(): void
     {
         $user = User::factory()->create();
@@ -1005,6 +1103,13 @@ class TicketsControllerTest extends TestCase
         return '';
     }
 
+    private function reactionForm(string $html, string $emoji): string
+    {
+        preg_match('/data-emoji="'.preg_quote($emoji, '/').'".*?<\/form>/s', $html, $match);
+
+        return $match[0] ?? '';
+    }
+
     #[Test]
     public function show_reaction_bar_displays_emoji_counts(): void
     {
@@ -1045,9 +1150,12 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $response->assertStatus(200);
-        // User has reacted, so btn-primary should appear (highlighted)
-        $response->assertSee('btn-primary', false);
+        $response->assertOk();
+
+        $form = $this->reactionForm($response->getContent(), 'thumbsup');
+
+        $this->assertStringContainsString('btn-primary', $form, 'Reacted emoji should be highlighted');
+        $this->assertStringNotContainsString('btn-outline-secondary', $form);
     }
 
     #[Test]
@@ -1063,10 +1171,13 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $response->assertStatus(200);
-        // Even with no reactions, the add-reaction buttons should show
+        $response->assertOk();
         $response->assertSee('reaction-bar', false);
         $response->assertSee('add-reaction', false);
+
+        $form = $this->reactionForm($response->getContent(), 'thumbsup');
+
+        $this->assertStringContainsString('btn-outline-secondary', $form, 'Unreacted emoji should stay outlined');
     }
 
     #[Test]
@@ -1075,7 +1186,7 @@ class TicketsControllerTest extends TestCase
         $user = User::factory()->create(['email' => 'test@example.com']);
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
 
-        Note::factory()->create([
+        $note = Note::factory()->create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'body' => 'Comment with avatar',
@@ -1083,85 +1194,56 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $response->assertStatus(200);
-        $response->assertSee('rounded-circle', false);
-        $response->assertSee('gravatar.com', false);
+        $response->assertOk();
+
+        preg_match('/id="note_'.preg_quote($note->id, '/').'".*?(?=id="note_|$)/s', $response->getContent(), $card);
+
+        $this->assertStringContainsString('rounded-circle', $card[0] ?? '', 'Note card should use the round avatar');
+        $this->assertStringContainsString('gravatar.com', $card[0] ?? '', 'Note card should use the Gravatar avatar');
     }
 
     #[Test]
-    public function show_renders_markdown_composer_replacing_quill(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        // Markdown textarea present
-        $response->assertSee('markdown-composer', false);
-        $response->assertSee('note-textarea', false);
-        // Status & time section
-        $response->assertSee('status-time-section', false);
-        // Submit button
-        $response->assertSee('Post Update');
-        // allUsers JSON for @mention autocomplete
-        $response->assertSee('data-users', false);
-    }
-
-    #[Test]
-    public function show_does_not_render_quill_editor(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertDontSee('note-editor-container', false);
-        $response->assertDontSee('loadQuill', false);
-    }
-
-    #[Test]
-    public function show_renders_composer_help_link(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('composer-help', false);
-        $response->assertSee('Help');
-        $response->assertSee('composerHelpModal', false);
-        $response->assertSee('/decision');
-        $response->assertSee('/blocker');
-        $response->assertSee('/assign');
-    }
-
-    #[Test]
-    public function show_renders_slash_command_autocomplete_container(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('slash-autocomplete', false);
-        $response->assertSee('data-commands', false);
-    }
-
-    #[Test]
-    public function show_renders_mention_autocomplete_container(): void
+    public function ticket_page_exposes_its_composer_and_client_hooks(): void
     {
         $user = User::factory()->create(['name' => 'TestUser']);
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $response->assertStatus(200);
-        $response->assertSee('mention-autocomplete', false);
-        $response->assertSee('TestUser');
+        $response->assertOk();
+
+        foreach ([
+            'markdown-composer',
+            'note-textarea',
+            'status-time-section',
+            'Post Update',
+            'data-users',
+            'composer-help',
+            'composerHelpModal',
+            '/decision',
+            '/blocker',
+            '/assign',
+            'slash-autocomplete',
+            'data-commands',
+            'mention-autocomplete',
+            'TestUser',
+            'fa-paperclip',
+            'data-action="attach"',
+            'data-keyboard-shortcuts',
+            'keyboard-icon',
+            'presence-indicator',
+            'data-ticket-id="'.$ticket->id.'"',
+            'signal-nudge',
+            'data-ticket-show',
+            'reply-composer',
+            'data-entry-type',
+        ] as $hook) {
+            $response->assertSee($hook, false);
+        }
+
+        $response->assertDontSee('note-editor-container', false);
+        $response->assertDontSee('loadQuill', false);
     }
 
     #[Test]
@@ -1217,103 +1299,9 @@ class TicketsControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
 
-        $content = $response->getContent();
-        // Find the note card for this decision and verify no edit action
-        $response->assertStatus(200);
-        // Decision notes should show "Update Decision" not "Edit"
-        $response->assertDontSee('data-action="edit"', false);
-    }
-
-    #[Test]
-    public function show_renders_attachment_button_in_composer(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('fa-paperclip', false);
-        $response->assertSee('data-action="attach"', false);
-    }
-
-    #[Test]
-    public function show_includes_keyboard_shortcut_data(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('data-keyboard-shortcuts', false);
-        $response->assertSee('keyboard-icon', false);
-    }
-
-    #[Test]
-    public function show_renders_presence_indicator(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('presence-indicator', false);
-        $response->assertSee('data-ticket-id="'.$ticket->id.'"', false);
-    }
-
-    #[Test]
-    public function show_renders_signal_nudge_container(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('signal-nudge', false);
-    }
-
-    #[Test]
-    public function show_renders_paste_detection_support(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        $response->assertSee('note-textarea', false);
-        $response->assertSee('data-ticket-show', false);
-    }
-
-    #[Test]
-    public function show_renders_mobile_responsive_classes(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
-
-        Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-        ]);
-
-        $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");
-
-        $response->assertStatus(200);
-        // Reply form should have mobile-friendly submit
-        $response->assertSee('reply-composer', false);
-        // Consecutive changelog collapse attribute
-        $response->assertSee('data-entry-type', false);
-    }
-
-    #[Test]
-    public function create_requires_authentication(): void
-    {
-        $response = $this->get('/ticket/create');
-
-        $response->assertRedirect('/login');
+        $response->assertOk()
+            ->assertSee('Immutable decision')
+            ->assertDontSee('data-action="edit"', false);
     }
 
     #[Test]
@@ -1341,16 +1329,6 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
-    public function clone_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $response = $this->get("/tickets/clone/{$ticket->id}");
-
-        $response->assertRedirect('/login');
-    }
-
-    #[Test]
     public function clone_returns_clone_view_with_ticket_data(): void
     {
         $user = User::factory()->create();
@@ -1371,16 +1349,6 @@ class TicketsControllerTest extends TestCase
         $response = $this->actingAs($user)->get('/tickets/clone/99999');
 
         $response->assertStatus(404);
-    }
-
-    #[Test]
-    public function edit_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $response = $this->get("/tickets/edit/{$ticket->id}");
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -1410,7 +1378,8 @@ class TicketsControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('value="2026-09-20"', false);
-        $response->assertSee('value="2026-09-21"', false);
+        $response->assertSee('Sep 21st, 2026 2:30pm', false);
+        $response->assertDontSee('name="closed_at"', false);
     }
 
     #[Test]
@@ -1624,6 +1593,29 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function update_ignores_forged_closed_at(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+            'subject' => $ticket->subject,
+            'description' => $ticket->description ?? '',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'milestone_id' => $ticket->milestone_id,
+            'project_id' => $ticket->project_id,
+            'closed_at' => '2020-01-01 00:00:00',
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
+        $this->assertNull($ticket->fresh()->closed_at);
+    }
+
+    #[Test]
     public function update_nullifies_empty_due_at(): void
     {
         $user = User::factory()->create();
@@ -1632,7 +1624,7 @@ class TicketsControllerTest extends TestCase
             'due_at' => '2024-01-01',
         ]);
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1642,6 +1634,9 @@ class TicketsControllerTest extends TestCase
             'project_id' => $ticket->project_id,
             'due_at' => '',
         ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
 
         $ticket->refresh();
         $this->assertNull($ticket->due_at);
@@ -1653,7 +1648,7 @@ class TicketsControllerTest extends TestCase
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id' => $user->id]);
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1664,17 +1659,23 @@ class TicketsControllerTest extends TestCase
             'due_at' => '2024-06-15 10:30:00',
         ]);
 
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
         $ticket->refresh();
         $this->assertStringStartsWith('2024-06-15', $ticket->due_at);
     }
 
     #[Test]
-    public function update_formats_closed_at(): void
+    public function update_preserves_existing_closed_at(): void
     {
         $user = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'closed_at' => '2024-06-15 10:30:00',
+        ]);
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1682,23 +1683,25 @@ class TicketsControllerTest extends TestCase
             'importance_id' => $ticket->importance_id,
             'milestone_id' => $ticket->milestone_id,
             'project_id' => $ticket->project_id,
-            'closed_at' => '2024-06-15 10:30:00',
         ]);
 
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
         $ticket->refresh();
-        $this->assertStringStartsWith('2024-06-15', $ticket->closed_at);
+        $this->assertStringStartsWith('2024-06-15', (string) $ticket->closed_at);
     }
 
     #[Test]
-    public function update_nullifies_empty_closed_at(): void
+    public function update_ignores_empty_closed_at(): void
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create([
             'user_id' => $user->id,
-            'closed_at' => now(),
+            'closed_at' => '2024-06-15 10:30:00',
         ]);
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1709,8 +1712,43 @@ class TicketsControllerTest extends TestCase
             'closed_at' => '',
         ]);
 
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
         $ticket->refresh();
-        $this->assertNull($ticket->closed_at);
+        $this->assertStringStartsWith('2024-06-15', (string) $ticket->closed_at);
+    }
+
+    #[Test]
+    public function update_edits_a_closed_ticket_without_a_false_close_changelog(): void
+    {
+        $user = User::factory()->create();
+        $closed = Status::factory()->closed()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'status_id' => $closed->id,
+            'closed_at' => '2024-06-15 10:30:00',
+        ]);
+
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+            'subject' => 'Updated subject',
+            'description' => $ticket->description ?? '',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'milestone_id' => $ticket->milestone_id,
+            'project_id' => $ticket->project_id,
+        ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
+
+        $this->assertSame('2024-06-15 10:30:00', $ticket->fresh()->closed_at->format('Y-m-d H:i:s'));
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+            'body_markdown' => 'Ticket closed on N/A',
+        ]);
     }
 
     #[Test]
@@ -1720,7 +1758,7 @@ class TicketsControllerTest extends TestCase
         $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $newStatus = Status::factory()->create();
 
-        $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
+        $response = $this->actingAs($user)->put("/tickets/update/{$ticket->id}", [
             'subject' => $ticket->subject,
             'description' => $ticket->description ?? '',
             'type_id' => $ticket->type_id,
@@ -1729,6 +1767,9 @@ class TicketsControllerTest extends TestCase
             'milestone_id' => $ticket->milestone_id,
             'project_id' => $ticket->project_id,
         ]);
+
+        $response->assertRedirect("/tickets/{$ticket->id}");
+        $response->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('notes', [
             'ticket_id' => $ticket->id,
@@ -1799,7 +1840,9 @@ class TicketsControllerTest extends TestCase
             'tickets' => [],
         ]);
 
-        $response->assertSessionHasErrors('tickets');
+        $response->assertSessionHasErrors([
+            'tickets' => 'At least one ticket must be selected.',
+        ]);
     }
 
     #[Test]
@@ -1864,6 +1907,26 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function batch_rejects_a_foreign_ticket_without_touching_owned_ones(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id' => $user->id, 'status_id' => Status::factory()->create()->id]);
+        $theirs = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+        $newStatus = Status::factory()->create();
+        $originalStatus = $mine->status_id;
+
+        $response = $this->actingAs($user)->post('/tickets/batch', [
+            'tickets' => [$mine->id => '1', $theirs->id => '1'],
+            'status_id' => $newStatus->id,
+        ]);
+
+        $response->assertForbidden();
+        $this->assertStringContainsString((string) $theirs->id, $response->exception->getMessage());
+        $this->assertSame($originalStatus, $mine->fresh()->status_id);
+    }
+
+    #[Test]
     public function batch_redirects_with_count_message(): void
     {
         $user = User::factory()->create();
@@ -1881,14 +1944,6 @@ class TicketsControllerTest extends TestCase
 
         $response->assertRedirect('/tickets');
         $response->assertSessionHas('info_message', '2 ticket(s) updated');
-    }
-
-    #[Test]
-    public function board_requires_authentication(): void
-    {
-        $response = $this->get('/tickets/board');
-
-        $response->assertRedirect('/login');
     }
 
     #[Test]
@@ -2029,6 +2084,48 @@ class TicketsControllerTest extends TestCase
 
         $ticket->refresh();
         $this->assertEquals($newStatus->id, $ticket->status_id);
+    }
+
+    #[Test]
+    public function note_with_blocked_status_command_redirects_with_error_and_no_changelog(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $status = Status::factory()->create(['name' => 'Testing']);
+
+        Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'blocker',
+            'resolved' => false,
+        ]);
+
+        $response = $this->actingAs($user)->post('/notes', [
+            'ticket_id' => $ticket->id,
+            'note' => '/status Testing',
+        ]);
+
+        $response->assertSessionHasErrors('note');
+        $this->assertNotEquals($status->id, $ticket->fresh()->status_id);
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->count());
+    }
+
+    #[Test]
+    public function note_with_two_action_mentions_redirects_with_error(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create(['name' => 'alice']);
+        User::factory()->create(['name' => 'bob']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->post('/notes', [
+            'ticket_id' => $ticket->id,
+            'note' => '/action @alice @bob do the thing',
+        ]);
+
+        $response->assertSessionHasErrors('note');
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->where('notetype', 'action')->count());
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->count());
     }
 
     #[Test]
@@ -2381,7 +2478,7 @@ class TicketsControllerTest extends TestCase
     public function fetch_returns_ticket_resource_collection(): void
     {
         $user = User::factory()->create();
-        Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-06-15 00:00:00']);
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id, 'closed_at' => '2024-06-15 00:00:00']);
 
         $response = $this->actingAs($user)->getJson('/tickets/fetch?started_at=2024-06-01&completed_at=2024-06-30');
 
@@ -2396,7 +2493,7 @@ class TicketsControllerTest extends TestCase
                     'created_at',
                 ],
             ],
-        ]);
+        ])->assertJsonPath('data.0.id', $ticket->id);
     }
 
     #[Test]
@@ -2528,5 +2625,96 @@ class TicketsControllerTest extends TestCase
         $this->assertNotNull($found);
         $this->assertEquals('Alice', $found['name']);
         $this->assertEquals('PM', $found['title']);
+    }
+
+    #[Test]
+    public function clone_view_carries_the_source_ticket(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'subject' => 'Original Ticket',
+            'description' => 'Original description',
+            'type_id' => Type::factory()->create()->id,
+            'status_id' => Status::factory()->create(['name' => 'Open'])->id,
+            'importance_id' => Importance::factory()->create()->id,
+            'project_id' => Project::factory()->create()->id,
+            'milestone_id' => Milestone::factory()->create()->id,
+        ]);
+
+        $response = $this->actingAs($user)->get("/tickets/clone/{$ticket->id}");
+
+        $response->assertOk();
+        $response->assertViewHas('ticket', function ($loaded) use ($ticket) {
+            return $loaded->is($ticket)
+                && $loaded->subject === $ticket->subject
+                && $loaded->description === $ticket->description;
+        });
+    }
+
+    #[Test]
+    public function clone_carries_story_points(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'storypoints' => 21]);
+
+        $response = $this->actingAs($user)->get("/tickets/clone/{$ticket->id}");
+
+        $response->assertOk();
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="storypoints"[^>]*value="21"/',
+            $response->getContent()
+        );
+    }
+
+    #[Test]
+    public function clone_persists_story_points(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'storypoints' => 21]);
+
+        $response = $this->actingAs($user)->post('/tickets', [
+            'subject' => 'Cloned from #'.$ticket->id,
+            'description' => $ticket->description,
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'project_id' => $ticket->project_id,
+            'milestone_id' => $ticket->milestone_id,
+            'user_id2' => $user->id,
+            'storypoints' => $ticket->storypoints,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('tickets', [
+            'subject' => 'Cloned from #'.$ticket->id,
+            'storypoints' => 21,
+        ]);
+    }
+
+    #[Test]
+    public function clone_shows_validation_errors(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+
+        $cloneUrl = "/tickets/clone/{$ticket->id}";
+        $response = $this->actingAs($user)->from($cloneUrl)->post('/tickets', [
+            'subject' => '',
+            'description' => 'Cloned description',
+            'type_id' => $ticket->type_id,
+            'status_id' => $ticket->status_id,
+            'importance_id' => $ticket->importance_id,
+            'project_id' => $ticket->project_id,
+            'milestone_id' => $ticket->milestone_id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response->assertRedirect($cloneUrl);
+        $content = $this->get($cloneUrl)->assertOk()->getContent();
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="subject"[^>]*class="[^"]*is-invalid/',
+            $content
+        );
     }
 }

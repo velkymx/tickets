@@ -18,6 +18,7 @@ use App\Mcp\Tools\PromoteNoteTool;
 use App\Mcp\Tools\ReactToNoteTool;
 use App\Mcp\Tools\ReplyToNoteTool;
 use App\Mcp\Tools\ResolveNoteTool;
+use App\Mcp\Tools\SearchTicketsTool;
 use App\Mcp\Tools\UpdateMilestoneTool;
 use App\Mcp\Tools\UpdateTicketTool;
 use App\Mcp\Tools\WatchTicketTool;
@@ -29,8 +30,10 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\MarkdownService;
 use Illuminate\Support\Facades\Cache;
-use Laravel\Mcp\Server\Transport\StdioTransport;
+use Laravel\Mcp\Server\Contracts\Transport;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -57,11 +60,19 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
-    public function lookups_tool_rejects_unauthenticated_calls(): void
+    #[DataProvider('unauthenticatedToolCalls')]
+    public function tools_reject_unauthenticated_calls(string $tool, array $args): void
     {
-        $response = TicketsServer::tool(GetLookupsTool::class, []);
+        TicketsServer::tool($tool, $args)->assertHasErrors(['Unauthenticated']);
+    }
 
-        $response->assertHasErrors(['Unauthenticated']);
+    public static function unauthenticatedToolCalls(): array
+    {
+        return [
+            'lookups' => [GetLookupsTool::class, []],
+            'list milestones' => [ListMilestonesTool::class, []],
+            'search tickets' => [SearchTicketsTool::class, ['query' => 'login']],
+        ];
     }
 
     #[Test]
@@ -199,6 +210,50 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
+    public function add_note_tool_accepts_bracket_mention_with_space_for_actions(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create(['name' => 'Sarah Connor']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => null,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/action @[Sarah Connor] verify fix on staging',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+        $this->assertSame($assignee->id, $ticket->fresh()->user_id2);
+    }
+
+    #[Test]
+    public function add_note_tool_rejects_email_address_as_action_assignee(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => '/action Contact support@example.com about the outage',
+        ]);
+
+        $response->assertHasErrors();
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+    }
+
+    #[Test]
     public function get_pulse_tool_returns_execution_state(): void
     {
         $user = User::factory()->create();
@@ -213,18 +268,44 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
-    public function server_acknowledges_initialized_lifecycle_method(): void
+    public function server_acknowledges_the_initialized_lifecycle_request(): void
     {
-        $server = new TicketsServer(new StdioTransport);
+        $transport = new class implements Transport
+        {
+            /** @var array<int, string> */
+            public array $sent = [];
 
-        $boot = new \ReflectionMethod($server, 'boot');
-        $boot->setAccessible(true);
-        $boot->invoke($server);
+            public function onReceive(\Closure $handler): void {}
 
-        $methods = new \ReflectionProperty($server, 'methods');
-        $methods->setAccessible(true);
+            public function run(): void {}
 
-        $this->assertArrayHasKey('notifications/initialized', $methods->getValue($server));
+            public function send(string $message): void
+            {
+                $this->sent[] = $message;
+            }
+
+            public function stream(\Closure $stream): void
+            {
+                foreach ($stream() as $message) {
+                    $this->sent[] = $message;
+                }
+            }
+        };
+
+        $server = new TicketsServer($transport);
+        $server->start();
+        $server->handle((string) json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'notifications/initialized',
+        ]));
+
+        $this->assertCount(1, $transport->sent);
+
+        $reply = json_decode($transport->sent[0], true);
+
+        $this->assertSame(1, $reply['id']);
+        $this->assertArrayNotHasKey('error', $reply);
     }
 
     #[Test]
@@ -288,7 +369,15 @@ class TicketsServerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('no note stored');
-        $this->assertDatabaseMissing('notes', ['ticket_id' => $ticket->id]);
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'message',
+        ]);
+        // The field change still lands in the changelog for the audit trail.
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
     }
 
     #[Test]
@@ -324,6 +413,11 @@ class TicketsServerTest extends TestCase
         $this->assertDatabaseMissing('notes', [
             'ticket_id' => $ticket->id,
             'body_markdown' => '/close',
+        ]);
+        // Guard failures are errors, not changelog entries.
+        $this->assertDatabaseMissing('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
         ]);
     }
 
@@ -494,6 +588,7 @@ class TicketsServerTest extends TestCase
     public function promote_note_tool_requires_assignee_for_actions(): void
     {
         $user = User::factory()->create();
+        User::factory()->create(['name' => 'alan']);
         $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
         $note = Note::factory()->create([
             'ticket_id' => $ticket->id,
@@ -510,6 +605,29 @@ class TicketsServerTest extends TestCase
             'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'action', 'assignee' => 'alan',
         ])->assertOk();
         $this->assertDatabaseHas('notes', ['id' => $note->id, 'notetype' => 'action']);
+    }
+
+    #[Test]
+    public function promote_note_tool_uses_stored_mention_for_action(): void
+    {
+        $user = User::factory()->create();
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $markdown = 'Fix the @param docblock, @[Jane Doe]';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        TicketsServer::actingAs($user)->tool(PromoteNoteTool::class, [
+            'ticket_id' => $ticket->id, 'note_id' => $note->id, 'type' => 'action',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'notetype' => 'action']);
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id, 'user_id' => $jane->id]);
     }
 
     #[Test]
@@ -716,14 +834,6 @@ class TicketsServerTest extends TestCase
     }
 
     #[Test]
-    public function list_milestones_tool_rejects_unauthenticated_calls(): void
-    {
-        $response = TicketsServer::tool(ListMilestonesTool::class, []);
-
-        $response->assertHasErrors(['Unauthenticated']);
-    }
-
-    #[Test]
     public function get_milestone_tool_returns_detail_and_tickets(): void
     {
         $user = User::factory()->create();
@@ -793,5 +903,107 @@ class TicketsServerTest extends TestCase
 
         $response->assertHasErrors();
         $this->assertDatabaseHas('milestones', ['id' => $milestone->id, 'name' => 'Locked']);
+    }
+
+    #[Test]
+    public function add_note_tool_creates_mentions_and_notifies(): void
+    {
+        Cache::flush();
+        $user = User::factory()->create();
+        $mentioned = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'body' => "Ping @[{$mentioned->name}]",
+        ]);
+
+        $response->assertOk();
+        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'message')->latest('id')->firstOrFail();
+
+        $this->assertDatabaseHas('mentions', [
+            'note_id' => $note->id,
+            'user_id' => $mentioned->id,
+        ]);
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $mentioned->id]);
+    }
+
+    #[Test]
+    public function add_note_tool_writes_a_changelog_when_status_changes(): void
+    {
+        Cache::flush();
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $newStatus = Status::factory()->create(['name' => 'Escalated']);
+
+        $response = TicketsServer::actingAs($user)->tool(AddNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'status_id' => $newStatus->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertSame($newStatus->id, $ticket->fresh()->status_id);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
+    }
+
+    #[Test]
+    public function reply_to_note_tool_creates_reply(): void
+    {
+        Cache::flush();
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'parent_id' => null,
+        ]);
+
+        $response = TicketsServer::actingAs($user)->tool(ReplyToNoteTool::class, [
+            'ticket_id' => $ticket->id,
+            'note_id' => $parent->id,
+            'body' => 'Reply from MCP',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'body_markdown' => 'Reply from MCP',
+        ]);
+    }
+
+    #[Test]
+    public function update_ticket_tool_creates_changelog(): void
+    {
+        Cache::flush();
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+        ]);
+        $newStatus = Status::factory()->create();
+
+        $response = TicketsServer::actingAs($user)->tool(UpdateTicketTool::class, [
+            'ticket_id' => $ticket->id,
+            'status_id' => $newStatus->id,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
+        ]);
     }
 }

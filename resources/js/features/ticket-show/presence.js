@@ -1,16 +1,11 @@
+import { withCsrf } from '../../lib/csrf.js';
+
 function escapeHtml(s) {
     return String(s)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
-}
-
-function gravatarHash(email) {
-    if (!email || typeof md5 !== 'function') {
-        return '';
-    }
-    return md5(email.toLowerCase().trim());
 }
 
 function updatePresenceUI(viewers) {
@@ -21,12 +16,11 @@ function updatePresenceUI(viewers) {
     let html = '<div class="d-flex" style="margin-left: -8px;">';
 
     viewers.slice(0, maxShow).forEach((v, i) => {
-        const hash = gravatarHash(v.email);
         const composingDot = v.composing
             ? '<span class="position-absolute bottom-0 end-0 badge bg-success rounded-circle" style="width:8px;height:8px;padding:0;">…</span>'
             : '';
         html += `<div class="position-relative" style="margin-left:-8px;z-index:${maxShow - i};" title="${escapeHtml(v.name)}">
-            <img src="https://www.gravatar.com/avatar/${hash}?s=28&d=mp" class="rounded-circle border border-2 border-white" width="28" height="28">
+            <img src="${escapeHtml(v.avatar_url)}" class="rounded-circle border border-2 border-white" width="28" height="28">
             ${composingDot}
         </div>`;
     });
@@ -43,13 +37,13 @@ export default function initPresence() {
     const ticketId = document.querySelector('.presence-indicator')?.dataset.ticketId;
     if (!ticketId) return;
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const csrfHeaders = withCsrf({ 'Content-Type': 'application/json' });
 
     function sendHeartbeat() {
         const composing = document.activeElement?.id === 'note-textarea';
         fetch(`/tickets/${ticketId}/presence`, {
             method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: csrfHeaders,
             body: JSON.stringify({ composing }),
         })
             .then(r => r.json())

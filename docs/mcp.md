@@ -285,6 +285,10 @@ async with tickets:
 - **Errors** come back as `isError: true` with a plain message. Tickets/notes
   and articles you cannot see or edit return a clean "not found" / "cannot
   edit" message rather than leaking existence.
+- **Slash command guards** reject the write with a plain message. A guard
+  failure (for example `/action` without exactly one assignee, or `/status`
+  while a blocker is open) writes no note or changelog entry, and any claim or
+  status change in the same call is rolled back.
 - Reads are visibility-scoped; writes are limited to tickets you own or are
   assigned to, and to KB articles you own or may edit.
 
@@ -301,32 +305,36 @@ playbook for that flow. To run several specialists through one server, see
 | Tool | Arguments |
 |------|-----------|
 | `get-lookups-tool` | none - statuses, types, importance, active projects, milestones, users with IDs. Call first. |
-| `list-tickets-tool` | `status_id`, `unassigned` (bool), `include_pulse` (bool), `per_page` (max 100, default 20). Your assigned tickets, newest first. |
+| `list-tickets-tool` | `status_id`, `unassigned` (bool), `include_pulse` (bool), `decision` (`me` for tickets waiting on your decision on any ticket, `any` for your tickets with an open request), `per_page` (max 100, default 20). Your assigned tickets, newest first. Each row has `decision_needed` and `decision_needed_from`. |
 | `search-tickets-tool` | `query` (required, GitLab-style `key:value` plus free text, same grammar and active-status default as web lists), `per_page` (max 100, default 20). Tickets you own or are assigned to, newest activity first. |
-| `get-ticket-tool` | `ticket_id` (required) - full detail, visible notes with replies, pulse state. |
+| `get-ticket-tool` | `ticket_id` (required) - full detail, visible notes with replies, pulse state including `decision_requests`. |
 | `get-pulse-tool` | `ticket_id` (required) - execution state, blocker, next action, decisions, threads. |
 | `create-ticket-tool` | `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id` (required); `description`, `status_id`, `assignee_id`, `due_at` (YYYY-MM-DD), `estimate`, `storypoints`. Assigned to you by default; pass `assignee_id` for someone else, or `assignee_id: null` to leave it unassigned. |
-| `update-ticket-tool` | `ticket_id` (required); any of `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`. Own/assigned only. |
-| `add-note-tool` | `ticket_id` (required); `body` (slash commands supported); `hours` (max 999); `status_id`; `claim` (bool, self-assign). Command-only bodies (e.g. `/close`) apply without storing a note. |
-| `reply-to-note-tool` | `ticket_id`, `note_id` (top-level only), `body` (all required). |
+| `update-ticket-tool` | `ticket_id` (required); any of `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`. Own/assigned only. Changed fields are written to the ticket changelog. |
+| `add-note-tool` | `ticket_id` (required); `body` (slash commands supported); `hours` (max 999); `status_id`; `claim` (bool, self-assign). Mentions notify the mentioned users, status and claim changes are written to the changelog, and watchers are notified. Command-only bodies (e.g. `/close`) apply without storing a note. |
+| `reply-to-note-tool` | `ticket_id`, `note_id` (top-level only), `body` (all required). A body starting `/decision` records a decision; on a decision request thread it also closes the request. |
 | `edit-note-tool` | `ticket_id`, `note_id`, `body` (all required). Own notes only; decisions immutable. |
 | `resolve-note-tool` | `ticket_id`, `note_id`, `resolution_message` (all required). Author or assignee only. |
 | `react-to-note-tool` | `ticket_id`, `note_id`, `emoji` (`thumbsup`, `eyes`). Toggles. |
 | `moderate-note-tool` | `ticket_id`, `note_id`, `action` (`pin`/`unpin`/`hide`/`unhide`). Own/assigned ticket only. |
-| `promote-note-tool` | `ticket_id`, `note_id`, `type` (`decision`/`blocker`/`action`); `assignee` (username, for actions). Message notes only; decisions need 20+ characters, actions need exactly one @assignee. |
+| `promote-note-tool` | `ticket_id`, `note_id`, `type` (`decision`/`blocker`/`action`/`decision_needed`); `assignee` (username, for actions or the decider). Message notes only; decisions need 20+ characters, actions need exactly one @assignee, decision requests exactly one @decider. Only mentions that match an existing user count; an unknown `assignee` is rejected. Same rules as the web and API promote. |
 | `watch-ticket-tool` | `ticket_id`, `action` (`watch`/`unwatch`/`mute`/`unmute`). Any viewable ticket, not just your own. |
 
 ### Slash commands (in `add-note-tool` body)
 
 `/close`, `/reopen`, `/status <name>`, `/hours <n>`, `/estimate <n>`,
 `/blocker <reason>`, `/decision <text>`, `/action @user <text>` (requires
-exactly one `@assignee`), `/assign @user`.
+exactly one `@assignee`), `/decide @user <question>` (requires exactly one
+`@decider`, who is notified at once), `/assign @user`. Names with spaces use
+the bracket form, for example `/action @[Jane Doe] <text>`. Email addresses
+are never read as mentions.
 
 ### Pulse fields
 
 `execution_state` (ON TRACK, AT RISK, BLOCKED, IDLE), `is_blocked`,
 `blocker_reason`, `next_action`, `latest_decision`, `open_threads`,
-`last_activity_at`, `is_stale`. Check pulse before acting - a BLOCKED ticket
+`decision_requests` (open asks: `id`, `question`, `requester`, `decider`,
+`decider_id`, `created_at`), `last_activity_at`, `is_stale`. Check pulse before acting - a BLOCKED ticket
 needs unblocking, not another status update.
 
 ## Knowledge base tools

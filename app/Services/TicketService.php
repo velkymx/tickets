@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\SlashCommandException;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -14,10 +15,10 @@ use App\Models\Type;
 use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
-use App\Notifications\WatcherNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class TicketService
 {
@@ -26,11 +27,13 @@ class TicketService
         private ?MarkdownService $markdownService = null,
         private ?MentionService $mentionService = null,
         private ?NotificationBatchService $notificationBatchService = null,
+        private ?NotificationService $notificationService = null,
     ) {
         $this->slashCommandService ??= app(SlashCommandService::class);
         $this->markdownService ??= app(MarkdownService::class);
         $this->mentionService ??= app(MentionService::class);
         $this->notificationBatchService ??= app(NotificationBatchService::class);
+        $this->notificationService ??= app(NotificationService::class);
     }
 
     public function changes(array $old, array $new): array
@@ -92,85 +95,111 @@ class TicketService
             }
         }
 
-        $oldDueAt = $old['due_at'] ? Carbon::parse($old['due_at'])->timestamp : null;
-        $newDueAt = array_key_exists('due_at', $new) && $new['due_at'] ? Carbon::parse($new['due_at'])->timestamp : null;
-        if ($oldDueAt !== $newDueAt && ($oldDueAt !== null || $newDueAt !== null)) {
-            $change_list[] = 'Due date changed to '.($new['due_at'] ? Carbon::parse($new['due_at'])->format('M jS, Y') : 'N/A');
+        $oldDueAt = ! empty($old['due_at']) ? Carbon::parse($old['due_at'])->timestamp : null;
+        $newDueAt = array_key_exists('due_at', $new)
+            ? (! empty($new['due_at']) ? Carbon::parse($new['due_at'])->timestamp : null)
+            : $oldDueAt;
+
+        if ($oldDueAt !== $newDueAt) {
+            $change_list[] = $newDueAt !== null
+                ? 'Due date changed to '.Carbon::createFromTimestamp($newDueAt)->format('M jS, Y')
+                : 'Due date cleared';
         }
 
-        $oldClosedAt = $old['closed_at'] ? Carbon::parse($old['closed_at'])->timestamp : null;
-        $newClosedAt = array_key_exists('closed_at', $new) && $new['closed_at'] ? Carbon::parse($new['closed_at'])->timestamp : null;
-        if ($oldClosedAt !== $newClosedAt && ($oldClosedAt !== null || $newClosedAt !== null)) {
-            $change_list[] = 'Ticket closed on '.($new['closed_at'] ? Carbon::parse($new['closed_at'])->format('M jS, Y') : 'N/A');
+        $oldClosedAt = ! empty($old['closed_at']) ? Carbon::parse($old['closed_at'])->timestamp : null;
+        $newClosedAt = array_key_exists('closed_at', $new)
+            ? (! empty($new['closed_at']) ? Carbon::parse($new['closed_at'])->timestamp : null)
+            : $oldClosedAt;
+
+        if ($oldClosedAt !== $newClosedAt) {
+            $change_list[] = $newClosedAt !== null
+                ? 'Ticket closed on '.Carbon::createFromTimestamp($newClosedAt)->format('M jS, Y')
+                : 'Ticket reopened';
         }
 
         return $change_list;
     }
 
-    public function notate(int $ticketId, string $message, array $changes, float $addHours = 0, ?int $parentId = null): void
+    /**
+     * Record a note, hours and/or field changes on a ticket, applying any
+     * slash commands in the message first. Returns what was written so callers
+     * can surface warnings.
+     *
+     * @return array{note: Note|null, changes: array<int, string>, warnings: array<int, string>}
+     *
+     * @throws SlashCommandException when a slash command fails
+     *                               a business rule guard
+     */
+    public function notate(int $ticketId, string $message, array $changes, float $addHours = 0, ?int $parentId = null): array
     {
-        $ticket = Ticket::findOrFail($ticketId);
-        $commandResults = $this->slashCommandService->handle($ticket, $message);
+        return DB::transaction(function () use ($ticketId, $message, $changes, $addHours, $parentId) {
+            $ticket = Ticket::findOrFail($ticketId);
+            $commandResults = $this->slashCommandService->handle($ticket, $message);
 
-        $message = $commandResults['body'] ?? trim($message);
-        $changes = array_merge($changes, $commandResults['changes'] ?? []);
-        $addHours += (float) ($commandResults['hours'] ?? 0);
-        $noteType = $commandResults['note_type'] ?? 'message';
-        $noteAttributes = $commandResults['note_attributes'] ?? [];
+            $message = $commandResults['body'] ?? trim($message);
+            $changes = array_values(array_unique(array_merge($changes, $commandResults['changes'] ?? [])));
+            $addHours += (float) ($commandResults['hours'] ?? 0);
+            $noteType = $commandResults['note_type'] ?? 'message';
+            $noteAttributes = $commandResults['note_attributes'] ?? [];
+            $warnings = $commandResults['warnings'] ?? [];
 
-        $hasMessage = strlen($message) > 0;
-        $hasHours = $addHours > 0;
-        $hasChanges = is_array($changes) && count($changes) > 0;
+            if (strlen($message) === 0 && $addHours <= 0 && count($changes) === 0) {
+                return ['note' => null, 'changes' => $changes, 'warnings' => $warnings];
+            }
 
-        if (! $hasMessage && ! $hasHours && ! $hasChanges) {
-            return;
-        }
+            $createdActivity = false;
+            $note = null;
 
-        $insert = [
-            'user_id' => Auth::id(),
-            'ticket_id' => $ticketId,
-            'body' => $message,
-            'parent_id' => $parentId,
-            'hours' => $addHours,
-        ];
-        $createdActivity = false;
+            if (strlen($message) > 0) {
+                $insert = [
+                    'user_id' => Auth::id(),
+                    'ticket_id' => $ticketId,
+                    'body' => $this->markdownService->parse($message),
+                    'body_markdown' => $message,
+                    'parent_id' => $parentId,
+                    'hours' => $addHours,
+                    'notetype' => $noteType,
+                ];
+                $insert = array_merge($insert, $noteAttributes);
 
-        if (strlen($message) > 0) {
-            $insert['body_markdown'] = $message;
-            $insert['body'] = $this->markdownService->parse($message);
-            $insert['notetype'] = $noteType;
-            $insert = array_merge($insert, $noteAttributes);
+                $note = Note::create($insert);
+                app(DecisionRequestService::class)->closeWith($note);
+                $this->createMentions($note, $message);
+                $createdActivity = true;
 
-            $note = Note::create($insert);
-            $this->createMentions($note, $message);
-            $this->notifyMentionedUsers($note);
-            $this->notifyParentAuthor($note);
-            $createdActivity = true;
-        }
+                DB::afterCommit(function () use ($note) {
+                    app(DecisionRequestService::class)->notify($note);
+                    $this->notifyMentionedUsers($note);
+                    $this->notifyParentAuthor($note);
+                });
+            }
 
-        if ($addHours > 0) {
-            $changes[] = 'Time or Quantity adjusted by '.$addHours;
-        }
+            if ($addHours > 0) {
+                $changes[] = 'Time or Quantity adjusted by '.$addHours;
+            }
 
-        if (is_array($changes) && count($changes) > 0) {
-            $changelogMarkdown = collect($changes)
-                ->map(fn (string $change) => '- '.$change)
-                ->implode("\n");
+            if (is_array($changes) && count($changes) > 0) {
+                $changelogMarkdown = collect($changes)
+                    ->map(fn (string $change) => '- '.$change)
+                    ->implode("\n");
 
-            Note::create([
-                'user_id' => Auth::id(),
-                'ticket_id' => $ticketId,
-                'body' => $this->markdownService->parse($changelogMarkdown),
-                'body_markdown' => $changelogMarkdown,
-                'notetype' => 'changelog',
-                'hours' => 0,
-            ]);
-            $createdActivity = true;
-        }
+                Note::create([
+                    'user_id' => Auth::id(),
+                    'ticket_id' => $ticketId,
+                    'body' => $this->markdownService->parse($changelogMarkdown),
+                    'body_markdown' => $changelogMarkdown,
+                    'notetype' => 'changelog',
+                    'hours' => 0,
+                ]);
+                $createdActivity = true;
+            }
 
-        if ($createdActivity) {
-            $this->notifyWatchers($ticket);
-        }
+            if ($createdActivity) {
+                DB::afterCommit(fn () => $this->notifyWatchers($ticket, $note));
+            }
+
+            return ['note' => $note, 'changes' => $changes, 'warnings' => $warnings];
+        });
     }
 
     private function createMentions(Note $note, string $markdown): void
@@ -189,23 +218,15 @@ class TicketService
         $this->mentionService->createMentions($note, $userIds);
     }
 
-    private function notifyWatchers(Ticket $ticket): void
+    private function notifyWatchers(Ticket $ticket, ?Note $note = null): void
     {
-        $url = url("/tickets/{$ticket->id}");
-        $message = "The Ticket '{$ticket->subject}' has been updated.";
-        $exceptUserId = Auth::id();
+        if ($note) {
+            $this->notificationService->notifyWatchers($ticket, $note);
 
-        $ticket->load('watchers.user');
+            return;
+        }
 
-        $ticket->watchers->each(function ($watcher) use ($message, $url, $exceptUserId) {
-            if ($watcher->user_id !== $exceptUserId && ! $watcher->muted && $watcher->user?->email) {
-                $this->notificationBatchService->dispatch(
-                    $watcher->user,
-                    new WatcherNotification('Ticket', $message, $url),
-                    $watcher->ticket_id
-                );
-            }
-        });
+        $this->notificationService->notifyTicketUpdate($ticket, Auth::id());
     }
 
     private function notifyMentionedUsers(Note $note): void
@@ -216,7 +237,7 @@ class TicketService
         $excerpt = trim(strip_tags($note->body_markdown ?: $note->body));
 
         $note->mentions->each(function ($mention) use ($note, $url, $excerpt) {
-            if ($mention->user_id !== $note->user_id && $mention->user) {
+            if ($mention->user_id !== $note->user_id && $mention->user_id !== $note->decider_id && $mention->user) {
                 $this->notificationBatchService->dispatch(
                     $mention->user,
                     new MentionNotification(
@@ -276,25 +297,7 @@ class TicketService
 
     public function getLookups(): array
     {
-        $lookups = Cache::remember('ticket_lookups', now()->addMinutes(60), fn () => $this->buildLookups());
-
-        $cachedCounts = $lookups['_counts'] ?? [];
-        $currentCounts = [
-            'types' => Type::count(),
-            'milestones' => Milestone::whereNull('end_at')->count(),
-            'importances' => Importance::count(),
-            'projects' => Project::where('active', 1)->count(),
-            'statuses' => Status::count(),
-            'releases' => Release::count(),
-            'users' => User::count(),
-        ];
-
-        if ($cachedCounts !== $currentCounts) {
-            Cache::forget('ticket_lookups');
-            $lookups = Cache::remember('ticket_lookups', now()->addMinutes(60), fn () => $this->buildLookups());
-        }
-
-        return $lookups;
+        return Cache::remember('ticket_lookups', now()->addMinutes(60), fn () => $this->buildLookups());
     }
 
     private function buildLookups(): array
@@ -307,15 +310,6 @@ class TicketService
             'statuses' => Status::orderBy('id')->pluck('name', 'id')->all(),
             'releases' => Release::orderBy('id')->pluck('title', 'id')->all(),
             'users' => User::orderBy('id')->pluck('name', 'id')->all(),
-            '_counts' => [
-                'types' => Type::count(),
-                'milestones' => Milestone::whereNull('end_at')->count(),
-                'importances' => Importance::count(),
-                'projects' => Project::where('active', 1)->count(),
-                'statuses' => Status::count(),
-                'releases' => Release::count(),
-                'users' => User::count(),
-            ],
         ];
     }
 }

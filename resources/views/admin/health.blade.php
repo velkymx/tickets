@@ -29,11 +29,7 @@
                         <tr>
                             <td class="text-nowrap" style="width: 220px;">{{ $result->label }}</td>
                             <td style="width: 120px;">
-                                <span class="badge {{ match ($result->status->value) {
-                                    'OK', 'Enabled' => 'bg-success',
-                                    'Warning', 'Disabled' => 'bg-warning text-dark',
-                                    default => 'bg-danger',
-                                } }}">{{ $result->status->value }}</span>
+                                <span class="badge {{ $result->status->badgeClass() }}">{{ $result->status->value }}</span>
                             </td>
                             <td>
                                 {{ $result->value }}

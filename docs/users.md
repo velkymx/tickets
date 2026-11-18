@@ -13,6 +13,16 @@ The `admin` flag is set directly in the database - there is no UI to promote use
 App\Models\User::where('email', 'user@example.com')->update(['admin' => true]);
 ```
 
+## Deactivating a user
+
+Admins can set a user inactive under **Admin → Users → Edit** (`active = false`). Deactivation blocks every access path immediately:
+
+- Password and SSO login are refused.
+- Existing web sessions end on the next request and the user is redirected to the login page.
+- The user's API token is rejected on REST and MCP HTTP calls, and `MCP_USER_ID` no longer resolves for stdio MCP servers.
+
+Reactivating the user (`active = true`) restores access with the same token.
+
 ## Knowledge Base roles
 
 KB access is controlled separately from the admin flag:
@@ -90,8 +100,13 @@ Microsoft Entra logins are available when their credentials are set in
 Unconfigured providers stay off the login page entirely. First-time SSO users
 are created only when an allow-list permits it (`SSO_ALLOWED_DOMAINS`,
 `AZURE_TENANT_ID`, `GITHUB_ALLOWED_ORG`, `GITLAB_ALLOWED_GROUP`); otherwise the
-callback refuses with no account created. Email linking requires a verified
-provider email. Deactivated users are blocked on every path. Set
+callback refuses with no account created. Linking a provider login to an
+existing account requires a verified provider email (Google `email_verified`,
+GitHub verified primary email, GitLab `confirmed_at`) and the same
+tenant/org/group gates; Microsoft Entra email claims are never trusted for
+linking, so an Entra login cannot attach to an account it did not create. The
+gates are read from `config/services.php`, so they keep working under
+`php artisan config:cache`. Deactivated users are blocked on every path. Set
 `PASSWORD_LOGIN_ENABLED=false` or `REGISTRATION_ENABLED=false` for SSO-only
 installs.
 

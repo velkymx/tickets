@@ -1,0 +1,211 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+class AddCoreTableForeignKeys extends Migration
+{
+    private const LOOKUPS = [
+        ['tickets', 'type_id', 'types'],
+        ['tickets', 'status_id', 'statuses'],
+        ['tickets', 'importance_id', 'importances'],
+        ['tickets', 'milestone_id', 'milestones'],
+        ['tickets', 'project_id', 'projects'],
+    ];
+
+    public function up(): void
+    {
+        $this->backfillUnassignedTickets();
+        $this->remapDanglingLookups();
+        $this->deleteOrphanedDependentRows();
+        $this->ensureAuthorsExist();
+
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('tickets', function (Blueprint $table) {
+                $table->unsignedBigInteger('user_id2')->nullable()->change();
+            });
+        }
+
+        Schema::table('tickets', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
+            $table->foreign('user_id2')->references('id')->on('users')->onDelete('restrict');
+            $table->foreign('type_id')->references('id')->on('types')->onDelete('restrict');
+            $table->foreign('status_id')->references('id')->on('statuses')->onDelete('restrict');
+            $table->foreign('importance_id')->references('id')->on('importances')->onDelete('restrict');
+            $table->foreign('milestone_id')->references('id')->on('milestones')->onDelete('restrict');
+            $table->foreign('project_id')->references('id')->on('projects')->onDelete('restrict');
+        });
+
+        Schema::table('notes', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
+            $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('cascade');
+        });
+
+        Schema::table('ticket_views', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('cascade');
+        });
+
+        Schema::table('ticket_user_watchers', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('cascade');
+        });
+
+        Schema::table('ticket_estimates', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('cascade');
+        });
+
+        Schema::table('release_tickets', function (Blueprint $table) {
+            $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('cascade');
+            $table->foreign('release_id')->references('id')->on('releases')->onDelete('cascade');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('release_tickets', function (Blueprint $table) {
+            $table->dropForeign(['ticket_id']);
+            $table->dropForeign(['release_id']);
+        });
+
+        Schema::table('ticket_estimates', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['ticket_id']);
+        });
+
+        Schema::table('ticket_user_watchers', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['ticket_id']);
+        });
+
+        Schema::table('ticket_views', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['ticket_id']);
+        });
+
+        Schema::table('notes', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['ticket_id']);
+        });
+
+        Schema::table('tickets', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['user_id2']);
+            $table->dropForeign(['type_id']);
+            $table->dropForeign(['status_id']);
+            $table->dropForeign(['importance_id']);
+            $table->dropForeign(['milestone_id']);
+            $table->dropForeign(['project_id']);
+        });
+
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('tickets', function (Blueprint $table) {
+                $table->integer('user_id2')->unsigned()->nullable()->change();
+            });
+        }
+    }
+
+    private function backfillUnassignedTickets(): void
+    {
+        DB::table('tickets')
+            ->where(function ($query) {
+                $query->where('user_id2', 0)
+                    ->orWhereNotIn('user_id2', function ($query) {
+                        $query->select('id')->from('users');
+                    });
+            })
+            ->update(['user_id2' => null]);
+    }
+
+    private function remapDanglingLookups(): void
+    {
+        foreach (self::LOOKUPS as [$table, $column, $reference]) {
+            $dangling = DB::table($table)
+                ->where(function ($query) use ($column, $reference) {
+                    $query->where($column, 0)
+                        ->orWhereNotIn($column, function ($query) use ($reference) {
+                            $query->select('id')->from($reference);
+                        });
+                })
+                ->exists();
+
+            if (! $dangling) {
+                continue;
+            }
+
+            $fallback = DB::table($reference)->orderBy('id')->value('id');
+
+            if ($fallback === null) {
+                throw new RuntimeException(
+                    "Cannot add foreign keys: {$table}.{$column} has dangling rows but {$reference} is empty."
+                );
+            }
+
+            DB::table($table)
+                ->where(function ($query) use ($column, $reference) {
+                    $query->where($column, 0)
+                        ->orWhereNotIn($column, function ($query) use ($reference) {
+                            $query->select('id')->from($reference);
+                        });
+                })
+                ->update([$column => $fallback]);
+        }
+    }
+
+    private function deleteOrphanedDependentRows(): void
+    {
+        DB::table('notes')
+            ->whereNotIn('ticket_id', function ($query) {
+                $query->select('id')->from('tickets');
+            })
+            ->delete();
+
+        foreach (['ticket_views', 'ticket_user_watchers', 'ticket_estimates'] as $table) {
+            DB::table($table)
+                ->whereNotIn('ticket_id', function ($query) {
+                    $query->select('id')->from('tickets');
+                })
+                ->orWhereNotIn('user_id', function ($query) {
+                    $query->select('id')->from('users');
+                })
+                ->delete();
+        }
+
+        DB::table('release_tickets')
+            ->whereNotIn('ticket_id', function ($query) {
+                $query->select('id')->from('tickets');
+            })
+            ->orWhereNotIn('release_id', function ($query) {
+                $query->select('id')->from('releases');
+            })
+            ->delete();
+    }
+
+    private function ensureAuthorsExist(): void
+    {
+        $orphanedTickets = DB::table('tickets')
+            ->whereNotIn('user_id', function ($query) {
+                $query->select('id')->from('users');
+            })
+            ->pluck('id')
+            ->all();
+
+        $orphanedNotes = DB::table('notes')
+            ->whereNotIn('user_id', function ($query) {
+                $query->select('id')->from('users');
+            })
+            ->pluck('id')
+            ->all();
+
+        if ($orphanedTickets !== [] || $orphanedNotes !== []) {
+            throw new RuntimeException(
+                'Cannot add foreign keys: tickets owned by deleted users: ['.implode(', ', $orphanedTickets).'], '
+                .'notes authored by deleted users: ['.implode(', ', $orphanedNotes).']. '
+                .'Reassign or remove these rows, then retry.'
+            );
+        }
+    }
+}

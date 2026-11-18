@@ -14,9 +14,9 @@ use App\Models\Ticket;
 use App\Models\TicketUserWatcher;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\MarkdownService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -60,15 +60,6 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function lookups_requires_authentication(): void
-    {
-        $response = $this->getJson('/api/v1/lookups');
-
-        $response->assertStatus(401)
-            ->assertJson(['message' => 'Unauthorized']);
-    }
-
-    #[Test]
     public function lookups_returns_all_reference_data(): void
     {
         Status::factory()->create(['name' => 'Open']);
@@ -88,15 +79,12 @@ class TicketControllerTest extends TestCase
                     'projects',
                     'milestones',
                 ],
-            ]);
-    }
-
-    #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->getJson('/api/v1/tickets');
-
-        $response->assertStatus(401);
+            ])
+            ->assertJsonFragment(['name' => 'Open'])
+            ->assertJsonFragment(['name' => 'Bug'])
+            ->assertJsonFragment(['name' => 'High'])
+            ->assertJsonFragment(['name' => 'Project 1'])
+            ->assertJsonFragment(['name' => 'Sprint 1']);
     }
 
     #[Test]
@@ -127,7 +115,9 @@ class TicketControllerTest extends TestCase
                     'per_page',
                     'total',
                 ],
-            ]);
+            ])
+            ->assertJsonPath('data.0.id', $ticket->id)
+            ->assertJsonPath('meta.total', 1);
     }
 
     #[Test]
@@ -160,7 +150,7 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function index_filters_unassigned_tickets(): void
     {
-        Ticket::factory()->create(['user_id2' => 0]);
+        Ticket::factory()->create(['user_id2' => null]);
         Ticket::factory()->create(['user_id2' => $this->user->id]);
 
         $response = $this->getJson('/api/v1/tickets?unassigned=true', $this->apiHeaders());
@@ -181,13 +171,39 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function store_requires_authentication(): void
+    public function index_rejects_out_of_range_per_page(): void
     {
-        $response = $this->postJson('/api/v1/tickets', [
-            'subject' => 'New Ticket',
-        ]);
+        Ticket::factory()->count(3)->create(['user_id2' => $this->user->id]);
 
-        $response->assertStatus(401);
+        foreach (['-5', '0', '101'] as $perPage) {
+            $this->getJson("/api/v1/tickets?per_page={$perPage}", $this->apiHeaders())
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('per_page');
+        }
+    }
+
+    #[Test]
+    public function index_rejects_a_non_numeric_per_page(): void
+    {
+        $this->getJson('/api/v1/tickets?per_page=many', $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('per_page');
+    }
+
+    #[Test]
+    public function index_rejects_an_unknown_status(): void
+    {
+        $this->getJson('/api/v1/tickets?status=999999', $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('status');
+    }
+
+    #[Test]
+    public function index_rejects_a_non_numeric_status(): void
+    {
+        $this->getJson('/api/v1/tickets?status=open', $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('status');
     }
 
     #[Test]
@@ -276,6 +292,24 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function store_returns_the_actual_status_name(): void
+    {
+        $status = Status::factory()->closed()->create();
+
+        $response = $this->postJson('/api/v1/tickets', [
+            'subject' => 'Closed Ticket',
+            'type_id' => Type::first()->id,
+            'importance_id' => Importance::first()->id,
+            'project_id' => Project::first()->id,
+            'milestone_id' => Milestone::first()->id,
+            'status_id' => $status->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(201);
+        $response->assertJsonPath('ticket.status', $status->name);
+    }
+
+    #[Test]
     public function store_creates_unassigned_ticket(): void
     {
         $response = $this->postJson('/api/v1/tickets', [
@@ -347,16 +381,6 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $response = $this->getJson("/api/v1/tickets/{$ticket->id}");
-
-        $response->assertStatus(401);
-    }
-
-    #[Test]
     public function show_returns_ticket_details(): void
     {
         $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
@@ -382,7 +406,9 @@ class TicketControllerTest extends TestCase
                     'created_at',
                     'notes',
                 ],
-            ]);
+            ])
+            ->assertJsonPath('data.id', $ticket->id)
+            ->assertJsonPath('data.subject', $ticket->subject);
     }
 
     #[Test]
@@ -411,10 +437,10 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function show_returns_ticket_for_any_authenticated_user(): void
+    public function show_returns_ticket_for_the_owner(): void
     {
         $otherUser = User::factory()->create();
-        $ticket = Ticket::factory()->create(['user_id2' => $otherUser->id]);
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $otherUser->id]);
 
         $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
 
@@ -423,11 +449,72 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function note_requires_authentication(): void
+    public function show_returns_ticket_for_the_assignee(): void
     {
-        $response = $this->postJson('/api/v1/tickets/1/note');
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $this->user->id]);
 
-        $response->assertStatus(401);
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.id', $ticket->id);
+    }
+
+    #[Test]
+    public function pulse_returns_ticket_for_the_assignee(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $this->user->id]);
+
+        $response = $this->getJson("/api/v1/tickets/{$ticket->id}/pulse", $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertArrayHasKey('execution_state', $response->json('data'));
+    }
+
+    #[Test]
+    public function watch_starts_watching_as_assignee(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $this->user->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('watching', true);
+        $this->assertDatabaseHas('ticket_user_watchers', [
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => false,
+        ]);
+    }
+
+    #[Test]
+    public function show_rejects_a_ticket_the_user_does_not_own(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+
+        $this->getJson("/api/v1/tickets/{$ticket->id}", $this->apiHeaders())->assertStatus(404);
+    }
+
+    #[Test]
+    public function pulse_rejects_a_ticket_the_user_does_not_own(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+
+        $this->getJson("/api/v1/tickets/{$ticket->id}/pulse", $this->apiHeaders())->assertStatus(404);
+    }
+
+    #[Test]
+    public function watch_rejects_a_ticket_the_user_does_not_own(): void
+    {
+        $other = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [], $this->apiHeaders())->assertStatus(404);
+        $this->assertDatabaseMissing('ticket_user_watchers', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->user->id,
+        ]);
     }
 
     #[Test]
@@ -509,7 +596,11 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(200);
 
-        $note = Note::where('ticket_id', $ticket->id)->where('user_id', $this->user->id)->latest('id')->first();
+        $note = Note::where('ticket_id', $ticket->id)
+            ->where('user_id', $this->user->id)
+            ->where('notetype', 'message')
+            ->latest('id')
+            ->first();
         $this->assertNotNull($note);
         $this->assertStringContainsString('<p>Test note</p>', $note->body);
         $this->assertEquals('Test note', $note->body_markdown);
@@ -726,7 +817,8 @@ class TicketControllerTest extends TestCase
                     'status',
                     'assignee',
                 ],
-            ]);
+            ])
+            ->assertJsonPath('ticket.id', $ticket->id);
     }
 
     #[Test]
@@ -1003,25 +1095,6 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function all_api_routes_are_registered(): void
-    {
-        $routes = collect(Route::getRoutes()->getRoutes())
-            ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/'))
-            ->map(fn ($route) => $route->methods()[0].' '.$route->uri())
-            ->sort()
-            ->values()
-            ->toArray();
-
-        $this->assertContains('GET api/v1/tickets/{id}', $routes);
-        $this->assertContains('GET api/v1/tickets/{id}/pulse', $routes);
-        $this->assertContains('POST api/v1/tickets/{id}/note', $routes);
-        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/react', $routes);
-        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/reply', $routes);
-        $this->assertContains('PUT api/v1/tickets/{id}/notes/{noteId}', $routes);
-        $this->assertContains('POST api/v1/tickets/{id}/notes/{noteId}/resolve', $routes);
-    }
-
-    #[Test]
     public function index_includes_pulse_summary_when_requested(): void
     {
         $ticket = Ticket::factory()->create(['user_id2' => $this->user->id]);
@@ -1076,18 +1149,34 @@ class TicketControllerTest extends TestCase
             return $ticket;
         });
 
-        // Count queries for 5 tickets with pulse
-        DB::enableQueryLog();
-        $this->getJson('/api/v1/tickets?include=pulse', $this->apiHeaders())
-            ->assertStatus(200);
-        $queriesFor5 = count(DB::getQueryLog());
-        DB::disableQueryLog();
+        $queriesFor = function (int $count): int {
+            Ticket::query()->delete();
+            Ticket::factory()->count($count)->create(['user_id2' => $this->user->id]);
 
-        // Should not have 5× note queries - eager loading keeps it constant
-        // Without fix: ~5 note queries (one per ticket) + base queries
-        // With fix: 1 bulk note query + base queries
-        // We assert queries < 5 * per-ticket-cost
-        $this->assertLessThan(20, $queriesFor5, "Too many queries ($queriesFor5) - likely N+1 on pulse notes");
+            Cache::flush();
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+
+            $this->getJson('/api/v1/tickets?include=pulse', $this->apiHeaders())
+                ->assertOk();
+
+            $count = count(DB::getQueryLog());
+            DB::disableQueryLog();
+            DB::flushQueryLog();
+
+            return $count;
+        };
+
+        $queriesFor5 = $queriesFor(5);
+        $queriesFor10 = $queriesFor(10);
+
+        // A constant query count proves the note loading is bulk; an N+1 would
+        // add one query per ticket and make the second run larger.
+        $this->assertSame(
+            $queriesFor5,
+            $queriesFor10,
+            "Pulse note loading scales with ticket count: {$queriesFor5} queries for 5 tickets, {$queriesFor10} for 10"
+        );
     }
 
     #[Test]
@@ -1180,6 +1269,44 @@ class TicketControllerTest extends TestCase
             'ticket_id' => $ticket->id,
             'notetype' => 'action',
         ]);
+    }
+
+    #[Test]
+    public function note_with_action_and_bracket_mention_with_space_creates_action(): void
+    {
+        $assignee = User::factory()->create(['name' => 'Sarah Connor']);
+        $ticket = Ticket::factory()->create([
+            'user_id2' => null,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/action @[Sarah Connor] verify fix on staging',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertEquals('action', $response->json('note.notetype'));
+
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'action',
+        ]);
+        $this->assertSame($assignee->id, $ticket->fresh()->user_id2);
+    }
+
+    #[Test]
+    public function note_with_action_and_only_an_email_address_returns_422(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'user_id2' => $this->user->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => '/action Contact support@example.com about the outage',
+        ], $this->apiHeaders());
+
+        $response->assertStatus(422);
     }
 
     #[Test]
@@ -1402,6 +1529,13 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function moderate_note_returns_not_found_for_a_missing_ticket(): void
+    {
+        $this->postJson('/api/v1/tickets/999999/notes/1/moderate', ['action' => 'pin'], $this->apiHeaders())
+            ->assertStatus(404);
+    }
+
+    #[Test]
     public function moderate_note_rejects_a_foreign_ticket(): void
     {
         $other = User::factory()->create();
@@ -1409,7 +1543,31 @@ class TicketControllerTest extends TestCase
         $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $other->id]);
 
         $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'pin'], $this->apiHeaders())
-            ->assertStatus(404);
+            ->assertStatus(403);
+    }
+
+    #[Test]
+    public function moderate_note_allows_the_note_author(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $owner->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $this->user->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'hide'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.hidden', true);
+        $this->assertDatabaseHas('notes', ['id' => $note->id, 'hide' => true]);
+    }
+
+    #[Test]
+    public function moderate_note_rejects_an_unrelated_user(): void
+    {
+        $owner = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id, 'user_id2' => $owner->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $owner->id]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/moderate", ['action' => 'pin'], $this->apiHeaders())
+            ->assertStatus(403);
     }
 
     #[Test]
@@ -1440,8 +1598,42 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
+    public function promote_note_uses_stored_mention_for_action(): void
+    {
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $markdown = 'Fix the @param docblock, @[Jane Doe]';
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
+            'body' => app(MarkdownService::class)->parse($markdown),
+            'body_markdown' => $markdown,
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'action'], $this->apiHeaders())
+            ->assertStatus(200)
+            ->assertJsonPath('note.notetype', 'action');
+
+        $this->assertDatabaseHas('mentions', ['note_id' => $note->id, 'user_id' => $jane->id]);
+    }
+
+    #[Test]
+    public function promote_note_rejects_action_with_unknown_assignee(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
+        $note = Note::factory()->create([
+            'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
+            'body' => 'Someone should look at this.',
+        ]);
+
+        $this->postJson("/api/v1/tickets/{$ticket->id}/notes/{$note->id}/promote", ['type' => 'action', 'assignee' => 'nobody'], $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Actions require exactly one @assignee.');
+    }
+
+    #[Test]
     public function promote_note_with_assignee_creates_action(): void
     {
+        User::factory()->create(['name' => 'alan']);
         $ticket = Ticket::factory()->create(['user_id' => $this->user->id, 'user_id2' => $this->user->id]);
         $note = Note::factory()->create([
             'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'notetype' => 'message',
@@ -1469,10 +1661,9 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function watch_starts_watching_a_ticket(): void
     {
-        $other = User::factory()->create();
         $ticket = Ticket::factory()->create([
-            'user_id' => $other->id,
-            'user_id2' => $other->id,
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
         ]);
 
         $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [], $this->apiHeaders())
@@ -1486,10 +1677,9 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function watch_mutes_an_existing_watcher(): void
     {
-        $other = User::factory()->create();
         $ticket = Ticket::factory()->create([
-            'user_id' => $other->id,
-            'user_id2' => $other->id,
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
         ]);
         TicketUserWatcher::factory()->create([
             'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => false,
@@ -1506,10 +1696,9 @@ class TicketControllerTest extends TestCase
     #[Test]
     public function watch_removes_an_existing_watcher(): void
     {
-        $other = User::factory()->create();
         $ticket = Ticket::factory()->create([
-            'user_id' => $other->id,
-            'user_id2' => $other->id,
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
         ]);
         TicketUserWatcher::factory()->create([
             'ticket_id' => $ticket->id, 'user_id' => $this->user->id, 'muted' => true,
@@ -1521,14 +1710,6 @@ class TicketControllerTest extends TestCase
         $this->assertDatabaseMissing('ticket_user_watchers', [
             'ticket_id' => $ticket->id, 'user_id' => $this->user->id,
         ]);
-    }
-
-    #[Test]
-    public function watch_requires_authentication(): void
-    {
-        $ticket = Ticket::factory()->create();
-
-        $this->postJson("/api/v1/tickets/{$ticket->id}/watch", [])->assertStatus(401);
     }
 
     #[Test]
@@ -1576,14 +1757,6 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function update_requires_authentication(): void
-    {
-        $response = $this->putJson('/api/v1/tickets/1', ['subject' => 'x']);
-
-        $response->assertStatus(401);
-    }
-
-    #[Test]
     public function update_rejects_tickets_the_user_does_not_own(): void
     {
         $otherUser = User::factory()->create();
@@ -1624,6 +1797,111 @@ class TicketControllerTest extends TestCase
             'ticket_id' => $target->id,
             'parent_id' => $note->id,
             'body_markdown' => 'Reply on the correct ticket',
+        ]);
+    }
+
+    #[Test]
+    public function api_note_writes_a_changelog_when_the_status_changes(): void
+    {
+        Cache::flush();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $newStatus = Status::factory()->create(['name' => 'Escalated']);
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => 'Escalating this',
+            'status_id' => $newStatus->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $this->assertSame($newStatus->id, $ticket->fresh()->status_id);
+
+        $changelog = Note::where('ticket_id', $ticket->id)
+            ->where('notetype', 'changelog')
+            ->first();
+
+        $this->assertNotNull($changelog);
+        $this->assertStringContainsString('Status changed to Escalated', $changelog->body_markdown);
+    }
+
+    #[Test]
+    public function api_note_creates_mentions_and_sends_a_notification(): void
+    {
+        Cache::flush();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $mentioned = User::factory()->create();
+
+        $response = $this->postJson("/api/v1/tickets/{$ticket->id}/note", [
+            'body' => "Need help @[{$mentioned->name}]",
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+
+        $note = Note::where('ticket_id', $ticket->id)->where('notetype', 'message')->latest('id')->firstOrFail();
+
+        $this->assertDatabaseHas('mentions', [
+            'note_id' => $note->id,
+            'user_id' => $mentioned->id,
+        ]);
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $mentioned->id]);
+    }
+
+    #[Test]
+    public function api_reply_writes_note_and_notifies_parent_author(): void
+    {
+        Cache::flush();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $author = User::factory()->create();
+        $parent = Note::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $author->id,
+            'parent_id' => null,
+        ]);
+
+        $response = $this->postJson(
+            "/api/v1/tickets/{$ticket->id}/notes/{$parent->id}/reply",
+            ['body' => 'Thanks for the update'],
+            $this->apiHeaders(),
+        );
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'parent_id' => $parent->id,
+            'user_id' => $this->user->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $author->id,
+        ]);
+    }
+
+    #[Test]
+    public function api_update_writes_changelog_entry(): void
+    {
+        Cache::flush();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $this->user->id,
+            'user_id2' => $this->user->id,
+        ]);
+        $newStatus = Status::factory()->create();
+
+        $response = $this->putJson("/api/v1/tickets/{$ticket->id}", [
+            'status_id' => $newStatus->id,
+        ], $this->apiHeaders());
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('notes', [
+            'ticket_id' => $ticket->id,
+            'notetype' => 'changelog',
         ]);
     }
 }

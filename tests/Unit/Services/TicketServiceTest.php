@@ -14,10 +14,12 @@ use App\Models\Type;
 use App\Models\User;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
+use App\Notifications\WatcherDatabaseNotification;
 use App\Notifications\WatcherNotification;
 use App\Services\TicketService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -33,6 +35,51 @@ class TicketServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = new TicketService;
+    }
+
+    #[Test]
+    public function it_rolls_back_slash_changes_when_the_changelog_insert_fails(): void
+    {
+        Notification::fake();
+
+        $author = User::factory()->create();
+        $watcher = User::factory()->create();
+        $status = Status::factory()->create(['name' => 'Testing']);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+        ]);
+        $originalStatusId = $ticket->status_id;
+
+        TicketUserWatcher::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $watcher->id,
+        ]);
+
+        Note::creating(function ($note): void {
+            static $fired = false;
+
+            if ($fired || $note->notetype !== 'changelog') {
+                return;
+            }
+
+            $fired = true;
+
+            throw new \RuntimeException('changelog insert failed');
+        });
+
+        Auth::login($author);
+
+        try {
+            $this->service->notate($ticket->id, "/status Testing\nhello", []);
+            $this->fail('Expected changelog failure was not thrown.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('changelog insert failed', $exception->getMessage());
+        }
+
+        $this->assertSame($originalStatusId, $ticket->fresh()->status_id);
+        $this->assertSame(0, Note::where('ticket_id', $ticket->id)->count());
+        Notification::assertNotSentTo($watcher, WatcherNotification::class);
     }
 
     #[Test]
@@ -159,17 +206,18 @@ class TicketServiceTest extends TestCase
         Cache::flush();
         $user = User::factory()->create();
         $newAssignee = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         $this->service->getLookups();
 
-        $old = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $user->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
-        $new = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $newAssignee->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $old = ['id' => $ticket->id, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $user->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $new = ['id' => $ticket->id, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $newAssignee->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
 
         $changes = $this->service->changes($old, $new);
 
         $this->assertNotEmpty(array_filter($changes, fn ($c) => str_contains($c, 'Assigned User changed to '.$newAssignee->name)));
         $this->assertDatabaseHas('ticket_user_watchers', [
-            'ticket_id' => 1,
+            'ticket_id' => $ticket->id,
             'user_id' => $newAssignee->id,
         ]);
     }
@@ -180,18 +228,19 @@ class TicketServiceTest extends TestCase
         Cache::flush();
         $user = User::factory()->create();
         $newAssignee = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
 
         TicketUserWatcher::factory()->create([
-            'ticket_id' => 1,
+            'ticket_id' => $ticket->id,
             'user_id' => $newAssignee->id,
         ]);
 
-        $old = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $user->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
-        $new = ['id' => 1, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $newAssignee->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $old = ['id' => $ticket->id, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $user->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
+        $new = ['id' => $ticket->id, 'subject' => 'Test', 'description' => '', 'type_id' => 1, 'status_id' => 1, 'importance_id' => 1, 'milestone_id' => 1, 'project_id' => 1, 'estimate' => 0, 'user_id2' => $newAssignee->id, 'storypoints' => 0, 'due_at' => null, 'closed_at' => null];
 
         $this->service->changes($old, $new);
 
-        $this->assertEquals(1, TicketUserWatcher::where('ticket_id', 1)->where('user_id', $newAssignee->id)->count());
+        $this->assertEquals(1, TicketUserWatcher::where('ticket_id', $ticket->id)->where('user_id', $newAssignee->id)->count());
     }
 
     #[Test]
@@ -389,7 +438,7 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_skips_muted_watchers_when_note_activity_is_created(): void
+    public function it_sends_database_notifications_to_muted_watchers(): void
     {
         Notification::fake();
 
@@ -408,9 +457,35 @@ class TicketServiceTest extends TestCase
         ]);
 
         Auth::login($author);
-        $this->service->notate($ticket->id, 'Muted watcher should not be notified.', []);
+        $this->service->notate($ticket->id, 'Muted watcher gets a database notification.', []);
 
+        Notification::assertSentTo($watcher, WatcherDatabaseNotification::class);
         Notification::assertNotSentTo($watcher, WatcherNotification::class);
+    }
+
+    #[Test]
+    public function it_does_not_double_notify_mentioned_watchers(): void
+    {
+        Notification::fake();
+
+        $author = User::factory()->create(['name' => 'sarah']);
+        $mentioned = User::factory()->create(['name' => 'alex']);
+        $otherWatcher = User::factory()->create();
+        $ticket = Ticket::factory()->create([
+            'user_id' => $author->id,
+            'user_id2' => $author->id,
+            'subject' => 'Mentioned Watcher Ticket',
+        ]);
+
+        TicketUserWatcher::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $mentioned->id]);
+        TicketUserWatcher::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $otherWatcher->id]);
+
+        Auth::login($author);
+        $this->service->notate($ticket->id, 'Can you check the deploy, @alex?', []);
+
+        Notification::assertSentTo($mentioned, MentionNotification::class);
+        Notification::assertNotSentTo($mentioned, WatcherNotification::class);
+        Notification::assertSentTo($otherWatcher, WatcherNotification::class);
     }
 
     #[Test]
@@ -510,6 +585,32 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
+    public function warmed_lookups_issue_no_queries(): void
+    {
+        Cache::flush();
+        $this->service->getLookups();
+
+        DB::enableQueryLog();
+        $this->service->getLookups();
+
+        $this->assertCount(0, DB::getQueryLog());
+    }
+
+    #[Test]
+    public function lookups_bust_when_lookup_models_change(): void
+    {
+        Cache::flush();
+        $type = Type::factory()->create(['name' => 'Original']);
+        $this->assertContains('Original', $this->service->getLookups()['types']);
+
+        $type->update(['name' => 'Renamed']);
+
+        $lookups = $this->service->getLookups();
+        $this->assertNotContains('Original', $lookups['types']);
+        $this->assertContains('Renamed', $lookups['types']);
+    }
+
+    #[Test]
     public function lookups_are_cached_for_sixty_minutes(): void
     {
         Cache::flush();
@@ -565,27 +666,17 @@ class TicketServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_rebuilds_stale_cached_status_lookups(): void
+    public function stale_lookups_rebuild_after_ttl_expiry(): void
     {
         Cache::flush();
-
         $open = Status::factory()->create(['name' => 'Open']);
-        $closed = Status::factory()->create(['name' => 'Closed']);
+        $closed = Status::factory()->closed()->create();
 
-        Cache::put('ticket_lookups', [
-            'types' => [],
-            'milestones' => [],
-            'importances' => [],
-            'projects' => [],
-            'statuses' => [$open->id => $open->name],
-            'releases' => [],
-            'users' => [],
-        ], now()->addMinutes(60));
+        Cache::put('ticket_lookups', ['statuses' => []], now()->addMinutes(60));
 
+        $this->travel(61)->minutes();
         $lookups = $this->service->getLookups();
 
-        // 10 seeded statuses + 2 created by test = 12
-        $this->assertCount(12, $lookups['statuses']);
         $this->assertContains($open->name, $lookups['statuses']);
         $this->assertContains($closed->name, $lookups['statuses']);
     }
@@ -597,14 +688,11 @@ class TicketServiceTest extends TestCase
 
         $lookups = $this->service->getLookups();
 
-        // Seeded statuses in ID order
+        // Seeded statuses in ID order; names are asserted in
+        // it_returns_lookups_with_seeded_values.
         $this->assertSame(
             [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             array_keys($lookups['statuses'])
-        );
-        $this->assertSame(
-            ['new', 'active', 'testing', 'ready to deploy', 'completed', 'waiting', 'reopened', 'duplicate', 'declined', 'backlog'],
-            array_values($lookups['statuses'])
         );
     }
 

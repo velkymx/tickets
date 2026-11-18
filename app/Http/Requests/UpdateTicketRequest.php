@@ -23,7 +23,6 @@ class UpdateTicketRequest extends FormRequest
             'project_id' => 'nullable|integer|exists:projects,id',
             'user_id2' => 'nullable|integer|exists:users,id',
             'due_at' => 'nullable|date',
-            'closed_at' => 'nullable|date',
             'estimate' => 'nullable|numeric|min:0',
             'storypoints' => 'nullable|integer|min:0',
         ];

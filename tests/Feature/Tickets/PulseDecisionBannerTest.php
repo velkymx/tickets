@@ -14,19 +14,15 @@ class PulseDecisionBannerTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function show_calls_out_open_threads_first(): void
+    public function show_calls_out_decision_requests_first(): void
     {
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create(['user_id2' => $user->id]);
-        $thread = Note::factory()->create([
-            'user_id' => $user->id,
-            'ticket_id' => $ticket->id,
-            'notetype' => 'message',
-        ]);
         Note::factory()->create([
             'user_id' => $user->id,
             'ticket_id' => $ticket->id,
-            'parent_id' => $thread->id,
+            'notetype' => 'decision_needed',
+            'decider_id' => $user->id,
         ]);
 
         $response = $this->actingAs($user)->get("/tickets/{$ticket->id}");

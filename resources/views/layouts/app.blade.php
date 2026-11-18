@@ -27,7 +27,7 @@
                 aria-controls="navbarSupportedContent" 
                 aria-expanded="false" 
                 aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"><img src="/tickets.png" alt="Tickets"></span>
+            <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -49,6 +49,15 @@
 
                     <li class="nav-item"><a class="nav-link" href="/ticket/create">New Ticket</a></li>
                     <li class="nav-item"><a class="nav-link" href="/tickets/import">Import</a></li>
+                    @if ($pendingDecisionCount > 0)
+                        <li class="nav-item">
+                            <a class="nav-link d-inline-flex align-items-center gap-2" href="/tickets?q=decision%3Ame" title="Decisions waiting on you">
+                                <i class="fa-solid fa-gavel" aria-hidden="true"></i>
+                                <span class="visually-hidden">Decisions waiting on you</span>
+                                <span class="badge rounded-pill bg-danger notification-count-inline" data-decision-count="{{ $pendingDecisionCount }}">{{ $pendingDecisionCount }}</span>
+                            </a>
+                        </li>
+                    @endif
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-inline-flex align-items-center gap-2" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="{{ $unreadNotificationCount > 0 ? 'fas fa-bell' : 'far fa-bell' }}" aria-hidden="true"></i>
@@ -73,7 +82,7 @@
                                     <div class="d-flex justify-content-between gap-3">
                                         <div class="small">
                                             <div class="fw-semibold">{{ $notification->data['excerpt'] ?? $notification->data['message'] ?? 'Activity update' }}</div>
-                                            <div class="text-muted">{{ $notification->created_at->diffForHumans() }}</div>
+                                            <div class="text-muted"><x-relative-time :value="$notification->created_at" /></div>
                                         </div>
                                         @if (! $notification->read_at)
                                             <span class="text-danger">●</span>

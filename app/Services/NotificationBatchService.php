@@ -13,8 +13,11 @@ class NotificationBatchService
     {
         $entry = $this->normalize($user, $notification);
 
-        // In-app delivery is never gated; only mail is.
         $user->notifyNow($notification, ['database']);
+
+        if (! in_array('mail', (array) $notification->via($user), true)) {
+            return;
+        }
 
         if (! $user->mailsFor($this->prefKey($entry['type']))) {
             return;

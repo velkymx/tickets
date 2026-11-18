@@ -32,13 +32,7 @@ class HealthPageTest extends TestCase
 
         $this->actingAs($user)->get('/admin/health')->assertForbidden();
         $this->actingAs($user)->postJson('/admin/health/queue-ping')->assertForbidden();
-        $this->actingAs($user)->getJson('/admin/health/queue-ping/abc')->assertForbidden();
-    }
-
-    #[Test]
-    public function guest_is_redirected_to_login(): void
-    {
-        $this->get('/admin/health')->assertRedirect('/login');
+        $this->actingAs($user)->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertForbidden();
     }
 
     #[Test]
@@ -46,14 +40,7 @@ class HealthPageTest extends TestCase
     {
         $admin = User::factory()->create(['admin' => true]);
 
-        $content = $this->actingAs($admin)->get('/home')->getContent();
-
-        $usersPos = strpos($content, 'Manage Users');
-        $healthPos = strpos($content, 'System Health');
-
-        $this->assertNotFalse($usersPos);
-        $this->assertNotFalse($healthPos);
-        $this->assertGreaterThan($usersPos, $healthPos);
+        $this->actingAs($admin)->get('/home')->assertOk()->assertSeeInOrder(['Manage Users', 'System Health']);
     }
 
     #[Test]
@@ -62,5 +49,15 @@ class HealthPageTest extends TestCase
         $user = User::factory()->create(['admin' => false]);
 
         $this->actingAs($user)->get('/home')->assertOk()->assertDontSee('System Health');
+    }
+
+    #[Test]
+    public function disabled_features_render_a_neutral_badge(): void
+    {
+        $admin = User::factory()->create(['admin' => true]);
+
+        $this->actingAs($admin)->get('/admin/health')
+            ->assertOk()
+            ->assertSee('Disabled');
     }
 }

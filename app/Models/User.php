@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,10 +17,14 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
-        static::deleting(function (User $user) {
-            TicketView::where('user_id', $user->id)->delete();
-            TicketUserWatcher::where('user_id', $user->id)->delete();
+        static::saving(function (User $user) {
+            $user->name_lower = mb_strtolower(trim($user->name ?? ''));
         });
+    }
+
+    public function scopeWithName(Builder $query, string $name): Builder
+    {
+        return $query->where('name_lower', mb_strtolower(trim($name)))->orderBy('id');
     }
 
     protected $fillable = [
@@ -98,7 +103,7 @@ class User extends Authenticatable
     public function wantsNotification(string $type): bool
     {
         return match ($type) {
-            'mention' => (bool) $this->notificationPrefs()['mentions'],
+            'mention', 'decision_request' => (bool) $this->notificationPrefs()['mentions'],
             'reply' => (bool) $this->notificationPrefs()['replies'],
             'watching' => (bool) $this->notificationPrefs()['watching'],
             default => $this->unknownNotificationType($type),

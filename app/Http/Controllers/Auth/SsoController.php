@@ -58,18 +58,22 @@ class SsoController extends Controller
         }
 
         $email = strtolower(trim((string) $socialUser->getEmail()));
+        $existing = $email !== '' ? User::where('email', $email)->first() : null;
 
-        if ($email !== '' && $this->verifiedEmail($provider, $driver, $socialUser, $email)) {
-            $user = User::where('email', $email)->first();
-
-            if ($user) {
-                $user->socialAccounts()->create([
-                    'provider' => $provider,
-                    'provider_id' => (string) $socialUser->getId(),
+        if ($existing) {
+            if (! $this->verifiedEmail($provider, $driver, $socialUser, $email)
+                || ! $this->passesProviderGate($provider, $driver, $socialUser)) {
+                return redirect()->route('login')->withErrors([
+                    'email' => 'An account with this email already exists. Sign in with your password or contact an administrator.',
                 ]);
-
-                return $this->signIn($user);
             }
+
+            $existing->socialAccounts()->create([
+                'provider' => $provider,
+                'provider_id' => (string) $socialUser->getId(),
+            ]);
+
+            return $this->signIn($existing);
         }
 
         if (! $this->allowedToRegister($provider, $driver, $socialUser, $email)) {
@@ -120,8 +124,30 @@ class SsoController extends Controller
         return match ($provider) {
             'google' => (bool) ($socialUser->user['email_verified'] ?? false),
             'github' => $this->githubVerifiedPrimary($driver, $email),
-            default => $email !== '',
+            'gitlab' => ! empty($socialUser->user['confirmed_at']),
+            default => false,
         };
+    }
+
+    private function passesProviderGate(string $provider, mixed $driver, mixed $socialUser): bool
+    {
+        $tenant = (string) config('services.sso.azure_tenant');
+        $org = (string) config('services.sso.github_org');
+        $group = (string) config('services.sso.gitlab_group');
+
+        if ($provider === 'azure' && $tenant !== '' && (string) ($socialUser->user['tid'] ?? '') !== $tenant) {
+            return false;
+        }
+
+        if ($provider === 'github' && $org !== '' && ! $this->githubOrgMember($driver, $org)) {
+            return false;
+        }
+
+        if ($provider === 'gitlab' && $group !== '' && ! $this->gitlabGroupMember($driver, $group)) {
+            return false;
+        }
+
+        return true;
     }
 
     private function githubVerifiedPrimary(mixed $driver, string $email): bool
@@ -155,35 +181,22 @@ class SsoController extends Controller
 
         $domains = array_filter(array_map(
             fn ($d) => strtolower(trim($d)),
-            explode(',', (string) env('SSO_ALLOWED_DOMAINS', ''))
+            explode(',', (string) config('services.sso.allowed_domains'))
         ));
 
         if ($domains !== [] && ! in_array(Str::after($email, '@'), $domains, true)) {
             return false;
         }
 
-        $tenant = (string) env('AZURE_TENANT_ID', '');
-        $org = (string) env('GITHUB_ALLOWED_ORG', '');
-        $group = (string) env('GITLAB_ALLOWED_GROUP', '');
-
-        if ($provider === 'azure' && $tenant !== '') {
-            $tid = (string) ($socialUser->user['tid'] ?? '');
-
-            if ($tid !== '' && $tid !== $tenant) {
-                return false;
-            }
-        }
-
-        if ($provider === 'github' && $org !== '' && ! $this->githubOrgMember($driver, $org)) {
-            return false;
-        }
-
-        if ($provider === 'gitlab' && $group !== '' && ! $this->gitlabGroupMember($driver, $group)) {
+        if (! $this->passesProviderGate($provider, $driver, $socialUser)) {
             return false;
         }
 
         // Fail closed: at least one gate must be configured.
-        return $domains !== [] || $tenant !== '' || $org !== '' || $group !== '';
+        return $domains !== []
+            || (string) config('services.sso.azure_tenant') !== ''
+            || (string) config('services.sso.github_org') !== ''
+            || (string) config('services.sso.gitlab_group') !== '';
     }
 
     private function githubOrgMember(mixed $driver, string $org): bool

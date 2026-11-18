@@ -97,11 +97,19 @@ Returns tickets assigned to the authenticated user, paginated.
 | `per_page` | integer | Items per page. Default: 20. Max: 100. |
 | `status` | integer | Filter by status ID. |
 | `unassigned` | boolean | Set to `1` to list unassigned tickets instead. |
+| `decision` | string | `me` lists tickets with an open decision request aimed at you, whoever owns them. `any` narrows your tickets to those with any open decision request. |
 | `include` | string | Set to `pulse` to include pulse summary on each ticket. |
+
+Values outside the `per_page` range of 1 to 100, or a `status` that does not exist, return 422.
+
+Each ticket includes `decision_needed` (bool) and `decision_needed_from` (the user id of the oldest open request's decider, or `null`).
 
 ```bash
 curl -H "Authorization: Bearer <token>" \
   "https://your-app.example.com/api/v1/tickets?per_page=50&status=1"
+
+curl -H "Authorization: Bearer <token>" \
+  "https://your-app.example.com/api/v1/tickets?decision=me"
 ```
 
 ---
@@ -112,7 +120,7 @@ curl -H "Authorization: Bearer <token>" \
 GET /tickets/{id}
 ```
 
-Returns full ticket detail: metadata, notes, reactions, attachments, mentions, and pulse summary.
+Returns full ticket detail: metadata, notes, reactions, attachments, mentions, and pulse summary. Only tickets you created or are assigned to are visible; others return 404.
 
 **Query parameters:**
 
@@ -163,7 +171,7 @@ PUT /tickets/{id}
 PATCH /tickets/{id}
 ```
 
-Updates any subset of a ticket you own or are assigned to. Send only the fields you want to change.
+Updates any subset of a ticket you own or are assigned to. Send only the fields you want to change. Changed fields are written to the ticket changelog, the same as an edit in the web UI.
 
 **Fields:** `subject`, `description`, `status_id`, `assignee_id`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints`.
 
@@ -175,16 +183,17 @@ curl -X PUT \
   https://your-app.example.com/api/v1/tickets/42
 ```
 
-**Response (201):**
+**Response (200):**
 
 ```json
 {
-  "message": "Ticket created.",
+  "message": "Ticket updated successfully",
   "ticket": {
-    "id": 123,
+    "id": 42,
     "subject": "Login page returns 500",
+    "description": "Reproducible on Chrome/Mac only.",
     "status": "Open",
-    "link": "https://your-app.example.com/tickets/123"
+    "assignee": "Ada Lovelace"
   }
 }
 ```
@@ -197,7 +206,10 @@ curl -X PUT \
 POST /tickets/{id}/note
 ```
 
-Adds a note, logs hours, changes status, or runs slash commands.
+Adds a note, logs hours, changes status, or runs slash commands. The note
+records mentions and notifies the mentioned users, and any status, claim,
+field, or slash-command change is written to the ticket changelog. Watchers
+are notified of the write.
 
 **Fields:**
 
@@ -207,6 +219,10 @@ Adds a note, logs hours, changes status, or runs slash commands.
 | `status_id` | integer | Change ticket status. |
 | `hours` | number | Log hours against this ticket. |
 | `claim` | boolean | Assign the ticket to yourself. |
+
+Business rule guards, such as `/action` without exactly one assignee or
+`/status` while a blocker is open, return 422 and write nothing, including any
+claim or status change in the same request.
 
 **Slash commands** (include in `body`):
 
@@ -220,8 +236,9 @@ Adds a note, logs hours, changes status, or runs slash commands.
 | `/hours 2` | Log 2 hours |
 | `/pin` | Pin this note |
 | `/decision` | Mark note as a decision |
+| `/decide @user Question` | Ask exactly one user for a decision. They are notified at once. 422 without exactly one known `@user`. Names with spaces use `@[Full Name]`. |
 | `/blocker` | Mark note as a blocker |
-| `/action @user Task description` | Create an action item |
+| `/action @user Task description` | Create an action item. Names with spaces use `@[Full Name]`. |
 | `/update` | Mark as a status update |
 | `/milestone Milestone 2` | Move to milestone by name |
 
@@ -283,7 +300,7 @@ Marks a note as resolved. Creates a reply with the resolution message.
 curl -X POST \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"resolution_message": "Fixed in v2.1 hotfix."}' \
+  -d '{"resolution_message": "Fixed in the latest release."}' \
   https://your-app.example.com/api/v1/tickets/42/notes/99/resolve
 ```
 
@@ -331,7 +348,7 @@ curl -X POST \
 POST /tickets/{id}/notes/{noteId}/promote
 ```
 
-Turns a plain message note into a `decision`, `blocker`, or `action`. Only message notes can be promoted; decisions need 20+ characters, and actions need exactly one `@assignee` (a mention in the body or the `assignee` field).
+Turns a plain message note into a `decision`, `blocker`, `action`, or `decision_needed`. Only message notes can be promoted; decisions need 20+ characters, actions need exactly one `@assignee`, and decision requests exactly one `@decider` (a mention in the body or the `assignee` field). Only mentions that match an existing user count, so tokens such as `@param` are ignored, and an unknown `assignee` is rejected. An action `assignee` is written into the note as an `@[Name]` mention and shows as the owner in the pulse. Promoting to `decision_needed` notifies the decider.
 
 ```bash
 curl -X POST \
@@ -339,6 +356,18 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"type": "action", "assignee": "jane"}' \
   https://your-app.example.com/api/v1/tickets/42/notes/99/promote
+```
+
+### Decision Requests
+
+A `decision_needed` note asks one person to decide. It stays open, and shows on that person's Home page and navbar, until someone replies on the thread with a body starting `/decision`, or resolves the thread. Pulse lists open ones under `decision_requests` (`id`, `question`, `requester`, `decider`, `decider_id`, `created_at`).
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"body": "/decision Ship Friday after the smoke test"}' \
+  https://your-app.example.com/api/v1/tickets/42/notes/99/reply
 ```
 
 ---
@@ -349,7 +378,7 @@ curl -X POST \
 POST /tickets/{id}/watch
 ```
 
-Watch, unwatch, mute, or unmute a ticket for yourself. `action` is one of `watch` (default), `unwatch`, `mute`, `unmute`. Any ticket you can view may be watched.
+Watch, unwatch, mute, or unmute a ticket for yourself. `action` is one of `watch` (default), `unwatch`, `mute`, `unmute`. Only tickets you created or are assigned to may be watched; others return 404.
 
 ```bash
 curl -X POST \
@@ -367,7 +396,7 @@ curl -X POST \
 GET /tickets/{id}/pulse
 ```
 
-Returns execution state summary: blockers, open threads, next action, latest decision, staleness.
+Returns execution state summary: blockers, open threads, next action, latest decision, staleness. Only tickets you created or are assigned to are visible; others return 404.
 
 **Execution states:** `ON TRACK`, `AT RISK`, `BLOCKED`, `IDLE`.
 
@@ -469,7 +498,7 @@ AI assistants can work with tickets and the knowledge base through the built-in
 `laravel/mcp` package) instead of raw REST calls - `POST /mcp/tickets` with the
 same Bearer token, or the local stdio handle `tickets`.
 
-The full MCP reference - connection, all 16 tools with arguments, slash
+The full MCP reference - connection, all 24 tools with arguments, slash
 commands, pulse fields, and error conventions - lives in **[mcp.md](mcp.md)**.
 
 ---

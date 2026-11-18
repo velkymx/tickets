@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\SystemHealth\RequirementResult;
 use App\SystemHealth\Requirements;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -44,28 +45,24 @@ class InstallCommand extends Command
         $appUrl = $this->answer('APP_URL', text('App URL', default: config('app.url') ?: 'http://localhost:8000'), $auto);
         $driver = $this->answer(
             'DB_CONNECTION',
-            select('Database driver', ['sqlite' => 'SQLite (file, simplest)', 'mysql' => 'MySQL / MariaDB', 'pgsql' => 'PostgreSQL'], default: env('DB_CONNECTION', 'sqlite')),
+            select('Database driver', ['mysql' => 'MySQL / MariaDB', 'pgsql' => 'PostgreSQL'], default: env('DB_CONNECTION', 'mysql')),
             $auto
         );
 
-        if (! in_array($driver, ['sqlite', 'mysql', 'pgsql'], true)) {
-            $this->components->error("Unsupported driver: {$driver}. Use sqlite, mysql, or pgsql.");
+        if (! in_array($driver, ['mysql', 'pgsql'], true)) {
+            $this->components->error("Unsupported driver: {$driver}. Use mysql or pgsql.");
 
             return self::FAILURE;
         }
 
         $settings = ['APP_URL' => $appUrl, 'DB_CONNECTION' => $driver];
 
-        if ($driver === 'sqlite') {
-            $settings['DB_DATABASE'] = env('DB_DATABASE') ?: database_path('database.sqlite');
-        } else {
-            $portDefault = $driver === 'pgsql' ? '5432' : '3306';
-            $settings['DB_HOST'] = $this->answer('DB_HOST', text('Database host', default: env('DB_HOST', '127.0.0.1')), $auto);
-            $settings['DB_PORT'] = $this->answer('DB_PORT', text('Database port', default: (string) env('DB_PORT', $portDefault)), $auto);
-            $settings['DB_DATABASE'] = $this->answer('DB_DATABASE', text('Database name', default: (string) env('DB_DATABASE', 'tickets')), $auto);
-            $settings['DB_USERNAME'] = $this->answer('DB_USERNAME', text('Database username', default: (string) env('DB_USERNAME', 'root')), $auto);
-            $settings['DB_PASSWORD'] = $this->answer('DB_PASSWORD', password('Database password', required: false) ?? '', $auto);
-        }
+        $portDefault = $driver === 'pgsql' ? '5432' : '3306';
+        $settings['DB_HOST'] = $this->answer('DB_HOST', text('Database host', default: env('DB_HOST', '127.0.0.1')), $auto);
+        $settings['DB_PORT'] = $this->answer('DB_PORT', text('Database port', default: (string) env('DB_PORT', $portDefault)), $auto);
+        $settings['DB_DATABASE'] = $this->answer('DB_DATABASE', text('Database name', default: (string) env('DB_DATABASE', 'tickets')), $auto);
+        $settings['DB_USERNAME'] = $this->answer('DB_USERNAME', text('Database username', default: (string) env('DB_USERNAME', 'root')), $auto);
+        $settings['DB_PASSWORD'] = $this->answer('DB_PASSWORD', password('Database password', required: false) ?? '', $auto);
 
         if ($this->option('no-seed')) {
             $seed = false;
@@ -89,13 +86,6 @@ class InstallCommand extends Command
 
         $this->writeEnv($settings);
         $this->components->twoColumnDetail('Environment', '.env updated');
-
-        if ($driver === 'sqlite') {
-            File::ensureDirectoryExists(dirname($settings['DB_DATABASE']));
-            if (! File::exists($settings['DB_DATABASE'])) {
-                File::put($settings['DB_DATABASE'], '');
-            }
-        }
 
         config(['database.default' => $driver]);
         foreach (['HOST', 'PORT', 'DATABASE', 'USERNAME', 'PASSWORD'] as $suffix) {

@@ -29,7 +29,7 @@
             @if($article->owner)
                 By <a href="/users/{{ $article->owner->id }}" class="text-decoration-none">{{ $article->owner->name }}</a>
             @endif
-            &middot; Updated {{ $article->updated_at->diffForHumans() }}
+            &middot; Updated <x-relative-time :value="$article->updated_at" />
         </div>
     </div>
 </div>

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Repo guide for coding agents. App is a Laravel ticket tracker (Blade plus Bootstrap, Alpine, SQLite/MySQL/PG). PRs target `2.0.0`; `master` is the legacy default branch.
+Repo guide for coding agents. App is a Laravel ticket tracker (Blade plus Bootstrap, Alpine, MySQL/PG). Feature branches target `2.0.0`; `2.0.0` merges to `master` for release.
 
 ## Commands
 
@@ -15,6 +15,10 @@ Repo guide for coding agents. App is a Laravel ticket tracker (Blade plus Bootst
 - One issue, one branch (`fix/issue-N-slug`), one PR targeting `2.0.0`. Never commit to primary.
 - No commit prefixes (`feat:`, `fix:`, etc). Subject: capitalized imperative, max 50 chars, no trailing period. Blank line, body wrapped at 72 cols, what plus why.
 - No em-dashes or en-dashes anywhere.
+
+## Framework behavior
+
+- Use the framework as shipped. Do not test framework behavior and do not change or wrap framework behavior to make a test pass.
 
 ## Where logic lives
 

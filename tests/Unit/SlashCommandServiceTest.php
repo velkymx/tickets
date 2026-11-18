@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Exceptions\SlashCommandException;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -9,6 +10,7 @@ use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SlashCommandService;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -44,7 +46,7 @@ class SlashCommandServiceTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
         $author = User::factory()->create();
-        $status = Status::factory()->create(['name' => 'Testing']);
+        Status::factory()->create(['name' => 'Testing']);
 
         Note::create([
             'body' => 'Blocked on API rollout',
@@ -54,10 +56,10 @@ class SlashCommandServiceTest extends TestCase
             'resolved' => false,
         ]);
 
-        $result = $this->service->handle($ticket, '/status Testing');
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Resolve blocker before changing status');
 
-        $this->assertNotEquals($status->id, $ticket->fresh()->status_id);
-        $this->assertContains('Resolve blocker before changing status', $result['changes']);
+        $this->service->handle($ticket, '/status Testing');
     }
 
     #[Test]
@@ -101,10 +103,10 @@ class SlashCommandServiceTest extends TestCase
             'resolved' => false,
         ]);
 
-        $result = $this->service->handle($ticket, '/close');
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Resolve blocker before changing status');
 
-        $this->assertNull($ticket->fresh()->closed_at);
-        $this->assertContains('Resolve blocker before changing status', $result['changes']);
+        $this->service->handle($ticket, '/close');
     }
 
     #[Test]
@@ -151,6 +153,25 @@ class SlashCommandServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_saves_the_ticket_once_for_multi_command_messages(): void
+    {
+        $ticket = Ticket::factory()->create();
+        $status = Status::factory()->create(['name' => 'Testing']);
+        User::factory()->create(['name' => 'john']);
+
+        DB::enableQueryLog();
+        $result = $this->service->handle($ticket, "/status Testing\n/estimate 5");
+
+        $updates = collect(DB::getQueryLog())->filter(
+            fn ($entry) => preg_match('/^\s*update\s*[\"`\[]?tickets[\"`\]]?/i', $entry['query'])
+        );
+        $this->assertCount(1, $updates);
+        $this->assertSame($status->id, $ticket->fresh()->status_id);
+        $this->assertEquals(5, $ticket->fresh()->estimate);
+        $this->assertContains(['action' => 'status_changed', 'to' => 'Testing'], $result['actions']);
+    }
+
+    #[Test]
     public function it_supports_multi_command_submissions_and_collects_body_text()
     {
         $ticket = Ticket::factory()->create();
@@ -172,15 +193,41 @@ class SlashCommandServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_resolves_code_tokens_away_for_action_assignees(): void
+    {
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
+        $jane = User::factory()->create(['name' => 'Jane Doe']);
+
+        $result = $this->service->handle($ticket, '/action Fix @[Jane Doe] see @param docs');
+
+        $this->assertSame('action', $result['note_type']);
+        $this->assertSame($jane->id, $ticket->fresh()->user_id2);
+    }
+
+    #[Test]
+    public function it_rejects_action_commands_whose_only_mention_is_not_a_user(): void
+    {
+        $ticket = Ticket::factory()->create();
+
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Actions require exactly one @assignee');
+
+        $this->service->handle($ticket, '/action Check @media rules');
+    }
+
+    #[Test]
     public function it_requires_exactly_one_assignee_for_action_commands()
     {
         $ticket = Ticket::factory()->create();
 
-        $missing = $this->service->handle($ticket, '/action Verify fix');
-        $multiple = $this->service->handle($ticket, '/action Verify fix @[john] @[sarah]');
-
-        $this->assertContains('Actions require exactly one @assignee', $missing['changes']);
-        $this->assertContains('Actions require exactly one @assignee', $multiple['changes']);
+        foreach (['/action Verify fix', '/action Verify fix @[john] @[sarah]'] as $body) {
+            try {
+                $this->service->handle($ticket, $body);
+                $this->fail('Expected SlashCommandException for '.$body);
+            } catch (SlashCommandException $e) {
+                $this->assertSame('Actions require exactly one @assignee', $e->getMessage());
+            }
+        }
     }
 
     #[Test]
@@ -197,15 +244,16 @@ class SlashCommandServiceTest extends TestCase
             'resolved' => false,
         ]);
 
-        $result = $this->service->handle($ticket, '/action Verify fix @[john]');
+        $this->expectException(SlashCommandException::class);
+        $this->expectExceptionMessage('Too many open actions');
 
-        $this->assertContains('Too many open actions. Resolve or overwrite an existing action before creating a new one', $result['changes']);
+        $this->service->handle($ticket, '/action Verify fix @[john]');
     }
 
     #[Test]
     public function it_auto_assigns_unassigned_tickets_to_the_action_assignee()
     {
-        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
         $assignee = User::factory()->create(['name' => 'sarah']);
 
         $result = $this->service->handle($ticket, '/action Verify fix @[sarah]');
@@ -217,7 +265,7 @@ class SlashCommandServiceTest extends TestCase
     #[Test]
     public function it_prefers_exact_case_for_action_assignees(): void
     {
-        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
         User::factory()->create(['name' => 'john']);
         $exact = User::factory()->create(['name' => 'John']);
 
@@ -225,6 +273,24 @@ class SlashCommandServiceTest extends TestCase
 
         $this->assertEquals($exact->id, $ticket->fresh()->user_id2);
         $this->assertContains(['action' => 'assigned', 'to' => 'John'], $result['actions']);
+    }
+
+    #[Test]
+    public function it_moves_the_ticket_to_an_open_status_on_reopen(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'status_id' => Status::factory()->closed()->create()->id,
+            'closed_at' => now(),
+        ]);
+        cache()->forget('closed_status_ids');
+        cache()->forget('active_status_ids');
+
+        $result = $this->service->handle($ticket, '/reopen');
+
+        $fresh = $ticket->fresh();
+        $this->assertNull($fresh->closed_at);
+        $this->assertFalse(Status::isClosed((int) $fresh->status_id));
+        $this->assertContains('Ticket reopened', $result['changes']);
     }
 
     #[Test]
@@ -267,7 +333,7 @@ class SlashCommandServiceTest extends TestCase
     #[Test]
     public function it_extracts_bracket_mentions_in_action_commands(): void
     {
-        $ticket = Ticket::factory()->create(['user_id2' => 999999]);
+        $ticket = Ticket::factory()->create(['user_id2' => null]);
         $assignee = User::factory()->create(['name' => 'Sarah Lee']);
 
         $result = $this->service->handle($ticket, '/action Verify fix @[Sarah Lee (QA)]');
@@ -322,13 +388,16 @@ class SlashCommandServiceTest extends TestCase
             }
         };
 
+        $this->expectException(\RuntimeException::class);
+
         try {
             $service->handle($ticket, "/status active\n/close");
-        } catch (\RuntimeException) {
-            // expected
+        } finally {
+            $this->assertEquals(
+                $originalStatusId,
+                $ticket->fresh()->status_id,
+                'Status change should be rolled back'
+            );
         }
-
-        $ticket->refresh();
-        $this->assertEquals($originalStatusId, $ticket->status_id, 'Status change should be rolled back');
     }
 }

@@ -1,5 +1,3 @@
-import EasyMDE from 'easymde';
-
 const TOOLBAR = [
     'bold', 'italic', 'heading', '|',
     'quote', 'unordered-list', 'ordered-list', 'checklist', '|',
@@ -8,8 +6,9 @@ const TOOLBAR = [
     'guide',
 ];
 
-function initEditor(element) {
+async function initEditor(element) {
     const autosaveId = element.dataset.autosaveId;
+    const { default: EasyMDE } = await import('easymde');
 
     new EasyMDE({
         element,
@@ -25,7 +24,9 @@ function initEditor(element) {
 }
 
 export default function initMarkdownEditors(root = document) {
-    root.querySelectorAll('textarea[data-markdown-editor]').forEach(initEditor);
+    root.querySelectorAll('textarea[data-markdown-editor]').forEach((element) => {
+        initEditor(element).catch((error) => console.error('Error initializing markdown editor:', error));
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => initMarkdownEditors());

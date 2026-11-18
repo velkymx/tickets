@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Kb;
 use App\Http\Controllers\Controller;
 use App\Models\KbArticle;
 use App\Services\KbArticleService;
+use App\Services\LineDiffService;
 use Illuminate\Support\Facades\Auth;
 
 class KbVersionController extends Controller
 {
+    public function __construct(private LineDiffService $diffService) {}
+
     public function index(KbArticle $slug)
     {
         $article = $slug;
@@ -37,13 +40,18 @@ class KbVersionController extends Controller
         $fromVersion = $article->versions()->where('version_number', $from)->firstOrFail();
         $toVersion = $article->versions()->where('version_number', $to)->firstOrFail();
 
-        return view('kb.history.diff', compact('article', 'fromVersion', 'toVersion'));
+        $diff = $this->diffService->diff(
+            explode("\n", $fromVersion->body_markdown ?? ''),
+            explode("\n", $toVersion->body_markdown ?? ''),
+        );
+
+        return view('kb.history.diff', compact('article', 'fromVersion', 'toVersion', 'diff'));
     }
 
     public function restore(KbArticle $slug, int $version, KbArticleService $articleService)
     {
         $article = $slug;
-        $this->authorize('update', $article);
+        $this->authorize('restore', $article);
 
         $versionModel = $article->versions()->where('version_number', $version)->firstOrFail();
 

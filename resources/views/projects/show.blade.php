@@ -80,10 +80,10 @@
             <ul class="list-group list-group-flush">
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     Total Tickets
-                    <span class="badge text-bg-primary rounded-pill">{{ $project->tickets->count() }}</span>
+                    <span class="badge text-bg-primary rounded-pill">{{ $total }}</span>
                 </li>
                 @foreach ($statuscodes as $code)
-                    @php $count = $project->tickets->where('status_id', $code->id)->count(); @endphp
+                    @php $count = $statusCounts[$code->id] ?? 0; @endphp
                     @if($count > 0)
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             {{ $code->name }}

@@ -49,13 +49,13 @@ Each article has a visibility level set during creation or editing:
 
 | Visibility | Who can read |
 |------------|--------------|
-| `public` | All authenticated users |
-| `internal` | All authenticated users |
-| `restricted` | Only users explicitly granted access |
+| `public` | Everyone, including guests (verified articles) |
+| `internal` | All authenticated users (non-draft articles) |
+| `restricted` | Owner and explicitly granted users (non-draft articles) |
 
 ### Granting restricted access
 
-Restricted access is granted per article. On the article edit page, add users to the **Allowed Users** list.
+Restricted access is granted per article through the permitted users field on the create and edit forms. Permitted users can both view and edit article content, and owners retain access without a grant row. Only the owner or a KB admin can change visibility, status, and grants, including through the API and MCP tools.
 
 ## Version history
 
@@ -77,7 +77,7 @@ Deleting an article soft-deletes it - it disappears from the KB but can be recov
 
 ## Full-text search
 
-The KB search bar (top of the KB index) searches across article titles, body content, category names, and tags. Results are ranked by relevance.
+The KB search bar (top of the KB index) searches article titles, body content, and tag names. Results are ordered by last update.
 
 ---
 

@@ -2,42 +2,34 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('users')->updateOrInsert(
+        $unassigned = User::updateOrCreate(
             ['email' => 'noreply@ajbapps.com'],
             [
                 'name' => 'Unassigned',
-                'email' => 'noreply@ajbapps.com',
                 'password' => Hash::make(str()->random(40)),
-                'active' => 1,
-                'admin' => 0,
-                'title' => 'Unassigned User',
                 'timezone' => 'UTC',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'title' => 'Unassigned User',
             ]
         );
+        $unassigned->forceFill(['active' => 1, 'admin' => 0])->saveQuietly();
 
-        DB::table('users')->updateOrInsert(
+        $admin = User::updateOrCreate(
             ['email' => 'support@ajbapps.com'],
             [
                 'name' => 'administrator',
-                'email' => 'support@ajbapps.com',
                 'password' => Hash::make('password123'),
-                'active' => 1,
-                'admin' => 1,
-                'title' => 'Administrator User',
                 'timezone' => 'UTC',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'title' => 'Administrator User',
             ]
         );
+        $admin->forceFill(['active' => 1, 'admin' => 1])->saveQuietly();
     }
 }

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SlashCommandException;
 use App\Http\Requests\BatchUpdateTicketRequest;
 use App\Http\Requests\EstimateTicketRequest;
+use App\Http\Requests\FetchTicketsRequest;
 use App\Http\Requests\NoteTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Http\Resources\TicketResource;
+use App\Models\Note;
 use App\Models\ReleaseTicket;
 use App\Models\Status;
 use App\Models\Ticket;
@@ -86,7 +89,13 @@ class TicketsController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers'));
+        $decisionRequests = Note::query()
+            ->awaitingDecisionFrom($user->id)
+            ->with(['ticket', 'user'])
+            ->oldest()
+            ->get();
+
+        return view('home', compact('tickets', 'stats', 'recentTickets', 'recentNotes', 'searchQuery', 'searchTokens', 'blockers', 'decisionRequests'));
     }
 
     public function index(Request $request)
@@ -119,15 +128,9 @@ class TicketsController extends Controller
 
         $lookups = $this->ticketService->getLookups();
 
-        $lookups['types'][0] = 'No Change';
-        $lookups['milestones'][0] = 'No Change';
-        $lookups['importances'][0] = 'No Change';
-        $lookups['projects'][0] = 'No Change';
-        $lookups['statuses'][0] = 'No Change';
-        $lookups['users'][0] = 'No Change';
-        $lookups['releases'][0] = 'No Change';
+        $pendingDecisions = Note::query()->awaitingDecisionFrom(Auth::id())->count();
 
-        return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens'));
+        return view('tickets.list', compact('tickets', 'lookups', 'searchQuery', 'searchTokens', 'pendingDecisions'));
     }
 
     public function claim($id)
@@ -178,7 +181,7 @@ class TicketsController extends Controller
 
         $ticketView->touch();
 
-        $ticketViews = TicketView::select('user_id', \DB::raw('max(created_at) as viewed_at'))
+        $ticketViews = TicketView::select('user_id', \DB::raw('max(updated_at) as viewed_at'))
             ->where('ticket_id', $ticket->id)
             ->whereHas('user')
             ->groupBy('user_id')
@@ -187,6 +190,12 @@ class TicketsController extends Controller
 
         $pulse = app(TicketPulseService::class)->getPulse($ticket);
 
+        $resolvableNoteIds = $ticket->notes->filter(function ($note) use ($ticket) {
+            $note->setRelation('ticket', $ticket);
+
+            return Auth::user()->can('resolve', $note);
+        })->map->id->values()->all();
+
         $allUsers = User::orderBy('name')->get(['id', 'name', 'title'])->map(fn ($u) => [
             'id' => $u->id,
             'name' => $u->name,
@@ -194,10 +203,10 @@ class TicketsController extends Controller
         ])->values()->toArray();
         $pinnedNotes = $ticket->notes->where('pinned', true);
 
-        return view('tickets.show', compact('ticket', 'lookups', 'ticketViews', 'pulse', 'allUsers', 'pinnedNotes', 'lastViewedAt'));
+        return view('tickets.show', compact('ticket', 'lookups', 'ticketViews', 'pulse', 'allUsers', 'pinnedNotes', 'lastViewedAt', 'resolvableNoteIds'));
     }
 
-    public function create($value = '')
+    public function create()
     {
         $lookups = $this->ticketService->getLookups();
 
@@ -240,12 +249,6 @@ class TicketsController extends Controller
             $data['due_at'] = null;
         }
 
-        if (! empty($data['closed_at'])) {
-            $data['closed_at'] = Carbon::parse($data['closed_at'])->format('Y-m-d H:i:s');
-        } else {
-            $data['closed_at'] = null;
-        }
-
         $change_list = $this->ticketService->changes($ticket->toArray(), $data);
 
         $ticket->update($data);
@@ -279,6 +282,12 @@ class TicketsController extends Controller
 
         $tickets = Ticket::whereIn('id', $ticketIds)->get()->keyBy('id');
 
+        foreach ($ticketIds as $ticketId) {
+            if ($tickets->has($ticketId) && Gate::denies('update', $tickets->get($ticketId))) {
+                abort(403, "Cannot update ticket #{$ticketId}.");
+            }
+        }
+
         $updateFields = array_filter([
             'type_id' => $validated['type_id'] ?? null,
             'status_id' => $validated['status_id'] ?? null,
@@ -298,20 +307,28 @@ class TicketsController extends Controller
 
                 $ticket = $tickets->get($ticketId);
 
-                Gate::authorize('update', $ticket);
+                $applied = false;
 
                 if (! empty($validated['release_id']) && $validated['release_id'] > 0) {
                     ReleaseTicket::firstOrCreate([
                         'release_id' => $validated['release_id'],
                         'ticket_id' => $ticketId,
                     ]);
+                    $applied = true;
                 }
 
                 if (! empty($updateFields)) {
+                    $changes = $this->ticketService->changes($ticket->toArray(), $updateFields);
+
                     $ticket->update($updateFields);
+
+                    $this->ticketService->notate((int) $ticket->id, '', $changes);
+                    $applied = true;
                 }
 
-                $i++;
+                if ($applied) {
+                    $i++;
+                }
             }
         });
 
@@ -397,7 +414,13 @@ class TicketsController extends Controller
 
         $change_list = $this->ticketService->changes($old, $ticket->toArray());
 
-        $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
+        try {
+            $this->ticketService->notate($ticket->id, $validated['note'] ?? '', $change_list, $validated['hours'] ?? 0);
+        } catch (SlashCommandException $e) {
+            return redirect('tickets/'.$request['ticket_id'])
+                ->withErrors(['note' => $e->getMessage()])
+                ->withInput();
+        }
 
         $ticket->unsetRelation('notes');
         $ticket->loadSum('notes', 'hours');
@@ -446,18 +469,15 @@ class TicketsController extends Controller
         return redirect('tickets/'.$ticket_id);
     }
 
-    public function fetch(Request $request)
+    public function fetch(FetchTicketsRequest $request)
     {
-        $request->validate([
-            'started_at' => 'required|date',
-            'completed_at' => 'required|date|after_or_equal:started_at',
-        ]);
+        $validated = $request->validated();
 
         return TicketResource::collection(
             Ticket::with(['status', 'assignee', 'notes'])
                 ->withCount('notes')
                 ->where('user_id2', Auth::id())
-                ->whereBetween('closed_at', [$request->started_at, $request->completed_at])
+                ->whereBetween('closed_at', [$validated['started_at'], $validated['completed_at']])
                 ->get()
         );
     }

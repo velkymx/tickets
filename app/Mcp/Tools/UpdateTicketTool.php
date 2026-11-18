@@ -3,9 +3,10 @@
 namespace App\Mcp\Tools;
 
 use App\Models\Status;
-use App\Models\Ticket;
+use App\Services\TicketService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type as JsonType;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -20,6 +21,8 @@ class UpdateTicketTool extends TicketTool
         if (! $user) {
             return $this->unauthenticated();
         }
+
+        Auth::setUser($user);
 
         $validated = $request->validate([
             'ticket_id' => 'required|integer|exists:tickets,id',
@@ -42,6 +45,8 @@ class UpdateTicketTool extends TicketTool
             return $this->ticketNotFound();
         }
 
+        $old = $ticket->toArray();
+
         if (array_key_exists('subject', $validated) && $validated['subject'] !== null) {
             $ticket->subject = $validated['subject'];
         }
@@ -50,7 +55,7 @@ class UpdateTicketTool extends TicketTool
             $ticket->description = $validated['description'] ?? '';
         }
 
-        if (! empty($validated['status_id']) && $validated['status_id'] != $ticket->status_id) {
+        if (! empty($validated['status_id']) && (int) $validated['status_id'] !== (int) $ticket->status_id) {
             $ticket->status_id = $validated['status_id'];
             $ticket->closed_at = Status::isClosed($validated['status_id']) ? now() : null;
         }
@@ -74,6 +79,13 @@ class UpdateTicketTool extends TicketTool
         }
 
         $ticket->save();
+
+        $ticketService = app(TicketService::class);
+        $changes = $ticketService->changes($old, $ticket->fresh()->toArray());
+        if (! empty($changes)) {
+            $ticketService->notate((int) $ticket->id, '', $changes);
+        }
+
         $ticket->load(['status', 'assignee']);
 
         return $this->respond([

@@ -5,7 +5,17 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Tickets</h1>
-        <a href="/ticket/create" class="btn btn-sm btn-primary">Create Ticket</a>
+        <div class="d-flex gap-2">
+            @php($decisionActive = $searchQuery === 'decision:me')
+            <a href="{{ $decisionActive ? url('tickets') : url('tickets').'?q=decision%3Ame' }}"
+               class="btn btn-sm {{ $decisionActive ? 'btn-danger' : 'btn-outline-danger' }} d-inline-flex align-items-center gap-2"
+               @if($decisionActive) aria-current="true" @endif>
+                <i class="fa-solid fa-gavel" aria-hidden="true"></i>
+                Needs my decision
+                <span class="badge {{ $decisionActive ? 'text-bg-light' : 'text-bg-danger' }}">{{ $pendingDecisions }}</span>
+            </a>
+            <a href="/ticket/create" class="btn btn-sm btn-primary">Create Ticket</a>
+        </div>
     </div>
 
     {{-- Query Search --}}
@@ -36,6 +46,7 @@
             <div class="col-md-6 col-lg-4">
                 <label for="batch_type_id" class="form-label">Ticket Type</label>
                 <select name="type_id" id="batch_type_id" class="form-select">
+                    <option value="0">No Change</option>
                     @foreach ($lookups['types'] as $id => $name)
                         <option value="{{ $id }}" @if (old('type_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -46,6 +57,7 @@
             <div class="col-md-6 col-lg-4">
                 <label for="batch_importance_id" class="form-label">Ticket Importance</label>
                 <select name="importance_id" id="batch_importance_id" class="form-select">
+                    <option value="0">No Change</option>
                     @foreach ($lookups['importances'] as $id => $name)
                         <option value="{{ $id }}" @if (old('importance_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -56,6 +68,7 @@
             <div class="col-md-6 col-lg-4">
                 <label for="batch_milestone_id" class="form-label">Ticket Milestone</label>
                 <select name="milestone_id" id="batch_milestone_id" class="form-select">
+                    <option value="0">No Change</option>
                     @foreach ($lookups['milestones'] as $id => $name)
                         <option value="{{ $id }}" @if (old('milestone_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -66,6 +79,7 @@
             <div class="col-md-6 col-lg-4">
                 <label for="batch_status_id" class="form-label">Ticket Status</label>
                 <select name="status_id" id="batch_status_id" class="form-select">
+                    <option value="0">No Change</option>
                     @foreach ($lookups['statuses'] as $id => $name)
                         <option value="{{ $id }}" @if (old('status_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -76,6 +90,7 @@
             <div class="col-md-6 col-lg-4">
                 <label for="batch_project_id" class="form-label">Ticket Project</label>
                 <select name="project_id" id="batch_project_id" class="form-select">
+                    <option value="0">No Change</option>
                     @foreach ($lookups['projects'] as $id => $name)
                         <option value="{{ $id }}" @if (old('project_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -86,6 +101,7 @@
             <div class="col-md-6 col-lg-4">
                 <label for="batch_user_id2" class="form-label">Assign To</label>
                 <select name="user_id2" id="batch_user_id2" class="form-select">
+                    <option value="0">No Change</option>
                     @foreach ($lookups['users'] as $id => $name)
                         <option value="{{ $id }}" @if (old('user_id2') == $id) selected @endif>{{ $name }}</option>
                     @endforeach
@@ -96,6 +112,7 @@
             <div class="col-md-6 col-lg-4">
                 <label for="batch_release_id" class="form-label">Add to Release</label>
                 <select name="release_id" id="batch_release_id" class="form-select">
+                    <option value="0">No Change</option>
                     @foreach ($lookups['releases'] as $id => $name)
                         <option value="{{ $id }}" @if (old('release_id') == $id) selected @endif>{{ $name }}</option>
                     @endforeach

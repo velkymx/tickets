@@ -1,3 +1,47 @@
+<div
+    x-data="{
+        pulse: @js($pulse),
+        resolvableIds: @js($resolvableIds ?? []),
+        csrf: document.querySelector('meta[name=csrf-token]')?.content,
+        refresh() {
+            fetch(`/tickets/${this.pulse.id}/pulse`)
+                .then(res => res.json())
+                .then(data => {
+                    this.pulse = data;
+                    this.resolvableIds = data.resolvable_note_ids ?? [];
+                });
+        },
+        resolving: null,
+        resolutionMessage: '',
+        submitting: false,
+        resolve(id) {
+            this.resolving = id;
+            this.resolutionMessage = '';
+        },
+        async submitResolve(id) {
+            if (!this.resolutionMessage.trim() || this.submitting) return;
+            this.submitting = true;
+            try {
+                const res = await fetch(`/notes/${id}/resolve`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': this.csrf, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ resolution_message: this.resolutionMessage })
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    alert(err.message || 'Could not resolve. Check permissions.');
+                    this.submitting = false;
+                    return;
+                }
+                location.reload();
+            } catch (e) {
+                alert('Network error. Please try again.');
+                this.submitting = false;
+            }
+        }
+    }"
+    x-init="refresh(); setInterval(() => refresh(), 30000)"
+>
 <div class="d-lg-none mb-3">
     <button
         class="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center"
@@ -36,11 +80,11 @@
         ></span>
     </h6>
     <ul class="list-unstyled mb-0 small">
-        <template x-if="pulse.open_threads.length">
+        <template x-if="pulse.decision_requests.length">
             <li class="py-2 border-top">
                 {{-- Badge on the mobile toggle is the small-screen affordance; this banner lives inside the collapse, so no expand handler here. --}}
                 <a href="#pulse-threads" class="alert alert-warning d-flex justify-content-between align-items-center py-2 px-2 mb-0 text-decoration-none">
-                    <span><strong>Needs your decision</strong> <span class="text-muted" x-text="`(${pulse.open_threads.length} open)`"></span></span>
+                    <span><strong>Needs your decision</strong> <span class="text-muted" x-text="`(${pulse.decision_requests.length} open)`"></span></span>
                     <i class="fa-solid fa-arrow-down small"></i>
                 </a>
             </li>
@@ -52,7 +96,7 @@
                 <div class="d-flex justify-content-between align-items-center mt-1">
                     <span class="small text-muted" x-text="pulse.latest_blocker.author"></span>
                     <button type="button" class="btn btn-outline-danger btn-sm"
-                            x-show="resolving !== pulse.latest_blocker.id"
+                            x-show="resolving !== pulse.latest_blocker.id && resolvableIds.includes(pulse.latest_blocker.id)"
                             @click="resolve(pulse.latest_blocker.id)">Resolve</button>
                 </div>
                 <template x-if="resolving === pulse.latest_blocker.id">
@@ -81,7 +125,7 @@
                         </template>
                     </div>
                     <button type="button" class="btn btn-outline-secondary btn-sm ms-2 flex-shrink-0"
-                            x-show="resolving !== pulse.next_action.id"
+                            x-show="resolving !== pulse.next_action.id && resolvableIds.includes(pulse.next_action.id)"
                             @click="resolve(pulse.next_action.id)">Done</button>
                 </div>
                 <template x-if="resolving === pulse.next_action.id">
@@ -103,6 +147,9 @@
             <strong>Latest Decision:</strong>
             <template x-if="pulse.latest_decision">
                 <span>
+                    <template x-if="pulse.latest_decision.question">
+                        <span class="d-block small text-muted" x-text="pulse.latest_decision.question"></span>
+                    </template>
                     <span x-html="pulse.latest_decision.body"></span>
                     <span class="small text-muted ms-1" x-text="pulse.latest_decision.author"></span>
                     <template x-if="pulse.latest_decision.supersedes">
@@ -130,7 +177,7 @@
                                     x-text="`${thread.subject} (${thread.reply_count})`"
                                 ></a>
                                 <button type="button" class="btn btn-outline-secondary btn-sm"
-                                        x-show="resolving !== thread.id"
+                                        x-show="resolving !== thread.id && resolvableIds.includes(thread.id)"
                                         @click="resolve(thread.id)">Resolve</button>
                             </div>
                             <template x-if="resolving === thread.id">
@@ -155,3 +202,4 @@
         </li>
     </ul>
 </aside>
+</div>

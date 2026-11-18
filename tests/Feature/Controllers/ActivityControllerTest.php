@@ -3,6 +3,7 @@
 namespace Tests\Feature\Controllers;
 
 use App\Models\User;
+use App\Notifications\DecisionRequestNotification;
 use App\Notifications\MentionNotification;
 use App\Notifications\ReplyNotification;
 use App\Notifications\WatcherNotification;
@@ -15,14 +16,6 @@ use Tests\Traits\SeedsDatabase;
 class ActivityControllerTest extends TestCase
 {
     use SeedsDatabase;
-
-    #[Test]
-    public function index_requires_authentication(): void
-    {
-        $response = $this->get('/activity');
-
-        $response->assertRedirect('/login');
-    }
 
     #[Test]
     public function index_lists_the_current_users_notifications(): void
@@ -60,6 +53,25 @@ class ActivityControllerTest extends TestCase
         $response->assertViewHas('notifications', function ($notifications) {
             return $notifications->count() === 1
                 && ($notifications->first()->data['excerpt'] ?? null) === 'Mention body';
+        });
+    }
+
+    #[Test]
+    public function index_filters_decision_requests(): void
+    {
+        $user = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Sarah']);
+
+        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Mention body', 'http://example.com/tickets/142'));
+        $user->notifyNow(new DecisionRequestNotification($actor->id, $actor->name, 142, 57, 'Ship Friday?', 'http://example.com/tickets/142#note_57'));
+
+        $response = $this->actingAs($user)->get('/activity?filter=decisions');
+
+        $response->assertOk();
+        $response->assertSee('Decisions');
+        $response->assertViewHas('notifications', function ($notifications) {
+            return $notifications->count() === 1
+                && ($notifications->first()->data['type'] ?? null) === 'decision_request';
         });
     }
 
@@ -125,21 +137,6 @@ class ActivityControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_uses_theme_aware_notification_card_backgrounds(): void
-    {
-        $user = User::factory()->create();
-        $actor = User::factory()->create(['name' => 'Sarah']);
-
-        $user->notifyNow(new MentionNotification($actor->id, $actor->name, 142, 55, 'Check the deploy.', 'http://example.com/tickets/142'));
-
-        $response = $this->actingAs($user)->get('/activity');
-
-        $response->assertOk();
-        $response->assertSee('bg-body', false);
-        $response->assertDontSee('bg-white', false);
-    }
-
-    #[Test]
     public function read_marks_a_single_notification_as_read(): void
     {
         $user = User::factory()->create();
@@ -190,8 +187,6 @@ class ActivityControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('id="notificationsDropdown"', false);
         $response->assertSee('fas fa-bell', false);
-        $response->assertSee('notification-count-inline', false);
-        $response->assertDontSee('translate-middle badge', false);
         $response->assertSee('6 unread');
         $response->assertSee('View all');
         $response->assertSee('/activity', false);

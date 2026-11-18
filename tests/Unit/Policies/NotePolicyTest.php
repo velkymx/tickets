@@ -68,6 +68,19 @@ class NotePolicyTest extends TestCase
     }
 
     #[Test]
+    public function team_member_may_react_to_and_reply_to_any_note(): void
+    {
+        $owner = User::factory()->create();
+        $author = User::factory()->create();
+        $teamMember = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $owner->id]);
+        $note = Note::factory()->create(['user_id' => $author->id, 'ticket_id' => $ticket->id]);
+
+        $this->assertTrue($teamMember->can('react', $note));
+        $this->assertTrue($teamMember->can('reply', $note));
+    }
+
+    #[Test]
     public function admin_may_do_anything(): void
     {
         $admin = User::factory()->create(['admin' => true]);
@@ -75,5 +88,7 @@ class NotePolicyTest extends TestCase
 
         $this->assertTrue($admin->can('update', $note));
         $this->assertTrue($admin->can('resolve', $note));
+        $this->assertTrue($admin->can('react', $note));
+        $this->assertTrue($admin->can('reply', $note));
     }
 }

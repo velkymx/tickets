@@ -13,12 +13,6 @@ class PaletteSearchTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function search_requires_authentication(): void
-    {
-        $this->getJson('/palette/search?q=login')->assertUnauthorized();
-    }
-
-    #[Test]
     public function search_returns_matching_tickets(): void
     {
         $user = User::factory()->create();
@@ -39,6 +33,17 @@ class PaletteSearchTest extends TestCase
         Ticket::factory()->create(['subject' => 'Login crash']);
 
         $response = $this->actingAs($user)->getJson('/palette/search?q=l');
+
+        $response->assertOk()->assertExactJson([]);
+    }
+
+    #[Test]
+    public function missing_query_returns_empty(): void
+    {
+        $user = User::factory()->create();
+        Ticket::factory()->create(['subject' => 'Login crash']);
+
+        $response = $this->actingAs($user)->getJson('/palette/search');
 
         $response->assertOk()->assertExactJson([]);
     }

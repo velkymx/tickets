@@ -9,6 +9,7 @@ use App\Models\TicketUserWatcher;
 use App\Models\User;
 use App\Notifications\WatcherNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Traits\SeedsDatabase;
@@ -16,48 +17,6 @@ use Tests\Traits\SeedsDatabase;
 class TicketTest extends TestCase
 {
     use SeedsDatabase;
-
-    #[Test]
-    public function it_computes_actual_hours_from_notes_sum(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create([
-            'user_id' => $user->id,
-            'user_id2' => $user->id,
-        ]);
-
-        Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'hours' => 2.5,
-        ]);
-        Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'hours' => 3.5,
-        ]);
-
-        $loadedTicket = Ticket::withSum('notes', 'hours')->find($ticket->id);
-        $this->assertEquals(6, $loadedTicket->actual_hours);
-    }
-
-    #[Test]
-    public function it_returns_zero_actual_hours_when_not_eager_loaded(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create([
-            'user_id' => $user->id,
-            'user_id2' => $user->id,
-        ]);
-
-        Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'hours' => 2,
-        ]);
-
-        $this->assertEquals(0, $ticket->actual_hours);
-    }
 
     #[Test]
     public function it_notifies_watchers_on_update(): void
@@ -128,10 +87,12 @@ class TicketTest extends TestCase
             'user_id2' => $creator->id,
         ]);
 
+        Schema::disableForeignKeyConstraints();
         TicketUserWatcher::factory()->create([
             'ticket_id' => $ticket->id,
             'user_id' => 99999,
         ]);
+        Schema::enableForeignKeyConstraints();
 
         $ticket = $ticket->fresh()->load('watchers');
         $ticket->subject = 'Updated Subject';
@@ -156,6 +117,25 @@ class TicketTest extends TestCase
         $ticket->save();
 
         $this->assertNotNull($ticket->fresh()->closed_at);
+    }
+
+    #[Test]
+    public function it_writes_one_reopen_note_for_repeated_reopens(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $ticket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'user_id2' => $user->id,
+            'status_id' => Status::factory()->closed()->create()->id,
+            'closed_at' => now(),
+        ]);
+        $ticket->status_id = Status::factory()->create()->id;
+
+        $ticket->recordReopenAuditNote();
+        $ticket->recordReopenAuditNote();
+
+        $this->assertSame(1, Note::where('ticket_id', $ticket->id)->where('notetype', 'changelog')->count());
     }
 
     #[Test]

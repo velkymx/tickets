@@ -4,6 +4,7 @@ namespace Tests\Feature\Console;
 
 use App\Console\Commands\InstallCommand;
 use App\Models\User;
+use App\SystemHealth\Requirements;
 use Dotenv\Dotenv;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -44,14 +45,10 @@ class InstallGuardsTest extends TestCase
     #[Test]
     public function php_gate_matches_composer_floor(): void
     {
-        // Intent: the hardcoded gate string must track the composer floor.
-        // Reads source as text; a comment containing the version would also
-        // satisfy it, so treat this as a drift tripwire, not a behavior pin.
-        $source = file_get_contents(app_path('SystemHealth/Requirements.php'));
         $composer = json_decode((string) file_get_contents(base_path('composer.json')), true);
 
         $this->assertSame('^8.4', $composer['require']['php']);
-        $this->assertStringContainsString('8.4.0', (string) $source);
+        $this->assertSame('8.4.0', Requirements::MIN_PHP);
     }
 
     #[Test]
@@ -79,11 +76,10 @@ class InstallGuardsTest extends TestCase
     #[Test]
     public function node_gate_matches_package_engines(): void
     {
-        $source = file_get_contents(app_path('SystemHealth/Requirements.php'));
         $package = json_decode((string) file_get_contents(base_path('package.json')), true);
 
         $this->assertSame('>=24', $package['engines']['node'] ?? null);
-        $this->assertStringContainsString('24.0.0', (string) $source);
+        $this->assertSame('24.0.0', Requirements::MIN_NODE);
     }
 
     #[Test]

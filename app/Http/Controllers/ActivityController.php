@@ -17,6 +17,7 @@ class ActivityController extends Controller
                 $filter = $request->string('filter')->toString();
                 $type = match ($filter) {
                     'mentions' => 'mention',
+                    'decisions' => 'decision_request',
                     'watching' => 'watching',
                     'replies' => 'reply',
                     default => null,

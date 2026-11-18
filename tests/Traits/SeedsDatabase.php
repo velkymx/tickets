@@ -2,6 +2,8 @@
 
 namespace Tests\Traits;
 
+use Database\Seeders\DefaultsSeeder;
+use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 trait SeedsDatabase
@@ -14,6 +16,9 @@ trait SeedsDatabase
     {
         $this->baseRefreshDatabase();
 
-        $this->seed();
+        $this->seed([
+            DefaultsSeeder::class,
+            UserSeeder::class,
+        ]);
     }
 }

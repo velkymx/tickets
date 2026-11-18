@@ -14,6 +14,7 @@
         "laravel/tinker": "^3.0",
         "laravel/ui": "^4.6",
         "mustache/mustache": "^3.2",
+        "sebastian/diff": "^6.0",
         "socialiteproviders/microsoft-azure": "^5.0",
         "symfony/html-sanitizer": "^8.1",
         "symfony/yaml": "^8.0"
@@ -72,7 +73,6 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
         "pre-package-uninstall": [

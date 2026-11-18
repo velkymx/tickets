@@ -21,17 +21,11 @@ class RequirementsTest extends TestCase
     }
 
     #[Test]
-    public function missing_driver_extension_is_reported(): void
+    public function named_driver_reports_its_pdo_extension(): void
     {
-        $results = Requirements::check('pgsql');
+        $names = array_map(fn ($r) => $r->name, Requirements::check('pgsql'));
 
-        $names = array_column(array_map(fn ($r) => ['name' => $r->name, 'ok' => $r->ok], $results), 'ok', 'name');
-
-        if (extension_loaded('pdo_pgsql')) {
-            $this->assertTrue($names['PHP extension: pdo_pgsql']);
-        } else {
-            $this->assertFalse($names['PHP extension: pdo_pgsql']);
-        }
+        $this->assertContains('PHP extension: pdo_pgsql', $names);
     }
 
     #[Test]

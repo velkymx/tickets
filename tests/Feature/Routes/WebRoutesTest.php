@@ -3,89 +3,94 @@
 namespace Tests\Feature\Routes;
 
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class WebRoutesTest extends TestCase
 {
+    /**
+     * Routes that legitimately have no name. Everything else must be named so
+     * views and redirects can use route().
+     */
+    private const UNNAMED_ALLOWED = [
+        '/',
+        'broadcasting/auth',
+        'login',
+        'register',
+        'mcp/tickets',
+        'up',
+    ];
+
     #[Test]
-    public function it_names_all_app_routes(): void
+    public function every_app_route_has_a_name(): void
     {
-        $routes = Route::getRoutes();
         $unnamed = [];
 
-        foreach ($routes as $route) {
-            if (str_starts_with($route->uri(), 'api/')) {
+        foreach (Route::getRoutes() as $route) {
+            if ($this->isExemptFromNaming($route->uri())) {
                 continue;
             }
 
-            // Package-registered MCP transport stubs, not app routes.
-            if (str_starts_with($route->uri(), 'mcp/')) {
-                continue;
-            }
-
-            $appUris = ['ticket', 'milestone', 'project', 'release', 'note', 'user'];
-            $isAppRoute = false;
-
-            foreach ($appUris as $uri) {
-                if (str_starts_with($route->uri(), $uri) || str_contains($route->uri(), $uri)) {
-                    $isAppRoute = true;
-                    break;
-                }
-            }
-
-            if ($isAppRoute && empty($route->getName())) {
-                $unnamed[] = $route->uri();
+            if (empty($route->getName())) {
+                $unnamed[] = implode('|', $route->methods()).' '.$route->uri();
             }
         }
 
-        $this->assertEmpty($unnamed, 'App routes without names: '.implode(', ', $unnamed));
+        $this->assertSame([], $unnamed, 'Routes without names: '.implode(', ', $unnamed));
     }
 
     #[Test]
-    public function it_uses_post_for_state_changing_operations(): void
+    #[DataProvider('stateChangingRoutes')]
+    public function state_changing_routes_use_their_expected_verb(string $uri, string $verb): void
     {
-        $routes = Route::getRoutes();
-        $stateChangingUris = ['claim', 'watch', 'store', 'batch', 'upload', 'import'];
+        $route = collect(Route::getRoutes())->first(
+            fn ($route) => $route->uri() === $uri && in_array($verb, $route->methods(), true)
+        );
 
-        foreach ($routes as $route) {
-            $methods = $route->methods();
+        $this->assertNotNull($route, "Route {$uri} should accept {$verb}");
+    }
 
-            if (in_array('GET', $methods) || in_array('HEAD', $methods)) {
+    #[Test]
+    public function mutating_routes_never_accept_get(): void
+    {
+        foreach (Route::getRoutes() as $route) {
+            if (! preg_match('/(update|batch|claim|watch)\b/', $route->uri())) {
                 continue;
             }
 
-            if (str_starts_with($route->uri(), 'api/')) {
-                continue;
-            }
-
-            foreach ($stateChangingUris as $uri) {
-                if (str_contains($route->uri(), $uri)) {
-                    $this->assertContains('POST', $methods, "Route {$route->uri()} should use POST");
-                }
-            }
+            $this->assertNotContains(
+                'GET',
+                $route->methods(),
+                "Route {$route->uri()} mutates state and must not accept GET"
+            );
         }
     }
 
-    #[Test]
-    public function it_uses_put_for_update_operations(): void
+    public static function stateChangingRoutes(): array
     {
-        $routes = Route::getRoutes();
-        $expectedPutRoutes = [
-            'tickets/update/{id}',
-            'milestone/update/{id}',
-            'release/edit/{id}',
+        return [
+            'batch update' => ['tickets/batch', 'POST'],
+            'import' => ['tickets/import', 'POST'],
+            'claim' => ['tickets/claim/{id}', 'POST'],
+            'watch ticket' => ['tickets/watch/{id}', 'POST'],
+            'update ticket' => ['tickets/update/{id}', 'PUT'],
+            'update milestone' => ['milestone/update/{id}', 'PUT'],
+            'edit release' => ['release/edit/{id}', 'PUT'],
+            'store release' => ['release/store', 'POST'],
+            'create note' => ['notes', 'POST'],
+            'create article' => ['kb', 'POST'],
+            'update article' => ['kb/{slug}', 'PUT'],
+            'create api ticket' => ['api/v1/tickets', 'POST'],
+            'update api ticket' => ['api/v1/tickets/{id}', 'PUT'],
+            'update user access' => ['admin/users/{user}', 'PUT'],
         ];
+    }
 
-        $actualPutRoutes = [];
-        foreach ($routes as $route) {
-            if (in_array('PUT', $route->methods())) {
-                $actualPutRoutes[] = $route->uri();
-            }
-        }
-
-        foreach ($expectedPutRoutes as $expected) {
-            $this->assertContains($expected, $actualPutRoutes, "Expected PUT route {$expected} not found");
-        }
+    private function isExemptFromNaming(string $uri): bool
+    {
+        return in_array($uri, self::UNNAMED_ALLOWED, true)
+            || str_starts_with($uri, '_ignition/')
+            || str_starts_with($uri, 'storage/');
     }
 }

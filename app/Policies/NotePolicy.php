@@ -24,6 +24,20 @@ class NotePolicy
             : Response::deny('Only the author can edit this note.');
     }
 
+    public function reply(User $user, Note $note): Response
+    {
+        return $user->can('addNote', $note->ticket)
+            ? Response::allow()
+            : Response::deny('You cannot reply to this note.');
+    }
+
+    public function react(User $user, Note $note): Response
+    {
+        return $user->can('view', $note->ticket)
+            ? Response::allow()
+            : Response::deny('You cannot react to this note.');
+    }
+
     public function hide(User $user, Note $note): Response
     {
         return $this->involved($user, $note)
@@ -54,9 +68,9 @@ class NotePolicy
 
     public function resolve(User $user, Note $note): Response
     {
-        return $this->involved($user, $note)
+        return $this->involved($user, $note) || $user->id === $note->decider_id
             ? Response::allow()
-            : Response::deny('Only the thread author, ticket creator, or assignee can resolve.');
+            : Response::deny('Only the thread author, ticket creator, assignee, or decider can resolve.');
     }
 
     private function involved(User $user, Note $note): bool

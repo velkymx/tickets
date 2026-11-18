@@ -4,13 +4,9 @@ Tickets can act as the coordination layer for AI agents.
 
 The built-in [Model Context Protocol](https://modelcontextprotocol.io/) server gives AI clients access to tickets and the knowledge base, while the REST API provides the same capabilities to custom agents and automation.
 
-This makes Tickets useful as more than a project management application. It can serve as the shared workspace where humans and AI agents coordinate work, record decisions, surface blockers, and track execution.
+## Tickets as an AI coordination layer
 
-## Why use Tickets as an AI coordination layer?
-
-AI agents are good at performing focused tasks. They are much less useful when every agent has its own isolated context and there is no shared record of what happened.
-
-Tickets provides that shared context.
+Tickets provides the shared context for agent work.
 
 Agents can:
 
@@ -26,9 +22,7 @@ Agents can:
 * Read Ticket Pulse
 * Search and update knowledge base articles
 
-Humans see the same work in the same application.
-
-Instead of building a separate coordination system for every AI workflow, Tickets becomes the system of record for the work.
+Humans see the same work in the same application. Tickets is the system of record for the work.
 
 ## Architecture
 
@@ -63,7 +57,7 @@ A typical AI-enabled workflow looks like this:
 
 Tickets remains the shared coordination layer while different AI clients and agents perform specialized work.
 
-## MCP or REST?
+## MCP and REST
 
 Use MCP when your AI client supports the Model Context Protocol.
 
@@ -105,7 +99,7 @@ See the [REST API documentation](api.md) for the complete API reference.
 
 [CrewAI](https://www.crewai.com/) is a Python framework for building role-based AI agents that collaborate as a crew.
 
-Tickets works well as the shared system of record for a CrewAI workflow.
+Tickets is the shared system of record for a CrewAI workflow.
 
 For example, a crew might contain:
 
@@ -441,4 +435,5 @@ The project history remains.
 * [REST API](api.md)
 * [Ticket Pulse](pulse.md)
 * [Agile Workflow](agile-workflow.md)
+* [AI Workflow with Human-in-the-Middle Decisions](ai-workflow-human-in-the-middle.md)
 * [Knowledge Base](kb-admin.md)

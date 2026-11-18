@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Database;
 
-use App\Models\User;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -23,15 +22,5 @@ class UsersAvatarMigrationTest extends TestCase
         $this->assertNotNull($avatar);
         $this->assertTrue($avatar['nullable']);
         $this->assertTrue($avatar['default'] === null || strtoupper((string) $avatar['default']) === 'NULL');
-    }
-
-    #[Test]
-    public function it_persists_avatar_paths_for_users(): void
-    {
-        $user = User::factory()->create([
-            'avatar' => 'avatars/alice.png',
-        ]);
-
-        $this->assertSame('avatars/alice.png', $user->fresh()->avatar);
     }
 }

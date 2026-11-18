@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -70,40 +71,45 @@ class KbArticle extends Model
 
     public function isVisibleTo(?User $user): bool
     {
-        // Public + verified = anyone can see
-        if ($this->visibility === 'public' && $this->status === 'verified') {
-            return true;
+        return static::query()
+            ->whereKey($this->getKey())
+            ->visibleTo($user)
+            ->exists();
+    }
+
+    /**
+     * Limit a query to articles the given user may see. Mirrors the policy so
+     * lists and related-article panels cannot leak titles.
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if ($user?->isKbAdmin()) {
+            return $query;
         }
 
-        // No user after this point
+        $public = fn (Builder $query) => $query
+            ->where('visibility', 'public')
+            ->where('status', 'verified');
+
         if ($user === null) {
-            return false;
+            return $query->where($public);
         }
 
-        // Admins and KB admins can see everything
-        if ($user->isKbAdmin()) {
-            return true;
-        }
-
-        // Draft only visible to the author
-        if ($this->status === 'draft') {
-            return $this->user_id === $user->id;
-        }
-
-        // Internal = any authenticated user
-        if ($this->visibility === 'internal') {
-            return true;
-        }
-
-        // Restricted = owner or permitted users
-        if ($this->visibility === 'restricted') {
-            if ($this->owner_id === $user->id) {
-                return true;
-            }
-
-            return $this->permissions()->where('user_id', $user->id)->exists();
-        }
-
-        return false;
+        return $query->where(function (Builder $query) use ($user, $public) {
+            $query
+                ->where($public)
+                ->orWhere(fn (Builder $query) => $query
+                    ->where('status', 'draft')
+                    ->where('user_id', $user->id))
+                ->orWhere(fn (Builder $query) => $query
+                    ->where('visibility', 'internal')
+                    ->where('status', '!=', 'draft'))
+                ->orWhere(fn (Builder $query) => $query
+                    ->where('visibility', 'restricted')
+                    ->where('status', '!=', 'draft')
+                    ->where(fn (Builder $query) => $query
+                        ->where('owner_id', $user->id)
+                        ->orWhereHas('permissions', fn (Builder $query) => $query->where('user_id', $user->id))));
+        });
     }
 }

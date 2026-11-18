@@ -16,9 +16,12 @@ class RequirementsCheck implements HealthCheck
 
     public function run(): array
     {
+        $connection = (string) config('database.default');
+        $driver = (string) config("database.connections.{$connection}.driver", $connection);
+
         $results = [];
 
-        foreach (Requirements::check((string) config('database.default')) as $requirement) {
+        foreach (Requirements::check($driver) as $requirement) {
             $results[] = new HealthResult(
                 $requirement->ok ? HealthStatus::Ok : HealthStatus::Problem,
                 $requirement->name,

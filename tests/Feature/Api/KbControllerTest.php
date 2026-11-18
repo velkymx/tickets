@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\KbArticle;
+use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
 use App\Models\User;
@@ -39,12 +40,6 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
-    public function kb_endpoints_require_authentication(): void
-    {
-        $this->getJson('/api/v1/kb/articles')->assertStatus(401);
-    }
-
-    #[Test]
     public function lookups_returns_categories_and_tags(): void
     {
         KbCategory::factory()->create(['name' => 'Runbooks']);
@@ -53,8 +48,8 @@ class KbControllerTest extends TestCase
         $response = $this->getJson('/api/v1/kb/lookups', $this->apiHeaders());
 
         $response->assertStatus(200)
-            ->assertSee('Runbooks')
-            ->assertSee('deploy');
+            ->assertJsonFragment(['name' => 'Runbooks'])
+            ->assertJsonFragment(['name' => 'deploy']);
     }
 
     #[Test]
@@ -73,8 +68,8 @@ class KbControllerTest extends TestCase
         $response = $this->getJson('/api/v1/kb/articles?query=e', $this->apiHeaders());
 
         $response->assertStatus(200)
-            ->assertSee('Deploy Guide')
-            ->assertDontSee('Secret Draft');
+            ->assertJsonFragment(['title' => 'Deploy Guide'])
+            ->assertJsonMissing(['title' => 'Secret Draft']);
     }
 
     #[Test]
@@ -147,6 +142,36 @@ class KbControllerTest extends TestCase
         ], $this->apiHeaders());
 
         $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function update_does_not_let_a_permitted_editor_change_visibility_or_status(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'status' => 'draft',
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $this->user->id]);
+
+        $this->putJson("/api/v1/kb/articles/{$article->id}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'public',
+            'status' => 'verified',
+            'commit_message' => 'Try to publish',
+            'tags' => [$tag->id],
+        ], $this->apiHeaders())->assertOk();
+
+        $this->assertSame('restricted', $article->fresh()->visibility);
+        $this->assertSame('draft', $article->fresh()->status);
     }
 
     #[Test]

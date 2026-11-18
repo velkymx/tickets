@@ -64,10 +64,11 @@ class NoteReactionsTableTest extends TestCase
     #[Test]
     public function deleting_a_note_or_user_cascades_to_note_reactions(): void
     {
+        $author = User::factory()->create();
         $user = User::factory()->create();
         $ticket = Ticket::factory()->create();
         $note = Note::factory()->create([
-            'user_id' => $user->id,
+            'user_id' => $author->id,
             'ticket_id' => $ticket->id,
         ]);
 
@@ -82,7 +83,7 @@ class NoteReactionsTableTest extends TestCase
         $this->assertDatabaseMissing('note_reactions', ['id' => $reaction->id]);
 
         $secondNote = Note::factory()->create([
-            'user_id' => $user->id,
+            'user_id' => $author->id,
             'ticket_id' => $ticket->id,
         ]);
         $secondReaction = NoteReaction::create([
@@ -94,11 +95,5 @@ class NoteReactionsTableTest extends TestCase
         $user->delete();
 
         $this->assertDatabaseMissing('note_reactions', ['id' => $secondReaction->id]);
-    }
-
-    #[Test]
-    public function note_reaction_model_limits_v21_emojis(): void
-    {
-        $this->assertSame(['thumbsup', 'eyes'], NoteReaction::ALLOWED_EMOJIS);
     }
 }

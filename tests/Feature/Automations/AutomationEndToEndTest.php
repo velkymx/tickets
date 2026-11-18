@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Automations;
 
-use App\Automations\Support\SsrfGuard;
 use App\Jobs\ExecuteAutomationRuleJob;
 use App\Models\Automation;
 use App\Models\AutomationAction;
@@ -55,9 +54,7 @@ class AutomationEndToEndTest extends TestCase
     #[Test]
     public function job_sends_webhook_and_logs_run(): void
     {
-        Http::fake(['https://hooks.example.com/*' => Http::response('ok', 200)]);
-
-        $this->mock(SsrfGuard::class)->shouldReceive('validate')->andReturn(null);
+        Http::fake(['https://93.184.215.14/*' => Http::response('ok', 200)]);
 
         config(['queue.default' => 'sync']);
 
@@ -67,7 +64,7 @@ class AutomationEndToEndTest extends TestCase
             'automation_rule_id' => $rule->id,
             'type' => 'call_webhook',
             'config_json' => [
-                'url' => 'https://hooks.example.com/test',
+                'url' => 'https://93.184.215.14/test',
                 'method' => 'POST',
                 'headers' => [],
                 'payload' => ['ticket_id' => '{{ ticket.id }}'],
@@ -93,7 +90,7 @@ class AutomationEndToEndTest extends TestCase
         ]);
 
         Http::assertSentCount(1);
-        Http::assertSent(fn ($request) => $request->url() === 'https://hooks.example.com/test'
+        Http::assertSent(fn ($request) => $request->url() === 'https://93.184.215.14/test'
             && $request->method() === 'POST'
             && $request['ticket_id'] == $ticket->id);
     }

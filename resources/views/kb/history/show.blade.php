@@ -22,7 +22,7 @@
         </p>
     </div>
     <div class="d-flex gap-2">
-        @can('update', $article)
+        @can('restore', $article)
             <form method="POST" action="{{ route('kb.restore', [$article->slug, $versionModel->version_number]) }}"
                   onsubmit="return confirm('Restore this version? This will create a new version from this content.')">
                 @csrf

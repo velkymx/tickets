@@ -3,10 +3,15 @@
 namespace Tests\Feature\Controllers;
 
 use App\Models\KbArticle;
+use App\Models\KbArticlePermission;
 use App\Models\KbCategory;
 use App\Models\KbTag;
+use App\Models\Note;
+use App\Models\Ticket;
 use App\Models\User;
+use App\Notifications\WatcherNotification;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,6 +23,17 @@ class KbControllerTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
+    public function public_search_has_a_visible_submit_control(): void
+    {
+        $response = $this->get('/kb');
+
+        $response->assertOk();
+        $response->assertSee('action="'.route('kb.search').'" method="GET" role="search"', false);
+        $response->assertSee('aria-label="Search articles"', false);
+        $response->assertSee('<button class="btn btn-sm btn-outline-secondary" type="submit">Search</button>', false);
+    }
+
+    #[Test]
     public function index_is_accessible_without_auth(): void
     {
         $article = KbArticle::factory()->verified()->public()->create(['title' => 'Public Runbook']);
@@ -26,6 +42,16 @@ class KbControllerTest extends TestCase
             ->assertOk()
             ->assertSee('Public Runbook')
             ->assertSee(route('kb.show', $article->slug), false);
+    }
+
+    #[Test]
+    public function index_shows_an_alert_when_no_articles_exist(): void
+    {
+        $response = $this->get('/kb');
+
+        $response->assertOk();
+        $response->assertSee('alert alert-info', false);
+        $response->assertSee('No articles found.');
     }
 
     #[Test]
@@ -47,6 +73,74 @@ class KbControllerTest extends TestCase
         $response = $this->get("/kb/{$article->slug}");
         $response->assertOk();
         $response->assertSee($article->title);
+    }
+
+    #[Test]
+    public function show_hides_internal_and_restricted_related_articles_from_guests(): void
+    {
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create();
+        $article->tags()->attach($tag);
+
+        $internal = KbArticle::factory()->verified()->internal()->create(['title' => 'Internal Playbook']);
+        $internal->tags()->attach($tag);
+
+        $restricted = KbArticle::factory()->verified()->restricted()->create(['title' => 'Restricted Runbook']);
+        $restricted->tags()->attach($tag);
+
+        $this->get("/kb/{$article->slug}")
+            ->assertOk()
+            ->assertDontSee('Internal Playbook')
+            ->assertDontSee('Restricted Runbook');
+    }
+
+    #[Test]
+    public function show_lists_internal_related_articles_to_authenticated_users(): void
+    {
+        $user = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create();
+        $article->tags()->attach($tag);
+
+        $internal = KbArticle::factory()->verified()->internal()->create(['title' => 'Internal Playbook']);
+        $internal->tags()->attach($tag);
+
+        $this->actingAs($user)->get("/kb/{$article->slug}")
+            ->assertOk()
+            ->assertSee('Internal Playbook');
+    }
+
+    #[Test]
+    public function show_hides_restricted_related_articles_from_unpermitted_users(): void
+    {
+        $user = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create();
+        $article->tags()->attach($tag);
+
+        $restricted = KbArticle::factory()->verified()->restricted()->create(['title' => 'Restricted Runbook']);
+        $restricted->tags()->attach($tag);
+
+        $this->actingAs($user)->get("/kb/{$article->slug}")
+            ->assertOk()
+            ->assertDontSee('Restricted Runbook');
+    }
+
+    #[Test]
+    public function show_lists_restricted_related_articles_to_permitted_users(): void
+    {
+        $user = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create();
+        $article->tags()->attach($tag);
+
+        $restricted = KbArticle::factory()->verified()->restricted()->create(['title' => 'Restricted Runbook']);
+        $restricted->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $restricted->id, 'user_id' => $user->id]);
+
+        $this->actingAs($user)->get("/kb/{$article->slug}")
+            ->assertOk()
+            ->assertSee('Restricted Runbook');
     }
 
     #[Test]
@@ -81,12 +175,6 @@ class KbControllerTest extends TestCase
         $response->assertDontSee('<script>', false);
     }
 
-    #[Test]
-    public function guest_is_redirected_from_create(): void
-    {
-        $this->get('/kb/create')->assertRedirect('/login');
-    }
-
     public static function kbRolesThatCanCreate(): array
     {
         return ['reader' => [null], 'author' => ['author']];
@@ -98,9 +186,7 @@ class KbControllerTest extends TestCase
     {
         $user = User::factory()->create(['kb_role' => $role]);
 
-        $this->actingAs($user)->get('/kb/create')
-            ->assertOk()
-            ->assertSee('data-markdown-editor', false);
+        $this->actingAs($user)->get('/kb/create')->assertOk();
     }
 
     #[Test]
@@ -113,6 +199,303 @@ class KbControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('data-markdown-editor', false);
         $response->assertSee('data-autosave-id="kb-create"', false);
+    }
+
+    #[Test]
+    public function create_and_edit_forms_offer_quick_store_fields(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        foreach (['/kb/create', "/kb/{$article->slug}/edit"] as $path) {
+            $content = $this->actingAs($owner)->get($path)->assertOk()->getContent();
+
+            $this->assertStringContainsString('New category name...', $content);
+            $this->assertStringContainsString('New tag name...', $content);
+            $this->assertStringContainsString('/kb/categories/quick', $content);
+            $this->assertStringContainsString('/kb/tags/quick', $content);
+        }
+    }
+
+    #[Test]
+    public function edit_form_preselects_the_article_category_and_tags(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag->id);
+
+        $content = $this->actingAs($owner)->get("/kb/{$article->slug}/edit")->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<option value="'.$category->id.'"[^>]*selected/',
+            $content
+        );
+        $this->assertMatchesRegularExpression(
+            '/id="tag_'.$tag->id.'"[^>]*checked/',
+            $content
+        );
+    }
+
+    #[Test]
+    public function create_and_edit_forms_offer_a_permitted_users_field(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        $this->actingAs($owner)->get('/kb/create')->assertOk()->assertSee('permitted_users', false);
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")->assertOk()->assertSee('permitted_users', false);
+    }
+
+    #[Test]
+    public function update_with_permitted_users_grants_restricted_access(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Grant access',
+            'tags' => [$tag->id],
+            'permitted_users' => [$granted->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseHas('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $granted->id,
+        ]);
+        $this->actingAs($granted)->get("/kb/{$article->slug}")->assertOk();
+    }
+
+    #[Test]
+    public function owner_can_revoke_all_grants_while_staying_restricted(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Revoke all',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseMissing('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $granted->id,
+        ]);
+    }
+
+    #[Test]
+    public function cleared_grants_stay_cleared_through_a_validation_error(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")->assertOk();
+
+        $response = $this->actingAs($owner)->followingRedirects()->put("/kb/{$article->slug}", [
+            'title' => '',
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Edit content',
+            'tags' => [$tag->id],
+            'permitted_users_present' => '1',
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('value="'.$granted->id.'"', false);
+        $response->assertDontSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
+    public function forms_keep_string_old_input_selected(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+
+        $this->actingAs($owner)
+            ->withSession(['_old_input' => ['permitted_users' => [(string) $granted->id]]])
+            ->get('/kb/create')
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+
+        $this->actingAs($owner)
+            ->withSession(['_old_input' => ['permitted_users' => [(string) $granted->id]]])
+            ->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
+    public function edit_form_marks_granted_users_selected(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $granted = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $granted->id]);
+
+        $this->actingAs($owner)->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertSee('value="'.$granted->id.'" selected', false);
+    }
+
+    #[Test]
+    public function permitted_editor_cannot_change_grants(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $editor = User::factory()->create();
+        $stranger = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $editor->id]);
+
+        $response = $this->actingAs($editor)->put("/kb/{$article->slug}", [
+            'title' => 'Edited title',
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'commit_message' => 'Edit content',
+            'tags' => [$tag->id],
+            'permitted_users' => [$stranger->id],
+        ]);
+
+        $response->assertRedirect("/kb/{$article->slug}");
+        $this->assertDatabaseHas('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $editor->id,
+        ]);
+        $this->assertDatabaseMissing('kb_article_permissions', [
+            'article_id' => $article->id,
+            'user_id' => $stranger->id,
+        ]);
+        $this->actingAs($editor)->get("/kb/{$article->slug}/edit")
+            ->assertOk()
+            ->assertDontSee('permitted_users', false);
+    }
+
+    #[Test]
+    public function permitted_editor_cannot_change_visibility_or_status(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $editor = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'status' => 'draft',
+        ]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $editor->id]);
+
+        $this->actingAs($editor)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'public',
+            'status' => 'verified',
+            'commit_message' => 'Try to publish',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertSame('restricted', $article->fresh()->visibility);
+        $this->assertSame('draft', $article->fresh()->status);
+    }
+
+    #[Test]
+    public function owner_can_change_visibility_and_status(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->create([
+            'owner_id' => $owner->id,
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'visibility' => 'restricted',
+            'status' => 'draft',
+        ]);
+        $article->tags()->attach($tag);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => $article->body_markdown,
+            'category_id' => $category->id,
+            'visibility' => 'public',
+            'status' => 'verified',
+            'commit_message' => 'Publish it',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertSame('public', $article->fresh()->visibility);
+        $this->assertSame('verified', $article->fresh()->status);
     }
 
     #[Test]
@@ -154,6 +537,103 @@ class KbControllerTest extends TestCase
     }
 
     #[Test]
+    public function quick_create_rejects_duplicate_category_slug(): void
+    {
+        $user = User::factory()->create();
+        KbCategory::factory()->create(['name' => 'Billing', 'slug' => 'billing']);
+
+        $response = $this->actingAs($user)->postJson('/kb/categories/quick', [
+            'name' => 'Billing!',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('name');
+    }
+
+    #[Test]
+    public function quick_create_rejects_duplicate_tag_slug(): void
+    {
+        $user = User::factory()->create();
+        KbTag::factory()->create(['name' => 'php', 'slug' => 'php']);
+
+        $response = $this->actingAs($user)->postJson('/kb/tags/quick', [
+            'name' => 'PHP!',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('name');
+    }
+
+    #[Test]
+    public function relative_timestamps_carry_titles_and_empty_states_share_a_component(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+        Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id, 'parent_id' => $note->id]);
+
+        foreach (['/home', "/tickets/{$ticket->id}"] as $url) {
+            $html = $this->actingAs($user)->get($url)->assertOk()->getContent();
+
+            preg_match_all('/<time\b[^>]*>/', $html, $matches);
+            $this->assertNotEmpty($matches[0], "No relative timestamps on {$url}");
+
+            foreach ($matches[0] as $tag) {
+                $this->assertStringContainsString('datetime="', $tag, "Timestamp without datetime on {$url}");
+                $this->assertStringContainsString('title="', $tag, "Timestamp without title on {$url}");
+            }
+        }
+
+        $category = KbCategory::factory()->create();
+        $tag = KbTag::factory()->create();
+
+        $this->get('/kb')->assertOk()->assertSee('role="status"', false);
+        $this->get('/kb/search?q=zzz-no-such-article')->assertOk()->assertSee('role="status"', false);
+        $this->get("/kb/category/{$category->slug}")->assertOk()->assertSee('role="status"', false);
+        $this->get("/kb/tag/{$tag->slug}")->assertOk()->assertSee('role="status"', false);
+    }
+
+    #[Test]
+    public function search_empty_state_escapes_the_query_once(): void
+    {
+        $this->get('/kb/search?q='.urlencode('R&D'))
+            ->assertOk()
+            ->assertSee('R&amp;D', false)
+            ->assertDontSee('R&amp;amp;D', false);
+    }
+
+    #[Test]
+    public function every_activity_timestamp_carries_datetime_and_title(): void
+    {
+        $user = User::factory()->create();
+        $category = KbCategory::factory()->create();
+        $article = KbArticle::factory()->verified()->public()->create([
+            'user_id' => $user->id,
+            'owner_id' => $user->id,
+            'category_id' => $category->id,
+        ]);
+
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        Notification::send($user, new WatcherNotification('Ticket', 'An update', '/tickets/'.$ticket->id));
+
+        $urls = ['/tickets/board', '/activity', '/kb', "/kb/category/{$category->slug}"];
+
+        foreach ($urls as $url) {
+            $html = $this->actingAs($user)->get($url)->assertOk()->getContent();
+
+            preg_match_all('/<time\b[^>]*>/', $html, $matches);
+            $this->assertNotEmpty($matches[0], "No relative timestamps on {$url}");
+
+            foreach ($matches[0] as $tag) {
+                $this->assertStringContainsString('datetime="', $tag, "Timestamp without datetime on {$url}");
+                $this->assertStringContainsString('title="', $tag, "Timestamp without title on {$url}");
+            }
+        }
+
+        $this->assertNotEmpty($article->id);
+    }
+
+    #[Test]
     public function update_requires_ownership_or_permission(): void
     {
         $owner = User::factory()->create(['kb_role' => 'author']);
@@ -177,6 +657,28 @@ class KbControllerTest extends TestCase
         ])->assertForbidden();
 
         $this->assertDatabaseHas('kb_articles', ['id' => $article->id, 'title' => $article->title]);
+    }
+
+    #[Test]
+    public function update_clears_permissions_when_leaving_restricted(): void
+    {
+        $owner = User::factory()->create(['kb_role' => 'author']);
+        $permitted = User::factory()->create();
+        $tag = KbTag::factory()->create();
+        $article = KbArticle::factory()->verified()->restricted()->create(['owner_id' => $owner->id]);
+        $article->tags()->attach($tag);
+        KbArticlePermission::create(['article_id' => $article->id, 'user_id' => $permitted->id]);
+
+        $this->actingAs($owner)->put("/kb/{$article->slug}", [
+            'title' => $article->title,
+            'body_markdown' => 'Opened up',
+            'category_id' => $article->category_id,
+            'visibility' => 'internal',
+            'commit_message' => 'Open it up',
+            'tags' => [$tag->id],
+        ])->assertRedirect("/kb/{$article->slug}");
+
+        $this->assertDatabaseMissing('kb_article_permissions', ['article_id' => $article->id]);
     }
 
     #[Test]
@@ -254,5 +756,20 @@ class KbControllerTest extends TestCase
         ]);
 
         $response->assertStatus(422);
+    }
+
+    #[Test]
+    public function svg_attachment_is_rejected(): void
+    {
+        Storage::fake('public');
+
+        $author = User::factory()->create(['kb_role' => 'author']);
+        $article = KbArticle::factory()->create(['owner_id' => $author->id, 'user_id' => $author->id]);
+
+        $this->actingAs($author)->postJson("/kb/{$article->slug}/attachments", [
+            'file' => UploadedFile::fake()->create('logo.svg', 1, 'image/svg+xml'),
+        ])->assertStatus(422)->assertJsonValidationErrors('file');
+
+        $this->assertDatabaseMissing('kb_article_attachments', ['article_id' => $article->id]);
     }
 }

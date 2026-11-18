@@ -47,6 +47,10 @@
         </div>
     @endif
 
+    @foreach ($ticket->notes->where('notetype', 'decision_needed')->where('resolved', false)->whereNull('parent_id') as $decisionRequest)
+        <x-decision-banner :request="$decisionRequest" />
+    @endforeach
+
     <div class="row">
         {{-- Left Column (Ticket Body, Notes, Update Form) --}}
         <div class="col-lg-9">
@@ -106,6 +110,7 @@
                                     ['cmd' => '/assign', 'desc' => 'Assign ticket to user'],
                                     ['cmd' => '/status', 'desc' => 'Change ticket status'],
                                     ['cmd' => '/decision', 'desc' => 'Record a decision (immutable)'],
+                                    ['cmd' => '/decide', 'desc' => 'Ask someone for a decision'],
                                     ['cmd' => '/blocker', 'desc' => 'Flag a blocker'],
                                     ['cmd' => '/action', 'desc' => 'Create an action item'],
                                     ['cmd' => '/hours', 'desc' => 'Log time'],
@@ -199,7 +204,7 @@
             </div>
 
             {{-- Ticket Pulse (Real-Time Decision Log) --}}
-            <x-ticket-pulse :ticket="$ticket" :pulse="$pulse->toArray()" />
+            @include('partials.ticket-pulse', ['pulse' => $pulse->toArray(), 'resolvableIds' => $resolvableNoteIds ?? []])
 
             {{-- Ticket Details --}}
             <section class="mb-4">
@@ -307,7 +312,7 @@
                             @continue(! $view->user)
                             <li class="py-1 text-body-secondary">
                                 <i class="fas fa-user me-2"></i>
-                                <a href="/users/{{ $view->user->id }}" class="text-decoration-none">{{ $view->user->name }}</a> &mdash; {{ \Carbon\Carbon::createFromTimeStamp(strtotime($view->viewed_at))->diffForHumans() }}
+                                <a href="/users/{{ $view->user->id }}" class="text-decoration-none">{{ $view->user->name }}</a>, <x-relative-time :value="\Carbon\Carbon::parse($view->viewed_at)" />
                             </li>
                         @endforeach
                     </ul>

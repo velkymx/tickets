@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tickets;
 
+use App\Models\Note;
 use App\Models\Status;
 use App\Models\Ticket;
 use App\Models\User;
@@ -12,6 +13,30 @@ use Tests\Traits\SeedsDatabase;
 class HomeRecentTicketsTest extends TestCase
 {
     use SeedsDatabase;
+
+    #[Test]
+    public function home_links_my_tickets_to_the_assignee_filter(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/home');
+
+        $response->assertStatus(200);
+        $response->assertSee('/tickets?q=assignee', false);
+    }
+
+    #[Test]
+    public function home_activity_shows_absolute_time_on_hover(): void
+    {
+        $user = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id, 'user_id2' => $user->id]);
+        $note = Note::factory()->create(['ticket_id' => $ticket->id, 'user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->get('/home');
+
+        $response->assertStatus(200);
+        $response->assertSee('title="'.$note->created_at->toDateTimeString().'"', false);
+    }
 
     #[Test]
     public function home_shows_tickets_assigned_to_me(): void

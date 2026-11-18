@@ -16,7 +16,7 @@ Built with [Laravel](https://laravel.com), Tickets is designed to be easy to run
 
 ## Why Tickets?
 
-Tickets is for teams that have outgrown a simple GitHub Issues workflow but do not need the complexity of Jira.
+Tickets is a self-hosted, open-source issue tracker and project management application for teams that have outgrown a simple GitHub Issues workflow but do not need the complexity of Jira or the cost of Linear.
 
 Run it on your own infrastructure, keep your project data under your control, and customize the application to fit the way your team works.
 
@@ -102,7 +102,7 @@ Keep routine project activity moving without constant manual updates.
 
 Tickets includes a token-authenticated REST API for integrations, automation, and custom applications.
 
-The API supports tickets, notes, projects, milestones, releases, users, knowledge base content, Ticket Pulse, and related data.
+The API supports tickets, notes, Ticket Pulse, lookups, and knowledge base content.
 
 See the [API documentation](docs/api.md) for the complete reference.
 
@@ -116,7 +116,7 @@ This makes it possible to build workflows where specialized AI agents share the 
 
 Use [CrewAI](docs/crewai.md) to build role-based agent crews, or connect other MCP-compatible clients and agent runtimes to Tickets.
 
-* 19 MCP tools for tickets and the knowledge base
+* 24 MCP tools for tickets, milestones, notes, and the knowledge base
 * REST API with token authentication
 * Ticket Pulse for execution state
 * Agent-accessible decisions, blockers, actions, and notes
@@ -180,6 +180,8 @@ Tickets includes complete documentation covering installation, administration, w
 ### Concepts
 
 * [Agile Workflow](docs/agile-workflow.md)
+* [AI Workflow with Human-in-the-Middle Decisions](docs/ai-workflow-human-in-the-middle.md)
+* [Ticket Work Surface](docs/comments.md)
 * [Note Signals](docs/note-signals.md)
 * [Ticket Pulse](docs/pulse.md)
 
@@ -219,11 +221,10 @@ For complete installation, configuration, Docker deployment, and production host
 
 Tickets is a Laravel application and supports:
 
-* PHP 8.2+
+* PHP 8.4+
 * MariaDB 11.8+
 * MySQL 8.0+
 * PostgreSQL 12+
-* SQLite 3.35+
 * Node.js 24+ for building frontend assets
 
 Docker provides the complete application stack for a simpler deployment.
@@ -244,9 +245,10 @@ To contribute, see the [Contributing Guide](CONTRIBUTING.md).
 
 Found a security issue? See the [Security Policy](SECURITY.md). Please do not open a public issue for security vulnerabilities.
 
-## Roadmap
+## Community
 
-See the [GitHub Issues](https://github.com/velkymx/tickets/issues) and project discussions for current development, planned features, and future improvements.
+- [GitHub Issues](https://github.com/velkymx/tickets/issues) for bug reports and feature requests
+- [GitHub Discussions](https://github.com/velkymx/tickets/discussions) for questions and ideas
 
 ## License
 

@@ -9,7 +9,7 @@ This guide covers installing Tickets on a fresh server or local machine. For Doc
 | PHP | 8.4 |
 | Composer | 2.x |
 | Node.js | 24 |
-| MariaDB | 11.8 (or MySQL 8.0 / PostgreSQL 12 / SQLite 3.35) |
+| MariaDB | 11.8 (or MySQL 8.0 / PostgreSQL 12) |
 
 ## Quick setup
 
@@ -129,7 +129,7 @@ For production, use a process manager like Supervisor to keep the worker running
 php artisan test
 ```
 
-All tests should pass on a clean install.
+The test suite uses `tickets_test` with the `dbuser` credentials in `.env.testing` and `phpunit.xml`. Create that database and user, or override `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`, before running the suite.
 
 ---
 
