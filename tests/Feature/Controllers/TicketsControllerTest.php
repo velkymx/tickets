@@ -392,6 +392,22 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_filters_by_assignee_id(): void
+    {
+        $user = User::factory()->create();
+        $assignee = User::factory()->create();
+
+        $ticket = Ticket::factory()->create(['user_id2' => $assignee->id]);
+        $otherTicket = Ticket::factory()->create(['user_id2' => $user->id]);
+
+        $response = $this->actingAs($user)->get("/tickets?user_id2={$assignee->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee($ticket->subject);
+        $response->assertDontSee($otherTicket->subject);
+    }
+
+    #[Test]
     public function index_searches_by_subject_with_q_parameter(): void
     {
         $user = User::factory()->create();
