@@ -19,48 +19,6 @@ class TicketTest extends TestCase
     use SeedsDatabase;
 
     #[Test]
-    public function it_computes_actual_hours_from_notes_sum(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create([
-            'user_id' => $user->id,
-            'user_id2' => $user->id,
-        ]);
-
-        Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'hours' => 2.5,
-        ]);
-        Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'hours' => 3.5,
-        ]);
-
-        $loadedTicket = Ticket::withSum('notes', 'hours')->find($ticket->id);
-        $this->assertEquals(6, $loadedTicket->actual_hours);
-    }
-
-    #[Test]
-    public function it_returns_zero_actual_hours_when_not_eager_loaded(): void
-    {
-        $user = User::factory()->create();
-        $ticket = Ticket::factory()->create([
-            'user_id' => $user->id,
-            'user_id2' => $user->id,
-        ]);
-
-        Note::factory()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'hours' => 2,
-        ]);
-
-        $this->assertEquals(0, $ticket->actual_hours);
-    }
-
-    #[Test]
     public function it_notifies_watchers_on_update(): void
     {
         Notification::fake();
