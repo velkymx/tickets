@@ -92,7 +92,7 @@ Posts a JSON payload to an external URL.
 
 | Field | Description |
 |-------|-------------|
-| URL | The endpoint to POST to (must be HTTPS or an internal host; CGNAT ranges are blocked) |
+| URL | The endpoint to POST to. |
 | Payload | Mustache template - use `{{ticket.subject}}`, `{{ticket.id}}`, `{{actor.email}}`, etc. |
 
 **Example payload template:**
@@ -109,7 +109,7 @@ Posts a JSON payload to an external URL.
 
 ### Call API (`call_api`)
 
-Calls an internal API endpoint. Configuration depends on the endpoint targeted.
+Uses the same webhook delivery as `call_webhook`. Configure the URL and payload; the action posts JSON to that URL.
 
 ## Run history
 

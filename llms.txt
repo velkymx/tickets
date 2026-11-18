@@ -10,21 +10,21 @@ AI agents can interact with Tickets through its REST API or its MCP server, both
 
 ## Authentication
 
-Generate a token from the user profile page (`/user/api-token`). All API requests require the Bearer token in the Authorization header.
+Generate a token from Profile → Edit Profile (`POST /user/api-token`). All API requests require the Bearer token in the Authorization header.
 
 ## Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/health` | Health check: returns `{"status": "ok"}` |
-| GET | `/api/v1/lookups` | Returns statuses, types, importance levels, projects, milestones, releases, and users with IDs |
+| GET | `/api/v1/lookups` | Returns statuses, types, importance levels, projects, and milestones with IDs |
 | GET | `/api/v1/kb/lookups` | Returns KB categories and tags with IDs |
 | GET | `/api/v1/kb/articles` | List KB articles: supports `query`, `category_id`, `status`, `tag_id` |
 | POST | `/api/v1/kb/articles` | Create KB article: requires `title`, `body_markdown`, `category_id`, `tags` |
 | GET | `/api/v1/kb/articles/{id}` | Get KB article by id or slug |
 | PUT/PATCH | `/api/v1/kb/articles/{id}` | Update KB article |
-| GET | `/api/v1/tickets` | List tickets: supports `status`, `unassigned`, `decision` (`me`/`any`), `pulse` query params. Rows carry `decision_needed` and `decision_needed_from` |
-| POST | `/api/v1/tickets` | Create ticket: requires `subject`; optional `description`, `type_id`, `importance_id`, `project_id`, `milestone_id`, `due_at`, `estimate`, `storypoints` |
+| GET | `/api/v1/tickets` | List tickets: supports `status`, `unassigned`, `decision` (`me`/`any`), and `include=pulse`. Rows carry `decision_needed` and `decision_needed_from` |
+| POST | `/api/v1/tickets` | Create ticket: requires `subject`, `type_id`, `importance_id`, `project_id`, `milestone_id`; optional `description`, `status_id`, `assignee_id`, `due_at`, `estimate`, `storypoints` |
 | GET | `/api/v1/tickets/{id}` | Get ticket detail with notes, reactions, replies, attachments |
 | PUT/PATCH | `/api/v1/tickets/{id}` | Update ticket |
 | POST | `/api/v1/tickets/{id}/note` | Add note: supports `body`, `status_id`, `hours`, `claim`. Body supports slash commands: `/decision`, `/decide @user`, `/blocker`, `/action`, `/assign`, `/status`, `/hours`, `/estimate`, `/close`, `/reopen`. Mentions notify, and field changes are written to the changelog |

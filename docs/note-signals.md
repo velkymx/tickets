@@ -50,6 +50,7 @@ Type a slash command at the start of any line in the note body. Commands can be 
 | `/decision` | `/decision We will use Postgres` | Mark note as a decision |
 | `/blocker` | `/blocker Waiting on legal approval` | Mark note as a blocker |
 | `/action` | `/action @jane Deploy to staging` | Create an action item assigned to @jane |
+| `/decide` | `/decide @jane Choose the database` | Ask one person to decide; creates a decision request |
 | `/update` | `/update Milestone is on track` | Mark note as a status update |
 
 ### Combining commands
@@ -61,6 +62,10 @@ Type a slash command at the start of any line in the note body. Commands can be 
 ```
 
 This single note logs 3 hours, changes the status to "In Progress", and creates an action item for John.
+
+### Decision requests
+
+`/decide @user <question>` creates a `decision_needed` note for one person. The request appears in the ticket Pulse, the navbar "Needs my decision" count, and the decider's `decision=me` list. The decider replies on the thread with `/decision <answer>` to record the decision and close the request.
 
 ## Resolving notes
 

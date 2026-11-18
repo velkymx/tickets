@@ -129,7 +129,7 @@ For production, use a process manager like Supervisor to keep the worker running
 php artisan test
 ```
 
-All tests should pass on a clean install.
+The test suite uses `tickets_test` with the `dbuser` credentials in `.env.testing` and `phpunit.xml`. Create that database and user, or override `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD`, before running the suite.
 
 ---
 
