@@ -171,15 +171,39 @@ class TicketControllerTest extends TestCase
     }
 
     #[Test]
-    public function index_clamps_negative_per_page_to_one(): void
+    public function index_rejects_out_of_range_per_page(): void
     {
         Ticket::factory()->count(3)->create(['user_id2' => $this->user->id]);
 
-        $response = $this->getJson('/api/v1/tickets?per_page=-5', $this->apiHeaders());
+        foreach (['-5', '0', '101'] as $perPage) {
+            $this->getJson("/api/v1/tickets?per_page={$perPage}", $this->apiHeaders())
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('per_page');
+        }
+    }
 
-        $response->assertStatus(200);
-        $this->assertEquals(1, $response->json('meta.per_page'));
-        $this->assertEquals(3, $response->json('meta.total'));
+    #[Test]
+    public function index_rejects_a_non_numeric_per_page(): void
+    {
+        $this->getJson('/api/v1/tickets?per_page=many', $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('per_page');
+    }
+
+    #[Test]
+    public function index_rejects_an_unknown_status(): void
+    {
+        $this->getJson('/api/v1/tickets?status=999999', $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('status');
+    }
+
+    #[Test]
+    public function index_rejects_a_non_numeric_status(): void
+    {
+        $this->getJson('/api/v1/tickets?status=open', $this->apiHeaders())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('status');
     }
 
     #[Test]
