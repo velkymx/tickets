@@ -62,14 +62,6 @@ class HealthController extends Controller
             return response()->json(['status' => 'pending']);
         }
 
-        $sent = Cache::get("health-ping-sent:{$token}", $ran['at']);
-        $connection = (string) config('queue.default');
-
-        return response()->json([
-            'status' => 'answered',
-            'duration' => round(max(0, $ran['at'] - $sent), 1),
-            'connection' => $connection,
-            'queue' => (string) config("queue.connections.{$connection}.queue", 'default'),
-        ]);
+        return response()->json(['status' => 'answered']);
     }
 }

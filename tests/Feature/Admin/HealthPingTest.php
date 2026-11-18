@@ -71,9 +71,7 @@ class HealthPingTest extends TestCase
 
         $response = $this->actingAs($this->admin())->getJson('/admin/health/queue-ping/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')->assertOk();
 
-        $this->assertSame('answered', $response->json('status'));
-        $this->assertGreaterThanOrEqual(1, $response->json('duration'));
-        $this->assertLessThanOrEqual(5, $response->json('duration'));
+        $response->assertExactJson(['status' => 'answered']);
     }
 
     #[Test]
@@ -139,7 +137,7 @@ class HealthPingTest extends TestCase
     }
 
     #[Test]
-    public function answered_status_reports_connection_and_queue(): void
+    public function answered_status_reports_no_internals(): void
     {
         $token = str_repeat('b', 32);
         Cache::put("health-ping-sent:{$token}", microtime(true) - 1.5, 30);
@@ -147,11 +145,8 @@ class HealthPingTest extends TestCase
 
         $this->actingAs($this->admin())->getJson("/admin/health/queue-ping/{$token}")
             ->assertOk()
-            ->assertJson([
-                'status' => 'answered',
-                'connection' => (string) config('queue.default'),
-            ])
-            ->assertJsonStructure(['duration', 'queue']);
+            ->assertExactJson(['status' => 'answered'])
+            ->assertJsonMissing(['connection', 'queue', 'duration']);
     }
 
     #[Test]

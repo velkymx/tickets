@@ -10,7 +10,7 @@ describe('pingWorker', () => {
         const postPing = vi.fn().mockResolvedValue('tok');
         const getStatus = vi.fn()
             .mockResolvedValueOnce({ status: 'pending' })
-            .mockResolvedValue({ status: 'answered', duration: 1.2 });
+            .mockResolvedValue({ status: 'answered' });
         const onUpdate = vi.fn();
 
         const run = pingWorker(postPing, getStatus, onUpdate, { interval: 1000, attempts: 10 });
@@ -18,7 +18,7 @@ describe('pingWorker', () => {
         await run;
 
         expect(postPing).toHaveBeenCalledTimes(1);
-        expect(onUpdate).toHaveBeenCalledWith({ state: 'answered', duration: 1.2 });
+        expect(onUpdate).toHaveBeenCalledWith({ state: 'answered' });
     });
 
     it('gives up after ten polls without an answer', async () => {
