@@ -115,6 +115,23 @@ Agents resolve their own blockers with `resolve-note-tool` when the impediment c
 6. Set the human as the decider. The human uses the web UI, the `decision=me` list, and the Pulse.
 7. Watch the rate limit. The API and MCP share a 60 requests per minute throttle; the agents back off on 429.
 
+## Coordination software
+
+The workflow runs over MCP or HTTP, so the four roles can live in any agent runtime. The connection guides cover:
+
+- Hermes Agent (Nous Research)
+- CrewAI
+- LangGraph
+- OpenAI Agents SDK
+- Claude Agent SDK
+- Google ADK
+- Mastra
+- Microsoft Agent Framework
+- OpenClaw
+- Claude Code, Claude Desktop, and Claude.ai
+
+See [MCP Server](mcp.md) for client setup and [AI Agents with CrewAI](crewai.md) for a CrewAI example.
+
 ## Related documentation
 
 - [MCP Server](mcp.md)
