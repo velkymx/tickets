@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Repo guide for coding agents. App is a Laravel ticket tracker (Blade plus Bootstrap, Alpine, MySQL/PG). PRs target `2.0.0`; `master` is the legacy default branch.
+Repo guide for coding agents. App is a Laravel ticket tracker (Blade plus Bootstrap, Alpine, MySQL/PG). Feature branches target `2.0.0`; `2.0.0` merges to `master` for release.
 
 ## Commands
 

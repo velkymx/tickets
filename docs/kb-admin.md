@@ -77,7 +77,7 @@ Deleting an article soft-deletes it - it disappears from the KB but can be recov
 
 ## Full-text search
 
-The KB search bar (top of the KB index) searches across article titles, body content, category names, and tags. Results are ranked by relevance.
+The KB search bar (top of the KB index) searches article titles, body content, and tag names. Results are ordered by last update.
 
 ---
 

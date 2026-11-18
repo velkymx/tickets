@@ -8,29 +8,11 @@
 [![License](https://img.shields.io/github/license/velkymx/tickets)](LICENSE.md)
 [![GitHub Stars](https://img.shields.io/github/stars/velkymx/tickets)](https://github.com/velkymx/tickets/stargazers)
 
-A self-hosted, open-source issue and sprint tracker for small teams. Tickets combines project management, backlogs, Kanban boards, real-time collaboration, automations, a knowledge base, and a REST API without the complexity of Jira or the cost of Linear.
+A self-hosted, open-source issue and sprint tracker for small teams. Tickets combines project management, backlogs, Kanban boards, real-time collaboration, automations, a knowledge base, and a REST API.
 
 Built with [Laravel](https://laravel.com), Tickets is designed to be easy to run, easy to understand, and easy to customize.
 
 ![Ticket detail view](screenshots/ticket.png)
-
-## Why Tickets?
-
-Tickets is for teams that have outgrown a simple GitHub Issues workflow but do not need the complexity of Jira.
-
-Run it on your own infrastructure, keep your project data under your control, and customize the application to fit the way your team works.
-
-* Self-hosted and open source
-* Projects, milestones, releases, backlogs, and sprints
-* Kanban boards
-* Real-time collaboration
-* Built-in knowledge base
-* Automations and notifications
-* Ticket Pulse for execution visibility
-* REST API
-* MCP server for AI assistants
-* AI agent integration
-* Built with Laravel and designed to be extended
 
 ## Features
 
@@ -102,7 +84,7 @@ Keep routine project activity moving without constant manual updates.
 
 Tickets includes a token-authenticated REST API for integrations, automation, and custom applications.
 
-The API supports tickets, notes, projects, milestones, releases, users, knowledge base content, Ticket Pulse, and related data.
+The API supports tickets, notes, Ticket Pulse, lookups, and knowledge base content.
 
 See the [API documentation](docs/api.md) for the complete reference.
 
@@ -116,7 +98,7 @@ This makes it possible to build workflows where specialized AI agents share the 
 
 Use [CrewAI](docs/crewai.md) to build role-based agent crews, or connect other MCP-compatible clients and agent runtimes to Tickets.
 
-* 19 MCP tools for tickets and the knowledge base
+* 24 MCP tools for tickets, milestones, notes, and the knowledge base
 * REST API with token authentication
 * Ticket Pulse for execution state
 * Agent-accessible decisions, blockers, actions, and notes
@@ -144,35 +126,6 @@ See [MCP Server](docs/mcp.md) and [AI Agents with CrewAI](docs/crewai.md).
 
 ![Tickets milestone report](screenshots/milestone.png)
 
-## A Simpler Alternative to Jira
-
-Jira is built for organizations that need a highly configurable enterprise project management platform. Tickets takes a different approach.
-
-If your team needs projects, issues, sprints, Kanban boards, collaboration, documentation, and automation without a large administration layer, Tickets gives you a complete self-hosted application you control.
-
-Choose Tickets when you want:
-
-* Your own infrastructure
-* Open-source software
-* A simpler project management workflow
-* A Laravel application you can customize
-* No per-user SaaS subscription
-* Project data you control
-* An integrated knowledge base
-* API and AI integrations
-
-Choose Jira when you need its larger enterprise ecosystem, extensive integrations, and enterprise-specific capabilities.
-
-Tickets is not trying to reproduce every feature Jira has. It is designed for teams that want the core project management workflow without the complexity they do not need.
-
-## Tickets vs GitHub Issues
-
-GitHub Issues are excellent for teams that want to keep project tracking entirely inside GitHub.
-
-Tickets is a better fit when you want a dedicated, self-hosted project management application with its own projects, milestones, releases, sprints, Kanban boards, collaboration tools, knowledge base, automation, and API.
-
-If your team wants more structure than GitHub Issues without moving to a large SaaS project management platform, Tickets provides that middle ground.
-
 ## Documentation
 
 Tickets includes complete documentation covering installation, administration, workflows, integrations, and the underlying concepts behind the application.
@@ -180,6 +133,7 @@ Tickets includes complete documentation covering installation, administration, w
 ### Concepts
 
 * [Agile Workflow](docs/agile-workflow.md)
+* [Ticket Work Surface](docs/comments.md)
 * [Note Signals](docs/note-signals.md)
 * [Ticket Pulse](docs/pulse.md)
 
@@ -242,10 +196,6 @@ Tickets is developed as an open-source Laravel application with automated testin
 To contribute, see the [Contributing Guide](CONTRIBUTING.md).
 
 Found a security issue? See the [Security Policy](SECURITY.md). Please do not open a public issue for security vulnerabilities.
-
-## Roadmap
-
-See the [GitHub Issues](https://github.com/velkymx/tickets/issues) and project discussions for current development, planned features, and future improvements.
 
 ## License
 

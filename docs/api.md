@@ -100,6 +100,8 @@ Returns tickets assigned to the authenticated user, paginated.
 | `decision` | string | `me` lists tickets with an open decision request aimed at you, whoever owns them. `any` narrows your tickets to those with any open decision request. |
 | `include` | string | Set to `pulse` to include pulse summary on each ticket. |
 
+Values outside the `per_page` range of 1 to 100, or a `status` that does not exist, return 422.
+
 Each ticket includes `decision_needed` (bool) and `decision_needed_from` (the user id of the oldest open request's decider, or `null`).
 
 ```bash
@@ -181,16 +183,17 @@ curl -X PUT \
   https://your-app.example.com/api/v1/tickets/42
 ```
 
-**Response (201):**
+**Response (200):**
 
 ```json
 {
-  "message": "Ticket created.",
+  "message": "Ticket updated successfully",
   "ticket": {
-    "id": 123,
+    "id": 42,
     "subject": "Login page returns 500",
+    "description": "Reproducible on Chrome/Mac only.",
     "status": "Open",
-    "link": "https://your-app.example.com/tickets/123"
+    "assignee": "Ada Lovelace"
   }
 }
 ```
@@ -297,7 +300,7 @@ Marks a note as resolved. Creates a reply with the resolution message.
 curl -X POST \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"resolution_message": "Fixed in v2.1 hotfix."}' \
+  -d '{"resolution_message": "Fixed in the latest release."}' \
   https://your-app.example.com/api/v1/tickets/42/notes/99/resolve
 ```
 
@@ -495,7 +498,7 @@ AI assistants can work with tickets and the knowledge base through the built-in
 `laravel/mcp` package) instead of raw REST calls - `POST /mcp/tickets` with the
 same Bearer token, or the local stdio handle `tickets`.
 
-The full MCP reference - connection, all 16 tools with arguments, slash
+The full MCP reference - connection, all 24 tools with arguments, slash
 commands, pulse fields, and error conventions - lives in **[mcp.md](mcp.md)**.
 
 ---
