@@ -204,7 +204,7 @@
             </div>
 
             {{-- Ticket Pulse (Real-Time Decision Log) --}}
-            <x-ticket-pulse :ticket="$ticket" :pulse="$pulse->toArray()" :resolvable-ids="$resolvableNoteIds ?? []" />
+            @include('partials.ticket-pulse', ['pulse' => $pulse->toArray(), 'resolvableIds' => $resolvableNoteIds ?? []])
 
             {{-- Ticket Details --}}
             <section class="mb-4">
