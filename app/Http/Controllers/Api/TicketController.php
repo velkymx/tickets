@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\SlashCommandException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexTicketsRequest;
 use App\Models\Importance;
 use App\Models\Milestone;
 use App\Models\Note;
@@ -41,14 +42,14 @@ class TicketController extends Controller
         ]);
     }
 
-    public function index(Request $request)
+    public function index(IndexTicketsRequest $request)
     {
+        $validated = $request->validated();
+
         $user = $request->attributes->get('api_user');
-        $perPage = min(max((int) $request->get('per_page', 20), 1), 100);
+        $perPage = $validated['per_page'] ?? 20;
 
         $includePulse = $request->get('include') === 'pulse';
-
-        $request->validate(['decision' => 'nullable|in:me,any']);
 
         $eagerLoads = ['status', 'importance', 'openDecisionRequests'];
         if ($includePulse) {
@@ -57,7 +58,7 @@ class TicketController extends Controller
 
         $query = Ticket::with($eagerLoads);
 
-        if ($request->get('decision') === 'me') {
+        if (($validated['decision'] ?? null) === 'me') {
             $query->needsDecision($user->id);
         } elseif ($request->boolean('unassigned')) {
             $query->whereNull('user_id2');
@@ -65,12 +66,12 @@ class TicketController extends Controller
             $query->where('user_id2', $user->id);
         }
 
-        if ($request->get('decision') === 'any') {
+        if (($validated['decision'] ?? null) === 'any') {
             $query->needsDecision();
         }
 
-        if ($request->has('status')) {
-            $query->where('status_id', $request->status);
+        if (isset($validated['status'])) {
+            $query->where('status_id', $validated['status']);
         }
 
         $tickets = $query->orderBy('created_at', 'DESC')->paginate($perPage);
