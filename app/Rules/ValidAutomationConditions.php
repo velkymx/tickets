@@ -40,6 +40,7 @@ class ValidAutomationConditions implements ValidationRule
 
         return ! is_string($conditions['operator'] ?? null)
             || ! in_array($conditions['operator'], config('automations.operators', []), true)
-            || ! is_string($conditions['field'] ?? null);
+            || ! is_string($conditions['field'] ?? null)
+            || trim($conditions['field']) === '';
     }
 }

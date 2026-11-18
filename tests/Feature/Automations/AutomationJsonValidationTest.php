@@ -116,6 +116,7 @@ class AutomationJsonValidationTest extends TestCase
             'unknown object' => [json_encode(['foo' => 'bar'])],
             'unknown operator' => [json_encode(['operator' => 'explode', 'field' => 'ticket.id'])],
             'leaf without field' => [json_encode(['operator' => 'equals', 'value' => 1])],
+            'leaf with blank field' => [json_encode(['operator' => 'is_not_empty', 'field' => ''])],
             'group with a bad child' => [json_encode(['all' => [['operator' => 'equals', 'field' => 'ticket.id', 'value' => 1], ['nope' => true]]])],
         ];
     }
