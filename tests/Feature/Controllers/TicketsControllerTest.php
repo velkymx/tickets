@@ -1907,6 +1907,26 @@ class TicketsControllerTest extends TestCase
     }
 
     #[Test]
+    public function batch_rejects_a_foreign_ticket_without_touching_owned_ones(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $mine = Ticket::factory()->create(['user_id' => $user->id, 'status_id' => Status::factory()->create()->id]);
+        $theirs = Ticket::factory()->create(['user_id' => $other->id, 'user_id2' => $other->id]);
+        $newStatus = Status::factory()->create();
+        $originalStatus = $mine->status_id;
+
+        $response = $this->actingAs($user)->post('/tickets/batch', [
+            'tickets' => [$mine->id => '1', $theirs->id => '1'],
+            'status_id' => $newStatus->id,
+        ]);
+
+        $response->assertForbidden();
+        $this->assertStringContainsString((string) $theirs->id, $response->exception->getMessage());
+        $this->assertSame($originalStatus, $mine->fresh()->status_id);
+    }
+
+    #[Test]
     public function batch_redirects_with_count_message(): void
     {
         $user = User::factory()->create();

@@ -282,6 +282,12 @@ class TicketsController extends Controller
 
         $tickets = Ticket::whereIn('id', $ticketIds)->get()->keyBy('id');
 
+        foreach ($ticketIds as $ticketId) {
+            if ($tickets->has($ticketId) && Gate::denies('update', $tickets->get($ticketId))) {
+                abort(403, "Cannot update ticket #{$ticketId}.");
+            }
+        }
+
         $updateFields = array_filter([
             'type_id' => $validated['type_id'] ?? null,
             'status_id' => $validated['status_id'] ?? null,
@@ -300,8 +306,6 @@ class TicketsController extends Controller
                 }
 
                 $ticket = $tickets->get($ticketId);
-
-                Gate::authorize('update', $ticket);
 
                 $applied = false;
 
