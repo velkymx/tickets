@@ -133,6 +133,7 @@ Tickets includes complete documentation covering installation, administration, w
 ### Concepts
 
 * [Agile Workflow](docs/agile-workflow.md)
+* [AI Workflow with Human-in-the-Middle Decisions](docs/ai-workflow-human-in-the-middle.md)
 * [Ticket Work Surface](docs/comments.md)
 * [Note Signals](docs/note-signals.md)
 * [Ticket Pulse](docs/pulse.md)

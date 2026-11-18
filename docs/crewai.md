@@ -435,4 +435,5 @@ The project history remains.
 * [REST API](api.md)
 * [Ticket Pulse](pulse.md)
 * [Agile Workflow](agile-workflow.md)
+* [AI Workflow with Human-in-the-Middle Decisions](ai-workflow-human-in-the-middle.md)
 * [Knowledge Base](kb-admin.md)

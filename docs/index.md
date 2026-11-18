@@ -11,6 +11,7 @@ This index covers all documentation in this directory. Target readers: administr
 | Document | What it covers |
 |----------|---------------|
 | [Agile Workflow](agile-workflow.md) | Project → Milestone → Ticket hierarchy, milestone planning, kanban, milestone report |
+| [AI Workflow with Human-in-the-Middle Decisions](ai-workflow-human-in-the-middle.md) | Four agents across the status pipeline, with decisions and blockers routed to the human |
 | [Ticket Pulse](pulse.md) | Execution states (ON TRACK / AT RISK / BLOCKED / IDLE), triage, state transitions |
 | [Note Signals](note-signals.md) | Signal types, slash commands, decisions, blockers, actions, reactions, @mentions |
 | [Notifications](notifications.md) | Watchers, notification batching, @mentions, muting, notification bell |
