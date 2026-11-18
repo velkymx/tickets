@@ -16,6 +16,10 @@ Repo guide for coding agents. App is a Laravel ticket tracker (Blade plus Bootst
 - No commit prefixes (`feat:`, `fix:`, etc). Subject: capitalized imperative, max 50 chars, no trailing period. Blank line, body wrapped at 72 cols, what plus why.
 - No em-dashes or en-dashes anywhere.
 
+## Framework behavior
+
+- Use the framework as shipped. Do not test framework behavior and do not change or wrap framework behavior to make a test pass.
+
 ## Where logic lives
 
 - Query rules: Eloquent scopes on models (`Ticket::scopeFilter`, `scopeOpen`, `scopeClosed`, `scopeWithListRelations`, `LIST_SORTABLE`). No new Service classes for query logic.

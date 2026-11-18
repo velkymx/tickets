@@ -4,7 +4,6 @@ namespace App\Automations\Drivers;
 
 use App\Automations\Contracts\AutomationActionDriverInterface;
 use App\Automations\Support\PayloadRenderer;
-use App\Automations\Support\SsrfGuard;
 use App\Models\AutomationAction;
 use App\Models\AutomationActionLog;
 use App\Models\AutomationRun;
@@ -16,7 +15,6 @@ class WebhookActionDriver implements AutomationActionDriverInterface
     private const ALLOWED_METHODS = ['get', 'post', 'put', 'patch', 'delete'];
 
     public function __construct(
-        private readonly SsrfGuard $ssrfGuard,
         private readonly PayloadRenderer $renderer,
     ) {}
 
@@ -24,8 +22,6 @@ class WebhookActionDriver implements AutomationActionDriverInterface
     {
         $config = $action->config_json;
         $url = $config['url'];
-
-        $this->ssrfGuard->validate($url);
 
         $payload = $this->renderer->render($config['payload'] ?? [], $context);
         $payloadJson = json_encode($payload);
