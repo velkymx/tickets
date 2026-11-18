@@ -32,10 +32,14 @@ class ValidAutomationActions implements ValidationRule
                 return;
             }
 
-            if (in_array($action['type'], ['call_webhook', 'call_api'], true) && ! is_string($action['config']['url'] ?? null)) {
-                $fail('Webhook actions need a url in their config.');
+            if (in_array($action['type'], ['call_webhook', 'call_api'], true)) {
+                $url = $action['config']['url'] ?? null;
 
-                return;
+                if (! is_string($url) || trim($url) === '') {
+                    $fail('Webhook actions need a url in their config.');
+
+                    return;
+                }
             }
         }
     }

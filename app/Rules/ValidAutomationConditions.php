@@ -7,18 +7,12 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 class ValidAutomationConditions implements ValidationRule
 {
-    private const OPERATORS = [
-        'equals', 'not_equals', 'contains', 'starts_with', 'ends_with',
-        'greater_than', 'less_than', 'in', 'not_in', 'is_empty',
-        'is_not_empty', 'changed',
-    ];
-
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         $conditions = json_decode((string) $value, true);
 
         if (! is_array($conditions) || $this->invalid($conditions)) {
-            $fail('The conditions must be an all/any group or a leaf with an operator.');
+            $fail('The conditions must be an all/any group or a leaf with an operator and a field.');
         }
     }
 
@@ -45,6 +39,7 @@ class ValidAutomationConditions implements ValidationRule
         }
 
         return ! is_string($conditions['operator'] ?? null)
-            || ! in_array($conditions['operator'], self::OPERATORS, true);
+            || ! in_array($conditions['operator'], config('automations.operators', []), true)
+            || ! is_string($conditions['field'] ?? null);
     }
 }

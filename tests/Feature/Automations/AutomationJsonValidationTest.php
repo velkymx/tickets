@@ -115,6 +115,7 @@ class AutomationJsonValidationTest extends TestCase
             'list' => [json_encode([['operator' => 'equals', 'field' => 'ticket.id', 'value' => 1]])],
             'unknown object' => [json_encode(['foo' => 'bar'])],
             'unknown operator' => [json_encode(['operator' => 'explode', 'field' => 'ticket.id'])],
+            'leaf without field' => [json_encode(['operator' => 'equals', 'value' => 1])],
             'group with a bad child' => [json_encode(['all' => [['operator' => 'equals', 'field' => 'ticket.id', 'value' => 1], ['nope' => true]]])],
         ];
     }
@@ -167,14 +168,17 @@ class AutomationJsonValidationTest extends TestCase
     {
         $user = User::factory()->create(['admin' => true]);
 
-        $response = $this->actingAs($user)->post(route('automations.store'), [
-            'name' => 'Missing Url',
-            'trigger' => 'ticket.created',
-            'conditions_json' => json_encode(['all' => []]),
-            'actions_json' => json_encode([['type' => 'call_webhook', 'config' => []]]),
-        ]);
+        foreach ([[], ['url' => '']] as $config) {
+            $response = $this->actingAs($user)->post(route('automations.store'), [
+                'name' => 'Missing Url',
+                'trigger' => 'ticket.created',
+                'conditions_json' => json_encode(['all' => []]),
+                'actions_json' => json_encode([['type' => 'call_webhook', 'config' => $config]]),
+            ]);
 
-        $response->assertSessionHasErrors('actions_json');
+            $response->assertSessionHasErrors('actions_json');
+        }
+
         $this->assertDatabaseMissing('automations', ['name' => 'Missing Url']);
     }
 
